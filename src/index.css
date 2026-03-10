@@ -8,6 +8,7 @@
   html {
     scroll-behavior: smooth;
   }
+
   body {
     @apply bg-surface-950 text-slate-200 antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;

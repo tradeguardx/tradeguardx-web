@@ -9,8 +9,8 @@ const links = {
     { label: 'Preview', to: '/#preview' },
   ],
   resources: [
-    { label: 'Documentation', to: '#' },
-    { label: 'Contact', to: '#' },
+    { label: 'Support & Contact', to: '/support' },
+    { label: 'Email support', to: 'mailto:support@tradeguardx.com' },
   ],
   legal: [
     { label: 'Privacy Policy', to: '/privacy' },
@@ -52,9 +52,18 @@ export default function Footer() {
               <ul className="space-y-2">
                 {links.resources.map((link) => (
                   <li key={link.label}>
-                    <Link to={link.to} className="text-slate-400 hover:text-white transition-colors text-sm">
-                      {link.label}
-                    </Link>
+                    {link.to.startsWith('mailto:') ? (
+                      <a
+                        href={link.to}
+                        className="text-slate-400 hover:text-white transition-colors text-sm"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link to={link.to} className="text-slate-400 hover:text-white transition-colors text-sm">
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
