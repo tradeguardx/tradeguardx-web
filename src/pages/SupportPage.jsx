@@ -89,6 +89,37 @@ export default function SupportPage() {
           </p>
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="mb-16 rounded-3xl border border-accent/25 bg-gradient-to-br from-accent/[0.08] to-emerald-500/[0.04] p-6 md:p-8"
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="min-w-0">
+              <span className="inline-block text-accent text-xs font-semibold tracking-wider uppercase mb-2">
+                Beta program
+              </span>
+              <h2 className="font-display text-xl md:text-2xl font-semibold text-white mb-2">
+                Help us test and shape the product
+              </h2>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-xl">
+                Sign up for feedback sessions and optional video calls. Participants who help us test receive{' '}
+                <span className="text-slate-300">one month free</span> on TradeGuardX as a thank-you.
+              </p>
+            </div>
+            <Link
+              to="/beta-traders"
+              className="flex-shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-3.5 text-sm font-semibold text-surface-950 shadow-lg shadow-accent/20 transition hover:bg-accent-hover"
+            >
+              Open beta registration
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          </div>
+        </motion.div>
+
         {/* Contact cards */}
         <div className="grid md:grid-cols-2 gap-6 mb-16">
           {contactMethods.map((method, i) => (
