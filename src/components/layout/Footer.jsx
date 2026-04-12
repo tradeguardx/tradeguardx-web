@@ -12,6 +12,7 @@ const links = {
   ],
   resources: [
     { label: 'Support', to: '/support' },
+    { label: 'Beta program', to: '/beta-traders' },
     { label: 'Email Us', to: 'mailto:support@tradeguardx.com' },
     { label: 'FAQ', to: { pathname: '/', hash: 'faq' } },
   ],

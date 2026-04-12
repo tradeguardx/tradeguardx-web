@@ -109,15 +109,6 @@ export default function StoryHero() {
             Watch live demo
           </Link>
         </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.35 }}
-          className="mt-10 text-xs text-slate-600"
-        >
-          Scroll to see how one mistake gets stopped — before it costs you.
-        </motion.p>
       </div>
     </section>
   );

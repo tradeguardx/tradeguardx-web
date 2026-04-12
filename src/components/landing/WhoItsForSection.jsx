@@ -36,7 +36,7 @@ const personas = [
   },
   {
     title: 'Supported web platforms',
-    description: 'Built for browser-based platforms—currently including Delta Exchange and Exness—with more on the roadmap.',
+    description: 'Works with any browser-based venue you already trade on—no need to switch brokers or platforms.',
     icon: (
       <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />

@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: 'Which trading platforms are supported?',
-    a: 'TradeGuardX currently supports Delta Exchange and Exness. We are actively adding support for more platforms. You can request your platform via our support page.',
+    a: 'TradeGuardX is built for browser-based platforms in general—forex, crypto, futures, prop dashboards, and more. If your broker runs in the browser, you can use TradeGuardX alongside it. Contact support if you want help with your specific setup.',
   },
   {
     q: 'Can I use it for prop firm trading?',

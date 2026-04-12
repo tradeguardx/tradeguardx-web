@@ -8,6 +8,7 @@ import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import SupportPage from './pages/SupportPage';
+import BetaTestRegistrationPage from './pages/BetaTestRegistrationPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
@@ -57,6 +58,8 @@ function App() {
                   <Route path="login" element={<LoginPage />} />
                   <Route path="signup" element={<SignupPage />} />
                   <Route path="support" element={<SupportPage />} />
+                  <Route path="beta-traders" element={<BetaTestRegistrationPage />} />
+                  <Route path="beta-testers" element={<Navigate to="/beta-traders" replace />} />
                   <Route path="privacy" element={<PrivacyPolicyPage />} />
                   <Route path="terms" element={<TermsPage />} />
                   <Route path="refund" element={<RefundPolicyPage />} />

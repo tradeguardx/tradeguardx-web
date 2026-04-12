@@ -1,4 +1,3 @@
-import SocialProof from '../SocialProof';
 import ProtectionDemo from '../ProtectionDemo';
 import SupportedBrokers from '../SupportedBrokers';
 import FAQ from '../FAQ';
@@ -22,7 +21,6 @@ export default function StoryLanding() {
       <StoryHero />
       {/* Preserve deep-link from marketing / footer “how it works” */}
       <div id="how-it-works" className="sr-only" aria-hidden />
-      <SocialProof />
       <div className="section-gap" />
       <StoryMistake />
       <div className="section-gap" />

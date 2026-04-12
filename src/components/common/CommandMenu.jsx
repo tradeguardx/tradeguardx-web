@@ -8,6 +8,7 @@ const COMMANDS = [
   { label: 'Sign in', path: '/login', keywords: 'login auth account' },
   { label: 'Sign up', path: '/signup', keywords: 'register create account' },
   { label: 'Support', path: '/support', keywords: 'help contact' },
+  { label: 'Beta program', path: '/beta-traders', keywords: 'research feedback video test free month' },
   { label: 'Privacy Policy', path: '/privacy', keywords: 'privacy legal policy' },
   { label: 'Terms', path: '/terms', keywords: 'terms legal' },
   { label: 'Refund Policy', path: '/refund', keywords: 'refund policy legal' },

@@ -1,10 +1,5 @@
 import { motion } from 'framer-motion';
 
-const BROKERS = [
-  { name: 'Delta Exchange', logo: '/brokers/delta-exchange.svg', url: 'https://www.delta.exchange' },
-  { name: 'Exness', logo: '/brokers/exness.svg', url: 'https://www.exness.com' },
-];
-
 const tradingStyles = [
   'Prop Firm Traders',
   'Forex Traders',
@@ -29,33 +24,29 @@ export default function SupportedBrokers() {
             Works where you trade
           </h2>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-            TradeGuardX supports any browser-based trading platform. Currently live on:
+            TradeGuardX works with any browser-based trading platform—if you can trade it in Chrome or Edge, you can use our
+            extension alongside it.
           </p>
         </motion.div>
 
-        {/* Broker cards */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex flex-wrap items-center justify-center gap-5 mb-12"
+          className="max-w-2xl mx-auto mb-16"
         >
-          {BROKERS.map((broker) => (
-            <motion.a
-              key={broker.name}
-              href={broker.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-4 px-8 py-5 rounded-2xl glass glass-card-hover group"
-            >
-              <img src={broker.logo} alt="" className="h-10 w-10 object-contain flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
-              <span className="text-lg font-display font-semibold text-slate-200 group-hover:text-white transition-colors">
-                {broker.name}
-              </span>
-            </motion.a>
-          ))}
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-8 py-10 text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/15 text-accent mb-5 mx-auto">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="text-slate-200 font-display font-semibold text-lg md:text-xl mb-2">Universal browser support</p>
+            <p className="text-slate-400 text-sm md:text-[15px] leading-relaxed">
+              We do not lock you to a single broker or venue. Install the extension, sign in, and enforce your rules on the
+              platforms you already use.
+            </p>
+          </div>
         </motion.div>
 
         <motion.p
@@ -69,7 +60,7 @@ export default function SupportedBrokers() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
             </span>
-            Actively adding more platforms. Request yours via support.
+            Questions about your setup? Reach us anytime via support.
           </span>
         </motion.p>
 
