@@ -1,0 +1,39 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#050915"/>
+      <stop offset="1" stop-color="#0C1429"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(860 210) rotate(140.194) scale(415.495 305.626)">
+      <stop stop-color="#00D4AA" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#00D4AA" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#00D4AA"/>
+      <stop offset="1" stop-color="#34D399"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <g opacity="0.14">
+    <path d="M0 86H1200M0 172H1200M0 258H1200M0 344H1200M0 430H1200M0 516H1200" stroke="#A7B5D4"/>
+    <path d="M133 0V630M266 0V630M399 0V630M532 0V630M665 0V630M798 0V630M931 0V630M1064 0V630" stroke="#A7B5D4"/>
+  </g>
+
+  <g>
+    <rect x="120" y="156" width="84" height="84" rx="22" fill="url(#accent)" fill-opacity="0.18"/>
+    <path d="M152 197L168 213L198 183M220.9 165.4C205.3 160.2 191.9 149.3 182 134C172.1 149.3 158.7 160.2 143.1 165.4C140.8 171.2 139.6 177.6 139.6 184C139.6 219.6 160.3 249 182 254.6C203.7 249 224.4 219.6 224.4 184C224.4 177.6 223.2 171.2 220.9 165.4Z" stroke="#00D4AA" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="120" y="332" fill="white" font-family="Inter, Arial, sans-serif" font-size="74" font-weight="700">
+    TradeGuardX
+  </text>
+  <text x="120" y="388" fill="#9BA9C5" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="500">
+    Protect every trade automatically
+  </text>
+  <text x="120" y="454" fill="#00D4AA" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="600">
+    Hedging checks " Stop-loss prompts " Real-time risk protection
+  </text>
+</svg>

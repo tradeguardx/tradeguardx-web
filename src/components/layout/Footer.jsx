@@ -3,14 +3,17 @@ import { motion } from 'framer-motion';
 
 const links = {
   product: [
-    { label: 'Features', to: '/#features' },
-    { label: 'How it works', to: '/#how-it-works' },
+    { label: 'Features', to: { pathname: '/', hash: 'features' } },
+    { label: 'How it Works', to: { pathname: '/', hash: 'how-it-works' } },
+    { label: 'Web & extension', to: { pathname: '/', hash: 'ecosystem' } },
+    { label: "Who it's for", to: { pathname: '/', hash: 'who-its-for' } },
     { label: 'Pricing', to: '/pricing' },
-    { label: 'Preview', to: '/#preview' },
+    { label: 'Preview', to: { pathname: '/', hash: 'preview' } },
   ],
   resources: [
-    { label: 'Support & Contact', to: '/support' },
-    { label: 'Email support', to: 'mailto:support@tradeguardx.com' },
+    { label: 'Support', to: '/support' },
+    { label: 'Email Us', to: 'mailto:support@tradeguardx.com' },
+    { label: 'FAQ', to: { pathname: '/', hash: 'faq' } },
   ],
   legal: [
     { label: 'Privacy Policy', to: '/privacy' },
@@ -21,46 +24,50 @@ const links = {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-surface-800 py-12 md:py-16">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+    <footer className="border-t border-white/[0.06] bg-surface-950">
+      <div className="max-w-6xl mx-auto px-6 py-16 md:py-20">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 md:gap-8">
+          {/* Brand column */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="flex items-center gap-2"
+            className="col-span-2 md:col-span-1"
           >
-            <span className="text-xl font-bold text-white">TradeGuardX</span>
-            <span className="text-slate-500 text-sm">© {new Date().getFullYear()}</span>
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+                <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <span className="font-display font-bold text-white">TradeGuardX</span>
+            </div>
+            <p className="text-slate-500 text-sm leading-relaxed max-w-xs">
+              Automated trade protection for serious traders. Browser extension that enforces your risk rules in real-time.
+            </p>
           </motion.div>
 
-          <div className="flex flex-wrap gap-8">
-            <div>
-              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Product</h4>
-              <ul className="space-y-2">
-                {links.product.map((link) => (
+          {/* Link columns */}
+          {Object.entries(links).map(([title, items]) => (
+            <div key={title}>
+              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+                {title}
+              </h4>
+              <ul className="space-y-3">
+                {items.map((link) => (
                   <li key={link.label}>
-                    <Link to={link.to} className="text-slate-400 hover:text-white transition-colors text-sm">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Resources</h4>
-              <ul className="space-y-2">
-                {links.resources.map((link) => (
-                  <li key={link.label}>
-                    {link.to.startsWith('mailto:') ? (
+                    {typeof link.to === 'string' && link.to.startsWith('mailto:') ? (
                       <a
                         href={link.to}
-                        className="text-slate-400 hover:text-white transition-colors text-sm"
+                        className="text-slate-500 hover:text-slate-200 transition-colors text-sm"
                       >
                         {link.label}
                       </a>
                     ) : (
-                      <Link to={link.to} className="text-slate-400 hover:text-white transition-colors text-sm">
+                      <Link
+                        to={link.to}
+                        className="text-slate-500 hover:text-slate-200 transition-colors text-sm"
+                      >
                         {link.label}
                       </Link>
                     )}
@@ -68,24 +75,17 @@ export default function Footer() {
                 ))}
               </ul>
             </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Legal</h4>
-              <ul className="space-y-2">
-                {links.legal.map((link) => (
-                  <li key={link.label}>
-                    <Link to={link.to} className="text-slate-400 hover:text-white transition-colors text-sm">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          ))}
         </div>
 
-        <p className="mt-12 text-slate-500 text-sm">
-          Protect every trade automatically. TradeGuardX is a browser extension for traders who want to enforce risk rules without the stress.
-        </p>
+        <div className="mt-16 pt-8 border-t border-white/[0.04] flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-slate-600 text-sm">
+            &copy; {new Date().getFullYear()} TradeGuardX. All rights reserved.
+          </p>
+          <p className="text-slate-600 text-xs">
+            TradeGuardX is not affiliated with any broker or prop firm.
+          </p>
+        </div>
       </div>
     </footer>
   );
