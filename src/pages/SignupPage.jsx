@@ -109,6 +109,12 @@ export default function SignupPage() {
           <p className="text-slate-500 text-[15px]">
             Get started free — no credit card needed
           </p>
+          <p className="mt-4 text-[13px] text-slate-500">
+            <Link to="/beta-traders" className="text-accent font-medium hover:underline">
+              Join the beta & feedback program
+            </Link>
+            <span className="text-slate-600"> — video sessions, product input, incentives.</span>
+          </p>
           {plan !== 'free' && (
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold border mt-3 ${pm.cls}`}>
               {pm.label} plan

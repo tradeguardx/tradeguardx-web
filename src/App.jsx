@@ -31,6 +31,7 @@ import AppLoader from './components/common/AppLoader';
 import CommandMenu from './components/common/CommandMenu';
 import { ToastProvider } from './components/common/ToastProvider';
 import AppErrorBoundary from './components/common/AppErrorBoundary';
+import VercelRouteAnalytics from './components/common/VercelRouteAnalytics';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -49,6 +50,7 @@ function App() {
         <BrowserRouter>
           <ToastProvider>
             <AuthProvider>
+              <VercelRouteAnalytics />
               <ScrollToTop />
               <CommandMenu />
               <Routes>

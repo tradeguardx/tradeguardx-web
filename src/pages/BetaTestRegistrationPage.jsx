@@ -1,14 +1,54 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useToast } from '../components/common/ToastProvider';
-import { submitBetaTestRegistration, isBetaSignupConfigured } from '../api/betaSignupApi';
+import { useAuth } from '../context/AuthContext';
+
+function formEndpoint() {
+  return (import.meta.env.VITE_BETA_SIGNUP_ENDPOINT || '').trim();
+}
+
+function isFormConfigured() {
+  return formEndpoint().length > 0;
+}
+
+async function postBetaRegistration(payload) {
+  const url = formEndpoint();
+  if (!url) {
+    throw new Error('Form is not configured. Set VITE_BETA_SIGNUP_ENDPOINT for this deployment.');
+  }
+  const body = {
+    _subject: 'TradeGuardX beta / research signup',
+    email: payload.email.trim(),
+    _replyto: payload.email.trim(),
+    first_name: payload.firstName.trim(),
+    last_name: payload.lastName.trim(),
+    place: payload.place.trim() || '—',
+    funded_account_info: payload.fundedAccountInfo.trim(),
+    mobile: payload.mobile.trim(),
+    video_call_ok: payload.videoCallOk ? 'yes' : 'no',
+  };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    // eslint-disable-next-line no-console
+    console.error('beta registration POST', res.status, text);
+    throw new Error('Could not send your registration. Please try again or email support@tradeguardx.com.');
+  }
+}
 
 const inputCls =
   'w-full rounded-xl border border-surface-700/60 bg-surface-800/50 px-4 py-3 text-[15px] text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-accent/40 focus:ring-1 focus:ring-accent/20 transition-colors';
 
 export default function BetaTestRegistrationPage() {
   const toast = useToast();
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [place, setPlace] = useState('');
@@ -18,7 +58,16 @@ export default function BetaTestRegistrationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
-  const configured = isBetaSignupConfigured();
+  const configured = isFormConfigured();
+
+  useEffect(() => {
+    const q = searchParams.get('email');
+    if (q) setEmail(decodeURIComponent(q));
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (user?.email) setEmail((prev) => (prev ? prev : user.email));
+  }, [user?.email]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +77,8 @@ export default function BetaTestRegistrationPage() {
     }
     setSubmitting(true);
     try {
-      await submitBetaTestRegistration({
+      await postBetaRegistration({
+        email,
         firstName,
         lastName,
         place,
@@ -67,18 +117,23 @@ export default function BetaTestRegistrationPage() {
             Research & feedback
           </span>
           <h1 className="font-display text-3xl md:text-4xl font-bold text-white mb-3">Help shape TradeGuardX</h1>
-          <p className="text-slate-400 text-lg leading-relaxed mb-8">
+          <p className="text-slate-400 text-lg leading-relaxed mb-3">
             We are inviting traders for short feedback sessions. If you join a video call and help us test the product,
             we will credit you with <span className="text-slate-200 font-medium">one month free</span> on TradeGuardX
             as a thank-you.
+          </p>
+          <p className="text-slate-500 text-sm mb-8">
+            Want a password account instead?{' '}
+            <Link to="/signup" className="text-accent hover:underline">
+              Create account
+            </Link>
           </p>
         </motion.div>
 
         {!configured && (
           <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-5 py-4 text-amber-100/90 text-sm mb-8 leading-relaxed">
             Set <code className="text-amber-200/90">VITE_BETA_SIGNUP_ENDPOINT</code> in{' '}
-            <code className="text-amber-200/90">.env.local</code> or Vercel (your Formspree URL), then restart the dev server
-            or redeploy.
+            <code className="text-amber-200/90">.env.local</code> or Vercel (e.g. Formspree URL), then restart or redeploy.
           </div>
         )}
 
@@ -140,6 +195,22 @@ export default function BetaTestRegistrationPage() {
                   autoComplete="family-name"
                 />
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="beta-email" className="block text-sm font-medium text-slate-300 mb-1.5">
+                Email <span className="text-rose-400">*</span>
+              </label>
+              <input
+                id="beta-email"
+                type="email"
+                className={inputCls}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="you@example.com"
+                autoComplete="email"
+              />
             </div>
 
             <div>
@@ -224,8 +295,7 @@ export default function BetaTestRegistrationPage() {
             </fieldset>
 
             <p className="text-xs text-slate-500 leading-relaxed">
-              By submitting, you agree that we may contact you about this program. We use your details only to coordinate
-              feedback sessions and incentives. See our{' '}
+              By submitting, you agree that we may contact you about this program. See our{' '}
               <Link to="/privacy" className="text-accent hover:underline">
                 Privacy Policy
               </Link>

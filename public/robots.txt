@@ -1,0 +1,8 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# App UI behind login — not useful for public search
+Disallow: /dashboard/
+
+Sitemap: https://tradeguardx.com/sitemap.xml

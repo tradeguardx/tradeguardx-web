@@ -58,7 +58,8 @@ function normalizePlan(raw, index) {
     };
   }).filter((f) => f.text);
   const monthlyPrice = Number(raw.priceMonthly ?? raw.monthlyPrice ?? 0);
-  const ctaLink = raw.features?.ctaLink || (key === 'free' ? '/signup' : `/signup?plan=${key}`);
+  const ctaLink =
+    raw.features?.ctaLink || (key === 'free' ? '/beta-traders' : `/beta-traders?plan=${key}`);
 
   return {
     id: raw.id || key || `${index}`,
@@ -469,7 +470,7 @@ export default function PricingPage() {
           </p>
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
             <Link
-              to="/signup"
+              to="/beta-traders"
               className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-accent text-surface-950 font-semibold text-lg hover:bg-accent-hover transition-all duration-300 shadow-lg shadow-accent/20"
             >
               Get Started Free

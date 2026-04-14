@@ -201,8 +201,9 @@ export function AuthProvider({ children }) {
     [bootstrapSession, toAppUser]
   );
 
-  const loginWithGoogle = useCallback(async () => {
-    const redirectTo = `${window.location.origin}/dashboard`;
+  const loginWithGoogle = useCallback(async (redirectPath = '/dashboard') => {
+    const path = redirectPath.startsWith('/') ? redirectPath : `/${redirectPath}`;
+    const redirectTo = `${window.location.origin}${path}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },

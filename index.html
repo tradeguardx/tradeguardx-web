@@ -5,6 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="TradeGuardX - Browser extension that protects traders from breaking trading rules. Daily loss limits, drawdown protection, auto-close trades." />
+    <meta name="application-name" content="TradeGuardX" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="TradeGuardX — Protect every trade automatically" />
     <meta property="og:description" content="Browser extension for traders: enforce daily loss limits, drawdown controls, and risk rules in real time." />
@@ -15,6 +16,45 @@
     <meta name="twitter:description" content="Trade safer with real-time risk prompts, hedging prevention, and rule-based protection." />
     <meta name="twitter:image" content="/og-image.svg" />
     <title>TradeGuardX — Protect every trade automatically</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://tradeguardx.com/#organization",
+            "name": "TradeGuardX",
+            "url": "https://tradeguardx.com",
+            "logo": "https://tradeguardx.com/favicon.svg",
+            "sameAs": []
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://tradeguardx.com/#software",
+            "name": "TradeGuardX",
+            "description": "Browser extension and web app for traders: enforce daily loss limits, drawdown rules, hedging prevention, and risk controls in real time on browser-based trading platforms.",
+            "url": "https://tradeguardx.com",
+            "applicationCategory": "FinanceApplication",
+            "applicationSubCategory": "Trading & risk management software",
+            "operatingSystem": "Web; Google Chrome; Microsoft Edge",
+            "browserRequirements": "Requires JavaScript. Chromium-based browser with extension support.",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD",
+              "description": "Free plan available; paid plans for advanced rules and journaling."
+            },
+            "publisher": { "@id": "https://tradeguardx.com/#organization" },
+            "featureList": [
+              "Real-time rule enforcement in the browser",
+              "Daily loss and drawdown protection",
+              "Hedging and risk limits",
+              "Trade journal and replay"
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
