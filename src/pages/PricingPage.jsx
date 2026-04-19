@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import FAQ from '../components/landing/FAQ';
@@ -6,6 +6,8 @@ import { getPricingPlans } from '../api/pricingApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/ToastProvider';
 import { createCheckoutSession } from '../api/paymentsApi';
+import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
+import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
 
 const PLAN_STYLE = {
   free: {
@@ -41,9 +43,18 @@ function planKey(name = '') {
   return name.toLowerCase().replace(/\s|\+/g, '');
 }
 
+/** Prefer API `slug` (e.g. pro_plus) so keys match /signup?plan= and pending checkout. */
+function planKeyFromApi(raw, name, index) {
+  const slug = raw?.slug;
+  if (slug != null && String(slug).trim() !== '') {
+    return normalizePlanSlugForMatch(slug);
+  }
+  return planKey(name || `Plan ${index + 1}`);
+}
+
 function normalizePlan(raw, index) {
   const name = raw.name || `Plan ${index + 1}`;
-  const key = planKey(name);
+  const key = planKeyFromApi(raw, name, index);
   const style = PLAN_STYLE[key] || PLAN_STYLE.free;
   const featureList = Array.isArray(raw.features)
     ? raw.features
@@ -99,7 +110,7 @@ export default function PricingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [checkoutKey, setCheckoutKey] = useState(null);
-  const { session } = useAuth();
+  const { session, user, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -110,6 +121,15 @@ export default function PricingPage() {
     }
     if (!session?.access_token) {
       navigate(plan.ctaLink);
+      return;
+    }
+    const elig = paidCheckoutEligibility(user?.plan, plan.key);
+    if (!elig.allowed) {
+      if (elig.reason === 'current') {
+        toast.error('Already on this plan', 'You are already subscribed to this tier.');
+      } else if (elig.reason === 'downgrade') {
+        toast.info('Change plan in Billing', 'To switch to a lower tier, use Billing → manage subscription.');
+      }
       return;
     }
     setCheckoutKey(plan.key);
@@ -130,6 +150,60 @@ export default function PricingPage() {
       setCheckoutKey(null);
     }
   }
+
+  const resumeCheckoutRef = useRef(false);
+
+  /** After signup from Pricing with a paid plan, sessionStorage holds the plan — continue to Dodo checkout here. */
+  useEffect(() => {
+    if (isLoading || loadError || plans.length === 0 || !session?.access_token) return;
+    if (subscriptionLoading) return;
+    const pending = getPendingCheckoutPlan();
+    if (!pending || pending === 'free') return;
+    const pendingN = normalizePlanSlugForMatch(pending);
+    const plan = plans.find((p) => normalizePlanSlugForMatch(p.key) === pendingN);
+    if (!plan) {
+      clearPendingCheckoutPlan();
+      return;
+    }
+    if (plan.key === 'free') return;
+    const resumeElig = paidCheckoutEligibility(user?.plan, plan.key);
+    if (!resumeElig.allowed) {
+      clearPendingCheckoutPlan();
+      return;
+    }
+    if (resumeCheckoutRef.current) return;
+    resumeCheckoutRef.current = true;
+
+    let cancelled = false;
+    setCheckoutKey(plan.key);
+    (async () => {
+      try {
+        const res = await createCheckoutSession({
+          accessToken: session.access_token,
+          planSlug: plan.key,
+        });
+        if (cancelled) return;
+        const url = res?.data?.checkoutUrl;
+        if (url) {
+          clearPendingCheckoutPlan();
+          window.location.href = url;
+          return;
+        }
+        throw new Error('No checkout URL returned');
+      } catch (err) {
+        if (!cancelled) {
+          resumeCheckoutRef.current = false;
+          toast.error('Checkout failed', err?.message || 'Please try again.');
+        }
+      } finally {
+        if (!cancelled) setCheckoutKey(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, loadError, plans, session?.access_token, subscriptionLoading, user?.plan, toast]);
 
   useEffect(() => {
     let cancelled = false;
@@ -219,6 +293,10 @@ export default function PricingPage() {
             {plans.map((plan, i) => {
               const price = plan.monthlyPrice;
               const displayPrice = price === 0 ? '$0' : `$${price}`;
+              const paidElig =
+                session?.access_token && plan.key !== 'free'
+                  ? paidCheckoutEligibility(user?.plan, plan.key)
+                  : null;
 
               return (
                 <motion.div
@@ -314,19 +392,84 @@ export default function PricingPage() {
 
                     {/* CTA */}
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="mt-8">
-                      {plan.key !== 'free' && session?.access_token ? (
-                        <button
-                          type="button"
-                          onClick={() => handlePaidPlanCta(plan)}
-                          disabled={checkoutKey === plan.key}
-                          className={`block w-full py-3.5 rounded-xl text-center font-semibold transition-all duration-300 text-sm disabled:opacity-60 ${
-                            plan.primary
-                              ? 'bg-accent text-surface-950 hover:bg-accent-hover shadow-md shadow-accent/25 hover:shadow-lg hover:shadow-accent/30'
-                              : 'bg-white/[0.04] text-white hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12]'
-                          }`}
-                        >
-                          {checkoutKey === plan.key ? 'Redirecting…' : plan.cta}
-                        </button>
+                      {plan.key === 'free' && session?.access_token ? (
+                        subscriptionLoading ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="block w-full py-3.5 rounded-xl text-center font-semibold transition-all duration-300 text-sm opacity-60 cursor-wait bg-white/[0.04] text-white border border-white/[0.06]"
+                          >
+                            Loading plan…
+                          </button>
+                        ) : isPaidPlan(user?.plan) ? (
+                          <Link
+                            to="/dashboard/account/billing"
+                            className="block w-full py-3.5 rounded-xl text-center font-semibold transition-all duration-300 text-sm bg-white/[0.04] text-slate-200 hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.12]"
+                          >
+                            Manage subscription
+                          </Link>
+                        ) : (
+                          <Link
+                            to={plan.ctaLink}
+                            className={`block w-full py-3.5 rounded-xl text-center font-semibold transition-all duration-300 text-sm ${
+                              plan.primary
+                                ? 'bg-accent text-surface-950 hover:bg-accent-hover shadow-md shadow-accent/25 hover:shadow-lg hover:shadow-accent/30'
+                                : 'bg-white/[0.04] text-white hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12]'
+                            }`}
+                          >
+                            {plan.cta}
+                          </Link>
+                        )
+                      ) : plan.key !== 'free' && session?.access_token ? (
+                        subscriptionLoading ? (
+                          <button
+                            type="button"
+                            disabled
+                            className={`block w-full py-3.5 rounded-xl text-center font-semibold transition-all duration-300 text-sm opacity-60 cursor-wait ${
+                              plan.primary
+                                ? 'bg-accent text-surface-950'
+                                : 'bg-white/[0.04] text-white border border-white/[0.06]'
+                            }`}
+                          >
+                            Loading plan…
+                          </button>
+                        ) : paidElig && !paidElig.allowed && paidElig.reason === 'current' ? (
+                          <button
+                            type="button"
+                            disabled
+                            className={`block w-full py-3.5 rounded-xl text-center font-semibold transition-all duration-300 text-sm opacity-70 cursor-not-allowed ${
+                              plan.primary
+                                ? 'bg-accent/50 text-surface-950'
+                                : 'bg-white/[0.06] text-slate-400 border border-white/[0.06]'
+                            }`}
+                          >
+                            Current plan
+                          </button>
+                        ) : paidElig && !paidElig.allowed && paidElig.reason === 'downgrade' ? (
+                          <Link
+                            to="/dashboard/account/billing"
+                            className={`block w-full py-3.5 rounded-xl text-center font-semibold transition-all duration-300 text-sm ${
+                              plan.primary
+                                ? 'bg-accent text-surface-950 hover:bg-accent-hover shadow-md shadow-accent/25'
+                                : 'bg-white/[0.04] text-white hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12]'
+                            }`}
+                          >
+                            Manage subscription
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handlePaidPlanCta(plan)}
+                            disabled={checkoutKey === plan.key}
+                            className={`block w-full py-3.5 rounded-xl text-center font-semibold transition-all duration-300 text-sm disabled:opacity-60 ${
+                              plan.primary
+                                ? 'bg-accent text-surface-950 hover:bg-accent-hover shadow-md shadow-accent/25 hover:shadow-lg hover:shadow-accent/30'
+                                : 'bg-white/[0.04] text-white hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12]'
+                            }`}
+                          >
+                            {checkoutKey === plan.key ? 'Redirecting…' : plan.cta}
+                          </button>
+                        )
                       ) : (
                         <Link
                           to={plan.ctaLink}
@@ -466,14 +609,16 @@ export default function PricingPage() {
             Ready to protect your trades?
           </h2>
           <p className="text-slate-500 text-sm mb-8">
-            Join thousands of traders who trust TradeGuardX. Start free, no card required.
+            {session?.access_token && !subscriptionLoading && isPaidPlan(user?.plan)
+              ? 'You are on a paid plan. Manage billing anytime from your account.'
+              : 'Join thousands of traders who trust TradeGuardX. Start free, no card required.'}
           </p>
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
             <Link
-              to="/beta-traders"
+              to={session?.access_token ? '/dashboard' : '/beta-traders'}
               className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-accent text-surface-950 font-semibold text-lg hover:bg-accent-hover transition-all duration-300 shadow-lg shadow-accent/20"
             >
-              Get Started Free
+              {session?.access_token ? 'Open dashboard' : 'Get Started Free'}
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>

@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import AppLoader from '../components/common/AppLoader';
 import { useToast } from '../components/common/ToastProvider';
-import { setPendingCheckoutPlan } from '../lib/checkoutIntent';
+import { setPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
 
 const planMeta = {
   proplus: { label: 'Pro+', cls: 'bg-purple-500/15 text-purple-300 border-purple-500/25' },
@@ -28,7 +28,8 @@ function pwStrength(pw) {
 
 export default function SignupPage() {
   const [searchParams] = useSearchParams();
-  const plan = searchParams.get('plan') || 'free';
+  const rawPlan = searchParams.get('plan') || 'free';
+  const plan = rawPlan === 'free' ? 'free' : normalizePlanSlugForMatch(rawPlan);
   const pm = planMeta[plan] || planMeta.free;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -36,10 +37,16 @@ export default function SignupPage() {
   const [showPw, setShowPw] = useState(false);
   const [focused, setFocused] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signup, loginWithGoogle } = useAuth();
+  const { signup, loginWithGoogle, session } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const str = useMemo(() => pwStrength(password), [password]);
+
+  useEffect(() => {
+    if (session?.access_token) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [session?.access_token, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,6 +59,9 @@ export default function SignupPage() {
       } else {
         if (plan !== 'free') {
           setPendingCheckoutPlan(plan);
+          toast.success('Account created', 'Continue to secure checkout for your plan.');
+          navigate('/pricing', { replace: true });
+          return;
         }
         toast.success('Account created', 'Your trading protection workspace is ready.');
         navigate('/dashboard', { replace: true });
@@ -66,8 +76,14 @@ export default function SignupPage() {
   const handleGoogle = async () => {
     setIsSubmitting(true);
     try {
-      await loginWithGoogle();
-      toast.info('Redirecting to Google', 'Complete sign-up and you will return to the dashboard.');
+      if (plan !== 'free') {
+        setPendingCheckoutPlan(plan);
+      }
+      await loginWithGoogle(plan !== 'free' ? '/pricing' : '/dashboard');
+      toast.info(
+        'Redirecting to Google',
+        plan !== 'free' ? 'After Google, you will continue to checkout on Pricing.' : 'Complete sign-up and you will return to the dashboard.',
+      );
       window.setTimeout(() => setIsSubmitting(false), 3000);
     } catch (error) {
       toast.error('Google sign-up failed', error?.message || 'Please try again in a moment.');
