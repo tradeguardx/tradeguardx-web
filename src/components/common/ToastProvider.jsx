@@ -3,36 +3,62 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 const ToastContext = createContext(null);
 
+const TONE = {
+  success: {
+    bar: 'bg-success',
+    icon: (
+      <svg className="w-4 h-4 text-success flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M5 13l4 4L19 7" />
+      </svg>
+    ),
+  },
+  error: {
+    bar: 'bg-danger',
+    icon: (
+      <svg className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  info: {
+    bar: 'bg-accent',
+    icon: (
+      <svg className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+};
+
 function ToastItem({ toast, onClose }) {
-  const tone =
-    toast.type === 'success'
-      ? 'border-success/35 bg-success/10'
-      : toast.type === 'error'
-        ? 'border-danger/35 bg-danger/10'
-        : 'border-accent/30 bg-surface-900/90';
+  const tone = TONE[toast.type] ?? TONE.info;
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+      initial={{ opacity: 0, y: -8, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -6, scale: 0.98 }}
-      transition={{ duration: 0.18 }}
-      className={`w-full rounded-xl border px-4 py-3 backdrop-blur-xl shadow-xl shadow-black/30 ${tone}`}
+      exit={{ opacity: 0, y: -6, scale: 0.97 }}
+      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      className="w-full rounded-xl border border-white/[0.08] bg-surface-800 shadow-xl shadow-black/40 overflow-hidden"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-white">{toast.title}</p>
+      {/* coloured top bar */}
+      <div className={`h-0.5 w-full ${tone.bar}`} />
+
+      <div className="flex items-start gap-3 px-4 py-3">
+        {tone.icon}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-white leading-snug">{toast.title}</p>
           {toast.description && (
-            <p className="text-xs text-slate-300 mt-1 leading-relaxed">{toast.description}</p>
+            <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{toast.description}</p>
           )}
         </div>
         <button
           onClick={() => onClose(toast.id)}
-          className="text-slate-400 hover:text-white transition-colors"
+          className="text-slate-500 hover:text-slate-200 transition-colors flex-shrink-0 mt-0.5"
           aria-label="Close notification"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>

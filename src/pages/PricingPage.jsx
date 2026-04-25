@@ -8,8 +8,6 @@ import { useToast } from '../components/common/ToastProvider';
 import { createCheckoutSession } from '../api/paymentsApi';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
 import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
-import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
-import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
 
 // ─── Per-plan visual theming ─────────────────────────────────────────────────
 const PLAN_THEME = {
@@ -155,7 +153,6 @@ export default function PricingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [checkoutKey, setCheckoutKey] = useState(null);
-  const { session, user, subscriptionLoading } = useAuth();
   const { session, user, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
