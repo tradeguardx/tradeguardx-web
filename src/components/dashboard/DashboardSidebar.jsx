@@ -74,27 +74,27 @@ function itemIsActive(pathname, item) {
 function SidebarUpgradeCard({ isPro }) {
   const tierStyle = isPro
     ? {
-        frame: 'from-violet-500/70 via-fuchsia-500/35 to-violet-600/50',
-        orbA: 'bg-violet-400/35',
-        orbB: 'bg-fuchsia-500/30',
-        spotlight: 'bg-[radial-gradient(ellipse_90%_80%_at_50%_0%,rgba(167,139,250,0.22),transparent_55%)]',
-        iconWrap: 'from-violet-400/50 to-fuchsia-600/40 shadow-[0_0_20px_-4px_rgba(167,139,250,0.5)]',
-        eyebrow: 'text-violet-200/95',
-        body: 'text-slate-300/90',
-        btn: 'from-violet-500 via-fuchsia-500 to-violet-600 shadow-[0_4px_24px_-4px_rgba(139,92,246,0.55)] hover:shadow-[0_6px_28px_-2px_rgba(217,70,239,0.45)] hover:brightness-110',
-        glow: 'rgba(139, 92, 246, 0.45)',
-      }
+      frame: 'from-violet-500/70 via-fuchsia-500/35 to-violet-600/50',
+      orbA: 'bg-violet-400/35',
+      orbB: 'bg-fuchsia-500/30',
+      spotlight: 'bg-[radial-gradient(ellipse_90%_80%_at_50%_0%,rgba(167,139,250,0.22),transparent_55%)]',
+      iconWrap: 'from-violet-400/50 to-fuchsia-600/40 shadow-[0_0_20px_-4px_rgba(167,139,250,0.5)]',
+      eyebrow: 'text-violet-200/95',
+      body: 'text-slate-300/90',
+      btn: 'from-violet-500 via-fuchsia-500 to-violet-600 shadow-[0_4px_24px_-4px_rgba(139,92,246,0.55)] hover:shadow-[0_6px_28px_-2px_rgba(217,70,239,0.45)] hover:brightness-110',
+      glow: 'rgba(139, 92, 246, 0.45)',
+    }
     : {
-        frame: 'from-emerald-400/55 via-accent/40 to-teal-600/45',
-        orbA: 'bg-emerald-400/30',
-        orbB: 'bg-cyan-400/20',
-        spotlight: 'bg-[radial-gradient(ellipse_90%_80%_at_50%_0%,rgba(52,211,153,0.18),transparent_55%)]',
-        iconWrap: 'from-emerald-400/45 to-teal-600/35 shadow-[0_0_20px_-4px_rgba(0,212,170,0.35)]',
-        eyebrow: 'text-emerald-200/95',
-        body: 'text-slate-300/90',
-        btn: 'from-accent via-emerald-500 to-teal-600 shadow-[0_4px_24px_-4px_rgba(0,212,170,0.4)] hover:shadow-[0_6px_28px_-2px_rgba(45,212,191,0.35)] hover:brightness-110',
-        glow: 'rgba(0, 212, 170, 0.35)',
-      };
+      frame: 'from-emerald-400/55 via-accent/40 to-teal-600/45',
+      orbA: 'bg-emerald-400/30',
+      orbB: 'bg-cyan-400/20',
+      spotlight: 'bg-[radial-gradient(ellipse_90%_80%_at_50%_0%,rgba(52,211,153,0.18),transparent_55%)]',
+      iconWrap: 'from-emerald-400/45 to-teal-600/35 shadow-[0_0_20px_-4px_rgba(0,212,170,0.35)]',
+      eyebrow: 'text-emerald-200/95',
+      body: 'text-slate-300/90',
+      btn: 'from-accent via-emerald-500 to-teal-600 shadow-[0_4px_24px_-4px_rgba(0,212,170,0.4)] hover:shadow-[0_6px_28px_-2px_rgba(45,212,191,0.35)] hover:brightness-110',
+      glow: 'rgba(0, 212, 170, 0.35)',
+    };
 
   return (
     <motion.div
@@ -306,18 +306,16 @@ export default function DashboardSidebar() {
                       />
                     )}
                     <span
-                      className={`relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
-                        active
+                      className={`relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${active
                           ? 'bg-accent/20 text-accent shadow-sm shadow-accent/25 ring-1 ring-accent/20'
                           : 'bg-white/[0.05] text-slate-400 group-hover:bg-white/[0.10] group-hover:text-slate-200'
-                      }`}
+                        }`}
                     >
                       {icon}
                     </span>
                     <span
-                      className={`relative z-[1] text-[13px] ${
-                        active ? 'font-semibold text-white' : 'font-medium text-slate-300/90 group-hover:text-white'
-                      }`}
+                      className={`relative z-[1] text-[13px] ${active ? 'font-semibold text-white' : 'font-medium text-slate-300/90 group-hover:text-white'
+                        }`}
                     >
                       {item.label}
                     </span>

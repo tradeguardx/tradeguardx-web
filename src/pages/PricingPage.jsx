@@ -8,6 +8,8 @@ import { useToast } from '../components/common/ToastProvider';
 import { createCheckoutSession } from '../api/paymentsApi';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
 import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
+import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
+import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
 
 // ─── Per-plan visual theming ─────────────────────────────────────────────────
 const PLAN_THEME = {
@@ -154,6 +156,7 @@ export default function PricingPage() {
   const [loadError, setLoadError] = useState('');
   const [checkoutKey, setCheckoutKey] = useState(null);
   const { session, user, subscriptionLoading } = useAuth();
+  const { session, user, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -239,35 +242,35 @@ export default function PricingPage() {
     {
       category: 'Core Protection',
       rows: [
-        { label: 'Daily loss protection',   free: true,       pro: true,       proplus: true },
-        { label: 'Hedging prevention',      free: true,       pro: true,       proplus: true },
-        { label: 'Basic rule enforcement',  free: true,       pro: true,       proplus: true },
-        { label: 'Risk per trade rule',     free: false,      pro: true,       proplus: true },
-        { label: 'Max drawdown lock',       free: false,      pro: true,       proplus: true },
+        { label: 'Daily loss protection', free: true, pro: true, proplus: true },
+        { label: 'Hedging prevention', free: true, pro: true, proplus: true },
+        { label: 'Basic rule enforcement', free: true, pro: true, proplus: true },
+        { label: 'Risk per trade rule', free: false, pro: true, proplus: true },
+        { label: 'Max drawdown lock', free: false, pro: true, proplus: true },
       ],
     },
     {
       category: 'Trading Rules',
       rows: [
-        { label: 'Active rules',            free: 'Limited',  pro: 'All rules', proplus: 'Unlimited' },
-        { label: 'Custom rule builder',     free: false,      pro: true,        proplus: true },
-        { label: 'Rule violation alerts',   free: false,      pro: true,        proplus: true },
+        { label: 'Active rules', free: 'Limited', pro: 'All rules', proplus: 'Unlimited' },
+        { label: 'Custom rule builder', free: false, pro: true, proplus: true },
+        { label: 'Rule violation alerts', free: false, pro: true, proplus: true },
       ],
     },
     {
       category: 'Journal & Analytics',
       rows: [
-        { label: 'Trade journal history',   free: '7 days',   pro: '90 days',   proplus: 'Unlimited' },
-        { label: 'AI trade insights',       free: false,      pro: true,        proplus: true },
-        { label: 'Behavior pattern analysis', free: false,    pro: true,        proplus: true },
-        { label: 'Trade replay',            free: false,      pro: true,        proplus: true },
+        { label: 'Trade journal history', free: '7 days', pro: '90 days', proplus: 'Unlimited' },
+        { label: 'AI trade insights', free: false, pro: true, proplus: true },
+        { label: 'Behavior pattern analysis', free: false, pro: true, proplus: true },
+        { label: 'Trade replay', free: false, pro: true, proplus: true },
       ],
     },
     {
       category: 'Accounts',
       rows: [
-        { label: 'Trading accounts',        free: '1',        pro: '5',         proplus: 'Unlimited' },
-        { label: 'Multi-account analytics', free: false,      pro: false,       proplus: true },
+        { label: 'Trading accounts', free: '1', pro: '5', proplus: 'Unlimited' },
+        { label: 'Multi-account analytics', free: false, pro: false, proplus: true },
       ],
     },
   ];
@@ -535,9 +538,9 @@ export default function PricingPage() {
           >
             <div className="px-6 py-5" />
             {[
-              { key: 'free',    label: 'Free',  color: '#64748b' },
-              { key: 'pro',     label: 'Pro',   color: '#00d4aa', highlight: true },
-              { key: 'proplus', label: 'Pro+',  color: '#a78bfa' },
+              { key: 'free', label: 'Free', color: '#64748b' },
+              { key: 'pro', label: 'Pro', color: '#00d4aa', highlight: true },
+              { key: 'proplus', label: 'Pro+', color: '#a78bfa' },
             ].map((col) => (
               <div
                 key={col.key}
@@ -590,9 +593,9 @@ export default function PricingPage() {
                       <span className="text-sm" style={{ color: '#64748b' }}>{row.label}</span>
                     </div>
                     {[
-                      { key: 'free',    val: row.free,    color: '#64748b',  highlight: false },
-                      { key: 'pro',     val: row.pro,     color: '#00d4aa',  highlight: true  },
-                      { key: 'proplus', val: row.proplus, color: '#a78bfa',  highlight: false },
+                      { key: 'free', val: row.free, color: '#64748b', highlight: false },
+                      { key: 'pro', val: row.pro, color: '#00d4aa', highlight: true },
+                      { key: 'proplus', val: row.proplus, color: '#a78bfa', highlight: false },
                     ].map((col) => (
                       <div
                         key={col.key}
