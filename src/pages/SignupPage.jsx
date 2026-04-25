@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +28,11 @@ function pwStrength(pw) {
 }
 
 export default function SignupPage() {
+  useSEO({
+    title: 'Sign Up Free',
+    description: 'Create your free TradeGuardX account and start protecting your trades in minutes. No credit card required.',
+    url: 'https://tradeguardx.com/signup',
+  });
   const [searchParams] = useSearchParams();
   const rawPlan = searchParams.get('plan') || 'free';
   const plan = rawPlan === 'free' ? 'free' : normalizePlanSlugForMatch(rawPlan);

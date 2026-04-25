@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -6,6 +7,7 @@ import AppLoader from '../components/common/AppLoader';
 import { useToast } from '../components/common/ToastProvider';
 
 export default function LoginPage() {
+  useSEO({ title: 'Log In', url: 'https://tradeguardx.com/login' });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);

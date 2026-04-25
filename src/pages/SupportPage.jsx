@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useSEO } from '../hooks/useSEO';
 import { motion } from 'framer-motion';
 import { useToast } from '../components/common/ToastProvider';
 
@@ -47,6 +48,11 @@ const includeItems = [
 ];
 
 export default function SupportPage() {
+  useSEO({
+    title: 'Support',
+    description: 'Get help with TradeGuardX — setup guides, FAQs, billing questions, and direct email support.',
+    url: 'https://tradeguardx.com/support',
+  });
   const toast = useToast();
 
   const copySupportValue = async (value) => {

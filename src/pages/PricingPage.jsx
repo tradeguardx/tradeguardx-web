@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import FAQ from '../components/landing/FAQ';
@@ -149,6 +150,11 @@ const TRUST_BADGES = [
 ];
 
 export default function PricingPage() {
+  useSEO({
+    title: 'Pricing',
+    description: 'Free, Pro, and Pro+ plans for real-time trading risk management. Start free — upgrade when you need more rules and journal history.',
+    url: 'https://tradeguardx.com/pricing',
+  });
   const [plans, setPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
