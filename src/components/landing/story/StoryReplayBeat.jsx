@@ -18,7 +18,7 @@ export default function StoryReplayBeat() {
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
-          className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0a0c10] shadow-2xl"
+          className="gradient-card relative overflow-hidden shadow-2xl"
         >
           <img
             src="/replay.png"

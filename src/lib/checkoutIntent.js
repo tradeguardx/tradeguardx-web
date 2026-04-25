@@ -28,3 +28,10 @@ export function clearPendingCheckoutPlan() {
     /* ignore */
   }
 }
+
+/** Normalize plan slug from URL/signup (?plan=pro, pro_plus, proplus) for matching pricing cards. */
+export function normalizePlanSlugForMatch(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[\s_+-]/g, '');
+}

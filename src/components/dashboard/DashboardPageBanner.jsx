@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useDashboardTheme } from '../../context/DashboardThemeContext';
 
 /** Left accent bar gradients (compact strip) */
 const ACCENT_BAR = {
@@ -8,6 +9,15 @@ const ACCENT_BAR = {
   amber: 'from-amber-400 to-orange-400',
   rose: 'from-rose-400 to-pink-400',
   accent: 'from-accent to-emerald-400',
+};
+
+const ACCENT_RGB = {
+  emerald: '52,211,153',
+  violet: '167,139,250',
+  cyan: '0,212,170',
+  amber: '245,158,11',
+  rose: '251,113,133',
+  accent: '0,212,170',
 };
 
 /**
@@ -22,21 +32,31 @@ export default function DashboardPageBanner({
   actions,
   className = '',
 }) {
+  const { isDark } = useDashboardTheme();
   const bar = ACCENT_BAR[accent] || ACCENT_BAR.emerald;
+  const rgb = ACCENT_RGB[accent] || ACCENT_RGB.emerald;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className={`dash-panel mb-6 flex flex-col gap-3 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-2.5 sm:pl-4 ${className}`}
+      className={`dash-panel relative mb-6 flex flex-col gap-3 overflow-hidden rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-2.5 sm:pl-4 ${className}`}
       style={{
-        borderColor: 'var(--dash-border)',
+        borderColor: isDark ? 'var(--dash-border)' : `rgba(${rgb},0.20)`,
+        boxShadow: isDark ? 'var(--dash-shadow-card)' : `0 1px 4px rgba(0,0,0,0.04), 0 0 0 1px rgba(${rgb},0.10)`,
       }}
     >
-      <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+      {/* Ambient left-side glow */}
+      <div
+        className="pointer-events-none absolute inset-y-0 left-0 w-28 rounded-l-2xl"
+        style={{ background: `linear-gradient(to right, rgba(${rgb},${isDark ? 0.07 : 0.05}), transparent)` }}
+        aria-hidden
+      />
+      <div className="relative flex min-w-0 flex-1 items-start gap-3 sm:items-center">
         <div
-          className={`mt-0.5 h-9 w-1 shrink-0 rounded-full bg-gradient-to-b ${bar} shadow-[0_0_12px_rgba(0,212,170,0.25)] sm:h-10`}
+          className={`mt-0.5 h-9 w-1 shrink-0 rounded-full bg-gradient-to-b ${bar} sm:h-10`}
+          style={{ boxShadow: `0 0 12px rgba(${rgb},${isDark ? 0.40 : 0.30})` }}
           aria-hidden
         />
         <div className="min-w-0 flex-1">
@@ -60,7 +80,7 @@ export default function DashboardPageBanner({
         </div>
       </div>
       {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">{actions}</div>
+        <div className="relative flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">{actions}</div>
       ) : null}
     </motion.div>
   );

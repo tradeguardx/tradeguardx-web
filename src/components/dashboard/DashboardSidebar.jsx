@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { planDisplayLabel, planTierFromSlug } from '../../lib/planLimits';
 
 const icons = {
   overview: (
@@ -52,15 +53,15 @@ const icons = {
   ),
 };
 
-/** Primary workflow navigation with light grouping dividers. */
+/** Primary workflow navigation with section group labels. */
 const NAV_ITEMS = [
-  { to: '/dashboard/overview', end: true, label: 'Overview', iconKey: 'overview' },
+  { to: '/dashboard/overview', end: true, label: 'Overview', iconKey: 'overview', groupLabel: 'Analytics' },
   { to: '/dashboard/rules', end: false, label: 'Rules', iconKey: 'rules' },
-  { to: '/dashboard/journal', end: false, label: 'Journal', iconKey: 'journal' },
-  { to: '/dashboard/trades', end: false, label: 'Trades', iconKey: 'trades' },
-  { to: '/dashboard/install-extension', end: false, label: 'Extension', iconKey: 'extension', dividerBefore: true },
+  { to: '/dashboard/journal', end: false, label: 'AI Journal', iconKey: 'journal' },
+  { to: '/dashboard/trades', end: false, label: 'All Trades', iconKey: 'trades' },
+  { to: '/dashboard/install-extension', end: false, label: 'Extension', iconKey: 'extension', groupLabel: 'Setup', dividerBefore: true },
   { to: '/dashboard/pairing', end: false, label: 'Pairing', iconKey: 'pairing' },
-  { to: '/dashboard/account/trading', end: false, label: 'Trading Accounts', iconKey: 'tradingAccounts' },
+  { to: '/dashboard/account/trading', end: false, label: 'Accounts', iconKey: 'tradingAccounts' },
   { to: '/dashboard/account/billing', end: false, label: 'Billing', iconKey: 'billing' },
 ];
 
@@ -69,13 +70,159 @@ function itemIsActive(pathname, item) {
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
 
+/** Upgrade nudge: gradient frame, spotlight, glow + hover shimmer (reads clearly in a narrow sidebar). */
+function SidebarUpgradeCard({ isPro }) {
+  const tierStyle = isPro
+    ? {
+        frame: 'from-violet-500/70 via-fuchsia-500/35 to-violet-600/50',
+        orbA: 'bg-violet-400/35',
+        orbB: 'bg-fuchsia-500/30',
+        spotlight: 'bg-[radial-gradient(ellipse_90%_80%_at_50%_0%,rgba(167,139,250,0.22),transparent_55%)]',
+        iconWrap: 'from-violet-400/50 to-fuchsia-600/40 shadow-[0_0_20px_-4px_rgba(167,139,250,0.5)]',
+        eyebrow: 'text-violet-200/95',
+        body: 'text-slate-300/90',
+        btn: 'from-violet-500 via-fuchsia-500 to-violet-600 shadow-[0_4px_24px_-4px_rgba(139,92,246,0.55)] hover:shadow-[0_6px_28px_-2px_rgba(217,70,239,0.45)] hover:brightness-110',
+        glow: 'rgba(139, 92, 246, 0.45)',
+      }
+    : {
+        frame: 'from-emerald-400/55 via-accent/40 to-teal-600/45',
+        orbA: 'bg-emerald-400/30',
+        orbB: 'bg-cyan-400/20',
+        spotlight: 'bg-[radial-gradient(ellipse_90%_80%_at_50%_0%,rgba(52,211,153,0.18),transparent_55%)]',
+        iconWrap: 'from-emerald-400/45 to-teal-600/35 shadow-[0_0_20px_-4px_rgba(0,212,170,0.35)]',
+        eyebrow: 'text-emerald-200/95',
+        body: 'text-slate-300/90',
+        btn: 'from-accent via-emerald-500 to-teal-600 shadow-[0_4px_24px_-4px_rgba(0,212,170,0.4)] hover:shadow-[0_6px_28px_-2px_rgba(45,212,191,0.35)] hover:brightness-110',
+        glow: 'rgba(0, 212, 170, 0.35)',
+      };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+      className="mt-3 px-2.5 pb-2"
+    >
+      {/* Gradient border + pulsing outer glow */}
+      <div className={`relative rounded-2xl p-[1px] bg-gradient-to-br ${tierStyle.frame}`}>
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute -inset-3 rounded-3xl blur-xl"
+          style={{ background: `radial-gradient(circle at 50% 50%, ${tierStyle.glow}, transparent 65%)` }}
+          animate={{ opacity: [0.18, 0.42, 0.18], scale: [0.97, 1.02, 0.97] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
+        <div className="group/card relative overflow-hidden rounded-[15px] bg-[#0a0f1e]/98 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+          {/* Hover shimmer sweep */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-[2] overflow-hidden rounded-[15px] opacity-0 transition-opacity duration-300 group-hover/card:opacity-100"
+          >
+            <div className="absolute inset-y-0 -left-1/3 w-2/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.12] to-transparent transition-transform duration-700 ease-out group-hover/card:translate-x-[180%]" />
+          </div>
+
+          {/* Top spotlight — visible depth vs flat grey */}
+          <div
+            aria-hidden
+            className={`pointer-events-none absolute inset-x-0 top-0 h-24 ${tierStyle.spotlight}`}
+          />
+
+          {/* Animated orbs — stronger so they read on screen */}
+          <motion.div
+            aria-hidden
+            className={`pointer-events-none absolute -left-8 -top-12 h-32 w-32 rounded-full blur-3xl ${tierStyle.orbA}`}
+            animate={{ opacity: [0.30, 0.55, 0.30], scale: [1, 1.10, 1] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            aria-hidden
+            className={`pointer-events-none absolute -bottom-10 -right-8 h-28 w-36 rounded-full blur-3xl ${tierStyle.orbB}`}
+            animate={{ opacity: [0.22, 0.45, 0.22], scale: [1.05, 1, 1.05] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+          />
+
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          />
+
+          <div className="relative z-[1] px-3.5 pb-3.5 pt-3.5">
+            <div className="flex gap-3">
+              <motion.div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${tierStyle.iconWrap} ring-1 ring-white/15`}
+                whileHover={{ scale: 1.07, rotate: -4 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 20 }}
+              >
+                {isPro ? (
+                  <svg className="h-[18px] w-[18px] text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.85} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                ) : (
+                  <svg className="h-[18px] w-[18px] text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.85} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                )}
+              </motion.div>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <p className={`text-[10px] font-bold uppercase tracking-[0.16em] ${tierStyle.eyebrow}`}>
+                  {isPro ? 'Go further' : 'Level up'}
+                </p>
+                <p className="mt-0.5 font-display text-[15px] font-bold leading-tight text-white [text-shadow:0_1px_12px_rgba(0,0,0,0.35)]">
+                  {isPro ? 'Unlock Pro+' : 'Upgrade to Pro'}
+                </p>
+                <p className={`mt-1.5 text-[11.5px] leading-snug ${tierStyle.body}`}>
+                  {isPro
+                    ? 'Unlimited accounts, full history, full analytics.'
+                    : 'More accounts, 90-day insights, stronger protection.'}
+                </p>
+              </div>
+            </div>
+
+            <motion.div className="mt-3" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Link
+                to="/pricing"
+                className={`relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r py-2.5 text-[12.5px] font-bold text-white transition-all duration-300 ${tierStyle.btn} group/btn`}
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 to-white/10 opacity-90"
+                />
+                <span className="relative z-[1]">{isPro ? 'Explore Pro+' : 'See Pro benefits'}</span>
+                <motion.svg
+                  className="relative z-[1] h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </motion.svg>
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function DashboardSidebar() {
-  const { user, logout } = useAuth();
+  const { user, logout, subscriptionLoading } = useAuth();
   const location = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
 
   const initial = user?.name?.[0] || user?.email?.[0] || 'U';
   const displayName = user?.name || user?.email?.split('@')[0] || 'Trader';
+  const planTier = planTierFromSlug(user?.plan);
+  const planBadgeLabel = user?.planLabel || planDisplayLabel(user?.plan);
+  const planBadgeCls =
+    planTier === 'proplus'
+      ? 'border-purple-500/35 bg-purple-500/15 text-purple-200'
+      : planTier === 'pro'
+        ? 'border-accent/40 bg-accent/12 text-accent'
+        : 'border-white/[0.12] bg-white/[0.06] text-slate-400';
 
   return (
     <aside className="fixed left-0 top-0 z-40 hidden h-dvh w-[260px] flex-col overflow-hidden lg:flex">
@@ -99,6 +246,19 @@ export default function DashboardSidebar() {
             <span className="font-display text-[15px] font-bold leading-tight block text-white">
               TradeGuardX
             </span>
+            {subscriptionLoading ? (
+              <span
+                className="mt-1.5 inline-block h-5 w-16 max-w-full rounded-md bg-white/[0.06]"
+                aria-hidden
+              />
+            ) : (
+              <span
+                className={`mt-1.5 inline-flex max-w-full items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${planBadgeCls}`}
+                title={`Current plan: ${planBadgeLabel}`}
+              >
+                {planBadgeLabel}
+              </span>
+            )}
           </div>
         </NavLink>
       </div>
@@ -113,7 +273,12 @@ export default function DashboardSidebar() {
             return (
               <div key={item.to}>
                 {item.dividerBefore && (
-                  <div className="my-2.5 mx-2 h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />
+                  <div className="my-3 mx-2 h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />
+                )}
+                {item.groupLabel && (
+                  <p className="mb-1.5 mt-1 px-3 text-[9px] font-bold uppercase tracking-[0.18em] select-none" style={{ color: 'rgba(148,163,184,0.45)' }}>
+                    {item.groupLabel}
+                  </p>
                 )}
                 <motion.div
                   initial={{ opacity: 0, x: -8 }}
@@ -123,12 +288,12 @@ export default function DashboardSidebar() {
                   <NavLink
                     to={item.to}
                     end={item.end}
-                    className="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200"
+                    className="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 hover:bg-white/[0.05]"
                   >
                     {active && (
                       <motion.div
                         layoutId="sidebar-bg"
-                        className="absolute inset-0 rounded-xl bg-gradient-to-r from-accent/[0.15] via-accent/[0.08] to-transparent"
+                        className="absolute inset-0 rounded-xl bg-gradient-to-r from-accent/[0.18] via-accent/[0.08] to-transparent"
                         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                       />
                     )}
@@ -141,23 +306,27 @@ export default function DashboardSidebar() {
                       />
                     )}
                     <span
-                      className={`relative z-[1] flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
+                      className={`relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
                         active
-                          ? 'bg-accent/25 text-accent shadow-sm shadow-accent/20'
-                          : 'bg-white/[0.04] text-slate-500 group-hover:bg-white/[0.08] group-hover:text-white'
+                          ? 'bg-accent/20 text-accent shadow-sm shadow-accent/25 ring-1 ring-accent/20'
+                          : 'bg-white/[0.05] text-slate-400 group-hover:bg-white/[0.10] group-hover:text-slate-200'
                       }`}
                     >
                       {icon}
                     </span>
                     <span
-                      className={`relative z-[1] text-[13px] font-medium ${
-                        active ? 'text-white' : 'text-slate-300 group-hover:text-white'
+                      className={`relative z-[1] text-[13px] ${
+                        active ? 'font-semibold text-white' : 'font-medium text-slate-300/90 group-hover:text-white'
                       }`}
                     >
                       {item.label}
                     </span>
-                    {!active && (
-                      <span className="absolute inset-0 rounded-xl bg-white/[0.02] opacity-0 transition-opacity group-hover:opacity-100" />
+                    {active && (
+                      <motion.span
+                        layoutId="sidebar-dot"
+                        className="relative z-[1] ml-auto h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_6px_rgba(0,212,170,0.7)]"
+                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                      />
                     )}
                   </NavLink>
                 </motion.div>
@@ -166,6 +335,11 @@ export default function DashboardSidebar() {
           })}
         </div>
 
+        {(() => {
+          const tier = planTierFromSlug(user?.plan);
+          if (tier === 'proplus') return null;
+          return <SidebarUpgradeCard isPro={tier === 'pro'} />;
+        })()}
       </nav>
 
       <div className="relative z-[1] shrink-0">

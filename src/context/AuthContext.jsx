@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef } f
 import { supabase } from '../lib/supabaseClient';
 import { initUserProfile } from '../api/userApi';
 import { getCurrentSubscription } from '../api/subscriptionApi';
+import { identifySentryUser, clearSentryUser } from '../sentry.js';
 
 const AuthContext = createContext(null);
 
@@ -149,6 +150,13 @@ export function AuthProvider({ children }) {
       listener?.subscription?.unsubscribe();
     };
   }, [bootstrapSession, toAppUser]);
+
+  // Tag/clear the Sentry user scope so error events from authenticated users
+  // are attributable. No-op when Sentry isn't configured.
+  useEffect(() => {
+    if (user) identifySentryUser(user);
+    else clearSentryUser();
+  }, [user]);
 
   const refetchSubscription = useCallback(async () => {
     if (!session?.access_token) return;

@@ -48,13 +48,69 @@ export async function fetchTradingAccounts({ accessToken, signal } = {}) {
 }
 
 /**
+ * GET /user/trading-accounts/supported-props
+ * Returns enriched broker records: { brokerId, name, equityMode, defaultTimezone,
+ * defaultResetTimeLocal, dailyLossBasis, sizes[], dashboardUrl, defaultRules, hasMapping }.
+ */
+export async function fetchSupportedProps({ accessToken, signal } = {}) {
+  if (!accessToken) throw new Error('Missing access token');
+  const payload = await apiGet('/trading-accounts/supported-props', {
+    signal,
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = unwrap(payload);
+  const brokers = Array.isArray(data?.brokers) ? data.brokers : [];
+  return brokers
+    .map((b) => {
+      const brokerId = typeof b?.brokerId === 'string' ? b.brokerId.trim() : '';
+      if (!brokerId) return null;
+      const status = b.status === 'planned' || b.status === 'deprecated' ? b.status : 'active';
+      return {
+        brokerId,
+        slug: b.slug ?? brokerId,
+        name: b.name ?? brokerId,
+        equityMode: b.equityMode === 'funded' ? 'funded' : 'live',
+        defaultTimezone: b.defaultTimezone ?? 'UTC',
+        defaultResetTimeLocal: b.defaultResetTimeLocal ?? '00:00',
+        dailyLossBasis: b.dailyLossBasis === 'balance' ? 'balance' : 'equity',
+        sizes: Array.isArray(b.sizes) ? b.sizes.filter((n) => typeof n === 'number') : [],
+        dashboardUrl: b.dashboardUrl ?? null,
+        defaultRules: b.defaultRules ?? { dailyLossPct: 5, maxLossPct: 10 },
+        status,
+      };
+    })
+    .filter(Boolean);
+}
+
+/**
  * POST /user/trading-accounts
  */
-export async function createTradingAccount({ accessToken, name, propFirmSlug, platform, signal } = {}) {
+export async function createTradingAccount({
+  accessToken,
+  name,
+  propFirmSlug,
+  platform,
+  accountSize,
+  accountCurrency,
+  equityMode,
+  timezone,
+  dailyResetTimeLocal,
+  dailyLossBasis,
+  dashboardUrl,
+  signal,
+} = {}) {
   if (!accessToken) throw new Error('Missing access token');
   const body = { name };
   if (propFirmSlug !== undefined) body.propFirmSlug = propFirmSlug;
   if (platform !== undefined) body.platform = platform;
+  if (accountSize !== undefined) body.accountSize = accountSize;
+  if (accountCurrency !== undefined) body.accountCurrency = accountCurrency;
+  if (equityMode !== undefined) body.equityMode = equityMode;
+  if (timezone !== undefined) body.timezone = timezone;
+  if (dailyResetTimeLocal !== undefined) body.dailyResetTimeLocal = dailyResetTimeLocal;
+  if (dailyLossBasis !== undefined) body.dailyLossBasis = dailyLossBasis;
+  if (dashboardUrl !== undefined) body.dashboardUrl = dashboardUrl;
+
   const payload = await apiPost('/trading-accounts', body, {
     signal,
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -75,6 +131,11 @@ export async function patchTradingAccount({
   sortOrder,
   accountSize,
   accountCurrency,
+  equityMode,
+  timezone,
+  dailyResetTimeLocal,
+  dailyLossBasis,
+  dashboardUrl,
   signal,
 } = {}) {
   if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
@@ -85,10 +146,43 @@ export async function patchTradingAccount({
   if (sortOrder !== undefined) body.sortOrder = sortOrder;
   if (accountSize !== undefined) body.accountSize = accountSize;
   if (accountCurrency !== undefined) body.accountCurrency = accountCurrency;
+  if (equityMode !== undefined) body.equityMode = equityMode;
+  if (timezone !== undefined) body.timezone = timezone;
+  if (dailyResetTimeLocal !== undefined) body.dailyResetTimeLocal = dailyResetTimeLocal;
+  if (dailyLossBasis !== undefined) body.dailyLossBasis = dailyLossBasis;
+  if (dashboardUrl !== undefined) body.dashboardUrl = dashboardUrl;
+
   const payload = await apiPatch(`/trading-accounts/${encodeURIComponent(accountId)}`, body, {
     signal,
     headers: { Authorization: `Bearer ${accessToken}` },
   });
+  const data = unwrap(payload);
+  return data?.account;
+}
+
+/**
+ * POST /user/trading-accounts/:accountId/reconcile — user-declared balance.
+ */
+export async function reconcileTradingAccount({
+  accessToken,
+  accountId,
+  declaredBalance,
+  closedPnlToday,
+  floatingPnl,
+  signal,
+} = {}) {
+  if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
+  const body = { declaredBalance };
+  if (closedPnlToday !== undefined) body.closedPnlToday = closedPnlToday;
+  if (floatingPnl !== undefined) body.floatingPnl = floatingPnl;
+  const payload = await apiPost(
+    `/trading-accounts/${encodeURIComponent(accountId)}/reconcile`,
+    body,
+    {
+      signal,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
   const data = unwrap(payload);
   return data?.account;
 }

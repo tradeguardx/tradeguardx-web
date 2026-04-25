@@ -1,11 +1,29 @@
 import { useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { TradingAccountProvider } from '../../context/TradingAccountContext';
 import { DashboardThemeProvider, useDashboardTheme } from '../../context/DashboardThemeContext';
 import DashboardSidebar from './DashboardSidebar';
 import AccountSelector from './AccountSelector';
+
+const ROUTE_LABELS = {
+  '/dashboard/overview': 'Overview',
+  '/dashboard/rules': 'Rules Terminal',
+  '/dashboard/journal': 'AI Journal',
+  '/dashboard/trades': 'All Trades',
+  '/dashboard/install-extension': 'Install Extension',
+  '/dashboard/pairing': 'Extension Pairing',
+  '/dashboard/account/trading': 'Trading Accounts',
+  '/dashboard/account/billing': 'Billing',
+  '/dashboard/account': 'Account',
+};
+
+function usePageLabel() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith('/dashboard/trades/')) return 'Trade Detail';
+  return ROUTE_LABELS[pathname] || null;
+}
 
 const mobileNavItems = [
   { to: '/dashboard/overview', end: true, label: 'Overview', icon: (
@@ -87,6 +105,7 @@ function DashboardInner() {
   const { logout } = useAuth();
   const { theme, isDark } = useDashboardTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pageLabel = usePageLabel();
 
   return (
     <div
@@ -138,6 +157,24 @@ function DashboardInner() {
                   </svg>
                 </button>
                 <AccountSelector />
+                {pageLabel && (
+                  <>
+                    <span className="hidden h-5 w-px lg:block" style={{ backgroundColor: 'var(--dash-border)' }} />
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={pageLabel}
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 6 }}
+                        transition={{ duration: 0.18 }}
+                        className="hidden text-sm font-semibold lg:block"
+                        style={{ color: 'var(--dash-text-secondary)' }}
+                      >
+                        {pageLabel}
+                      </motion.span>
+                    </AnimatePresence>
+                  </>
+                )}
               </div>
 
               <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">

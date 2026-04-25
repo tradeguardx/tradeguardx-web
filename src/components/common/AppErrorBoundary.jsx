@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { Sentry } from '../../sentry.js';
 
 export default class AppErrorBoundary extends Component {
   constructor(props) {
@@ -10,10 +11,19 @@ export default class AppErrorBoundary extends Component {
     return { hasError: true };
   }
 
-  componentDidCatch(error) {
+  componentDidCatch(error, errorInfo) {
     // Keep console error for local debugging visibility.
     // eslint-disable-next-line no-console
     console.error('Unhandled UI error:', error);
+    // Forward to Sentry so we see this in production. The SDK is a no-op when
+    // VITE_SENTRY_DSN is not configured (local dev).
+    try {
+      Sentry.withScope((scope) => {
+        scope.setTag('boundary', 'app-root');
+        scope.setExtra('componentStack', errorInfo?.componentStack || null);
+        Sentry.captureException(error);
+      });
+    } catch { /* noop — never let reporting take down the fallback UI */ }
   }
 
   render() {

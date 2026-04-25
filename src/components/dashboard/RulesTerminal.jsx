@@ -5,8 +5,9 @@ import DashboardPageBanner, { DashboardSectionHeading } from './DashboardPageBan
 import { staggerContainer, staggerItem } from './dashboardMotion';
 import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
+import { useDashboardTheme } from '../../context/DashboardThemeContext';
 import { useToast } from '../common/ToastProvider';
-import { SkeletonBlock } from '../common/LoadingSkeleton';
+import { ShimmerBlock } from '../common/LoadingSkeleton';
 import { fetchRulesBundle, saveRuleInstance } from '../../api/rulesApi';
 
 const RULE_VISUALS = {
@@ -153,6 +154,7 @@ function groupRulesByPlanSection(rules) {
 
 function RuleCard({ rule, index, accessToken, tradingAccountId, onSaved }) {
   const toast = useToast();
+  const { isDark } = useDashboardTheme();
   const [values, setValues] = useState(() =>
     rule.fields.reduce((acc, f) => ({ ...acc, [f.key]: f.value }), {}),
   );
@@ -226,13 +228,15 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, onSaved }) {
             <div className="flex items-center gap-2.5 flex-wrap">
               <h3 className="font-display font-semibold text-sm truncate" style={{ color: 'var(--dash-text-primary)' }}>{rule.name}</h3>
               {!rule.locked && rule.hasSavedInstance && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent/10 border border-accent/15 text-[10px] font-bold flex-shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 text-accent"
+                  style={{ backgroundColor: isDark ? 'rgba(0,212,170,0.10)' : 'rgba(0,212,170,0.08)', border: `1px solid rgba(0,212,170,${isDark ? '0.15' : '0.30'})` }}>
                   <span className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_4px_rgba(0,212,170,0.6)]" />
-                  <span className="text-accent">Saved</span>
+                  Saved
                 </span>
               )}
               {!rule.locked && !rule.hasSavedInstance && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-[10px] font-bold flex-shrink-0 text-amber-400/95">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 text-amber-400"
+                  style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.10)' : 'rgba(245,158,11,0.08)', border: `1px solid rgba(245,158,11,${isDark ? '0.25' : '0.35'})` }}>
                   Not saved — defaults only
                 </span>
               )}
@@ -280,8 +284,8 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, onSaved }) {
               <div
                 className="mb-4 rounded-xl border px-3 py-2.5 text-xs leading-relaxed"
                 style={{
-                  borderColor: 'rgba(251, 191, 36, 0.25)',
-                  backgroundColor: 'rgba(251, 191, 36, 0.06)',
+                  borderColor: isDark ? 'rgba(251,191,36,0.25)' : 'rgba(245,158,11,0.35)',
+                  backgroundColor: isDark ? 'rgba(251,191,36,0.06)' : '#fffbeb',
                   color: 'var(--dash-text-secondary)',
                 }}
               >
@@ -369,6 +373,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, onSaved }) {
 
 export default function RulesTerminal() {
   const { session } = useAuth();
+  const { isDark } = useDashboardTheme();
   const { accounts, accountsLoading, selectedTradingAccountId, selectedAccount } = useTradingAccounts();
   const [bundle, setBundle] = useState(null);
   const [bundleLoading, setBundleLoading] = useState(false);
@@ -507,13 +512,13 @@ export default function RulesTerminal() {
           </p>
           <div className="mb-8 grid grid-cols-3 gap-3 sm:gap-4">
             {[1, 2, 3].map((k) => (
-              <SkeletonBlock key={k} className="h-[92px] w-full rounded-2xl sm:h-[100px]" />
+              <ShimmerBlock key={k} className="h-[92px] w-full rounded-2xl sm:h-[100px]" />
             ))}
           </div>
           <div className="mb-10 space-y-3">
-            <SkeletonBlock className="h-5 w-40" />
+            <ShimmerBlock className="h-5 w-40" />
             {[...Array(4)].map((_, i) => (
-              <SkeletonBlock key={i} className="h-[88px] w-full rounded-2xl" />
+              <ShimmerBlock key={i} className="h-[88px] w-full rounded-2xl" />
             ))}
           </div>
         </>
@@ -638,7 +643,8 @@ export default function RulesTerminal() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="relative overflow-hidden rounded-2xl border border-accent/15"
+              className="relative overflow-hidden rounded-2xl border"
+              style={{ borderColor: isDark ? 'rgba(0,212,170,0.15)' : 'rgba(0,212,170,0.25)', backgroundColor: isDark ? 'transparent' : '#f0fdf9', boxShadow: isDark ? 'none' : '0 1px 6px rgba(0,212,170,0.08)' }}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-accent/[0.06] via-violet-500/[0.04] to-transparent" />
               <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-accent/[0.1] blur-3xl" />

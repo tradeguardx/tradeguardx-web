@@ -98,7 +98,7 @@ export default function FAQ() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-3xl glass p-6 md:p-8"
+          className="gradient-card p-6 md:p-8"
         >
           {faqs.map((faq, i) => (
             <FAQItem

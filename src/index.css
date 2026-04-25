@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -74,6 +74,356 @@
   .section-gap {
     @apply border-t border-white/[0.04];
   }
+
+  /* ==========================================================================
+     Sentry-inspired landing tokens
+     - Generous typographic scale (Fraunces for display, Inter for body)
+     - Eyebrow/kicker labels in monospace
+     - Gradient-bordered cards with hover bloom
+     - Section shells with consistent rhythm
+     ========================================================================== */
+  .font-display-serif {
+    font-family: 'Fraunces', 'Inter', system-ui, sans-serif;
+    font-feature-settings: "ss01", "ss02";
+    letter-spacing: -0.02em;
+  }
+  .display-2xl {
+    font-family: 'Fraunces', 'Inter', system-ui, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 0.95;
+    font-size: clamp(3rem, 8vw, 7rem);
+  }
+  .display-xl {
+    font-family: 'Fraunces', 'Inter', system-ui, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+  }
+  .display-lg {
+    font-family: 'Fraunces', 'Inter', system-ui, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+  }
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-[11px] font-semibold uppercase;
+    font-family: 'Space Grotesk', monospace;
+    letter-spacing: 0.16em;
+    color: #6ee7b7;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 24px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 170, 0.6));
+  }
+  .body-lg {
+    @apply text-lg md:text-xl text-slate-400;
+    line-height: 1.55;
+  }
+  .body-xl {
+    @apply text-xl md:text-2xl text-slate-300;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+  }
+
+  .section-shell {
+    @apply relative mx-auto w-full max-w-7xl px-6 py-24 md:py-32 lg:py-40;
+  }
+  .section-shell-tight {
+    @apply relative mx-auto w-full max-w-6xl px-6 py-20 md:py-28;
+  }
+  .section-shell-narrow {
+    @apply relative mx-auto w-full max-w-4xl px-6 py-20 md:py-28 text-center;
+  }
+
+  /* ==========================================================================
+     Sentry-style "neon" gradient-bordered card.
+     - Visible 1.5px gradient stroke that runs cool→warm→cool around the card
+     - Brightens on hover, with a soft accent shadow underneath
+     - Variants: .gradient-card-warm (rose / amber accent),
+                 .gradient-card-cool (sky / violet accent),
+                 .gradient-card-iris (multi-stop iris)
+     Drop on any element that currently uses a flat border-white/* class.
+     ========================================================================== */
+  .gradient-card {
+    position: relative;
+    border-radius: 1.25rem;
+    background: linear-gradient(180deg, rgba(13, 18, 30, 0.78), rgba(7, 10, 18, 0.78));
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+    isolation: isolate;
+  }
+  .gradient-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: linear-gradient(
+      140deg,
+      rgba(0, 212, 170, 0.55) 0%,
+      rgba(110, 231, 183, 0.35) 25%,
+      rgba(255, 255, 255, 0.06) 50%,
+      rgba(0, 212, 170, 0.15) 75%,
+      rgba(0, 212, 170, 0.45) 100%
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    opacity: 0.7;
+  }
+  .gradient-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: 0 0 0 0 rgba(0, 212, 170, 0);
+    transition: box-shadow 0.5s ease;
+  }
+  .gradient-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 28px 60px -30px rgba(0, 212, 170, 0.45),
+      0 0 0 1px rgba(0, 212, 170, 0.05);
+  }
+  .gradient-card:hover::before {
+    opacity: 1;
+  }
+  .gradient-card:hover::after {
+    box-shadow: inset 0 0 60px rgba(0, 212, 170, 0.04);
+  }
+
+  /* Warm variant — for "risk / loss" framed cards */
+  .gradient-card-warm::before {
+    background: linear-gradient(
+      140deg,
+      rgba(244, 63, 94, 0.45) 0%,
+      rgba(251, 146, 60, 0.30) 30%,
+      rgba(255, 255, 255, 0.06) 55%,
+      rgba(244, 63, 94, 0.18) 80%,
+      rgba(244, 63, 94, 0.40) 100%
+    );
+  }
+  .gradient-card-warm:hover {
+    box-shadow:
+      0 28px 60px -30px rgba(244, 63, 94, 0.40),
+      0 0 0 1px rgba(244, 63, 94, 0.05);
+  }
+
+  /* Cool variant — for "info / setup" framed cards */
+  .gradient-card-cool::before {
+    background: linear-gradient(
+      140deg,
+      rgba(56, 189, 248, 0.45) 0%,
+      rgba(139, 92, 246, 0.30) 30%,
+      rgba(255, 255, 255, 0.06) 55%,
+      rgba(56, 189, 248, 0.18) 80%,
+      rgba(56, 189, 248, 0.40) 100%
+    );
+  }
+  .gradient-card-cool:hover {
+    box-shadow:
+      0 28px 60px -30px rgba(56, 189, 248, 0.40),
+      0 0 0 1px rgba(56, 189, 248, 0.05);
+  }
+
+  /* Iris variant — multi-stop, used sparingly on hero / showcase cards */
+  .gradient-card-iris::before {
+    background: linear-gradient(
+      140deg,
+      rgba(0, 212, 170, 0.50) 0%,
+      rgba(56, 189, 248, 0.35) 30%,
+      rgba(139, 92, 246, 0.30) 60%,
+      rgba(0, 212, 170, 0.45) 100%
+    );
+  }
+
+  /* Soft accent radial glow placed behind a hero / section anchor */
+  .accent-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60vmax 40vmax at 12% 10%, rgba(0, 212, 170, 0.10), transparent 60%),
+      radial-gradient(40vmax 30vmax at 90% 80%, rgba(110, 231, 183, 0.07), transparent 60%);
+  }
+
+  /* Section-level eyebrow rule that pairs with `.eyebrow` text */
+  .section-eyebrow-rule {
+    width: 56px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(0, 212, 170, 0.7), transparent);
+  }
+
+  /* "Code" / data block styling — used for product-feel mockups */
+  .data-pane {
+    border-radius: 1rem;
+    background: linear-gradient(180deg, rgba(8, 12, 22, 0.95), rgba(4, 7, 13, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.04) inset,
+      0 30px 80px -30px rgba(0, 0, 0, 0.7),
+      0 0 0 1px rgba(0, 212, 170, 0.04);
+    font-family: 'Space Grotesk', 'IBM Plex Mono', monospace;
+  }
+
+  /* Subtle inner top hairline used on hero / mockups */
+  .hairline-top {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  /* Sentry-style wavy divider — thin sine wave that tiles horizontally.
+     Drop above the footer (or any place that wants a friendly visual break). */
+  .wave-divider {
+    width: 100%;
+    height: 14px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 8' width='30' height='8' preserveAspectRatio='none'><path d='M0 4 Q 7.5 0 15 4 T 30 4' fill='none' stroke='rgba(255,255,255,0.55)' stroke-width='1.2' stroke-linecap='round' /></svg>");
+    background-repeat: repeat-x;
+    background-position: center;
+    background-size: 30px 8px;
+  }
+
+  /* ==========================================================================
+     Sentry-inspired landing background.
+     Drops a fixed full-viewport layer BEHIND the page content with:
+       - A slightly enriched base color (cooler than pure surface-950)
+       - Sparse scatter "stars" (tiny dots + the occasional accent dot)
+       - A faint horizon glow at the top center
+     The layer is pointer-events: none so it never intercepts clicks.
+     Apply by rendering <div className="landing-bg" aria-hidden /> once at the
+     top of the landing tree.
+     ========================================================================== */
+  .landing-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: #060a14;
+    /* Two layers stacked:
+         1. SVG scatter pattern — a 320×320 tile with mixed dots, + crosses,
+            × marks, and a few accent-green dots placed irregularly so the
+            tile doesn't read as a grid.
+         2. Two soft radial glows (top horizon + bottom-right counter) for
+            depth without obvious tiling. */
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520'><g fill='rgba(255,255,255,0.32)'><circle cx='40' cy='80' r='0.7'/><circle cx='420' cy='60' r='0.9'/><circle cx='260' cy='180' r='0.6'/><circle cx='80' cy='340' r='0.7'/><circle cx='460' cy='420' r='0.7'/></g><g stroke='rgba(255,255,255,0.28)' stroke-width='0.8' stroke-linecap='round' fill='none'><line x1='180' y1='130' x2='184' y2='130'/><line x1='182' y1='128' x2='182' y2='132'/><line x1='360' y1='280' x2='364' y2='284'/><line x1='364' y1='280' x2='360' y2='284'/></g><g fill='rgba(0,212,170,0.4)'><circle cx='320' cy='420' r='0.9'/></g></svg>"),
+      radial-gradient(80vmax 40vmax at 50% -10%, rgba(0, 212, 170, 0.10), transparent 70%),
+      radial-gradient(60vmax 40vmax at 95% 95%, rgba(56, 189, 248, 0.06), transparent 70%);
+    background-size:
+      520px 520px,
+      100% 100%,
+      100% 100%;
+  }
+
+  /* A thin grain overlay to break up flat color — uses an inline SVG noise.
+     Stacks ABOVE the scatter but still BEHIND content. */
+  .landing-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    mix-blend-mode: screen;
+  }
+
+  /* ==========================================================================
+     Shooting stars + blinking stars
+     Render <span class="shooting-star"/> elements inside .landing-bg.
+     Use the data-attr `data-delay` on each (via inline style) to stagger.
+     ========================================================================== */
+  /* Star base — share radius/animation, override size + glow per variant. */
+  .star {
+    position: absolute;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.9);
+    will-change: opacity, transform;
+  }
+  .star-sm {
+    width: 1px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 0 2px 0 rgba(255, 255, 255, 0.3);
+  }
+  .star-md {
+    width: 2px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.45);
+  }
+  .star-lg {
+    width: 3px;
+    height: 3px;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.55), 0 0 20px 4px rgba(255, 255, 255, 0.18);
+  }
+  .star-accent {
+    background: rgba(0, 212, 170, 0.95);
+    box-shadow: 0 0 8px 1px rgba(0, 212, 170, 0.55), 0 0 18px 3px rgba(0, 212, 170, 0.18);
+  }
+  .star-blink {
+    animation: tg-blink 3s ease-in-out infinite;
+  }
+  .star-blink-slow {
+    animation: tg-blink 5s ease-in-out infinite;
+  }
+  .star-blink-fast {
+    animation: tg-blink 1.8s ease-in-out infinite;
+  }
+
+  .shooting-star {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 120px;
+    height: 1.5px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.9) 60%,
+      rgba(0, 212, 170, 1) 100%
+    );
+    border-radius: 9999px;
+    transform-origin: 100% 50%;
+    opacity: 0;
+    filter: drop-shadow(0 0 4px rgba(0, 212, 170, 0.5));
+    animation: tg-shooting-star 8s linear infinite;
+    will-change: transform, opacity;
+  }
+
+  @keyframes tg-blink {
+    0%, 100% { opacity: 0.25; transform: scale(0.85); }
+    50%      { opacity: 1;    transform: scale(1); }
+  }
+
+  /* Diagonal streak across the viewport. The translate range covers the
+     full viewport so the star starts off-screen and exits off-screen. */
+  @keyframes tg-shooting-star {
+    0% {
+      transform: translate3d(-10vw, 0, 0) rotate(20deg);
+      opacity: 0;
+    }
+    5%  { opacity: 1; }
+    35% { opacity: 1; }
+    45% { opacity: 0; transform: translate3d(60vw, 30vh, 0) rotate(20deg); }
+    100% {
+      transform: translate3d(60vw, 30vh, 0) rotate(20deg);
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .star, .star-blink, .star-blink-slow, .star-blink-fast, .shooting-star {
+      animation: none;
+      opacity: 0.6;
+    }
+  }
 }
 
 /* ── Dashboard theme tokens ── */
@@ -121,6 +471,7 @@
   --dash-glow-indigo: rgba(99,102,241,0.06);
   --dash-toggle-track: #e2e8f0;
   --dash-progress-bg: #e2e8f0;
+  --dash-bg-card-hover: #f1f5f9;
   --dash-shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 8px 28px rgba(15,23,42,0.06);
   --dash-shadow-inset-top: inset 0 1px 0 0 rgba(255,255,255,0.95);
   --dash-shadow-header: 0 2px 20px -4px rgba(15,23,42,0.08);
@@ -153,6 +504,99 @@
     linear-gradient(to right, var(--dash-grid-line) 1px, transparent 1px),
     linear-gradient(to bottom, var(--dash-grid-line) 1px, transparent 1px);
   background-size: 52px 52px;
+}
+
+/* ── Dashboard component semantic classes (theme-aware) ── */
+
+/* Protection status hero */
+.dash-status-active {
+  border: 1px solid rgba(0,212,170,0.20);
+  background-color: rgba(0,212,170,0.04);
+}
+[data-dash-theme="light"] .dash-status-active {
+  border-color: #a7f3d0;
+  background: linear-gradient(135deg, #f0fdf9 0%, #ffffff 72%);
+  box-shadow: 0 4px 24px rgba(16,185,129,0.10), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.dash-status-warn {
+  border: 1px solid rgba(245,158,11,0.20);
+  background-color: rgba(245,158,11,0.04);
+}
+[data-dash-theme="light"] .dash-status-warn {
+  border-color: #fcd34d;
+  background: linear-gradient(135deg, #fffbeb 0%, #ffffff 72%);
+  box-shadow: 0 4px 24px rgba(245,158,11,0.10), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+/* Elevated card — better depth in light */
+.dash-card-elevated {
+  background-color: var(--dash-bg-raised);
+  border: 1px solid var(--dash-border);
+  box-shadow: var(--dash-shadow-card);
+}
+[data-dash-theme="light"] .dash-card-elevated {
+  background: #ffffff;
+  border-color: rgba(15,23,42,0.07);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.06),
+    0 8px 24px rgba(0,0,0,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.85);
+}
+
+/* Quick action card */
+.dash-quick-action {
+  background-color: var(--dash-bg-raised);
+  border: 1px solid var(--dash-border);
+  box-shadow: var(--dash-shadow-card);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+[data-dash-theme="light"] .dash-quick-action {
+  background: #ffffff;
+  border-color: rgba(15,23,42,0.07);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+[data-dash-theme="light"] .dash-quick-action:hover {
+  border-color: rgba(0,212,170,0.30) !important;
+  box-shadow: 0 4px 20px rgba(0,212,170,0.09), 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* Theme-aware icon chip colors — gradient in dark, solid tint in light */
+.dash-icon-violet { background: linear-gradient(135deg,rgba(139,92,246,0.20),rgba(124,58,237,0.05)); color: #a78bfa; }
+.dash-icon-accent  { background: linear-gradient(135deg,rgba(0,212,170,0.20),rgba(16,185,129,0.05)); color: #34d399; }
+.dash-icon-blue    { background: linear-gradient(135deg,rgba(59,130,246,0.20),rgba(6,182,212,0.05));  color: #60a5fa; }
+.dash-icon-amber   { background: linear-gradient(135deg,rgba(245,158,11,0.20),rgba(234,88,12,0.05));  color: #fbbf24; }
+.dash-icon-purple  { background: linear-gradient(135deg,rgba(168,85,247,0.20),rgba(236,72,153,0.05)); color: #c084fc; }
+.dash-icon-emerald { background: linear-gradient(135deg,rgba(16,185,129,0.20),rgba(20,184,166,0.05)); color: #34d399; }
+
+[data-dash-theme="light"] .dash-icon-violet { background: #f5f3ff; color: #7c3aed; }
+[data-dash-theme="light"] .dash-icon-accent  { background: #ecfdf5; color: #059669; }
+[data-dash-theme="light"] .dash-icon-blue    { background: #eff6ff; color: #2563eb; }
+[data-dash-theme="light"] .dash-icon-amber   { background: #fffbeb; color: #d97706; }
+[data-dash-theme="light"] .dash-icon-purple  { background: #faf5ff; color: #9333ea; }
+[data-dash-theme="light"] .dash-icon-emerald { background: #ecfdf5; color: #059669; }
+
+/* Account chip in protection hero */
+.dash-account-chip {
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #cbd5e1;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.dash-account-chip:hover {
+  border-color: rgba(0,212,170,0.25);
+  background: rgba(0,212,170,0.06);
+  color: #ffffff;
+}
+[data-dash-theme="light"] .dash-account-chip {
+  border-color: rgba(15,23,42,0.10);
+  background: #f8fafc;
+  color: #334155;
+}
+[data-dash-theme="light"] .dash-account-chip:hover {
+  border-color: rgba(0,212,170,0.35);
+  background: #f0fdf9;
+  color: #0f172a;
 }
 
 /* Pairing page: sharp contrast (light theme was washing out amber / slate pills) */

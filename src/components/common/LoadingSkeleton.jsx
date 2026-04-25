@@ -13,6 +13,55 @@ export function SkeletonBlock({ className = '' }) {
   );
 }
 
+// Shimmer sweep — more polished than opacity pulse; uses the 'animate-shimmer' keyframe
+export function ShimmerBlock({ className = '' }) {
+  return (
+    <div
+      className={`rounded-lg animate-shimmer ${className}`}
+      style={{
+        background: 'linear-gradient(90deg, var(--dash-skeleton, rgba(255,255,255,0.06)) 0%, rgba(255,255,255,0.13) 50%, var(--dash-skeleton, rgba(255,255,255,0.06)) 100%)',
+        backgroundSize: '400% 100%',
+      }}
+    />
+  );
+}
+
+// Pre-built skeleton that matches a single trade row in AllTradesPage
+export function TradeRowSkeleton() {
+  return (
+    <div className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.05] bg-white/[0.02]">
+      <ShimmerBlock className="w-2 h-10 rounded-full flex-shrink-0" />
+      <div className="flex-1 min-w-0 space-y-2">
+        <ShimmerBlock className="h-3.5 w-32 rounded" />
+        <ShimmerBlock className="h-3 w-20 rounded" />
+      </div>
+      <div className="hidden sm:flex flex-col items-end gap-2 flex-shrink-0 w-24">
+        <ShimmerBlock className="h-3.5 w-16 rounded" />
+        <ShimmerBlock className="h-3 w-10 rounded" />
+      </div>
+      <div className="hidden md:flex flex-col items-end gap-2 flex-shrink-0 w-20">
+        <ShimmerBlock className="h-3.5 w-14 rounded" />
+        <ShimmerBlock className="h-3 w-8 rounded" />
+      </div>
+      <ShimmerBlock className="w-16 h-6 rounded-full flex-shrink-0" />
+    </div>
+  );
+}
+
+// Pre-built skeleton that matches a stat card (TradeOverviewPage / dashboard)
+export function StatCardSkeleton({ className = '' }) {
+  return (
+    <div className={`rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-3 ${className}`}>
+      <div className="flex items-center justify-between">
+        <ShimmerBlock className="h-3.5 w-24 rounded" />
+        <ShimmerBlock className="h-8 w-8 rounded-lg flex-shrink-0" />
+      </div>
+      <ShimmerBlock className="h-8 w-28 rounded" />
+      <ShimmerBlock className="h-3 w-16 rounded" />
+    </div>
+  );
+}
+
 export function EmptyState({ title, description, action }) {
   return (
     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-10 text-center">

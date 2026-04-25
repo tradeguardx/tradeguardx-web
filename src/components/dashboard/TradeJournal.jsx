@@ -5,7 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, Line, ComposedChart,
 } from 'recharts';
-import { EmptyState, SkeletonBlock } from '../common/LoadingSkeleton';
+import { EmptyState, ShimmerBlock } from '../common/LoadingSkeleton';
 import { useDashboardTheme } from '../../context/DashboardThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
@@ -27,6 +27,13 @@ function fmtDuration(sec) {
   if (sec < 60) return `${Math.round(sec)}s`;
   if (sec < 3600) return `${Math.round(sec / 60)}m`;
   return `${(sec / 3600).toFixed(1)}h`;
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r},${g},${b}`;
 }
 
 function isMeaningfulTradeRow(t) {
@@ -55,17 +62,26 @@ function useChartStyles() {
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, sub, icon, color }) {
+  const { isDark } = useDashboardTheme();
+  const rgb = hexToRgb(color);
   return (
     <motion.div
       variants={staggerItem}
       whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400, damping: 22 } }}
-      className="group relative overflow-hidden rounded-2xl border p-4 transition-shadow hover:shadow-lg"
-      style={{ borderColor: color + '20', backgroundColor: color + '06', boxShadow: 'var(--dash-shadow-card)' }}
+      className="group relative overflow-hidden rounded-2xl border p-4 transition-all duration-200 hover:shadow-lg"
+      style={{
+        borderColor: `rgba(${rgb},${isDark ? 0.18 : 0.25})`,
+        backgroundColor: isDark ? `rgba(${rgb},0.05)` : '#ffffff',
+        boxShadow: isDark ? 'var(--dash-shadow-card)' : `0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04), 0 0 0 1px rgba(${rgb},0.08)`,
+      }}
     >
       <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity group-hover:opacity-60" style={{ backgroundColor: color }} />
       <div className="relative flex items-center justify-between mb-2.5">
-        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: color + '90' }}>{label}</p>
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-110" style={{ backgroundColor: color + '15', color }}>
+        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `rgba(${rgb},${isDark ? 0.55 : 0.70})` }}>{label}</p>
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-110"
+          style={{ backgroundColor: `rgba(${rgb},${isDark ? 0.12 : 0.10})`, color }}
+        >
           {icon}
         </div>
       </div>
@@ -201,13 +217,20 @@ function FullPnlCalendar({ calendarData, trades }) {
             { label: 'Trades', value: String(monthSummary.totalTrades), color: '#00d4aa' },
             { label: 'Best Day', value: monthSummary.bestDay > 0 ? fmt$(monthSummary.bestDay) : '—', color: '#22c55e' },
             { label: 'Worst Day', value: monthSummary.worstDay < 0 ? fmt$(monthSummary.worstDay) : '—', color: '#ef4444' },
-          ].map((s) => (
-            <div key={s.label} className={`rounded-xl px-3 py-2.5 ${s.big ? 'ring-1' : ''}`}
-              style={{ backgroundColor: s.color + '08', borderColor: s.color + '20', ...(s.big ? { ringColor: s.color + '25' } : {}) }}>
-              <p className="text-[8px] font-bold uppercase tracking-widest" style={{ color: s.color + '80' }}>{s.label}</p>
-              <p className={`mt-0.5 font-black ${s.big ? 'text-lg' : 'text-base'}`} style={{ color: s.color }}>{s.value}</p>
-            </div>
-          ))}
+          ].map((s) => {
+            const sRgb = hexToRgb(s.color);
+            return (
+              <div key={s.label} className="rounded-xl px-3 py-2.5"
+                style={{
+                  backgroundColor: isDark ? `rgba(${sRgb},0.06)` : '#ffffff',
+                  border: `1px solid rgba(${sRgb},${isDark ? '0.16' : '0.25'})`,
+                  boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.04)',
+                }}>
+                <p className="text-[8px] font-bold uppercase tracking-widest" style={{ color: `rgba(${sRgb},${isDark ? '0.55' : '0.65'})` }}>{s.label}</p>
+                <p className={`mt-0.5 font-black ${s.big ? 'text-lg' : 'text-base'}`} style={{ color: s.color }}>{s.value}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -426,6 +449,7 @@ function BehaviorScoreRing({ score, size = 112, stroke = 6 }) {
 }
 
 function BehaviorPatternTab({ effectiveStats, advanced, ov, recentTrades, tooltipStyle, axisColor, gridColor, behaviorData, behaviorLoading }) {
+  const { isDark } = useDashboardTheme();
   const closedTrades = useMemo(() =>
     recentTrades.filter((t) => String(t.status || '').toUpperCase() === 'CLOSED' && t.pnl != null),
     [recentTrades]
@@ -466,7 +490,11 @@ function BehaviorPatternTab({ effectiveStats, advanced, ov, recentTrades, toolti
     <div className="space-y-5">
       {/* ── 3-Pillar Discipline Score + Streak ── */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border p-6 flex flex-col items-center justify-center text-center" style={{ borderColor: (ds ? (ds.overall >= 80 ? '#22c55e' : ds.overall >= 50 ? '#f59e0b' : '#ef4444') : 'var(--dash-border)') + '25', backgroundColor: (ds ? (ds.overall >= 80 ? '#22c55e' : ds.overall >= 50 ? '#f59e0b' : '#ef4444') : '#94a3b8') + '06' }}>
+        {(() => {
+          const scoreColor = ds ? (ds.overall >= 80 ? '#22c55e' : ds.overall >= 50 ? '#f59e0b' : '#ef4444') : '#94a3b8';
+          const scoreRgb = hexToRgb(scoreColor);
+          return (
+        <div className="rounded-2xl border p-6 flex flex-col items-center justify-center text-center" style={{ borderColor: `rgba(${scoreRgb},${isDark ? 0.25 : 0.30})`, backgroundColor: isDark ? `rgba(${scoreRgb},0.06)` : '#ffffff', boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
           {behaviorLoading ? (
             <div className="h-28 w-28 rounded-full animate-pulse" style={{ backgroundColor: 'var(--dash-bg-card)' }} />
           ) : ds ? (
@@ -502,6 +530,8 @@ function BehaviorPatternTab({ effectiveStats, advanced, ov, recentTrades, toolti
             <p className="text-xs" style={{ color: 'var(--dash-text-faint)' }}>No score data yet</p>
           )}
         </div>
+          );
+        })()}
 
         {/* Streak visual */}
         <div className="sm:col-span-2 rounded-2xl border p-5" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
@@ -693,6 +723,7 @@ function BehaviorPatternTab({ effectiveStats, advanced, ov, recentTrades, toolti
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function TradeJournal() {
   const { session, user } = useAuth();
+  const { isDark } = useDashboardTheme();
   const { accounts, accountsLoading, selectedTradingAccountId } = useTradingAccounts();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
@@ -725,7 +756,10 @@ export default function TradeJournal() {
     }
   }, [session?.access_token, selectedTradingAccountId, period]);
 
-  useEffect(() => { if (selectedTradingAccountId) load(); }, [selectedTradingAccountId, period, load]);
+  useEffect(() => {
+    if (accountsLoading) return;
+    load();
+  }, [accountsLoading, selectedTradingAccountId, period, load]);
 
   // Lazy-load behavior tags when Behavior tab is active
   useEffect(() => {
@@ -865,12 +899,12 @@ export default function TradeJournal() {
   if (loading || accountsLoading) {
     return (
       <div className="max-w-7xl space-y-5">
-        <SkeletonBlock className="h-14 w-full" />
-        <SkeletonBlock className="h-12 w-full" />
+        <ShimmerBlock className="h-14 w-full" />
+        <ShimmerBlock className="h-12 w-full" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[...Array(8)].map((_, i) => <SkeletonBlock key={i} className="h-24 w-full" />)}
+          {[...Array(8)].map((_, i) => <ShimmerBlock key={i} className="h-24 w-full" />)}
         </div>
-        <SkeletonBlock className="h-60 w-full" />
+        <ShimmerBlock className="h-60 w-full" />
       </div>
     );
   }
@@ -990,7 +1024,7 @@ export default function TradeJournal() {
 
                 {/* Drawdown */}
                 {advanced?.drawdownCurve?.length > 1 && (
-                  <div className="rounded-2xl border p-5" style={{ borderColor: 'rgba(239,68,68,0.15)', backgroundColor: 'rgba(239,68,68,0.03)' }}>
+                  <div className="rounded-2xl border p-5" style={{ borderColor: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.22)', backgroundColor: isDark ? 'rgba(239,68,68,0.03)' : '#fff8f8', boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <div className="mb-4 flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-display font-bold" style={{ color: 'var(--dash-text-secondary)' }}>Drawdown</h3>
@@ -1021,21 +1055,23 @@ export default function TradeJournal() {
                 {/* Largest Win/Loss */}
                 {advanced && (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="group relative overflow-hidden flex items-center justify-between rounded-2xl border p-4" style={{ borderColor: 'rgba(34,197,94,0.2)', backgroundColor: 'rgba(34,197,94,0.04)' }}>
+                    <div className="group relative overflow-hidden flex items-center justify-between rounded-2xl border p-4"
+                      style={{ borderColor: isDark ? 'rgba(34,197,94,0.2)' : 'rgba(34,197,94,0.28)', backgroundColor: isDark ? 'rgba(34,197,94,0.04)' : '#f0fdf4', boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.04)' }}>
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#22c55e90' }}>Largest Win</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: isDark ? '#22c55e90' : 'rgba(22,163,74,0.7)' }}>Largest Win</p>
                         <p className="mt-1.5 text-xl font-black text-emerald-400">{fmt$(advanced.largestWin)}</p>
                       </div>
-                      <div className="h-11 w-11 rounded-xl bg-emerald-500/12 flex items-center justify-center ring-1 ring-emerald-500/15">
+                      <div className="h-11 w-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: isDark ? 'rgba(34,197,94,0.12)' : 'rgba(34,197,94,0.12)' }}>
                         <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
                       </div>
                     </div>
-                    <div className="group relative overflow-hidden flex items-center justify-between rounded-2xl border p-4" style={{ borderColor: 'rgba(239,68,68,0.2)', backgroundColor: 'rgba(239,68,68,0.04)' }}>
+                    <div className="group relative overflow-hidden flex items-center justify-between rounded-2xl border p-4"
+                      style={{ borderColor: isDark ? 'rgba(239,68,68,0.2)' : 'rgba(239,68,68,0.28)', backgroundColor: isDark ? 'rgba(239,68,68,0.04)' : '#fff8f8', boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.04)' }}>
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#ef444490' }}>Largest Loss</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: isDark ? '#ef444490' : 'rgba(220,38,38,0.7)' }}>Largest Loss</p>
                         <p className="mt-1.5 text-xl font-black text-red-400">{fmt$(advanced.largestLoss)}</p>
                       </div>
-                      <div className="h-11 w-11 rounded-xl bg-red-500/12 flex items-center justify-center ring-1 ring-red-500/15">
+                      <div className="h-11 w-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.10)' }}>
                         <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
                       </div>
                     </div>

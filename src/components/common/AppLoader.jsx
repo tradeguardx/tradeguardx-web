@@ -1,53 +1,86 @@
 import { motion } from 'framer-motion';
 
+const BARS = [0.4, 0.7, 0.55, 1, 0.8, 0.6, 0.9, 0.5, 0.75, 0.45, 0.85, 0.65];
+
 export default function AppLoader() {
   return (
-    <div className="fixed inset-0 z-[100] bg-surface-950 flex items-center justify-center overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full bg-accent/[0.08] blur-[120px]" />
-      <div className="absolute bottom-[-120px] right-[-80px] w-[360px] h-[360px] rounded-full bg-indigo-500/[0.08] blur-[120px]" />
+    <div className="fixed inset-0 z-[100] bg-surface-950 flex flex-col items-center justify-center overflow-hidden">
 
-      <div className="relative flex flex-col items-center">
+      {/* Background glow blobs */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-accent/[0.06] blur-[140px]" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-indigo-500/[0.05] blur-[120px]" />
+      </div>
+
+      {/* Subtle grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.025]"
+        style={{
+          backgroundImage: 'linear-gradient(to right, #00d4aa 1px, transparent 1px), linear-gradient(to bottom, #00d4aa 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      {/* Center content */}
+      <div className="relative flex flex-col items-center gap-10">
+
+        {/* Mini chart bars — trading motif */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.92 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.45 }}
-          className="relative w-20 h-20 rounded-2xl border border-accent/30 bg-accent/10 grid place-items-center"
+          className="flex items-end gap-1.5 h-10"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
-            className="absolute inset-[-8px] rounded-[1.1rem] border border-accent/20"
-          />
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
+          {BARS.map((h, i) => (
+            <motion.div
+              key={i}
+              className="w-1.5 rounded-sm bg-accent"
+              style={{ height: `${h * 40}px` }}
+              initial={{ scaleY: 0, opacity: 0 }}
+              animate={{ scaleY: 1, opacity: h }}
+              transition={{
+                delay: i * 0.045,
+                duration: 0.4,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            />
+          ))}
         </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.35 }}
-          className="mt-6 font-display text-xl font-bold gradient-text"
-        >
-          TradeGuardX
-        </motion.h1>
-        <motion.p
+        {/* Wordmark */}
+        <div className="flex flex-col items-center gap-2">
+          <motion.h1
+            className="font-display text-3xl font-bold tracking-tight text-white"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+          >
+            Trade<span className="text-accent">Guard</span>X
+          </motion.h1>
+          <motion.p
+            className="text-xs tracking-widest uppercase text-slate-500 font-medium"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.45, duration: 0.4 }}
+          >
+            Risk Intelligence
+          </motion.p>
+        </div>
+
+        {/* Progress track */}
+        <motion.div
+          className="w-48 h-[2px] rounded-full bg-white/[0.06] overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.35 }}
-          className="mt-1 text-sm text-slate-500"
+          transition={{ delay: 0.5, duration: 0.3 }}
         >
-          Loading protection systems...
-        </motion.p>
-
-        <div className="mt-5 w-52 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-accent via-emerald-400 to-teal-300"
+            className="h-full rounded-full bg-gradient-to-r from-accent via-emerald-400 to-teal-300"
             initial={{ x: '-100%' }}
             animate={{ x: '100%' }}
-            transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut', delay: 0.55 }}
           />
-        </div>
+        </motion.div>
       </div>
     </div>
   );

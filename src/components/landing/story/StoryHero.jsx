@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import AnimatedChartBackground from './AnimatedChartBackground';
+import StoryRuleShield from './StoryRuleShield';
 
 export default function StoryHero() {
   const [mouse, setMouse] = useState({ x: 50, y: 50 });
   const [pnl, setPnl] = useState(1247.32);
+  const [scrolled, setScrolled] = useState(false);
 
   const onMove = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -25,9 +27,15 @@ export default function StoryHero() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 80);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <section
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden pt-24 pb-20"
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden pt-24 pb-24"
       onMouseMove={onMove}
     >
       <AnimatedChartBackground />
@@ -82,34 +90,98 @@ export default function StoryHero() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.12 }}
-          className="mx-auto mt-6 max-w-xl text-lg text-slate-400 md:text-xl"
+          className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 md:text-xl"
         >
-          Rules that actually run while you trade — on your screen, in real time. Your last line of defense before the account blows.
+          A real-time rule engine that enforces your trading plan inside the browser —
+          combined with an AI-powered journal that identifies the exact behavior patterns
+          costing you money.
         </motion.p>
+
+        {/* Capability pills */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.18 }}
+          className="mt-8 flex flex-wrap items-center justify-center gap-2"
+        >
+          {[
+            { label: 'Rule Engine', icon: '🛡️' },
+            { label: 'AI Journal', icon: '🧠' },
+            { label: 'Behavior Patterns', icon: '📊' },
+            { label: 'Works in your browser', icon: '🌐' },
+          ].map((pill) => (
+            <span
+              key={pill.label}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-slate-400"
+            >
+              <span>{pill.icon}</span>
+              {pill.label}
+            </span>
+          ))}
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.2 }}
+          transition={{ duration: 0.45, delay: 0.24 }}
           className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
         >
           <Link
             to="/pricing"
-            className="inline-flex items-center gap-2 rounded-2xl bg-accent px-8 py-4 text-lg font-semibold text-[#0a0c10] shadow-lg shadow-accent/25 transition hover:bg-accent/90"
+            className="inline-flex items-center gap-2 rounded-2xl bg-accent px-8 py-4 text-lg font-semibold text-[#0a0c10] shadow-lg shadow-accent/25 transition hover:bg-accent/90 active:scale-95"
           >
             Start free
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </Link>
-          <Link
-            to={{ pathname: '/', hash: 'protection-demo' }}
+          <a
+            href="#how-it-works"
             className="inline-flex items-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-8 py-4 text-lg font-medium text-slate-200 backdrop-blur-sm transition hover:border-accent/25 hover:bg-white/[0.06]"
           >
-            Watch live demo
-          </Link>
+            See how it works
+          </a>
         </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mt-5 text-xs text-slate-600"
+        >
+          Free plan available · No credit card required · Setup in &lt; 2 minutes
+        </motion.p>
       </div>
+
+      {/* Rule shield animation — rules → shield → trade. No heading,
+          since the hero copy above already serves as the headline. */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.35 }}
+        className="relative z-10 mt-20 w-full px-6"
+      >
+        <StoryRuleShield />
+      </motion.div>
+
+      {/* Scroll chevron */}
+      <AnimatePresence>
+        {!scrolled && (
+          <motion.a
+            href="#how-it-works"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, y: [0, 8, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ opacity: { delay: 1, duration: 0.5 }, y: { repeat: Infinity, duration: 1.6, ease: 'easeInOut' } }}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-slate-600 transition hover:text-slate-400"
+            aria-label="Scroll down"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 9l-7 7-7-7" />
+            </svg>
+          </motion.a>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

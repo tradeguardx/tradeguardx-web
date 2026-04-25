@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardPageBanner from '../components/dashboard/DashboardPageBanner';
-import { SkeletonBlock } from '../components/common/LoadingSkeleton';
+import { ShimmerBlock } from '../components/common/LoadingSkeleton';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useDashboardTheme } from '../context/DashboardThemeContext';
@@ -105,7 +105,7 @@ function useNarrativeTTS(text) {
 
   /**
    * Prefer warm female voices (voicemail / assistant style). Avoid obvious male voices.
-   * Order: Indian English female → explicit “Female” → known female names → best English female match.
+   * Order: Indian English female → explicit "Female" → known female names → best English female match.
    */
   const pickVoice = useCallback(() => {
     const voices =
@@ -132,7 +132,7 @@ function useNarrativeTTS(text) {
       if (v) return v;
     }
 
-    // 2) Explicitly labelled female / UK Female (clear “assistant” tone)
+    // 2) Explicitly labelled female / UK Female (clear "assistant" tone)
     const femaleLabel = en.find(
       (v) =>
         !soundsMale(v)
@@ -686,6 +686,7 @@ const SEVERITY_BG = { CRITICAL: 'rgba(239,68,68,0.08)', HIGH: 'rgba(249,115,22,0
 const SEVERITY_BORDER = { CRITICAL: 'rgba(239,68,68,0.20)', HIGH: 'rgba(249,115,22,0.18)', MEDIUM: 'rgba(250,204,21,0.15)', LOW: 'rgba(148,163,184,0.12)' };
 
 function ScoreRing({ score, size = 56, stroke = 5 }) {
+  const { isDark } = useDashboardTheme();
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(score, 100)) / 100;
@@ -693,7 +694,7 @@ function ScoreRing({ score, size = 56, stroke = 5 }) {
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="rotate-[-90deg]">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'} strokeWidth={stroke} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
           strokeDasharray={c} strokeDashoffset={c * (1 - pct)} strokeLinecap="round" className="transition-all duration-700" />
       </svg>
@@ -705,7 +706,14 @@ function ScoreRing({ score, size = 56, stroke = 5 }) {
 }
 
 function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative }) {
+  const { isDark } = useDashboardTheme();
   const parsed = useMemo(() => parseNarrative(narrative?.narrative), [narrative?.narrative]);
+  const violationsReadClean = useMemo(() => {
+    if (!parsed.violations?.length) return false;
+    return parsed.violations.every((line) =>
+      /nothing flagged|none detected|disciplined execution|clean execution|no violations/i.test(line)
+    );
+  }, [parsed.violations]);
   const analysis = narrative?.analysis;
   const ds = analysis?.disciplineScore;
   const vs = analysis?.violationSummary;
@@ -736,7 +744,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                   ].map((p) => (
                     <div key={p.label} className="flex items-center gap-2">
                       <span className="text-[9px] font-semibold w-14 shrink-0" style={{ color: 'var(--dash-text-faint)' }}>{p.label}</span>
-                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }}>
                         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${p.score}%`, backgroundColor: p.color }} />
                       </div>
                       <span className="text-[10px] font-bold w-7 text-right" style={{ color: p.color }}>{p.score}</span>
@@ -801,35 +809,85 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
 
       {/* ── Behavior Identity Tags ─────────────────────────────────────── */}
       {behaviorTags?.length > 0 && (
-        <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
-          <p className="text-[9px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--dash-text-faint)' }}>Behavior Patterns (Last {behaviorTags[0]?.tradeCount || 20} Trades)</p>
-          <div className="space-y-2.5">
-            {behaviorTags.map((bt) => {
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
+          {/* Section header */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: isDark ? 'rgba(167,139,250,0.15)' : 'rgba(167,139,250,0.10)', color: '#a78bfa' }}>
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+              </div>
+              <div>
+                <p className="text-xs font-bold" style={{ color: 'var(--dash-text-primary)' }}>Your Habits Lately</p>
+                <p className="text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>Patterns detected across your last {behaviorTags[0]?.tradeCount || 20} trades</p>
+              </div>
+            </div>
+            <span className="flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-[10px] font-bold" style={{ backgroundColor: isDark ? 'rgba(167,139,250,0.15)' : 'rgba(167,139,250,0.10)', color: '#a78bfa' }}>
+              {behaviorTags.length}
+            </span>
+          </div>
+          {/* Pattern cards */}
+          <div className="p-3 space-y-2.5">
+            {behaviorTags.map((bt, btIdx) => {
               const isPositive = bt.severity === 'POSITIVE';
               const tagColor = isPositive ? '#22c55e' : (SEVERITY_COLORS[bt.severity] || '#94a3b8');
-              const tagBg = isPositive ? 'rgba(34,197,94,0.06)' : (SEVERITY_BG[bt.severity] || 'rgba(148,163,184,0.06)');
-              const tagBorder = isPositive ? 'rgba(34,197,94,0.15)' : (SEVERITY_BORDER[bt.severity] || 'rgba(148,163,184,0.12)');
+              const tagBgDark = isPositive ? 'rgba(34,197,94,0.06)' : (SEVERITY_BG[bt.severity] || 'rgba(148,163,184,0.06)');
+              const tagBgLight = isPositive ? '#f0fdf4' : ({ CRITICAL: '#fff8f8', HIGH: '#fff5f0', MEDIUM: '#fffdf0', LOW: '#f8fafc' }[bt.severity] || '#f8fafc');
+              const tagBorderLight = isPositive ? 'rgba(34,197,94,0.28)' : ({ CRITICAL: 'rgba(239,68,68,0.28)', HIGH: 'rgba(249,115,22,0.25)', MEDIUM: 'rgba(250,204,21,0.30)', LOW: 'rgba(148,163,184,0.22)' }[bt.severity] || 'rgba(148,163,184,0.22)');
+              const tagBorder = isDark ? (isPositive ? 'rgba(34,197,94,0.18)' : (SEVERITY_BORDER[bt.severity] || 'rgba(148,163,184,0.12)')) : tagBorderLight;
               const pct = Math.round(bt.confidence * 100);
+              const tagLabel = bt.tag.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
               return (
-                <div key={bt.tag} className="rounded-xl border p-3" style={{ borderColor: tagBorder, backgroundColor: tagBg }}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black tracking-wide" style={{ color: tagColor }}>{bt.tag.replace(/_/g, ' ')}</span>
-                      {!isPositive && (
-                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: tagColor + '15', color: tagColor }}>{bt.severity}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-mono font-bold" style={{ color: tagColor }}>{bt.matchCount}/{bt.tradeCount}</span>
-                      <div className="w-12 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: tagColor }} />
+                <motion.div
+                  key={bt.tag}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: btIdx * 0.07 }}
+                  className="rounded-xl overflow-hidden border"
+                  style={{ borderColor: tagBorder, backgroundColor: isDark ? tagBgDark : tagBgLight, boxShadow: isDark ? 'none' : '0 1px 4px rgba(0,0,0,0.04)' }}
+                >
+                  <div className="px-4 pt-3.5 pb-3">
+                    {/* Header row */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md" style={{ backgroundColor: tagColor + (isDark ? '22' : '18'), color: tagColor }}>
+                            {isPositive ? 'Positive' : bt.severity}
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-black tracking-tight" style={{ color: tagColor }}>{tagLabel}</h3>
                       </div>
-                      <span className="text-[9px] font-mono" style={{ color: 'var(--dash-text-faint)' }}>{pct}%</span>
+                      {/* Frequency stat */}
+                      <div className="shrink-0 text-right">
+                        <p className="text-xl font-black leading-none" style={{ color: tagColor }}>
+                          {bt.matchCount}
+                          <span className="text-[12px] font-semibold" style={{ opacity: 0.55 }}>/{bt.tradeCount}</span>
+                        </p>
+                        <p className="text-[9px] mt-0.5" style={{ color: 'var(--dash-text-faint)' }}>trades</p>
+                      </div>
+                    </div>
+                    {/* Frequency bar */}
+                    <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)' }}>
+                      <motion.div
+                        className="h-full rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.7, delay: btIdx * 0.07 + 0.1, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ backgroundColor: tagColor, boxShadow: isDark ? `0 0 8px ${tagColor}50` : 'none' }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <p className="text-[9px]" style={{ color: 'var(--dash-text-faint)' }}>frequency across {bt.tradeCount} trades</p>
+                      <p className="text-[10px] font-bold tabular-nums" style={{ color: tagColor }}>{pct}%</p>
                     </div>
                   </div>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>{bt.description}</p>
-                  <p className="text-[10px] mt-1 font-mono" style={{ color: 'var(--dash-text-faint)' }}>{bt.evidence}</p>
-                </div>
+                  {/* Body */}
+                  <div className="px-4 pb-3.5 border-t" style={{ borderColor: isDark ? tagColor + '12' : tagColor + '1a' }}>
+                    <p className="text-xs leading-relaxed pt-2.5" style={{ color: 'var(--dash-text-muted)' }}>{bt.description}</p>
+                    {bt.evidence && (
+                      <p className="text-[10px] mt-2 font-mono" style={{ color: 'var(--dash-text-faint)', opacity: 0.75 }}>{bt.evidence}</p>
+                    )}
+                  </div>
+                </motion.div>
               );
             })}
           </div>
@@ -840,7 +898,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
       {(upt?.timeWithoutSL?.totalSeconds > 0 || mc?.comparison?.riskExceededBy) && (
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
           {upt?.timeWithoutSL?.totalSeconds > 0 && (
-            <div className="rounded-xl border p-3.5" style={{ borderColor: 'rgba(239,68,68,0.15)', backgroundColor: 'rgba(239,68,68,0.04)' }}>
+            <div className="rounded-xl border p-3.5" style={{ borderColor: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.25)', backgroundColor: isDark ? 'rgba(239,68,68,0.04)' : '#fff8f8' }}>
               <div className="flex items-center gap-1.5 mb-2">
                 <svg className="h-3.5 w-3.5" style={{ color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#ef4444' }}>Unprotected Time</p>
@@ -857,7 +915,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
             </div>
           )}
           {mc?.comparison?.riskExceededBy && (
-            <div className="rounded-xl border p-3.5" style={{ borderColor: 'rgba(249,115,22,0.15)', backgroundColor: 'rgba(249,115,22,0.04)' }}>
+            <div className="rounded-xl border p-3.5" style={{ borderColor: isDark ? 'rgba(249,115,22,0.15)' : 'rgba(249,115,22,0.28)', backgroundColor: isDark ? 'rgba(249,115,22,0.04)' : '#fff8f0' }}>
               <div className="flex items-center gap-1.5 mb-2">
                 <svg className="h-3.5 w-3.5" style={{ color: '#f97316' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#f97316' }}>Mistake Cost</p>
@@ -875,42 +933,81 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
         </div>
       )}
 
-      {/* ── AI Coach Narrative ────────────────────────────────────────────── */}
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: verdictColor + '30', background: `linear-gradient(135deg, ${verdictColor}08 0%, rgba(96,165,250,0.03) 100%)` }}>
-        <div className="p-5 space-y-4">
+      {/* ── AI Coach Narrative (friend tone in copy; warm UI) ───────────────── */}
+      <div
+        className="rounded-2xl border overflow-hidden relative"
+        style={{
+          borderColor: 'rgba(0,212,170,0.22)',
+          background: 'linear-gradient(165deg, rgba(0,212,170,0.07) 0%, var(--dash-bg-raised) 38%, var(--dash-bg-raised) 100%)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+        }}
+      >
+        <div className="pointer-events-none absolute -right-20 -top-16 h-40 w-40 rounded-full blur-3xl opacity-30" style={{ background: 'radial-gradient(circle, rgba(0,212,170,0.25), transparent 70%)' }} />
+        <div className="pointer-events-none absolute -left-16 bottom-0 h-32 w-32 rounded-full blur-3xl opacity-20" style={{ background: 'radial-gradient(circle, rgba(96,165,250,0.2), transparent 70%)' }} />
+
+        <div className="relative p-5 space-y-5">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs ring-1" style={{ backgroundColor: verdictColor + '15', color: verdictColor, ringColor: verdictColor + '25' }}>
-                {narrativeBusy ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: verdictColor + '40', borderTopColor: verdictColor }} /> : '✦'}
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg shadow-md ring-1 ring-white/10"
+                style={{
+                  background: `linear-gradient(145deg, ${verdictColor}22, rgba(0,212,170,0.12))`,
+                  color: verdictColor,
+                }}
+              >
+                {narrativeBusy ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: verdictColor + '35', borderTopColor: verdictColor }} />
+                ) : (
+                  <span aria-hidden>💬</span>
+                )}
               </div>
-              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: verdictColor + '90' }}>Discipline Coach</p>
+              <div className="min-w-0">
+                <p className="text-sm font-display font-bold tracking-tight" style={{ color: 'var(--dash-text-primary)' }}>Discipline coach</p>
+                <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--dash-text-muted)' }}>
+                  Plain talk on this trade — what happened, how it fits your habits, and what to try next.
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               {tts.supported && parsed.full && (
                 <div className="flex items-center gap-1.5">
-                  <button type="button" onClick={tts.toggle}
+                  <button
+                    type="button"
+                    onClick={tts.toggle}
                     className="relative flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-semibold transition-all hover:bg-white/5 overflow-hidden"
-                    style={{ borderColor: tts.playing && !tts.paused ? 'rgba(0,212,170,0.4)' : 'var(--dash-border)', color: tts.playing && !tts.paused ? '#00d4aa' : 'var(--dash-text-muted)' }}>
+                    style={{
+                      borderColor: tts.playing && !tts.paused ? 'rgba(0,212,170,0.45)' : 'var(--dash-border)',
+                      color: tts.playing && !tts.paused ? '#00d4aa' : 'var(--dash-text-muted)',
+                    }}
+                  >
                     {tts.playing && tts.progress > 0 && (
                       <div className="absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-500" style={{ width: `${tts.progress}%`, backgroundColor: '#00d4aa' }} />
                     )}
                     {tts.playing && !tts.paused ? 'Pause' : tts.playing && tts.paused ? 'Resume' : 'Listen'}
                   </button>
                   {tts.playing && (
-                    <button type="button" onClick={tts.stop}
+                    <button
+                      type="button"
+                      onClick={tts.stop}
                       className="flex h-7 w-7 items-center justify-center rounded-lg border transition-all hover:bg-white/5"
-                      style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-faint)' }}>
-                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+                      style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-faint)' }}
+                    >
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                        <rect x="6" y="6" width="12" height="12" rx="2" />
+                      </svg>
                     </button>
                   )}
                 </div>
               )}
               {narrative && !narrativeBusy && (
-                <button type="button" onClick={() => fetchNarrative(true)}
+                <button
+                  type="button"
+                  onClick={() => fetchNarrative(true)}
                   className="rounded-xl border px-3 py-1.5 text-[10px] font-semibold transition-all hover:bg-white/5"
-                  style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-muted)' }}>
-                  Regenerate
+                  style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-muted)' }}
+                >
+                  Refresh take
                 </button>
               )}
             </div>
@@ -929,60 +1026,139 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
 
           {narrative?.narrative && (
             <div className="space-y-4">
-              {/* Verdict */}
+              {/* Verdict — "real talk" */}
               {parsed.verdict && (
-                <div className="rounded-xl px-4 py-3" style={{ backgroundColor: verdictColor + '10', borderLeft: `3px solid ${verdictColor}` }}>
-                  <p className="text-sm font-bold leading-relaxed" style={{ color: verdictColor }}>{parsed.verdict}</p>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="relative overflow-hidden rounded-2xl border"
+                  style={{
+                    borderColor: verdictColor + '40',
+                    borderLeftWidth: 4,
+                    borderLeftColor: verdictColor,
+                    background: isDark
+                      ? `linear-gradient(120deg, ${verdictColor}14 0%, ${verdictColor}05 60%, transparent 100%)`
+                      : `linear-gradient(120deg, ${verdictColor}10 0%, ${verdictColor}04 60%, #ffffff 100%)`,
+                  }}
+                >
+                  <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full blur-2xl opacity-30" style={{ backgroundColor: verdictColor }} aria-hidden />
+                  <div className="relative px-4 py-4">
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <span className="text-[9px] font-black uppercase tracking-[0.18em]" style={{ color: verdictColor + 'cc' }}>Real talk</span>
+                    </div>
+                    <p className="text-sm leading-relaxed font-medium" style={{ color: 'var(--dash-text-primary)' }}>
+                      {parsed.verdict}
+                    </p>
+                  </div>
+                </motion.div>
               )}
 
               {/* Timeline */}
               {parsed.timeline.length > 0 && (
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: '#60a5fa80' }}>Timeline</p>
-                  <div className="space-y-1">
+                <div className="rounded-2xl border p-4" style={{ borderColor: isDark ? 'var(--dash-border)' : 'rgba(96,165,250,0.25)', backgroundColor: isDark ? 'rgba(96,165,250,0.04)' : '#f0f8ff' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: '#60a5fac0' }}>
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15 text-[12px]">⏱</span>
+                    What happened
+                  </p>
+                  <ul className="relative space-y-0 pl-1">
+                    <span className="absolute left-[11px] top-1.5 bottom-1.5 w-px bg-gradient-to-b from-blue-400/40 via-blue-400/20 to-transparent" aria-hidden />
                     {parsed.timeline.map((t, i) => (
-                      <p key={i} className="text-xs leading-relaxed font-mono" style={{ color: 'var(--dash-text-muted)' }}>{t}</p>
+                      <li key={i} className="relative flex gap-3 pl-1">
+                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-400/80 ring-4 ring-blue-500/10" aria-hidden />
+                        <p className="text-xs leading-relaxed flex-1" style={{ color: 'var(--dash-text-muted)' }}>
+                          {t.replace(/^[•\-\*]\s*/, '')}
+                        </p>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
               )}
 
-              {/* LLM Violations */}
-              {parsed.violations.length > 0 && parsed.violations[0] !== 'None detected — disciplined execution.' && (
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: '#ef444480' }}>Violations</p>
-                  <div className="space-y-1">
-                    {parsed.violations.map((v, i) => (
-                      <p key={i} className="text-xs leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>{v}</p>
-                    ))}
+              {/* Violations / rules check */}
+              {parsed.violations.length > 0 && (
+                violationsReadClean ? (
+                  <div className="rounded-2xl border p-4" style={{ borderColor: isDark ? 'rgba(34,197,94,0.22)' : 'rgba(34,197,94,0.28)', backgroundColor: isDark ? 'rgba(34,197,94,0.06)' : '#f0fdf4' }}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: '#4ade80cc' }}>
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/15 text-[12px]">✓</span>
+                        Rules check
+                    </p>
+                    <ul className="space-y-2">
+                      {parsed.violations.map((v, i) => (
+                        <li key={i} className="text-xs leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>
+                          {v.replace(/^[•\-\*]\s*/, '')}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-2xl border p-4" style={{ borderColor: isDark ? 'rgba(251,146,60,0.2)' : 'rgba(251,146,60,0.30)', backgroundColor: isDark ? 'rgba(251,146,60,0.05)' : '#fffbf5' }}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: '#fb923ccc' }}>
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/15 text-[12px]">→</span>
+                      Where it went wrong
+                    </p>
+                    <ul className="space-y-2">
+                      {parsed.violations.map((v, i) => (
+                        <li key={i} className="text-xs leading-relaxed pl-1 border-l-2 border-amber-500/25 pl-3" style={{ color: 'var(--dash-text-muted)' }}>
+                          {v.replace(/^[•\-\*]\s*/, '')}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
               )}
 
               {/* Cost */}
               {parsed.cost && (
-                <div className="rounded-xl border px-3.5 py-2.5" style={{ borderColor: 'rgba(249,115,22,0.15)', backgroundColor: 'rgba(249,115,22,0.04)' }}>
-                  <p className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#f9731680' }}>Cost Analysis</p>
-                  <p className="text-xs font-mono leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>{parsed.cost}</p>
+                <div className="rounded-2xl border px-4 py-3.5" style={{ borderColor: isDark ? 'rgba(251,191,36,0.18)' : 'rgba(251,191,36,0.35)', backgroundColor: isDark ? 'rgba(251,191,36,0.06)' : '#fffdf0' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: 'rgba(251,191,36,0.85)' }}>
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-amber-400/15 text-[12px]">$</span>
+                    The numbers
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>
+                    {parsed.cost}
+                  </p>
                 </div>
               )}
 
-              {/* Fix */}
+              {/* Fix — elevated CTA card */}
               {parsed.fix && (
-                <div className="rounded-xl border px-3.5 py-2.5" style={{ borderColor: 'rgba(0,212,170,0.18)', backgroundColor: 'rgba(0,212,170,0.05)' }}>
-                  <p className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#00d4aa80' }}>Fix</p>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>{parsed.fix}</p>
+                <div
+                  className="relative overflow-hidden rounded-2xl"
+                  style={{
+                    background: isDark
+                      ? 'linear-gradient(135deg, rgba(0,212,170,0.14) 0%, rgba(0,212,170,0.06) 100%)'
+                      : 'linear-gradient(135deg, #e6fdf8 0%, #f0fdf9 100%)',
+                    border: `1px solid rgba(0,212,170,${isDark ? 0.30 : 0.28})`,
+                    boxShadow: isDark ? '0 4px 24px rgba(0,212,170,0.07)' : '0 2px 12px rgba(0,212,170,0.08)',
+                  }}
+                >
+                  <div className="pointer-events-none absolute -right-6 -bottom-6 h-20 w-20 rounded-full blur-2xl opacity-40" style={{ backgroundColor: '#00d4aa' }} aria-hidden />
+                  <div className="relative px-5 py-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ backgroundColor: isDark ? 'rgba(0,212,170,0.2)' : 'rgba(0,212,170,0.15)', color: '#00d4aa' }}>
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                      </div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.18em]" style={{ color: 'rgba(0,212,170,0.95)' }}>Try this next</p>
+                    </div>
+                    <p className="text-sm leading-relaxed font-medium" style={{ color: 'var(--dash-text-primary)' }}>
+                      {parsed.fix}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-1">
-            <p className="text-[9px]" style={{ color: 'var(--dash-text-faint)' }}>Educational discipline analysis — not financial advice</p>
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t" style={{ borderColor: 'var(--dash-border)' }}>
+            <p className="text-[9px]" style={{ color: 'var(--dash-text-faint)' }}>
+              Coaching from your trade data — not financial advice.
+            </p>
             {narrative?.model && (
-              <p className="text-[9px]" style={{ color: 'var(--dash-text-faint)' }}>{narrative.cached ? 'Cached' : 'Fresh'} · {narrative.model}</p>
+              <p className="text-[9px]" style={{ color: 'var(--dash-text-faint)' }}>
+                {narrative.cached ? 'Saved' : 'New'} · {narrative.model}
+              </p>
             )}
           </div>
         </div>
@@ -1074,16 +1250,16 @@ export default function TradeDetailPage() {
     { id: 'overview', label: 'Overview' },
     { id: 'journal', label: 'Journal' },
     { id: 'replay', label: 'Replay' },
-    { id: 'media', label: `Story ${media.length > 0 ? `(${media.length})` : ''}` },
+    { id: 'media', label: media.length > 0 ? `Snapshots (${media.length})` : 'Snapshots' },
     { id: 'timeline', label: 'Timeline' },
   ];
 
   if (loading) {
     return (
       <div className="space-y-4">
-        <SkeletonBlock className="h-14 w-full" />
-        <div className="grid gap-3 md:grid-cols-4">{[...Array(4)].map((_, i) => <SkeletonBlock key={i} className="h-20 w-full" />)}</div>
-        <SkeletonBlock className="h-72 w-full" />
+        <ShimmerBlock className="h-14 w-full" />
+        <div className="grid gap-3 md:grid-cols-4">{[...Array(4)].map((_, i) => <ShimmerBlock key={i} className="h-20 w-full" />)}</div>
+        <ShimmerBlock className="h-72 w-full" />
       </div>
     );
   }
@@ -1118,8 +1294,13 @@ export default function TradeDetailPage() {
 
         <div className="relative flex items-center justify-between px-6 lg:px-8 pt-5 pb-0">
           <div className="flex items-center gap-4">
-            <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-black ring-1 ${isLong ? 'bg-emerald-500/12 text-emerald-400 ring-emerald-500/20' : 'bg-red-500/12 text-red-400 ring-red-500/20'}`}>
-              {isLong ? 'L' : 'S'}
+            <div
+              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ring-1 ${isLong ? 'ring-emerald-500/25' : 'ring-red-500/25'}`}
+              style={{ background: isLong ? 'linear-gradient(145deg,rgba(34,197,94,0.18),rgba(34,197,94,0.07))' : 'linear-gradient(145deg,rgba(239,68,68,0.18),rgba(239,68,68,0.07))' }}
+            >
+              <svg className="h-7 w-7" style={{ color: isLong ? '#22c55e' : '#ef4444' }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d={isLong ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'} />
+              </svg>
             </div>
             <div>
               <div className="flex items-center gap-2.5">
@@ -1166,15 +1347,15 @@ export default function TradeDetailPage() {
 
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {[
-              { label: 'Entry', value: fmtNum(trade.entryPrice, 4), color: '#22c55e' },
-              { label: 'Exit', value: fmtNum(trade.exitPrice, 4), color: '#ef4444' },
-              { label: 'Hold Time', value: fmtDuration(holdSeconds), color: '#f59e0b' },
-              { label: 'Quantity', value: trade.quantity || '—', color: '#8b5cf6' },
-              { label: 'Opened', value: trade.openedAt ? new Date(trade.openedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—', color: '#60a5fa' },
-              { label: 'Closed', value: trade.closedAt ? new Date(trade.closedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—', color: '#94a3b8' },
+              { label: 'Entry', value: fmtNum(trade.entryPrice, 4), color: '#22c55e', rgb: '34,197,94' },
+              { label: 'Exit', value: fmtNum(trade.exitPrice, 4), color: '#ef4444', rgb: '239,68,68' },
+              { label: 'Hold Time', value: fmtDuration(holdSeconds), color: '#f59e0b', rgb: '245,158,11' },
+              { label: 'Quantity', value: trade.quantity || '—', color: '#8b5cf6', rgb: '139,92,246' },
+              { label: 'Opened', value: trade.openedAt ? new Date(trade.openedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—', color: '#60a5fa', rgb: '96,165,250' },
+              { label: 'Closed', value: trade.closedAt ? new Date(trade.closedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—', color: '#94a3b8', rgb: '148,163,184' },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl border px-3 py-3" style={{ borderColor: s.color + '15', backgroundColor: s.color + '06' }}>
-                <p className="text-[8px] font-bold uppercase tracking-widest" style={{ color: s.color + '80' }}>{s.label}</p>
+              <div key={s.label} className="rounded-xl border px-3 py-3" style={{ borderColor: `rgba(${s.rgb},${isDark ? 0.15 : 0.25})`, backgroundColor: isDark ? `rgba(${s.rgb},0.06)` : '#ffffff', boxShadow: isDark ? 'none' : `0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(${s.rgb},0.08)` }}>
+                <p className="text-[8px] font-bold uppercase tracking-widest" style={{ color: `rgba(${s.rgb},${isDark ? 0.5 : 0.65})` }}>{s.label}</p>
                 <p className="mt-1.5 text-sm font-bold font-mono" style={{ color: 'var(--dash-text-primary)' }}>{s.value}</p>
               </div>
             ))}
@@ -1207,15 +1388,15 @@ export default function TradeDetailPage() {
               {/* Quick stats */}
               <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
                 {[
-                  { label: 'Events', value: events.length, color: '#60a5fa', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
-                  { label: 'Screenshots', value: media.length, color: '#00d4aa', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
-                  { label: 'Source', value: trade.source || '—', color: '#94a3b8', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg> },
-                  { label: 'Currency', value: trade.currency || 'USD', color: '#94a3b8', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+                  { label: 'Events', value: events.length, color: '#60a5fa', rgb: '96,165,250', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
+                  { label: 'Screenshots', value: media.length, color: '#00d4aa', rgb: '0,212,170', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+                  { label: 'Source', value: trade.source || '—', color: '#94a3b8', rgb: '148,163,184', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg> },
+                  { label: 'Currency', value: trade.currency || 'USD', color: '#94a3b8', rgb: '148,163,184', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-2xl border p-4 transition-all hover:shadow-sm" style={{ borderColor: s.color + '15', backgroundColor: s.color + '06' }}>
+                  <div key={s.label} className="rounded-2xl border p-4 transition-all hover:shadow-sm" style={{ borderColor: `rgba(${s.rgb},${isDark ? 0.15 : 0.22})`, backgroundColor: isDark ? `rgba(${s.rgb},0.06)` : '#ffffff', boxShadow: isDark ? 'none' : `0 1px 3px rgba(0,0,0,0.04)` }}>
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: s.color + '18', color: s.color }}>{s.icon}</div>
-                      <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: s.color + '80' }}>{s.label}</p>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: `rgba(${s.rgb},${isDark ? 0.12 : 0.10})`, color: s.color }}>{s.icon}</div>
+                      <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: `rgba(${s.rgb},${isDark ? 0.5 : 0.65})` }}>{s.label}</p>
                     </div>
                     <p className="text-xl font-black" style={{ color: s.color }}>{s.value}</p>
                   </div>
