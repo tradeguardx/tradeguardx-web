@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useToast } from '../components/common/ToastProvider';
@@ -294,10 +294,11 @@ function PairingStatusBadge({ accessToken, tradingAccountId }) {
   );
 }
 
-function AccountCard({ account, accessToken, onUpdated, toast }) {
+function AccountCard({ account, accessToken, onUpdated, toast, collapsible = false, defaultExpanded = true }) {
   const [name, setName] = useState(account.name || '');
   const [platform, setPlatform] = useState(account.platform || '');
   const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState(collapsible ? defaultExpanded : true);
   const isFunded = account.equityMode === 'funded';
 
   useEffect(() => {
@@ -324,6 +325,73 @@ function AccountCard({ account, accessToken, onUpdated, toast }) {
     }
   };
 
+  const accountSizeChip = isFunded && account.accountSize != null && (
+    <span
+      className="text-[10px] font-semibold rounded-full px-2 py-0.5"
+      style={{
+        backgroundColor: 'rgba(0, 212, 170, 0.12)',
+        color: '#00d4aa',
+      }}
+    >
+      {formatCurrency(account.accountSize, account.accountCurrency || 'USD')}
+    </span>
+  );
+
+  const HeaderInner = (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0 flex items-start gap-3">
+        {collapsible && (
+          <span
+            aria-hidden="true"
+            className="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-transform"
+            style={{
+              transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              color: 'var(--dash-text-muted)',
+              backgroundColor: 'var(--dash-bg-card)',
+              border: '1px solid var(--dash-border)',
+            }}
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
+        )}
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-display font-semibold text-base" style={{ color: 'var(--dash-text-primary)' }}>
+              {account.name}
+            </h3>
+            {account.propFirmSlug && (
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5"
+                style={{
+                  backgroundColor: 'rgba(148, 163, 184, 0.12)',
+                  color: 'var(--dash-text-secondary)',
+                }}
+              >
+                {account.propFirmSlug}
+              </span>
+            )}
+            {accountSizeChip}
+          </div>
+          <p className="text-xs mt-0.5 font-mono opacity-70" style={{ color: 'var(--dash-text-muted)' }}>
+            {account.id}
+          </p>
+          <div className="mt-2">
+            <PairingStatusBadge accessToken={accessToken} tradingAccountId={account.id} />
+          </div>
+        </div>
+      </div>
+      <Link
+        to="/dashboard/rules"
+        onClick={(e) => e.stopPropagation()}
+        className="text-xs font-semibold text-accent hover:underline"
+      >
+        Rules for this account →
+      </Link>
+    </div>
+  );
+
   return (
     <motion.div
       variants={staggerItem}
@@ -334,50 +402,41 @@ function AccountCard({ account, accessToken, onUpdated, toast }) {
         boxShadow: 'var(--dash-shadow-card)',
       }}
     >
-      <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--dash-border)' }}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-display font-semibold text-base" style={{ color: 'var(--dash-text-primary)' }}>
-                {account.name}
-              </h3>
-              {account.propFirmSlug && (
-                <span
-                  className="text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5"
-                  style={{
-                    backgroundColor: 'rgba(148, 163, 184, 0.12)',
-                    color: 'var(--dash-text-secondary)',
-                  }}
-                >
-                  {account.propFirmSlug}
-                </span>
-              )}
-            </div>
-            <p className="text-xs mt-0.5 font-mono opacity-70" style={{ color: 'var(--dash-text-muted)' }}>
-              {account.id}
-            </p>
-            <div className="mt-2">
-              <PairingStatusBadge accessToken={accessToken} tradingAccountId={account.id} />
-            </div>
-          </div>
-          <Link
-            to="/dashboard/rules"
-            className="text-xs font-semibold text-accent hover:underline"
-          >
-            Rules for this account →
-          </Link>
+      {collapsible ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="w-full text-left px-5 py-4 hover:bg-white/[0.02] transition-colors"
+          style={{ borderBottom: expanded ? '1px solid var(--dash-border)' : 'none' }}
+          aria-expanded={expanded}
+        >
+          {HeaderInner}
+        </button>
+      ) : (
+        <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--dash-border)' }}>
+          {HeaderInner}
         </div>
-      </div>
+      )}
 
-      <div className="p-5 space-y-4">
-        {isFunded && (
-          <FundedStatus
-            account={account}
-            accessToken={accessToken}
-            onUpdated={onUpdated}
-            toast={toast}
-          />
-        )}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            key="body"
+            initial={collapsible ? { height: 0, opacity: 0 } : false}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="p-5 space-y-4">
+              {isFunded && (
+                <FundedStatus
+                  account={account}
+                  accessToken={accessToken}
+                  onUpdated={onUpdated}
+                  toast={toast}
+                />
+              )}
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
@@ -438,7 +497,10 @@ function AccountCard({ account, accessToken, onUpdated, toast }) {
             Open Pairing
           </Link>
         </div>
-      </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -890,13 +952,15 @@ export default function TradingAccountsPage() {
         <p className="text-sm" style={{ color: 'var(--dash-text-muted)' }}>Loading…</p>
       ) : (
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-6">
-          {accounts.map((a) => (
+          {accounts.map((a, idx) => (
             <AccountCard
               key={a.id}
               account={a}
               accessToken={session?.access_token}
               onUpdated={refreshTradingAccounts}
               toast={toast}
+              collapsible={accounts.length > 1}
+              defaultExpanded={idx === 0}
             />
           ))}
           {accounts.length === 0 && !error && (

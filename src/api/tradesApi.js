@@ -151,18 +151,22 @@ function tradeMergeKey(t) {
 }
 
 /**
- * Merge journal projection + raw trades to avoid missing freshly-synced closes.
- * Journal rows win on conflicts because they usually include richer derived fields.
+ * Returns trades from the journal projection only.
+ *
+ * We previously also called /trades (raw) and merged, to cover the window where
+ * a freshly closed trade hadn't yet been projected to the journal table. That
+ * caused near-duplicate rows when the two sources recorded openedAt seconds
+ * apart (click vs broker-fill timestamp). The journal projection is fast enough
+ * in steady state, so we accept the small lag in exchange for a single source.
+ *
+ * Dedup passes are kept because the journal projection itself can briefly return
+ * separate OPEN and CLOSED rows for the same lifecycle while ingesting events.
  */
 export async function fetchUnifiedTrades({ accessToken, tradingAccountId, limit = 100, signal } = {}) {
-  const [journalRows, rawRows] = await Promise.all([
-    fetchJournalTrades({ accessToken, tradingAccountId, limit, signal }).catch(() => []),
-    fetchTrades({ accessToken, tradingAccountId, limit, signal }).catch(() => []),
-  ]);
+  const journalRows = await fetchJournalTrades({ accessToken, tradingAccountId, limit, signal }).catch(() => []);
 
   const byKey = new Map();
-  // Journal first (preferred), then fill gaps with raw rows.
-  for (const row of [...journalRows, ...rawRows]) {
+  for (const row of journalRows) {
     const normalized = normalizeTradeLifecycle(row);
     if (!normalized) continue;
     const key = tradeMergeKey(normalized);
@@ -170,16 +174,15 @@ export async function fetchUnifiedTrades({ accessToken, tradingAccountId, limit 
     byKey.set(key, mergeTradeRecords(byKey.get(key), normalized));
   }
 
-  // Second-pass dedupe: collapse near-identical lifecycle duplicates
-  // where ids differ across journal/raw sources.
+  // Collapse near-identical lifecycle duplicates (e.g. OPEN row + CLOSED row
+  // for the same lifecycle while the projection is mid-ingest).
   const byLifecycle = new Map();
   for (const row of byKey.values()) {
     const lifeKey = lifecycleDedupeKey(row) || tradeMergeKey(row);
     byLifecycle.set(lifeKey, mergeTradeRecords(byLifecycle.get(lifeKey), row));
   }
 
-  // Third-pass bridge: merge OPEN and CLOSED rows for the same lifecycle when
-  // ids differ across sources (common during extension transition states).
+  // Bridge OPEN and CLOSED versions of the same lifecycle when ids differ.
   const byBridge = new Map();
   for (const row of byLifecycle.values()) {
     const bridgeKey = lifecycleBridgeKey(row) || lifecycleDedupeKey(row) || tradeMergeKey(row);
