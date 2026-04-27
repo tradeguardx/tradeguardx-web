@@ -57,9 +57,9 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.08 }}
           className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6"
         >
-          <span className="gradient-text">Trade Smarter.</span>
+          <span className="gradient-text">Trade your strategy.</span>
           <br />
-          <span className="gradient-text-accent">Stay Protected.</span>
+          <span className="gradient-text-accent">Not your emotions.</span>
         </motion.h1>
 
         {/* Subheadline */}
@@ -69,8 +69,9 @@ export default function Hero() {
           transition={{ duration: 0.5, delay: 0.16 }}
           className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-5 leading-relaxed"
         >
-          TradeGuardX automatically enforces your risk rules inside your trading platform.
-          No API keys. No broker connection. Rule checks run locally; sign in to sync rules, pairing, and optional trade history to your account.
+          TradeGuardX runs in your broker tab and enforces your rules at the click.
+          The trade that breaks your daily limit, exceeds your risk-per-trade,
+          or chases a loss? <span className="text-slate-200 font-medium">It just doesn't go through.</span>
         </motion.p>
 
         <motion.p
@@ -79,7 +80,7 @@ export default function Hero() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-accent font-semibold text-base md:text-lg mb-12"
         >
-          Never break a prop firm rule again.
+          Never blow another account.
         </motion.p>
 
         {/* CTAs */}

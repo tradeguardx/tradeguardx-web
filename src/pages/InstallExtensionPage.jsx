@@ -2,38 +2,30 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { staggerContainer, staggerItem } from '../components/dashboard/dashboardMotion';
 
+// Direct Chrome Web Store listing URL.
+// TODO: replace with the exact slug/ID from your published listing once known.
+// Falls back to a search URL that always finds the published TradeGuardX listing.
+const CHROME_STORE_URL = 'https://chromewebstore.google.com/search/TradeGuardX';
+
 const STEPS = [
   {
     number: 1,
-    title: 'Open Chrome Web Store',
-    description: 'Navigate to the TradeGuardX page on the Chrome Web Store.',
-    detail: 'Works with Chrome, Brave, Edge, and other Chromium-based browsers.',
+    title: 'Add TradeGuardX to Chrome',
+    description: 'Open the TradeGuardX listing on the Chrome Web Store and click "Add to Chrome".',
+    detail: 'Confirm by clicking "Add extension" when Chrome asks. Works with Chrome, Brave, Edge, and other Chromium browsers.',
     gradient: 'from-accent/20 to-emerald-500/10',
     iconColor: 'text-accent',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
       </svg>
     ),
   },
   {
     number: 2,
-    title: 'Click "Add to Chrome"',
-    description: 'On the extension page, click the blue "Add to Chrome" button.',
-    detail: 'Confirm by clicking "Add extension" in the dialog that appears.',
-    gradient: 'from-blue-500/20 to-indigo-500/10',
-    iconColor: 'text-blue-400',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-      </svg>
-    ),
-  },
-  {
-    number: 3,
-    title: 'Pin the Extension',
-    description: 'Click the puzzle icon in the toolbar and pin TradeGuardX.',
-    detail: 'This keeps TradeGuardX visible for quick access to status and settings.',
+    title: 'Pin it to your toolbar',
+    description: 'Click the puzzle icon in Chrome and pin TradeGuardX so the popup is one click away.',
+    detail: 'Without pinning, the popup hides under the puzzle menu — easy to miss when you need it most.',
     gradient: 'from-purple-500/20 to-pink-500/10',
     iconColor: 'text-purple-400',
     icon: (
@@ -43,16 +35,28 @@ const STEPS = [
     ),
   },
   {
+    number: 3,
+    title: 'Pair the extension with your account',
+    description: 'Open Dashboard → Pairing, generate a code, then paste it into the TradeGuardX popup.',
+    detail: 'This links the extension to your trading account so your rules sync across devices.',
+    gradient: 'from-blue-500/20 to-indigo-500/10',
+    iconColor: 'text-blue-400',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+      </svg>
+    ),
+  },
+  {
     number: 4,
-    title: 'Configure & Trade',
-    description: 'Set your rules in this dashboard, then open your trading platform.',
-    detail: 'TradeGuardX detects your platform and starts monitoring automatically.',
+    title: 'Open your broker — rules enforce automatically',
+    description: 'Visit your supported broker (Exness, Delta Exchange, The Funded Room). The extension activates instantly.',
+    detail: 'Rule violations get blocked at the click — before the trade goes through. No willpower required.',
     gradient: 'from-amber-500/20 to-orange-500/10',
     iconColor: 'text-amber-400',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
     ),
   },
@@ -159,9 +163,9 @@ export default function InstallExtensionPage() {
 
           <div className="mx-auto mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             {[
+              { label: 'Live on Chrome Web Store', icon: '✓' },
               { label: '~2 min setup', icon: '⏱' },
-              { label: 'Chromium browsers', icon: '◆' },
-              { label: 'Free to install', icon: '✓' },
+              { label: 'Free to install', icon: '◆' },
             ].map((pill) => (
               <span
                 key={pill.label}
@@ -345,30 +349,31 @@ export default function InstallExtensionPage() {
               </svg>
             </div>
             <h3 className="font-display text-lg font-bold" style={{ color: 'var(--dash-text-primary)' }}>
-              Ready to install?
+              Install it now — it's free
             </h3>
             <p className="mx-auto mt-2 max-w-md text-sm" style={{ color: 'var(--dash-text-muted)' }}>
-              When the listing is live, this opens the Chrome Web Store. Bookmark this page to finish rules in the dashboard first.
+              TradeGuardX is live on the Chrome Web Store. Click below, add to Chrome,
+              then come back to pair and configure your rules.
             </p>
             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <motion.a
-                href="https://chrome.google.com/webstore"
+                href={CHROME_STORE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent to-emerald-400 px-7 py-3.5 text-sm font-bold text-surface-950 shadow-lg shadow-accent/25 transition-all hover:brightness-110"
               >
-                Open Chrome Web Store
+                Add to Chrome
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
               </motion.a>
               <Link
-                to="/dashboard/rules"
+                to="/dashboard/pairing"
                 className="text-sm font-medium text-accent underline-offset-4 hover:underline"
               >
-                Configure rules first →
+                Get a pairing code →
               </Link>
             </div>
           </div>

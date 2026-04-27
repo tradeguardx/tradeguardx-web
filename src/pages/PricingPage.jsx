@@ -20,7 +20,7 @@ const PLAN_THEME = {
     badgeBg: 'rgba(100,116,139,0.10)',
     badgeBorder: 'rgba(100,116,139,0.22)',
     badgeText: '#94a3b8',
-    tagline: 'Core protection, forever free.',
+    tagline: 'Stop yourself from yourself. Free, forever.',
     ctaBg: 'rgba(255,255,255,0.06)',
     ctaBorder: 'rgba(255,255,255,0.08)',
     ctaText: '#e2e8f0',
@@ -35,7 +35,7 @@ const PLAN_THEME = {
     badgeBg: 'rgba(0,212,170,0.14)',
     badgeBorder: 'rgba(0,212,170,0.30)',
     badgeText: '#00d4aa',
-    tagline: 'Full analytics. Full enforcement.',
+    tagline: 'For traders who can\'t afford another bad day.',
     ctaGradient: 'linear-gradient(135deg, #00d4aa 0%, #10b981 100%)',
     ctaText: '#07090f',
     ctaShadow: '0 4px 20px rgba(0,212,170,0.30)',
@@ -49,7 +49,7 @@ const PLAN_THEME = {
     badgeBg: 'rgba(139,92,246,0.14)',
     badgeBorder: 'rgba(139,92,246,0.30)',
     badgeText: '#c4b5fd',
-    tagline: 'Built for prop traders and power users.',
+    tagline: 'When discipline isn\'t optional anymore.',
     ctaGradient: 'linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%)',
     ctaText: '#ffffff',
     ctaShadow: '0 4px 20px rgba(139,92,246,0.28)',
@@ -94,7 +94,17 @@ function normalizePlan(raw, index) {
       ? raw.features.cardFeatures
       : [];
   const normalizedFeatures = featureList
-    .map((f) => (typeof f === 'string' ? { text: f, included: true } : { text: f?.text || '', included: f?.included !== false }))
+    .map((f) =>
+      typeof f === 'string'
+        ? { text: f, included: true }
+        : {
+            text: f?.text || '',
+            included: f?.included !== false,
+            lockedTier: f?.lockedTier || null,
+            comingSoon: Boolean(f?.comingSoon),
+            highlight: Boolean(f?.highlight),
+          },
+    )
     .filter((f) => f.text);
   const monthlyPrice = Number(raw.priceMonthly ?? raw.monthlyPrice ?? 0);
   const ctaLink = raw.features?.ctaLink || (key === 'free' ? '/beta-traders' : `/beta-traders?plan=${key}`);
@@ -226,7 +236,14 @@ export default function PricingPage() {
       try {
         const apiPlans = await getPricingPlans({ signal: controller.signal });
         if (apiPlans.length === 0) throw new Error('Pricing API returned invalid plan data');
-        if (!cancelled) setPlans(apiPlans.map(normalizePlan));
+        if (!cancelled) {
+          // Force canonical Free → Pro → Pro+ order regardless of API/DB sortOrder.
+          // Anything unknown lands at the end.
+          const ORDER = { free: 0, pro: 1, proplus: 2 };
+          const normalized = apiPlans.map(normalizePlan);
+          normalized.sort((a, b) => (ORDER[a.key] ?? 99) - (ORDER[b.key] ?? 99));
+          setPlans(normalized);
+        }
       } catch (error) {
         if (!cancelled) { setLoadError('Pricing is temporarily unavailable. Please try again shortly.'); setPlans([]); }
       } finally {
@@ -326,35 +343,160 @@ export default function PricingPage() {
 
       <div className="relative mx-auto max-w-7xl px-6 pt-28 pb-16">
 
-        {/* ── Hero ─────────────────────────────────────────────────────────── */}
+        {/* ── Hero (pain-led) ──────────────────────────────────────────────── */}
         <motion.div
-          className="text-center mb-16"
+          className="max-w-6xl mx-auto mb-16"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Eyebrow pill */}
-          <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 mb-7" style={{ borderColor: 'rgba(0,212,170,0.22)', backgroundColor: 'rgba(0,212,170,0.07)' }}>
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" style={{ boxShadow: '0 0 6px rgba(0,212,170,0.8)' }} />
-            <span className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color: '#00d4aa' }}>Protection plans</span>
+          <div className="text-center mb-12">
+            {/* Eyebrow pill — red, signals "bad news first" */}
+            <div
+              className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 mb-7"
+              style={{ borderColor: 'rgba(244,63,94,0.22)', backgroundColor: 'rgba(244,63,94,0.06)' }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#f43f5e', boxShadow: '0 0 6px rgba(244,63,94,0.8)' }} />
+              <span className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color: '#fb7185' }}>The hidden cost</span>
+            </div>
+
+            <h1 className="font-display text-5xl md:text-6xl lg:text-[4.25rem] font-bold tracking-tight text-white mb-6 leading-[1.05]">
+              Most traders don't lose to the market.<br />
+              <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)' }}>
+                They lose to themselves.
+              </span>
+            </h1>
+
+            <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-3">
+              It's 2 AM. The chart is red. You take one more trade.
+              By morning, the account is gone — and you're rehearsing how
+              you'll explain it to someone you love.
+            </p>
           </div>
 
-          <h1 className="font-display text-5xl md:text-6xl lg:text-[4.5rem] font-bold tracking-tight text-white mb-5 leading-[1.08]">
-            Trade with{' '}
-            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #00d4aa 0%, #34d399 100%)' }}>
-              discipline.
-            </span>
-            <br />
-            Pay as you grow.
-          </h1>
+          {/* Pain stat grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+            {[
+              {
+                stat: '80%',
+                label: 'lose money in year one',
+                detail: 'Not because they pick bad trades. Because they can\'t stop themselves from taking ONE MORE when they\'re already down for the day.',
+                tone: 'rose',
+              },
+              {
+                stat: '$487',
+                label: 'average prop fee — gone',
+                detail: 'Three months of saving. One bad Friday. The firm doesn\'t refund the fee. The account is just… done.',
+                tone: 'orange',
+              },
+              {
+                stat: '3.4×',
+                label: 'worse losses after a loss',
+                detail: 'You\'ll fight the urge to "make it back." You\'ll lose. Revenge trading is mathematically real — bigger, sloppier positions when chasing a loss.',
+                tone: 'amber',
+              },
+              {
+                stat: '14 days',
+                label: 'of work, undone in 4 hours',
+                detail: 'Two weeks of patient, disciplined trading. Erased in a single emotional session. The shame is worse than the loss.',
+                tone: 'rose',
+              },
+            ].map((p, i) => {
+              const colors = {
+                rose: { glow: 'rgba(244,63,94,0.10)', text: '#fb7185', bgFrom: 'rgba(244,63,94,0.04)' },
+                orange: { glow: 'rgba(251,146,60,0.10)', text: '#fb923c', bgFrom: 'rgba(251,146,60,0.04)' },
+                amber: { glow: 'rgba(251,191,36,0.10)', text: '#fbbf24', bgFrom: 'rgba(251,191,36,0.04)' },
+              }[p.tone];
+              return (
+                <motion.div
+                  key={p.label}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.05 * i, duration: 0.4 }}
+                  whileHover={{ y: -3, transition: { duration: 0.18 } }}
+                  className="relative rounded-2xl p-5 overflow-hidden"
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    background: `linear-gradient(180deg, ${colors.bgFrom}, rgba(255,255,255,0.01))`,
+                  }}
+                >
+                  <div
+                    className="pointer-events-none absolute -inset-8 blur-3xl opacity-60"
+                    style={{ background: `radial-gradient(ellipse at 50% 0%, ${colors.glow}, transparent 65%)` }}
+                    aria-hidden
+                  />
+                  <div className="relative">
+                    <p className="font-display text-4xl font-black mb-2 tracking-tight" style={{ color: colors.text }}>
+                      {p.stat}
+                    </p>
+                    <p className="text-sm font-semibold text-white mb-2 leading-snug">{p.label}</p>
+                    <p className="text-xs leading-relaxed" style={{ color: '#64748b' }}>{p.detail}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
 
-          <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-11 leading-relaxed">
+          {/* Bridge — pain → solution */}
+          <div
+            className="relative rounded-2xl px-6 py-6 md:px-10 md:py-8 overflow-hidden"
+            style={{
+              border: '1px solid rgba(0,212,170,0.18)',
+              background:
+                'linear-gradient(135deg, rgba(0,212,170,0.06) 0%, rgba(0,212,170,0.015) 50%, rgba(0,212,170,0.06) 100%)',
+            }}
+          >
+            <div
+              className="pointer-events-none absolute -inset-12 blur-3xl"
+              style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(0,212,170,0.10), transparent 65%)' }}
+              aria-hidden
+            />
+            <div className="relative flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-8">
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                style={{ backgroundColor: 'rgba(0,212,170,0.14)', color: '#00d4aa' }}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="font-display text-lg md:text-xl font-bold text-white mb-1.5 leading-snug">
+                  You don't need more willpower. You need a system that
+                  <span style={{ color: '#00d4aa' }}> won't let you click Buy</span> when you shouldn't.
+                </p>
+                <p className="text-sm leading-relaxed" style={{ color: '#94a3b8' }}>
+                  TradeGuardX runs in your broker tab. It enforces YOUR rules — daily loss
+                  limit, max drawdown, risk per trade — at the click. Not a popup. Not a warning.
+                  The trade just doesn't go through. Discipline on autopilot,
+                  for less than the cost of a single bad trade.
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── Pricing eyebrow + trust strip ────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.4 }}
+          className="text-center mb-12"
+        >
+          <div
+            className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 mb-5"
+            style={{ borderColor: 'rgba(0,212,170,0.22)', backgroundColor: 'rgba(0,212,170,0.07)' }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" style={{ boxShadow: '0 0 6px rgba(0,212,170,0.8)' }} />
+            <span className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color: '#00d4aa' }}>Pick your protection</span>
+          </div>
+          <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-7 leading-relaxed">
             Start free with core protection. Upgrade for deeper AI insights, unlimited history, and stronger enforcement.
           </p>
-
-          {/* Trust strip */}
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            {TRUST_BADGES.map((b, i) => (
+            {TRUST_BADGES.map((b) => (
               <span
                 key={b.label}
                 className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium"
@@ -365,7 +507,6 @@ export default function PricingPage() {
               </span>
             ))}
           </div>
-
           {loadError && <p className="mt-6 text-amber-400 text-sm">{loadError}</p>}
           {isLoading && (
             <div className="mt-8 flex items-center justify-center gap-2 text-slate-600 text-sm">
@@ -377,7 +518,7 @@ export default function PricingPage() {
 
         {/* ── Plan cards ───────────────────────────────────────────────────── */}
         {plans.length > 0 && (
-          <div className="grid md:grid-cols-3 gap-4 lg:gap-5 max-w-5xl mx-auto mb-6 md:items-center">
+          <div className="grid md:grid-cols-3 gap-5 lg:gap-6 max-w-5xl mx-auto mb-6 items-stretch">
             {plans.map((plan, i) => {
               const t = PLAN_THEME[plan.key] || PLAN_THEME.free;
               const isPrimary = plan.primary;
@@ -389,20 +530,20 @@ export default function PricingPage() {
                   initial={{ opacity: 0, y: 32 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.12 + i * 0.1, duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{ y: -3, transition: { duration: 0.2 } }}
-                  className={`relative flex flex-col ${isPrimary ? 'md:-mt-5 md:-mb-5 z-10' : 'z-0'}`}
+                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                  className={`relative flex ${isPrimary ? 'md:-my-6 md:scale-[1.04] z-10' : 'z-0'}`}
                 >
                   {/* Outer ambient glow for primary/proplus */}
                   {t.glow && (
                     <div
                       className="pointer-events-none absolute -inset-8 rounded-[3rem] blur-3xl"
-                      style={{ background: `radial-gradient(ellipse at 50% 30%, ${t.glow}, transparent 65%)` }}
+                      style={{ background: `radial-gradient(ellipse at 50% 30%, ${isPrimary ? t.glow.replace(/0\.\d+/, '0.28') : t.glow}, transparent 65%)` }}
                       aria-hidden
                     />
                   )}
 
                   {/* Gradient border shell */}
-                  <div className={`relative flex flex-col flex-1 rounded-[1.6rem] p-[1px] bg-gradient-to-b ${t.border}`}>
+                  <div className={`relative flex flex-col w-full rounded-[1.6rem] p-[1.5px] bg-gradient-to-b ${t.border}`}>
                     {/* Card inner */}
                     <div
                       className="relative flex flex-col flex-1 overflow-hidden rounded-[1.5rem]"
@@ -412,14 +553,14 @@ export default function PricingPage() {
                       {t.glow && (
                         <div
                           className="pointer-events-none absolute inset-x-0 top-0 h-40 rounded-t-[1.5rem]"
-                          style={{ background: `linear-gradient(to bottom, ${t.glow.replace('0.16', '0.06').replace('0.14', '0.05')}, transparent)` }}
+                          style={{ background: `linear-gradient(to bottom, ${t.glow.replace(/0\.\d+/, isPrimary ? '0.10' : '0.06')}, transparent)` }}
                           aria-hidden
                         />
                       )}
 
                       <div className="relative flex flex-col flex-1 p-7">
                         {/* Top row: icon + badge */}
-                        <div className="flex items-start justify-between mb-5">
+                        <div className="flex items-start justify-between mb-5 min-h-[44px]">
                           <div
                             className="flex h-11 w-11 items-center justify-center rounded-xl"
                             style={{ backgroundColor: t.iconBg, color: t.iconColor }}
@@ -437,8 +578,8 @@ export default function PricingPage() {
                         </div>
 
                         {/* Plan name + tagline */}
-                        <h3 className="font-display text-xl font-bold text-white mb-1">{plan.name}</h3>
-                        <p className="text-[12px] leading-relaxed mb-6" style={{ color: '#475569' }}>{t.tagline}</p>
+                        <h3 className="font-display text-2xl font-bold text-white mb-1.5 tracking-tight">{plan.name}</h3>
+                        <p className="text-[12px] leading-relaxed mb-6 min-h-[32px]" style={{ color: '#64748b' }}>{t.tagline}</p>
 
                         {/* Price */}
                         <div className="flex items-baseline gap-1.5 mb-1">
@@ -448,36 +589,85 @@ export default function PricingPage() {
                               initial={{ opacity: 0, y: -6 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: 6 }}
-                              className="font-display text-4xl font-black text-white"
+                              className="font-display text-5xl font-black text-white tracking-tight"
                             >
                               {price === 0 ? '$0' : `$${price}`}
                             </motion.span>
                           </AnimatePresence>
-                          {price > 0 && <span className="text-sm" style={{ color: '#475569' }}>/mo</span>}
+                          {price > 0 && <span className="text-sm font-medium" style={{ color: '#64748b' }}>/mo</span>}
                         </div>
-                        <p className="text-[11px] mb-6" style={{ color: '#334155' }}>
+                        <p className="text-[11px] mb-6 font-medium" style={{ color: '#475569' }}>
                           {price === 0 ? 'No credit card required' : 'Billed monthly · cancel anytime'}
                         </p>
 
+                        {/* CTA — moved above the feature list for stronger conversion focus */}
+                        <motion.div whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }} className="mb-7">
+                          {renderCta(plan)}
+                        </motion.div>
+
                         {/* Divider */}
-                        <div className="mb-5 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent)' }} />
+                        <div className="mb-5 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)' }} />
 
                         {/* Feature list */}
-                        <ul className="space-y-2.5 flex-1">
+                        <ul className="space-y-3 flex-1">
                           {plan.features.map((f) => (
                             <li key={f.text} className="flex items-start gap-2.5">
                               {f.included ? (
-                                <svg className="mt-0.5 h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20" style={{ color: t.checkColor }}>
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
+                                <span
+                                  className="mt-0.5 inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full"
+                                  style={{ backgroundColor: `${t.checkColor}1a` }}
+                                >
+                                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: t.checkColor }}>
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </span>
                               ) : (
-                                <svg className="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#1e293b' }}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <span
+                                  className="mt-0.5 inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full"
+                                  style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
+                                >
+                                  <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#475569' }}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m0-12a4 4 0 014 4v3H8V9a4 4 0 014-4z" />
+                                  </svg>
+                                </span>
                               )}
-                              <span className="text-sm leading-snug" style={{ color: f.included ? '#cbd5e1' : '#334155' }}>
+                              <span
+                                className={`flex-1 text-sm leading-snug ${f.included ? '' : 'line-through'}`}
+                                style={{
+                                  color: f.included ? (f.highlight ? '#ffffff' : '#cbd5e1') : '#475569',
+                                  fontWeight: f.highlight ? 600 : 400,
+                                }}
+                              >
                                 {f.text}
                               </span>
+                              {/* "Coming soon" pill for included-but-not-shipped */}
+                              {f.included && f.comingSoon && (
+                                <span
+                                  className="shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                                  style={{ backgroundColor: 'rgba(251,191,36,0.10)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.20)' }}
+                                >
+                                  Soon
+                                </span>
+                              )}
+                              {/* Tier-unlock pill for locked features */}
+                              {!f.included && f.lockedTier && (
+                                <span
+                                  className="shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                                  style={{
+                                    backgroundColor:
+                                      f.lockedTier === 'Pro+'
+                                        ? 'rgba(139,92,246,0.10)'
+                                        : 'rgba(0,212,170,0.10)',
+                                    color: f.lockedTier === 'Pro+' ? '#a78bfa' : '#00d4aa',
+                                    border:
+                                      f.lockedTier === 'Pro+'
+                                        ? '1px solid rgba(139,92,246,0.22)'
+                                        : '1px solid rgba(0,212,170,0.22)',
+                                  }}
+                                >
+                                  {f.lockedTier}
+                                </span>
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -486,20 +676,13 @@ export default function PricingPage() {
                         {plan.limitations.length > 0 && (
                           <ul className="mt-5 pt-4 space-y-1.5" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                             {plan.limitations.map((l) => (
-                              <li key={l} className="flex items-start gap-2 text-[11px]" style={{ color: '#334155' }}>
-                                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full" style={{ backgroundColor: '#1e293b' }} />
+                              <li key={l} className="flex items-start gap-2 text-[11px]" style={{ color: '#475569' }}>
+                                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full" style={{ backgroundColor: '#334155' }} />
                                 {l}
                               </li>
                             ))}
                           </ul>
                         )}
-
-                        {/* CTA */}
-                        <div className="mt-7">
-                          <motion.div whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }}>
-                            {renderCta(plan)}
-                          </motion.div>
-                        </div>
                       </div>
                     </div>
                   </div>
