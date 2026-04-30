@@ -25,11 +25,12 @@ export default function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`fixed left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
           ? 'bg-surface-950/80 backdrop-blur-2xl border-b border-white/[0.06] shadow-lg shadow-black/20'
           : 'bg-transparent'
       }`}
+      style={{ top: 'var(--tg-promo-h, 0px)' }}
     >
       <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">

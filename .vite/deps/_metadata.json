@@ -1,0 +1,79 @@
+{
+  "hash": "77e2b899",
+  "configHash": "ef45b843",
+  "lockfileHash": "f479cfea",
+  "browserHash": "2b402196",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "f5911630",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "9a2f4195",
+      "needsInterop": true
+    },
+    "@sentry/react": {
+      "src": "../../node_modules/@sentry/react/build/esm/index.js",
+      "file": "@sentry_react.js",
+      "fileHash": "342fbedb",
+      "needsInterop": false
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "69830f50",
+      "needsInterop": false
+    },
+    "framer-motion": {
+      "src": "../../node_modules/framer-motion/dist/es/index.mjs",
+      "file": "framer-motion.js",
+      "fileHash": "aa645c74",
+      "needsInterop": false
+    },
+    "@supabase/supabase-js": {
+      "src": "../../node_modules/@supabase/supabase-js/dist/index.mjs",
+      "file": "@supabase_supabase-js.js",
+      "fileHash": "423746dd",
+      "needsInterop": false
+    },
+    "recharts": {
+      "src": "../../node_modules/recharts/es6/index.js",
+      "file": "recharts.js",
+      "fileHash": "2f4c44e1",
+      "needsInterop": false
+    },
+    "@vercel/analytics/react": {
+      "src": "../../node_modules/@vercel/analytics/dist/react/index.mjs",
+      "file": "@vercel_analytics_react.js",
+      "fileHash": "f3195ded",
+      "needsInterop": false
+    },
+    "html-to-image": {
+      "src": "../../node_modules/html-to-image/es/index.js",
+      "file": "html-to-image.js",
+      "fileHash": "b47a22a4",
+      "needsInterop": false
+    },
+    "lightweight-charts": {
+      "src": "../../node_modules/lightweight-charts/dist/lightweight-charts.development.mjs",
+      "file": "lightweight-charts.js",
+      "fileHash": "be88e1b7",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-AU2MKR2E": {
+      "file": "chunk-AU2MKR2E.js"
+    },
+    "chunk-VX2H6PUQ": {
+      "file": "chunk-VX2H6PUQ.js"
+    },
+    "chunk-G3PMV62Z": {
+      "file": "chunk-G3PMV62Z.js"
+    }
+  }
+}

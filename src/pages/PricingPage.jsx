@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/ToastProvider';
 import { createCheckoutSession } from '../api/paymentsApi';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
+import { getStoredReferralCode } from '../lib/referralCode';
 import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
 
 // ─── Per-plan visual theming ─────────────────────────────────────────────────
@@ -169,9 +170,14 @@ export default function PricingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [checkoutKey, setCheckoutKey] = useState(null);
+  const [referralCode, setReferralCode] = useState(null);
   const { session, user, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+
+  useEffect(() => {
+    setReferralCode(getStoredReferralCode());
+  }, []);
 
   async function handlePaidPlanCta(plan) {
     if (plan.key === 'free') { navigate(plan.ctaLink); return; }
@@ -184,7 +190,11 @@ export default function PricingPage() {
     }
     setCheckoutKey(plan.key);
     try {
-      const res = await createCheckoutSession({ accessToken: session.access_token, planSlug: plan.key });
+      const res = await createCheckoutSession({
+        accessToken: session.access_token,
+        planSlug: plan.key,
+        couponCode: getStoredReferralCode() || undefined,
+      });
       const url = res?.data?.checkoutUrl;
       if (url) { window.location.href = url; return; }
       throw new Error('No checkout URL returned');
@@ -214,7 +224,11 @@ export default function PricingPage() {
     setCheckoutKey(plan.key);
     (async () => {
       try {
-        const res = await createCheckoutSession({ accessToken: session.access_token, planSlug: plan.key });
+        const res = await createCheckoutSession({
+          accessToken: session.access_token,
+          planSlug: plan.key,
+          couponCode: getStoredReferralCode() || undefined,
+        });
         if (cancelled) return;
         const url = res?.data?.checkoutUrl;
         if (url) { clearPendingCheckoutPlan(); window.location.href = url; return; }
@@ -513,6 +527,26 @@ export default function PricingPage() {
               <div className="h-3.5 w-3.5 rounded-full border-2 border-t-accent/80 border-accent/20 animate-spin" />
               Loading plans…
             </div>
+          )}
+          {referralCode && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-7 mx-auto inline-flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm"
+              style={{
+                borderColor: 'rgba(0,212,170,0.30)',
+                backgroundColor: 'rgba(0,212,170,0.08)',
+                color: '#00d4aa',
+              }}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+              <span className="font-medium">
+                Discount <span className="font-mono font-bold tracking-wider">{referralCode}</span> will be applied at checkout
+              </span>
+            </motion.div>
           )}
         </motion.div>
 

@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import ReadingProgress from '../common/ReadingProgress';
+import ActivePromo from '../promo/ActivePromo';
 
 export default function Layout() {
   const location = useLocation();
@@ -13,6 +14,7 @@ export default function Layout() {
     // scatter layer, hiding the Sentry-style background. Use a transparent
     // wrapper so the fixed layer shows through; body color is the fallback.
     <div className="min-h-screen flex flex-col">
+      {!isDashboard && <ActivePromo />}
       {!isDashboard && <ReadingProgress />}
       {!isDashboard && <Navbar />}
       <main className={isDashboard ? 'flex-1' : 'flex-1'}>

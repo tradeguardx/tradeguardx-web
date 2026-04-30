@@ -14,6 +14,7 @@ const links = {
     { label: 'Support', to: '/support' },
     { label: 'Email Us', to: 'mailto:support@tradeguardx.com' },
     { label: 'FAQ', to: { pathname: '/', hash: 'faq' } },
+    { label: 'Partner program', to: '/partner-with-us' },
   ],
   legal: [
     { label: 'Privacy Policy', to: '/privacy' },

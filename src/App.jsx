@@ -12,7 +12,12 @@ import BetaTestRegistrationPage from './pages/BetaTestRegistrationPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
+import PartnerApplyPage from './pages/PartnerApplyPage';
 import DashboardLayout from './components/dashboard/DashboardLayout';
+import InfluencerLayout from './components/influencer/InfluencerLayout';
+import InfluencerOverview from './pages/influencer/InfluencerOverview';
+import InfluencerCommissions from './pages/influencer/InfluencerCommissions';
+import InfluencerPayouts from './pages/influencer/InfluencerPayouts';
 import TradeOverviewPage from './pages/TradeOverviewPage';
 import RulesTerminal from './components/dashboard/RulesTerminal';
 import TradeJournal from './components/dashboard/TradeJournal';
@@ -27,6 +32,7 @@ import BillingPage from './pages/BillingPage';
 import PairingPage from './pages/PairingPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ScrollToTop from './components/common/ScrollToTop';
+import ReferralCapture from './components/common/ReferralCapture';
 import AppLoader from './components/common/AppLoader';
 import CommandMenu from './components/common/CommandMenu';
 import { ToastProvider } from './components/common/ToastProvider';
@@ -52,6 +58,7 @@ function App() {
             <AuthProvider>
               <VercelRouteAnalytics />
               <ScrollToTop />
+              <ReferralCapture />
               <CommandMenu />
               <Routes>
                 <Route path="/" element={<Layout />}>
@@ -65,6 +72,7 @@ function App() {
                   <Route path="privacy" element={<PrivacyPolicyPage />} />
                   <Route path="terms" element={<TermsPage />} />
                   <Route path="refund" element={<RefundPolicyPage />} />
+                  <Route path="partner-with-us" element={<PartnerApplyPage />} />
                 </Route>
                 <Route path="dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   <Route index element={<Navigate to="/dashboard/overview" replace />} />
@@ -82,6 +90,12 @@ function App() {
                   <Route path="billing" element={<RedirectWithSearch to="/dashboard/account/billing" />} />
                   <Route path="install-extension" element={<InstallExtensionPage />} />
                   <Route path="pairing" element={<PairingPage />} />
+                </Route>
+                <Route path="influencer" element={<ProtectedRoute><InfluencerLayout /></ProtectedRoute>}>
+                  <Route index element={<Navigate to="/influencer/overview" replace />} />
+                  <Route path="overview" element={<InfluencerOverview />} />
+                  <Route path="commissions" element={<InfluencerCommissions />} />
+                  <Route path="payouts" element={<InfluencerPayouts />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
