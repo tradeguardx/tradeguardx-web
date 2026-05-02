@@ -27,9 +27,19 @@ export function AuthProvider({ children }) {
       id: authUser.id,
       email: authUser.email || '',
       name: fullName || (authUser.email ? authUser.email.split('@')[0] : 'User'),
+      // `plan` is the EFFECTIVE plan used for feature gating across the app.
+      // Mirrors user-service's strict policy: anything other than `status='active'`
+      // collapses to `free` regardless of which plan was originally subscribed to.
       plan: 'free',
       planLabel: 'Free',
       limits: null,
+      // `subscribedPlanSlug` and `subscribedPlanLabel` are the literal plan the
+      // user is paying for — used by Billing/Account pages to show "Pro — past due"
+      // even when effective `plan` is downgraded.
+      subscribedPlanSlug: 'free',
+      subscribedPlanLabel: 'Free',
+      subscriptionStatus: 'active',
+      currentPeriodEnd: null,
     };
   }, []);
 
@@ -37,16 +47,39 @@ export function AuthProvider({ children }) {
     (authUser, subData) => {
       const base = toAppUser(authUser);
       if (!base) return null;
+
+      const status = subData?.subscription?.status ?? 'active';
+      const effectivelyActive = status === 'active';
+      const periodEnd = subData?.subscription?.currentPeriodEnd ?? null;
+
       if (!subData?.plan) {
-        return { ...base, plan: 'free', planLabel: 'Free', limits: subData?.limits ?? null };
+        return {
+          ...base,
+          plan: 'free',
+          planLabel: 'Free',
+          subscribedPlanSlug: 'free',
+          subscribedPlanLabel: 'Free',
+          subscriptionStatus: status,
+          currentPeriodEnd: periodEnd,
+          limits: effectivelyActive ? (subData?.limits ?? null) : null,
+        };
       }
+
       const planName = subData.plan.name || 'Free';
-      const slug = subData.plan.slug || planKeyFromName(planName);
+      const slug = (subData.plan.slug || planKeyFromName(planName)) || 'free';
+
       return {
         ...base,
-        plan: slug || 'free',
-        planLabel: planName,
-        limits: subData.limits ?? subData.plan?.features ?? null,
+        // Strict gate — Free unless status is active. Matches user-service's
+        // policy in subscriptionClient.ts so the rules section and the rest of
+        // the app agree on what features the user has access to right now.
+        plan: effectivelyActive ? slug : 'free',
+        planLabel: effectivelyActive ? planName : 'Free',
+        limits: effectivelyActive ? (subData.limits ?? subData.plan?.features ?? null) : null,
+        subscribedPlanSlug: slug,
+        subscribedPlanLabel: planName,
+        subscriptionStatus: status,
+        currentPeriodEnd: periodEnd,
       };
     },
     [toAppUser]

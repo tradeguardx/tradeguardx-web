@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
+import { useToast } from '../components/common/ToastProvider';
 import SparkleOverlay from '../components/common/SparkleOverlay';
 import {
   journalPeriodBadgeLabel,
@@ -10,6 +11,7 @@ import {
   planTierFromSlug,
 } from '../lib/planLimits';
 import { CONFIGURABLE_RULES } from '../lib/ruleCatalogDisplay';
+import { updateSubscriptionPaymentMethod } from '../api/paymentsApi';
 import { staggerContainer, staggerItem } from '../components/dashboard/dashboardMotion';
 
 function ruleTierBadge(rule) {
@@ -17,9 +19,97 @@ function ruleTierBadge(rule) {
   return 'Pro · Pro+';
 }
 
+const STATUS_BANNER = {
+  past_due: {
+    label: 'Payment past due',
+    body: (subscribedLabel) =>
+      `Your ${subscribedLabel} subscription failed to renew. Update your payment method to restore paid features — your account is on Free until then.`,
+    cta: 'Update payment',
+    color: '#fbbf24',
+    border: 'rgba(251,191,36,0.30)',
+    background: 'rgba(251,191,36,0.06)',
+  },
+  canceled: {
+    label: 'Subscription canceled',
+    body: (subscribedLabel) =>
+      `Your ${subscribedLabel} subscription was canceled. Resubscribe anytime to restore paid features.`,
+    cta: 'Resubscribe',
+    color: '#fb7185',
+    border: 'rgba(244,63,94,0.30)',
+    background: 'rgba(244,63,94,0.06)',
+  },
+  incomplete: {
+    label: 'Checkout incomplete',
+    body: () =>
+      `You started a checkout but didn't finish. Complete payment to activate your plan.`,
+    cta: 'Complete payment',
+    color: '#fbbf24',
+    border: 'rgba(251,191,36,0.30)',
+    background: 'rgba(251,191,36,0.06)',
+  },
+};
+
+function SubscriptionStatusBanner({ status, subscribedLabel, onPortalOpen, portalLoading }) {
+  const cfg = STATUS_BANNER[status];
+  if (!cfg) return null;
+  return (
+    <motion.div
+      variants={staggerItem}
+      className="rounded-2xl border p-4 sm:p-5"
+      style={{ borderColor: cfg.border, backgroundColor: cfg.background }}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: cfg.color }}>
+            {cfg.label}
+          </p>
+          <p className="mt-1 text-sm" style={{ color: 'var(--dash-text-secondary)' }}>
+            {cfg.body(subscribedLabel)}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onPortalOpen}
+          disabled={portalLoading}
+          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-surface-950 transition-colors hover:bg-accent-hover disabled:opacity-60"
+        >
+          {portalLoading ? 'Opening…' : cfg.cta}
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function AccountOverviewPage() {
-  const { user, subscriptionLoading } = useAuth();
+  const { user, subscriptionLoading, session } = useAuth();
   const { accounts, accountsLoading, accountsError } = useTradingAccounts();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const openPortal = useCallback(async () => {
+    if (!session?.access_token) return;
+    setPortalLoading(true);
+    try {
+      const res = await updateSubscriptionPaymentMethod({ accessToken: session.access_token });
+      const url = res?.data?.paymentUpdateUrl;
+      if (!url) throw new Error('No payment update URL returned');
+      window.location.href = url;
+    } catch (err) {
+      const code = err?.details?.error?.code;
+      if (code === 'NO_RECOVERABLE_SUBSCRIPTION') {
+        toast.info('Subscription needs to be renewed', 'Your previous subscription expired. Pick a plan to subscribe again.');
+        navigate('/pricing');
+        return;
+      }
+      if (code === 'NO_SUBSCRIPTION' || code === 'NO_CUSTOMER_RECORD') {
+        toast.info('No subscription on file', 'Pick a plan to start your subscription first.');
+      } else {
+        toast.error('Could not start payment update', err?.message || 'Please try again.');
+      }
+      setPortalLoading(false);
+    }
+  }, [session, toast, navigate]);
 
   const cap = maxTradingAccountsForPlan(user?.plan);
   const accountCount = accountsLoading ? null : accounts.length;
@@ -107,6 +197,10 @@ export default function AccountOverviewPage() {
     [capLabel, loadError, subscriptionLoading, user?.plan, user?.planLabel],
   );
 
+  const status = user?.subscriptionStatus ?? 'active';
+  const isActive = status === 'active';
+  const subscribedLabel = user?.subscribedPlanLabel || 'Free';
+
   return (
     <motion.div
       variants={staggerContainer}
@@ -114,6 +208,15 @@ export default function AccountOverviewPage() {
       animate="show"
       className="space-y-6"
     >
+      {!subscriptionLoading && !isActive && (
+        <SubscriptionStatusBanner
+          status={status}
+          subscribedLabel={subscribedLabel}
+          onPortalOpen={openPortal}
+          portalLoading={portalLoading}
+        />
+      )}
+
       <motion.div
         variants={staggerItem}
         className="relative overflow-hidden rounded-2xl border p-5 sm:p-6"
