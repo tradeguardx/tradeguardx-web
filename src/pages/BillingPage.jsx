@@ -29,6 +29,13 @@ const STATUS_INFO = {
       'Checkout was started but never completed. Finish the payment to activate your plan — until then, your account is on Free.',
     cta: 'Complete payment',
   },
+  expired: {
+    tone: 'amber',
+    label: 'Free trial ended',
+    message:
+      'Your free Pro period has ended. Pick a plan to keep Pro features — your account is on Free until then.',
+    cta: 'Pick a plan',
+  },
 };
 
 const TONE_STYLES = {
@@ -91,12 +98,82 @@ function StatusBanner({ status, periodEnd, subscribedPlanLabel, onPortalOpen, po
   );
 }
 
+function FoundingMemberInfo({ periodEnd, planLabel }) {
+  const dateLabel = periodEnd
+    ? new Date(periodEnd).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+    : null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-5 rounded-xl border p-4 sm:p-5"
+      style={{
+        borderColor: 'rgba(0,212,170,0.30)',
+        backgroundColor: 'rgba(0,212,170,0.05)',
+      }}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex items-start gap-3">
+          <span
+            className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+            style={{ background: 'linear-gradient(135deg, #00d4aa, #10b981)', boxShadow: '0 0 14px rgba(0,212,170,0.40)' }}
+            aria-hidden
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#07090f">
+              <path d="M12 2l2.39 4.84L20 7.7l-3.86 3.76L17.07 17 12 14.27 6.93 17l.93-5.54L4 7.7l5.61-.86L12 2z" />
+            </svg>
+          </span>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: '#7dffd4' }}>
+              Founding member
+            </p>
+            <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
+              {planLabel} unlocked free{dateLabel ? ` until ${dateLabel}` : ''}
+            </p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--dash-text-muted)' }}>
+              No card on file. When the trial ends, your account reverts to Free unless you subscribe.
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/pricing"
+          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-surface-950 transition-colors hover:bg-accent-hover"
+        >
+          Subscribe to keep {planLabel}
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function BillingPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { subscription, subscriptionLoading, user, refetchSubscription, session } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const [portalLoading, setPortalLoading] = useState(false);
+
+  // Derived state (computed before the callbacks so they can depend on it
+  // without hitting a temporal-dead-zone ReferenceError).
+  const status = user?.subscriptionStatus ?? 'active';
+  const isActive = status === 'active';
+  const subscribedPlanLabel = user?.subscribedPlanLabel || 'Free';
+  const effectivePlanLabel = user?.planLabel || 'Free';
+  const subscriptionSource = user?.subscriptionSource || 'free';
+  // Founding-member / admin-granted comps have no Dodo customer record, so
+  // "Manage billing" and "Update payment method" both fail. Branch UI on this.
+  const isAdminComp = subscriptionSource === 'admin';
+  // Show "Manage billing" only for users who have a real Dodo subscription —
+  // i.e. paid customers. Founding members (admin) and Free users don't.
+  const hasBillingRecord = isPaidPlan(user?.subscribedPlanSlug) && subscriptionSource === 'payment';
+  const sub = subscription?.subscription;
+  const periodEnd = sub?.currentPeriodEnd
+    ? new Date(sub.currentPeriodEnd).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : null;
 
   const openPortal = useCallback(async () => {
     if (!session?.access_token) {
@@ -121,6 +198,11 @@ export default function BillingPage() {
   }, [session, toast]);
 
   const startPaymentUpdate = useCallback(async () => {
+    // Expired comp users have no Dodo subscription — go straight to pricing.
+    if (status === 'expired') {
+      navigate('/pricing');
+      return;
+    }
     if (!session?.access_token) {
       toast.error('Not signed in', 'Please sign in again.');
       return;
@@ -133,21 +215,20 @@ export default function BillingPage() {
       window.location.href = url;
     } catch (err) {
       const code = err?.details?.error?.code;
-      if (code === 'NO_RECOVERABLE_SUBSCRIPTION') {
-        // Subscription is past the recovery window — Dodo cancelled/expired it.
-        // Send the user to /pricing to start a new subscription.
-        toast.info('Subscription needs to be renewed', 'Your previous subscription expired. Pick a plan to subscribe again.');
+      if (
+        code === 'NO_RECOVERABLE_SUBSCRIPTION' ||
+        code === 'NO_SUBSCRIPTION' ||
+        code === 'NO_CUSTOMER_RECORD'
+      ) {
+        // No live subscription on Dodo — user needs a fresh checkout.
+        toast.info('Subscription needs to be renewed', 'Pick a plan to continue.');
         navigate('/pricing');
         return;
       }
-      if (code === 'NO_SUBSCRIPTION' || code === 'NO_CUSTOMER_RECORD') {
-        toast.info('No subscription on file', 'Pick a plan to start your subscription first.');
-      } else {
-        toast.error('Could not start payment update', err?.message || 'Please try again.');
-      }
+      toast.error('Could not start payment update', err?.message || 'Please try again.');
       setPortalLoading(false);
     }
-  }, [session, toast, navigate]);
+  }, [session, toast, navigate, status]);
 
   useEffect(() => {
     const checkout = searchParams.get('checkout');
@@ -165,22 +246,6 @@ export default function BillingPage() {
     }
   }, [searchParams, setSearchParams, refetchSubscription, toast]);
 
-  const status = user?.subscriptionStatus ?? 'active';
-  const isActive = status === 'active';
-  const subscribedPlanLabel = user?.subscribedPlanLabel || 'Free';
-  const effectivePlanLabel = user?.planLabel || 'Free';
-  // Show "Manage billing" for any user who has (or had) a paid subscription —
-  // they have a Dodo customer record. Free users with no purchase history don't.
-  const hasBillingRecord = isPaidPlan(user?.subscribedPlanSlug);
-  const sub = subscription?.subscription;
-  const periodEnd = sub?.currentPeriodEnd
-    ? new Date(sub.currentPeriodEnd).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : null;
-
   return (
     <div className="w-full">
       <motion.div
@@ -196,8 +261,14 @@ export default function BillingPage() {
           Plan & subscription
         </h1>
         <p className="text-sm text-[var(--dash-text-muted)] mb-8">
-          Manage your TradeGuardX plan. Payments are processed securely by Dodo Payments.
+          {isAdminComp
+            ? `You're on a complimentary ${subscribedPlanLabel} plan as a founding member. No card needed, nothing to cancel — when the trial ends, your account reverts to Free unless you subscribe.`
+            : <>Manage your TradeGuardX plan. Payments are processed securely by Dodo Payments. You can update your payment method, view invoices, or <strong>cancel anytime</strong> — your Pro features stay active through the end of your current billing period.</>}
         </p>
+
+        {!subscriptionLoading && isAdminComp && isActive && (
+          <FoundingMemberInfo periodEnd={sub?.currentPeriodEnd} planLabel={subscribedPlanLabel} />
+        )}
 
         {!subscriptionLoading && !isActive && (
           <StatusBanner
@@ -235,7 +306,13 @@ export default function BillingPage() {
           {periodEnd && (
             <div className="flex justify-between gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
               <span className="text-[var(--dash-text-muted)]">
-                {isActive ? 'Next renewal' : status === 'past_due' ? 'Last successful period ended' : 'Period ends'}
+                {isAdminComp && isActive
+                  ? 'Free trial ends'
+                  : isActive
+                    ? 'Next renewal'
+                    : status === 'past_due'
+                      ? 'Last successful period ended'
+                      : 'Period ends'}
               </span>
               <span style={{ color: 'var(--dash-text-primary)' }}>{periodEnd}</span>
             </div>
@@ -247,7 +324,7 @@ export default function BillingPage() {
             to="/pricing"
             className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-accent text-surface-950 font-semibold text-sm hover:bg-accent-hover transition-colors"
           >
-            {isActive ? 'Change plan' : 'View plans'}
+            {isAdminComp ? `Subscribe to keep ${subscribedPlanLabel}` : isActive ? 'Change plan' : 'View plans'}
           </Link>
           {hasBillingRecord && (
             <button
@@ -257,7 +334,7 @@ export default function BillingPage() {
               className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border text-sm transition-colors hover:bg-[var(--dash-bg-card-hover)] disabled:opacity-60"
               style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-primary)' }}
             >
-              {portalLoading ? 'Opening…' : 'Manage billing'}
+              {portalLoading ? 'Opening…' : 'Manage or cancel subscription'}
             </button>
           )}
           <Link

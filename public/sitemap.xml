@@ -1,57 +1,124 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Marketing -->
   <url>
     <loc>https://tradeguardx.com/</loc>
-    <lastmod>2026-04-25</lastmod>
+    <lastmod>2026-05-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://tradeguardx.com/pricing</loc>
-    <lastmod>2026-04-25</lastmod>
+    <lastmod>2026-05-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://tradeguardx.com/signup</loc>
-    <lastmod>2026-04-25</lastmod>
+    <lastmod>2026-05-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://tradeguardx.com/support</loc>
-    <lastmod>2026-04-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://tradeguardx.com/beta-traders</loc>
-    <lastmod>2026-04-25</lastmod>
+    <loc>https://tradeguardx.com/partner-with-us</loc>
+    <lastmod>2026-05-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tradeguardx.com/login</loc>
-    <lastmod>2026-04-25</lastmod>
+    <loc>https://tradeguardx.com/beta-traders</loc>
+    <lastmod>2026-05-03</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://tradeguardx.com/roadmap</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tradeguardx.com/security</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Docs / Help -->
+  <url>
+    <loc>https://tradeguardx.com/help</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tradeguardx.com/help/getting-started</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://tradeguardx.com/help/pairing</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://tradeguardx.com/help/setting-your-first-rule</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://tradeguardx.com/help/common-issues</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://tradeguardx.com/help/account-questions</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Support -->
+  <url>
+    <loc>https://tradeguardx.com/support</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://tradeguardx.com/login</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Legal -->
+  <url>
     <loc>https://tradeguardx.com/privacy</loc>
-    <lastmod>2026-04-25</lastmod>
+    <lastmod>2026-05-03</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://tradeguardx.com/terms</loc>
-    <lastmod>2026-04-25</lastmod>
+    <lastmod>2026-05-03</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://tradeguardx.com/refund</loc>
-    <lastmod>2026-04-25</lastmod>
+    <lastmod>2026-05-03</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.35</priority>
+  </url>
+  <url>
+    <loc>https://tradeguardx.com/risk-disclosure</loc>
+    <lastmod>2026-05-03</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
   </url>
 </urlset>

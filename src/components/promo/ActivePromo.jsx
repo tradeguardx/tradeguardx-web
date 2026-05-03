@@ -1,14 +1,15 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getActivePromo, splitRemaining } from '../../lib/activePromo';
+import { getFoundingMemberConfig } from '../../lib/foundingMember';
 
 const SESSION_KEY = 'tgx_promo_dismissed_for';
 
 function CountdownDigit({ value }) {
-  const display = String(value).padStart(2, '0');
   return (
     <span className="inline-block min-w-[1.6em] text-center font-mono font-bold tabular-nums tracking-tight">
-      {display}
+      {String(value).padStart(2, '0')}
     </span>
   );
 }
@@ -35,9 +36,7 @@ function CopyCodeButton({ code }) {
       }}
       aria-label={`Copy code ${code}`}
     >
-      <span className="font-mono text-base font-bold tracking-[0.18em] text-white">
-        {code}
-      </span>
+      <span className="font-mono text-base font-bold tracking-[0.18em] text-white">{code}</span>
       <span className="text-white/80 transition-transform group-hover:scale-110">
         {copied ? (
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -63,43 +62,154 @@ function CopyCodeButton({ code }) {
   );
 }
 
+function CodePromoContent({ promo, now }) {
+  const remainingMs = promo.expiresAt - now;
+  const { days, hours, minutes, seconds } = splitRemaining(remainingMs);
+  const showDays = days > 0;
+  const headline = promo.discountPct ? `${promo.discountPct}% off all paid plans` : 'Limited-time offer';
+
+  return (
+    <div className="relative flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-6">
+      <div className="text-center sm:text-left">
+        <div className="flex items-center justify-center gap-2 sm:justify-start">
+          <motion.span
+            className="inline-block"
+            animate={{ scale: [1, 1.18, 1] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            aria-hidden
+          >
+            <svg className="h-4 w-4 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
+            </svg>
+          </motion.span>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/90">{promo.headline}</p>
+        </div>
+        <h2 className="mt-1 font-display text-xl font-bold leading-snug text-white sm:text-2xl">{headline}</h2>
+      </div>
+
+      <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex flex-col items-center gap-1 sm:items-start">
+          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">Use code</span>
+          <CopyCodeButton code={promo.code} />
+        </div>
+        <div className="hidden h-12 w-px sm:block" style={{ background: 'rgba(255,255,255,0.20)' }} aria-hidden />
+        <div className="flex flex-col items-center gap-1 sm:items-start">
+          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">Ends in</span>
+          <div
+            className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-lg text-white sm:text-xl"
+            style={{
+              background: 'rgba(0,0,0,0.28)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            {showDays && (
+              <>
+                <CountdownDigit value={days} />
+                <span className="text-xs font-medium opacity-70">d</span>
+              </>
+            )}
+            <CountdownDigit value={hours} />
+            <motion.span className="opacity-70" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }}>
+              :
+            </motion.span>
+            <CountdownDigit value={minutes} />
+            <motion.span className="opacity-70" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }}>
+              :
+            </motion.span>
+            <CountdownDigit value={seconds} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FoundingMemberContent({ cfg }) {
+  return (
+    <div className="relative flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-6">
+      <div className="text-center sm:text-left">
+        <div className="flex items-center justify-center gap-2 sm:justify-start">
+          <motion.span
+            className="inline-block"
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            aria-hidden
+          >
+            <svg className="h-4 w-4 text-yellow-300" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2l2.39 4.84L20 7.7l-3.86 3.76L17.07 17 12 14.27 6.93 17l.93-5.54L4 7.7l5.61-.86L12 2z" />
+            </svg>
+          </motion.span>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/90">
+            Launch promo · Founding {cfg.limit}
+          </p>
+        </div>
+        <h2 className="mt-1 font-display text-lg font-bold leading-snug text-white sm:text-xl">
+          First {cfg.limit} signups get {cfg.plan} <span className="text-yellow-200">free for {cfg.months} months</span>
+        </h2>
+      </div>
+
+      <Link
+        to="/signup"
+        className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[#07090f] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+      >
+        Claim your spot
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.4}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </Link>
+    </div>
+  );
+}
+
 /**
- * Eye-catching horizontal promo band: animated gradient, copy-to-clipboard
- * code pill, live countdown to a fixed expiration. Auto-hides when expired
- * or when user dismisses (per-session). Renders nothing when no active promo
- * is configured (`getActivePromo()` returns null).
+ * Top-of-viewport launch promo strip. Two modes:
+ *   1. Founding-member (preferred when launching) — flat message + signup CTA.
+ *      No countdown; the program ends when N signups hit, controlled server-side.
+ *   2. Discount code — coupon + live countdown for time-bounded promos.
+ *
+ * Founding-member takes priority when both env configs are present.
+ *
+ * Coordinates layout via CSS var `--tg-promo-h` (Navbar reads this) and
+ * `body.padding-top` (so page content doesn't slide under the strip). Cleans
+ * up both on dismiss/expiry/program-end.
  */
 export default function ActivePromo() {
-  const promo = useMemo(() => getActivePromo(), []);
+  const foundingCfg = useMemo(() => getFoundingMemberConfig(), []);
+  const codePromo = useMemo(() => getActivePromo(), []);
+  const mode = foundingCfg ? 'founding' : codePromo ? 'code' : null;
+
   const [now, setNow] = useState(() => Date.now());
   const [dismissed, setDismissed] = useState(false);
   const ref = useRef(null);
 
-  // Remember per-session dismiss keyed by code+expiresAt so a new promo isn't
-  // suppressed by the user dismissing an old one.
-  const dismissKey = promo ? `${promo.code}@${promo.expiresAt}` : null;
+  // Per-session dismiss key (so a new launch promo isn't suppressed by an old dismissal).
+  const dismissKey = foundingCfg
+    ? `founding-${foundingCfg.limit}-${foundingCfg.months}-${foundingCfg.plan}`
+    : codePromo
+      ? `code-${codePromo.code}@${codePromo.expiresAt}`
+      : null;
 
   useEffect(() => {
     if (!dismissKey) return;
     try {
-      if (sessionStorage.getItem(SESSION_KEY) === dismissKey) {
-        setDismissed(true);
-      }
+      if (sessionStorage.getItem(SESSION_KEY) === dismissKey) setDismissed(true);
     } catch {
       /* ignore */
     }
   }, [dismissKey]);
 
   useEffect(() => {
-    if (!promo) return;
+    if (mode !== 'code') return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [promo]);
+  }, [mode]);
 
-  // Publish the rendered band height as a CSS variable so the fixed navbar
-  // can offset its `top` by the promo height. Also pad the body so page
-  // content doesn't slide under the promo.
-  const visible = Boolean(promo) && !dismissed && (promo ? promo.expiresAt - now > 0 : false);
+  const codeExpired = mode === 'code' && codePromo.expiresAt - now <= 0;
+  const visible = Boolean(mode) && !dismissed && !codeExpired;
+
+  // Publish height as CSS var so the fixed Navbar can offset its `top`,
+  // and pad the body so page content doesn't slide under the strip.
   useLayoutEffect(() => {
     if (!visible || !ref.current) {
       document.documentElement.style.removeProperty('--tg-promo-h');
@@ -121,26 +231,16 @@ export default function ActivePromo() {
     };
   }, [visible]);
 
-  if (!promo || dismissed) return null;
-
-  const remainingMs = promo.expiresAt - now;
-  if (remainingMs <= 0) return null;
-
-  const { days, hours, minutes, seconds } = splitRemaining(remainingMs);
-  const showDays = days > 0;
+  if (!visible) return null;
 
   const handleDismiss = () => {
     try {
-      sessionStorage.setItem(SESSION_KEY, dismissKey);
+      if (dismissKey) sessionStorage.setItem(SESSION_KEY, dismissKey);
     } catch {
       /* ignore */
     }
     setDismissed(true);
   };
-
-  const headline = promo.discountPct
-    ? `${promo.discountPct}% off all paid plans`
-    : 'Limited-time offer';
 
   return (
     <AnimatePresence>
@@ -168,7 +268,7 @@ export default function ActivePromo() {
           aria-hidden
         />
 
-        {/* Darken for text contrast */}
+        {/* Darken overlay for text contrast */}
         <div
           className="absolute inset-0"
           style={{ background: 'linear-gradient(180deg, rgba(7,9,15,0.30) 0%, rgba(7,9,15,0.55) 100%)' }}
@@ -188,111 +288,39 @@ export default function ActivePromo() {
               background: 'rgba(255,255,255,0.45)',
               filter: 'blur(0.4px)',
             }}
-            animate={{
-              y: [-12, -24, -12],
-              opacity: [0, 0.7, 0],
-            }}
-            transition={{
-              duration: 3 + i * 0.4,
-              repeat: Infinity,
-              delay: i * 0.6,
-              ease: 'easeInOut',
-            }}
+            animate={{ y: [-12, -24, -12], opacity: [0, 0.7, 0] }}
+            transition={{ duration: 3 + i * 0.4, repeat: Infinity, delay: i * 0.6, ease: 'easeInOut' }}
             aria-hidden
           />
         ))}
 
-        <div className="relative mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-6">
-            {/* Headline */}
-            <div className="text-center sm:text-left">
-              <div className="flex items-center justify-center gap-2 sm:justify-start">
-                <motion.span
-                  className="inline-block"
-                  animate={{ scale: [1, 1.18, 1] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                  aria-hidden
-                >
-                  <svg className="h-4 w-4 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
-                  </svg>
-                </motion.span>
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/90">
-                  {promo.headline}
-                </p>
-              </div>
-              <h2 className="mt-1 font-display text-xl font-bold leading-snug text-white sm:text-2xl">
-                {headline}
-              </h2>
-            </div>
-
-            {/* Code + countdown */}
-            <div className="flex items-center gap-4 sm:gap-6">
-              <div className="flex flex-col items-center gap-1 sm:items-start">
-                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
-                  Use code
-                </span>
-                <CopyCodeButton code={promo.code} />
-              </div>
-
-              <div
-                className="hidden h-12 w-px sm:block"
-                style={{ background: 'rgba(255,255,255,0.20)' }}
-                aria-hidden
-              />
-
-              <div className="flex flex-col items-center gap-1 sm:items-start">
-                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
-                  Ends in
-                </span>
-                <div
-                  className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-lg text-white sm:text-xl"
-                  style={{
-                    background: 'rgba(0,0,0,0.28)',
-                    border: '1px solid rgba(255,255,255,0.18)',
-                    backdropFilter: 'blur(8px)',
-                  }}
-                >
-                  {showDays && (
-                    <>
-                      <CountdownDigit value={days} />
-                      <span className="text-xs font-medium opacity-70">d</span>
-                    </>
-                  )}
-                  <CountdownDigit value={hours} />
-                  <motion.span
-                    className="opacity-70"
-                    animate={{ opacity: [1, 0.3, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  >
-                    :
-                  </motion.span>
-                  <CountdownDigit value={minutes} />
-                  <motion.span
-                    className="opacity-70"
-                    animate={{ opacity: [1, 0.3, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  >
-                    :
-                  </motion.span>
-                  <CountdownDigit value={seconds} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Dismiss */}
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="absolute right-2 top-2 rounded-md p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white sm:right-4 sm:top-4"
-            aria-label="Dismiss promotion"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+        <div className="relative mx-auto max-w-7xl px-4 py-4 pr-12 sm:px-6 sm:py-5 sm:pr-16">
+          {mode === 'founding' && <FoundingMemberContent cfg={foundingCfg} />}
+          {mode === 'code' && <CodePromoContent promo={codePromo} now={now} />}
         </div>
+
+        {/* Dismiss — in-memory + per-session storage; reappears next session */}
+        <button
+          type="button"
+          onClick={handleDismiss}
+          className="absolute right-2 top-2 rounded-md p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white sm:right-4 sm:top-4"
+          aria-label="Dismiss promotion"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Auto-dismiss progress bar — only for code-promo mode (countdown-based) */}
+        {mode === 'code' && (
+          <motion.div
+            className="absolute inset-x-0 bottom-0 h-[2px] origin-left"
+            style={{ background: 'linear-gradient(to right, #00d4aa, #10b981, #00d4aa)' }}
+            initial={{ scaleX: 1 }}
+            animate={{ scaleX: 0 }}
+            transition={{ duration: Math.max(1, (codePromo.expiresAt - Date.now()) / 1000), ease: 'linear' }}
+          />
+        )}
       </motion.section>
     </AnimatePresence>
   );

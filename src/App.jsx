@@ -13,6 +13,11 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
 import PartnerApplyPage from './pages/PartnerApplyPage';
+import HelpPage from './pages/HelpPage';
+import SecurityPage from './pages/SecurityPage';
+import RoadmapPage from './pages/RoadmapPage';
+import RiskDisclosurePage from './pages/RiskDisclosurePage';
+import NotFoundPage from './pages/NotFoundPage';
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import InfluencerLayout from './components/influencer/InfluencerLayout';
 import InfluencerOverview from './pages/influencer/InfluencerOverview';
@@ -72,7 +77,15 @@ function App() {
                   <Route path="privacy" element={<PrivacyPolicyPage />} />
                   <Route path="terms" element={<TermsPage />} />
                   <Route path="refund" element={<RefundPolicyPage />} />
+                  <Route path="risk-disclosure" element={<RiskDisclosurePage />} />
                   <Route path="partner-with-us" element={<PartnerApplyPage />} />
+                  <Route path="help" element={<HelpPage />} />
+                  <Route path="help/:slug" element={<HelpPage />} />
+                  <Route path="security" element={<SecurityPage />} />
+                  <Route path="roadmap" element={<RoadmapPage />} />
+                  {/* Catch-all 404 inside Layout so the page keeps nav + footer.
+                      Replaces the previous redirect-to-home that produced soft-404s. */}
+                  <Route path="*" element={<NotFoundPage />} />
                 </Route>
                 <Route path="dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   <Route index element={<Navigate to="/dashboard/overview" replace />} />
@@ -97,7 +110,6 @@ function App() {
                   <Route path="commissions" element={<InfluencerCommissions />} />
                   <Route path="payouts" element={<InfluencerPayouts />} />
                 </Route>
-                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AuthProvider>
           </ToastProvider>

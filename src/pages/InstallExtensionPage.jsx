@@ -1,11 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { staggerContainer, staggerItem } from '../components/dashboard/dashboardMotion';
-
-// Direct Chrome Web Store listing URL.
-// TODO: replace with the exact slug/ID from your published listing once known.
-// Falls back to a search URL that always finds the published TradeGuardX listing.
-const CHROME_STORE_URL = 'https://chromewebstore.google.com/search/TradeGuardX';
+import { CHROME_STORE_URL } from '../lib/extension';
 
 const STEPS = [
   {

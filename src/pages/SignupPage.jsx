@@ -70,7 +70,8 @@ export default function SignupPage() {
           return;
         }
         toast.success('Account created', 'Your trading protection workspace is ready.');
-        navigate('/dashboard', { replace: true });
+        // welcome=1 triggers a one-shot celebration on first dashboard load.
+        navigate('/dashboard?welcome=1', { replace: true });
       }
     } catch (error) {
       toast.error('Signup failed', error?.message || 'Please verify your details and try again.');

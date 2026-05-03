@@ -47,6 +47,15 @@ const STATUS_BANNER = {
     border: 'rgba(251,191,36,0.30)',
     background: 'rgba(251,191,36,0.06)',
   },
+  expired: {
+    label: 'Free trial ended',
+    body: (subscribedLabel) =>
+      `Your free ${subscribedLabel} period has ended. Pick a plan to keep paid features — your account is on Free until then.`,
+    cta: 'Pick a plan',
+    color: '#fbbf24',
+    border: 'rgba(251,191,36,0.30)',
+    background: 'rgba(251,191,36,0.06)',
+  },
 };
 
 function SubscriptionStatusBanner({ status, subscribedLabel, onPortalOpen, portalLoading }) {
@@ -87,7 +96,14 @@ export default function AccountOverviewPage() {
   const navigate = useNavigate();
   const [portalLoading, setPortalLoading] = useState(false);
 
+  const status = user?.subscriptionStatus ?? 'active';
+
   const openPortal = useCallback(async () => {
+    // Expired comp users have no Dodo subscription — go straight to pricing.
+    if (status === 'expired') {
+      navigate('/pricing');
+      return;
+    }
     if (!session?.access_token) return;
     setPortalLoading(true);
     try {
@@ -97,19 +113,19 @@ export default function AccountOverviewPage() {
       window.location.href = url;
     } catch (err) {
       const code = err?.details?.error?.code;
-      if (code === 'NO_RECOVERABLE_SUBSCRIPTION') {
-        toast.info('Subscription needs to be renewed', 'Your previous subscription expired. Pick a plan to subscribe again.');
+      if (
+        code === 'NO_RECOVERABLE_SUBSCRIPTION' ||
+        code === 'NO_SUBSCRIPTION' ||
+        code === 'NO_CUSTOMER_RECORD'
+      ) {
+        toast.info('Subscription needs to be renewed', 'Pick a plan to continue.');
         navigate('/pricing');
         return;
       }
-      if (code === 'NO_SUBSCRIPTION' || code === 'NO_CUSTOMER_RECORD') {
-        toast.info('No subscription on file', 'Pick a plan to start your subscription first.');
-      } else {
-        toast.error('Could not start payment update', err?.message || 'Please try again.');
-      }
+      toast.error('Could not start payment update', err?.message || 'Please try again.');
       setPortalLoading(false);
     }
-  }, [session, toast, navigate]);
+  }, [session, toast, navigate, status]);
 
   const cap = maxTradingAccountsForPlan(user?.plan);
   const accountCount = accountsLoading ? null : accounts.length;
@@ -154,9 +170,9 @@ export default function AccountOverviewPage() {
     {
       title: 'Plan & billing',
       body: subscriptionLoading ? 'Loading…' : (user?.planLabel || 'Free'),
-      sub: 'Subscription and payment method',
+      sub: 'Update payment, view invoices, or cancel anytime',
       to: '/dashboard/account/billing',
-      cta: 'Manage billing',
+      cta: 'Manage or cancel',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -197,7 +213,6 @@ export default function AccountOverviewPage() {
     [capLabel, loadError, subscriptionLoading, user?.plan, user?.planLabel],
   );
 
-  const status = user?.subscriptionStatus ?? 'active';
   const isActive = status === 'active';
   const subscribedLabel = user?.subscribedPlanLabel || 'Free';
 

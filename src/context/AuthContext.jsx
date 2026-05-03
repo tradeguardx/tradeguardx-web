@@ -40,6 +40,10 @@ export function AuthProvider({ children }) {
       subscribedPlanLabel: 'Free',
       subscriptionStatus: 'active',
       currentPeriodEnd: null,
+      // 'free' | 'admin' | 'payment'. Lets billing/account pages distinguish
+      // founding-member comps (admin) from real Dodo subscriptions (payment) —
+      // critical because admin comps have no Dodo customer to manage/cancel.
+      subscriptionSource: 'free',
     };
   }, []);
 
@@ -49,8 +53,19 @@ export function AuthProvider({ children }) {
       if (!base) return null;
 
       const status = subData?.subscription?.status ?? 'active';
-      const effectivelyActive = status === 'active';
       const periodEnd = subData?.subscription?.currentPeriodEnd ?? null;
+      const source = subData?.subscription?.source ?? 'free';
+
+      // Effective access requires BOTH active status AND a non-expired period.
+      // The period check matters for admin-source comps (free Pro grants) —
+      // the backend leaves status='active' indefinitely on those, so without
+      // this lazy expiry check a 3-month comp would silently last forever.
+      const periodEndMs = periodEnd ? Date.parse(periodEnd) : null;
+      const periodExpired = periodEndMs != null && Number.isFinite(periodEndMs) && periodEndMs <= Date.now();
+      const effectivelyActive = status === 'active' && !periodExpired;
+      // Surface comp expiry as 'expired' so banners can show "Your free trial
+      // ended" rather than "Payment past due" — comp users never had a card.
+      const exposedStatus = status === 'active' && periodExpired ? 'expired' : status;
 
       if (!subData?.plan) {
         return {
@@ -59,8 +74,9 @@ export function AuthProvider({ children }) {
           planLabel: 'Free',
           subscribedPlanSlug: 'free',
           subscribedPlanLabel: 'Free',
-          subscriptionStatus: status,
+          subscriptionStatus: exposedStatus,
           currentPeriodEnd: periodEnd,
+          subscriptionSource: source,
           limits: effectivelyActive ? (subData?.limits ?? null) : null,
         };
       }
@@ -78,8 +94,9 @@ export function AuthProvider({ children }) {
         limits: effectivelyActive ? (subData.limits ?? subData.plan?.features ?? null) : null,
         subscribedPlanSlug: slug,
         subscribedPlanLabel: planName,
-        subscriptionStatus: status,
+        subscriptionStatus: exposedStatus,
         currentPeriodEnd: periodEnd,
+        subscriptionSource: source,
       };
     },
     [toAppUser]

@@ -355,160 +355,36 @@ export default function PricingPage() {
         <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-6 pt-28 pb-16">
+      <div className="relative mx-auto max-w-7xl px-6 pt-24 pb-16">
 
-        {/* ── Hero (pain-led) ──────────────────────────────────────────────── */}
-        <motion.div
-          className="max-w-6xl mx-auto mb-16"
-          initial={{ opacity: 0, y: 24 }}
+        {/* ── Concise pricing hero ─────────────────────────────────────────── */}
+        <motion.header
+          className="max-w-3xl mx-auto text-center mb-10"
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div className="text-center mb-12">
-            {/* Eyebrow pill — red, signals "bad news first" */}
-            <div
-              className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 mb-7"
-              style={{ borderColor: 'rgba(244,63,94,0.22)', backgroundColor: 'rgba(244,63,94,0.06)' }}
-            >
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: '#f43f5e', boxShadow: '0 0 6px rgba(244,63,94,0.8)' }} />
-              <span className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color: '#fb7185' }}>The hidden cost</span>
-            </div>
-
-            <h1 className="font-display text-5xl md:text-6xl lg:text-[4.25rem] font-bold tracking-tight text-white mb-6 leading-[1.05]">
-              Most traders don't lose to the market.<br />
-              <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)' }}>
-                They lose to themselves.
-              </span>
-            </h1>
-
-            <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-3">
-              It's 2 AM. The chart is red. You take one more trade.
-              By morning, the account is gone — and you're rehearsing how
-              you'll explain it to someone you love.
-            </p>
-          </div>
-
-          {/* Pain stat grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-            {[
-              {
-                stat: '80%',
-                label: 'lose money in year one',
-                detail: 'Not because they pick bad trades. Because they can\'t stop themselves from taking ONE MORE when they\'re already down for the day.',
-                tone: 'rose',
-              },
-              {
-                stat: '$487',
-                label: 'average prop fee — gone',
-                detail: 'Three months of saving. One bad Friday. The firm doesn\'t refund the fee. The account is just… done.',
-                tone: 'orange',
-              },
-              {
-                stat: '3.4×',
-                label: 'worse losses after a loss',
-                detail: 'You\'ll fight the urge to "make it back." You\'ll lose. Revenge trading is mathematically real — bigger, sloppier positions when chasing a loss.',
-                tone: 'amber',
-              },
-              {
-                stat: '14 days',
-                label: 'of work, undone in 4 hours',
-                detail: 'Two weeks of patient, disciplined trading. Erased in a single emotional session. The shame is worse than the loss.',
-                tone: 'rose',
-              },
-            ].map((p, i) => {
-              const colors = {
-                rose: { glow: 'rgba(244,63,94,0.10)', text: '#fb7185', bgFrom: 'rgba(244,63,94,0.04)' },
-                orange: { glow: 'rgba(251,146,60,0.10)', text: '#fb923c', bgFrom: 'rgba(251,146,60,0.04)' },
-                amber: { glow: 'rgba(251,191,36,0.10)', text: '#fbbf24', bgFrom: 'rgba(251,191,36,0.04)' },
-              }[p.tone];
-              return (
-                <motion.div
-                  key={p.label}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.05 * i, duration: 0.4 }}
-                  whileHover={{ y: -3, transition: { duration: 0.18 } }}
-                  className="relative rounded-2xl p-5 overflow-hidden"
-                  style={{
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    background: `linear-gradient(180deg, ${colors.bgFrom}, rgba(255,255,255,0.01))`,
-                  }}
-                >
-                  <div
-                    className="pointer-events-none absolute -inset-8 blur-3xl opacity-60"
-                    style={{ background: `radial-gradient(ellipse at 50% 0%, ${colors.glow}, transparent 65%)` }}
-                    aria-hidden
-                  />
-                  <div className="relative">
-                    <p className="font-display text-4xl font-black mb-2 tracking-tight" style={{ color: colors.text }}>
-                      {p.stat}
-                    </p>
-                    <p className="text-sm font-semibold text-white mb-2 leading-snug">{p.label}</p>
-                    <p className="text-xs leading-relaxed" style={{ color: '#64748b' }}>{p.detail}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Bridge — pain → solution */}
-          <div
-            className="relative rounded-2xl px-6 py-6 md:px-10 md:py-8 overflow-hidden"
-            style={{
-              border: '1px solid rgba(0,212,170,0.18)',
-              background:
-                'linear-gradient(135deg, rgba(0,212,170,0.06) 0%, rgba(0,212,170,0.015) 50%, rgba(0,212,170,0.06) 100%)',
-            }}
-          >
-            <div
-              className="pointer-events-none absolute -inset-12 blur-3xl"
-              style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(0,212,170,0.10), transparent 65%)' }}
-              aria-hidden
-            />
-            <div className="relative flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-8">
-              <div
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-                style={{ backgroundColor: 'rgba(0,212,170,0.14)', color: '#00d4aa' }}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <p className="font-display text-lg md:text-xl font-bold text-white mb-1.5 leading-snug">
-                  You don't need more willpower. You need a system that
-                  <span style={{ color: '#00d4aa' }}> won't let you click Buy</span> when you shouldn't.
-                </p>
-                <p className="text-sm leading-relaxed" style={{ color: '#94a3b8' }}>
-                  TradeGuardX runs in your broker tab. It enforces YOUR rules — daily loss
-                  limit, max drawdown, risk per trade — at the click. Not a popup. Not a warning.
-                  The trade just doesn't go through. Discipline on autopilot,
-                  for less than the cost of a single bad trade.
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ── Pricing eyebrow + trust strip ────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.4 }}
-          className="text-center mb-12"
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           <div
             className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 mb-5"
             style={{ borderColor: 'rgba(0,212,170,0.22)', backgroundColor: 'rgba(0,212,170,0.07)' }}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-accent" style={{ boxShadow: '0 0 6px rgba(0,212,170,0.8)' }} />
-            <span className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color: '#00d4aa' }}>Pick your protection</span>
+            <span className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color: '#00d4aa' }}>
+              Pricing
+            </span>
           </div>
-          <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-7 leading-relaxed">
-            Start free with core protection. Upgrade for deeper AI insights, unlimited history, and stronger enforcement.
+
+          <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight text-white mb-4 leading-[1.1]">
+            Simple pricing.{' '}
+            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #00d4aa 0%, #10b981 100%)' }}>
+              Cancel anytime.
+            </span>
+          </h1>
+
+          <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
+            Start free. Upgrade only when you need more rules and longer history.
           </p>
+
           <div className="flex items-center justify-center gap-2 flex-wrap">
             {TRUST_BADGES.map((b) => (
               <span
@@ -521,9 +397,10 @@ export default function PricingPage() {
               </span>
             ))}
           </div>
+
           {loadError && <p className="mt-6 text-amber-400 text-sm">{loadError}</p>}
           {isLoading && (
-            <div className="mt-8 flex items-center justify-center gap-2 text-slate-600 text-sm">
+            <div className="mt-7 flex items-center justify-center gap-2 text-slate-600 text-sm">
               <div className="h-3.5 w-3.5 rounded-full border-2 border-t-accent/80 border-accent/20 animate-spin" />
               Loading plans…
             </div>
@@ -533,7 +410,7 @@ export default function PricingPage() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="mt-7 mx-auto inline-flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm"
+              className="mt-6 mx-auto inline-flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm"
               style={{
                 borderColor: 'rgba(0,212,170,0.30)',
                 backgroundColor: 'rgba(0,212,170,0.08)',
@@ -548,7 +425,7 @@ export default function PricingPage() {
               </span>
             </motion.div>
           )}
-        </motion.div>
+        </motion.header>
 
         {/* ── Plan cards ───────────────────────────────────────────────────── */}
         {plans.length > 0 && (

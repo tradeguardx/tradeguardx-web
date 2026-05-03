@@ -16,9 +16,9 @@ export default function StoryLanding() {
     <>
       {/* Fixed Sentry-style scatter background — sits behind every section.
           pointer-events: none + z-index: -1 so it never interferes.
-          Children: blinking stars (CSS pulse) + shooting stars (diagonal
-          streak that loops). All decorative — animations are disabled when
-          prefers-reduced-motion is set. */}
+          Static twinkling stars only — shooting stars removed per user
+          preference. Animations are disabled when prefers-reduced-motion
+          is set. */}
       <div className="landing-bg" aria-hidden>
         {/* === Static "distant" stars (small, faint) === */}
         <span className="star star-sm" style={{ top: '17%', left: '88%' }} />
@@ -39,11 +39,6 @@ export default function StoryLanding() {
         {/* === Accent (brand green) — just one or two === */}
         <span className="star star-md star-accent star-blink-slow" style={{ top: '48%', left: '90%', animationDelay: '1.0s' }} />
         <span className="star star-lg star-accent star-blink-slow" style={{ top: '66%', left: '34%', animationDelay: '0.8s' }} />
-
-        {/* === Shooting stars — keep these, the user liked them === */}
-        <span className="shooting-star" style={{ top: '12%', left: '5%',  animationDelay: '0s',   animationDuration: '8s' }} />
-        <span className="shooting-star" style={{ top: '46%', left: '8%',  animationDelay: '4s',   animationDuration: '9s' }} />
-        <span className="shooting-star" style={{ top: '72%', left: '12%', animationDelay: '7.5s', animationDuration: '8.5s' }} />
       </div>
 
       {/* 1. Hero — what is TradeGuardX (now also includes the rule shield

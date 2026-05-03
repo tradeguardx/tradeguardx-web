@@ -6,6 +6,7 @@ import { TradingAccountProvider } from '../../context/TradingAccountContext';
 import { DashboardThemeProvider, useDashboardTheme } from '../../context/DashboardThemeContext';
 import DashboardSidebar from './DashboardSidebar';
 import AccountSelector from './AccountSelector';
+import WelcomeCelebration from './WelcomeCelebration';
 
 const ROUTE_LABELS = {
   '/dashboard/overview': 'Overview',
@@ -250,6 +251,9 @@ function DashboardInner() {
           </div>
         </main>
       </div>
+
+      {/* One-shot celebration when ?welcome=1 is in the URL (set by SignupPage). */}
+      <WelcomeCelebration />
     </div>
   );
 }

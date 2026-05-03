@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import AnimatedChartBackground from './AnimatedChartBackground';
 import StoryRuleShield from './StoryRuleShield';
+import { FoundingMemberPill } from '../../promo/FoundingMember';
+import { CHROME_STORE_URL } from '../../../lib/extension';
 
 export default function StoryHero() {
   const [mouse, setMouse] = useState({ x: 50, y: 50 });
@@ -120,11 +122,16 @@ export default function StoryHero() {
           ))}
         </motion.div>
 
+        {/* Founding-100 launch pill (hidden when env vars not set) */}
+        <div className="mt-8 flex justify-center">
+          <FoundingMemberPill />
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.24 }}
-          className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
+          className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row"
         >
           <Link
             to="/pricing"
@@ -140,6 +147,28 @@ export default function StoryHero() {
             className="inline-flex items-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-8 py-4 text-lg font-medium text-slate-200 backdrop-blur-sm transition hover:border-accent/25 hover:bg-white/[0.06]"
           >
             See how it works
+          </a>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 }}
+          className="mt-6 flex items-center justify-center"
+        >
+          <a
+            href={CHROME_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 transition-colors hover:text-accent"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 48 48" fill="currentColor" aria-hidden>
+              <path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 36c-8.84 0-16-7.16-16-16 0-2.5.58-4.86 1.6-6.97L17.62 31a8.005 8.005 0 0 0 7.43 5h.01l-3.6 6.94A15.96 15.96 0 0 1 24 40zm0-22c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm15.62 16.97L31.6 21h-.01a8.005 8.005 0 0 0-7.43-5h-.01l3.6-6.94c5.48 1.36 9.84 5.72 11.2 11.2.58 2.32.58 4.41-.33 6.71z"/>
+            </svg>
+            Already trade? Install the Chrome extension
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
           </a>
         </motion.div>
 

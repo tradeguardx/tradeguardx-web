@@ -18,6 +18,7 @@ export default function Navbar() {
     { label: 'Features', to: { pathname: '/', hash: 'features' } },
     { label: 'How it Works', to: { pathname: '/', hash: 'how-it-works' } },
     { label: 'Pricing', to: '/pricing' },
+    { label: 'Docs', to: '/help' },
   ];
 
   return (
