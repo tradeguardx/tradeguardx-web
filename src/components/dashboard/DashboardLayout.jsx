@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -107,6 +107,15 @@ function DashboardInner() {
   const { theme, isDark } = useDashboardTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pageLabel = usePageLabel();
+  const { pathname } = useLocation();
+  const mainRef = useRef(null);
+
+  // The dashboard's <main> element is the actual scroll container (window
+  // doesn't scroll because the layout is min-h-screen overflow-hidden).
+  // Global ScrollToTop only scrolls window — reset main on tab change here.
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, left: 0 });
+  }, [pathname]);
 
   return (
     <div
@@ -240,7 +249,7 @@ function DashboardInner() {
         </header>
 
         {/* Content */}
-        <main className="relative flex-1 overflow-auto">
+        <main ref={mainRef} className="relative flex-1 overflow-auto">
           <div className="dash-content-grid" aria-hidden />
           <div
             className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-[min(28vh,240px)] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(0,212,170,0.04),transparent)]"
