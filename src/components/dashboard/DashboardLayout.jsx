@@ -113,8 +113,14 @@ function DashboardInner() {
   // The dashboard's <main> element is the actual scroll container (window
   // doesn't scroll because the layout is min-h-screen overflow-hidden).
   // Global ScrollToTop only scrolls window — reset main on tab change here.
+  // We rAF the scroll: in production, useEffect fires before the new route's
+  // content has painted, so scrolling immediately resets an empty container
+  // and the layout settles wrong. rAF defers to after the next paint.
   useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, left: 0 });
+    const id = requestAnimationFrame(() => {
+      mainRef.current?.scrollTo({ top: 0, left: 0 });
+    });
+    return () => cancelAnimationFrame(id);
   }, [pathname]);
 
   return (
