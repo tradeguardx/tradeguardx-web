@@ -110,6 +110,17 @@ function DashboardInner() {
   const { pathname } = useLocation();
   const mainRef = useRef(null);
 
+  // Clear any inline body padding inherited from the prerendered home page
+  // HTML (Vercel serves dist/index.html as the SPA fallback for /dashboard,
+  // and that HTML may have body.padding-top set by ActivePromo at prerender
+  // time). Without this, OAuth-arrived dashboard sessions get pushed down by
+  // ~89px of phantom padding because ActivePromo never mounts on /dashboard
+  // routes to run its own cleanup.
+  useEffect(() => {
+    document.body.style.paddingTop = '';
+    document.documentElement.style.removeProperty('--tg-promo-h');
+  }, []);
+
   // The dashboard's <main> element is the actual scroll container (window
   // doesn't scroll because the layout is min-h-screen overflow-hidden).
   // Global ScrollToTop only scrolls window — reset main on tab change here.
