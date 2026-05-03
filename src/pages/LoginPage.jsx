@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSEO } from '../hooks/useSEO';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -13,11 +13,17 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [focused, setFocused] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, session } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
+
+  useEffect(() => {
+    if (session?.access_token) {
+      navigate(from, { replace: true });
+    }
+  }, [session?.access_token, from, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
