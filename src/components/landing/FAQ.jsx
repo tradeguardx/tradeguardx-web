@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const faqs = [
+export const faqs = [
   {
     q: 'How does TradeGuardX work without API keys?',
     a: 'TradeGuardX is a browser extension that runs directly inside your trading platform. It reads your open positions from the platform UI — no API keys, no broker API connection, and no special account permissions from your broker.',

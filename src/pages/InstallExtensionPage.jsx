@@ -46,7 +46,7 @@ const STEPS = [
   {
     number: 4,
     title: 'Open your broker — rules enforce automatically',
-    description: 'Visit your supported broker (Exness, Delta Exchange, The Funded Room). The extension activates instantly.',
+    description: 'Visit your supported broker (Exness, The Funded Room). The extension activates instantly.',
     detail: 'Rule violations get blocked at the click — before the trade goes through. No willpower required.',
     gradient: 'from-amber-500/20 to-orange-500/10',
     iconColor: 'text-amber-400',

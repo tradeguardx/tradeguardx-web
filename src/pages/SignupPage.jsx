@@ -86,7 +86,7 @@ export default function SignupPage() {
       if (plan !== 'free') {
         setPendingCheckoutPlan(plan);
       }
-      await loginWithGoogle(plan !== 'free' ? '/pricing' : '/dashboard');
+      await loginWithGoogle(plan !== 'free' ? '/pricing' : '/dashboard?welcome=1');
       toast.info(
         'Redirecting to Google',
         plan !== 'free' ? 'After Google, you will continue to checkout on Pricing.' : 'Complete sign-up and you will return to the dashboard.',

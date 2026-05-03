@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
@@ -38,24 +37,12 @@ import PairingPage from './pages/PairingPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ScrollToTop from './components/common/ScrollToTop';
 import ReferralCapture from './components/common/ReferralCapture';
-import AppLoader from './components/common/AppLoader';
 import CommandMenu from './components/common/CommandMenu';
 import { ToastProvider } from './components/common/ToastProvider';
 import AppErrorBoundary from './components/common/AppErrorBoundary';
 import VercelRouteAnalytics from './components/common/VercelRouteAnalytics';
 
 function App() {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (loading) {
-    return <AppLoader />;
-  }
-
   return (
     <AppErrorBoundary>
         <BrowserRouter>

@@ -64,7 +64,10 @@ export default function StoryHero() {
             </span>
             Monitoring your trade
           </span>
-          <span className="font-mono text-xs text-slate-500 tabular-nums">
+          <span className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-500 tabular-nums">
+            <span className="rounded-sm border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-slate-400">
+              Demo
+            </span>
             Live P&amp;L{' '}
             <motion.span
               key={pnl}
@@ -81,11 +84,11 @@ export default function StoryHero() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.06 }}
-          className="font-display text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl"
+          className="font-display text-5xl font-bold tracking-tight sm:text-6xl md:text-6xl lg:text-7xl"
         >
-          <span className="gradient-text">Trade Smarter.</span>
+          <span className="gradient-text">Pass your prop eval.</span>
           <br />
-          <span className="gradient-text-accent">Stay Protected.</span>
+          <span className="gradient-text-accent">Don&apos;t fail it on a bad day.</span>
         </motion.h1>
 
         <motion.p
@@ -94,9 +97,9 @@ export default function StoryHero() {
           transition={{ duration: 0.5, delay: 0.12 }}
           className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 md:text-xl"
         >
-          A real-time rule engine that enforces your trading plan inside the browser —
-          combined with an AI-powered journal that identifies the exact behavior patterns
-          costing you money.
+          The browser extension that enforces your prop firm&apos;s rules in real time —
+          daily loss, drawdown, hedging, lot size. We block the violation before it
+          triggers a reset.
         </motion.p>
 
         {/* Capability pills */}

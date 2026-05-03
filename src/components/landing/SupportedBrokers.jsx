@@ -1,38 +1,117 @@
 import { motion } from 'framer-motion';
 
-const liveBrokers = [
+// Live now — actively integrated and enforced in production today.
+const liveItems = [
   {
     name: 'Exness',
+    kind: 'broker',
     logo: '/brokers/exness.svg',
     type: 'Forex · CFD',
     detail: 'Full rule enforcement on Exness WebTrader',
   },
   {
-    name: 'Delta Exchange',
-    logo: '/brokers/delta-exchange.svg',
-    type: 'Crypto Derivatives',
-    detail: 'Rule engine + journal live on Delta Exchange',
-  },
-];
-
-const fundedAccounts = [
-  {
     name: 'The Funded Room',
+    kind: 'funded',
     initials: 'TFR',
-    color: 'from-blue-500/20 to-indigo-500/10 border-blue-500/25',
-    textColor: 'text-blue-300',
+    accent: 'from-blue-500/20 to-indigo-500/10 border-blue-500/25',
+    accentText: 'text-blue-300',
     type: 'Funded Prop Firm',
     detail: 'Daily loss, drawdown & hedging rules enforced',
   },
+];
+
+// Coming soon — integrations in active development, going live next.
+const comingSoonItems = [
   {
-    name: 'Funded Pips',
+    name: 'FundedPips',
+    kind: 'funded',
     initials: 'FP',
-    color: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/25',
-    textColor: 'text-emerald-300',
+    accent: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/25',
+    accentText: 'text-emerald-300',
     type: 'Funded Prop Firm',
-    detail: 'Prop firm rules enforced automatically in-browser',
+    detail: 'Prop firm rules — integration in progress',
+  },
+  {
+    name: 'The Goat Traders',
+    kind: 'funded',
+    initials: 'GT',
+    accent: 'from-amber-500/20 to-orange-500/10 border-amber-500/25',
+    accentText: 'text-amber-300',
+    type: 'Funded Prop Firm',
+    detail: 'Prop firm rules — integration in progress',
+  },
+  {
+    name: 'Bybit',
+    kind: 'broker',
+    initials: 'BY',
+    accent: 'from-yellow-500/20 to-amber-500/10 border-yellow-500/25',
+    accentText: 'text-yellow-300',
+    type: 'Crypto Derivatives',
+    detail: 'Spot + perpetuals — coming soon',
+  },
+  {
+    name: 'Delta Exchange',
+    kind: 'broker',
+    logo: '/brokers/delta-exchange.svg',
+    type: 'Crypto Derivatives',
+    detail: 'Crypto derivatives rule engine — coming soon',
   },
 ];
+
+function ItemCard({ item, status, index }) {
+  const isLive = status === 'live';
+  const isFunded = item.kind === 'funded';
+
+  // Cool gradient styling for funded firms; default warm for brokers (matches
+  // the violet/teal split the page used previously).
+  const cardClass = isFunded ? 'gradient-card gradient-card-cool' : 'gradient-card';
+  const muted = !isLive ? 'opacity-80' : '';
+
+  const badgeClass = isLive
+    ? isFunded
+      ? 'border-violet-500/25 bg-violet-500/10 text-violet-400'
+      : 'border-accent/20 bg-accent/10 text-accent'
+    : 'border-slate-500/25 bg-slate-500/10 text-slate-400';
+  const badgeLabel = isLive ? (isFunded ? 'FUNDED' : 'LIVE') : 'SOON';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.06 }}
+      className={`${cardClass} ${muted} group flex items-center gap-5 p-5 backdrop-blur-sm`}
+    >
+      {item.logo ? (
+        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] p-3">
+          <img
+            src={item.logo}
+            alt={item.name}
+            className="h-full w-full object-contain brightness-[0.85] group-hover:brightness-100 transition"
+          />
+        </div>
+      ) : (
+        <div
+          className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border bg-gradient-to-br ${item.accent}`}
+        >
+          <span className={`font-display text-lg font-black ${item.accentText}`}>
+            {item.initials}
+          </span>
+        </div>
+      )}
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="font-display text-base font-bold text-white">{item.name}</p>
+          <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-bold ${badgeClass}`}>
+            {badgeLabel}
+          </span>
+        </div>
+        <p className="mt-0.5 text-xs font-medium text-slate-500">{item.type}</p>
+        <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{item.detail}</p>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function SupportedBrokers() {
   return (
@@ -59,7 +138,7 @@ export default function SupportedBrokers() {
           </p>
         </motion.div>
 
-        {/* Live brokers */}
+        {/* Live now */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -76,38 +155,13 @@ export default function SupportedBrokers() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {liveBrokers.map((broker, i) => (
-              <motion.div
-                key={broker.name}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className="gradient-card group flex items-center gap-5 p-5 backdrop-blur-sm"
-              >
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] p-3">
-                  <img
-                    src={broker.logo}
-                    alt={broker.name}
-                    className="h-full w-full object-contain brightness-[0.85] group-hover:brightness-100 transition"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-display text-base font-bold text-white">{broker.name}</p>
-                    <span className="rounded-md border border-accent/20 bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold text-accent">
-                      LIVE
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs font-medium text-slate-500">{broker.type}</p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{broker.detail}</p>
-                </div>
-              </motion.div>
+            {liveItems.map((item, i) => (
+              <ItemCard key={item.name} item={item} status="live" index={i} />
             ))}
           </div>
         </motion.div>
 
-        {/* Funded account programs */}
+        {/* Coming soon */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -115,41 +169,16 @@ export default function SupportedBrokers() {
           className="mb-12"
         >
           <div className="mb-5 flex items-center gap-3">
-            <span className="h-2 w-2 rounded-full bg-violet-400" />
-            <p className="text-xs font-bold uppercase tracking-widest text-violet-400">
-              Funded account programs
+            <span className="h-2 w-2 rounded-full bg-slate-400" />
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+              Coming soon
             </p>
             <span className="h-px flex-1 bg-white/[0.06]" />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {fundedAccounts.map((firm, i) => (
-              <motion.div
-                key={firm.name}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className="gradient-card gradient-card-cool group flex items-center gap-5 p-5 backdrop-blur-sm"
-              >
-                <div
-                  className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border bg-gradient-to-br ${firm.color}`}
-                >
-                  <span className={`font-display text-lg font-black ${firm.textColor}`}>
-                    {firm.initials}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-display text-base font-bold text-white">{firm.name}</p>
-                    <span className="rounded-md border border-violet-500/25 bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-bold text-violet-400">
-                      FUNDED
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs font-medium text-slate-500">{firm.type}</p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{firm.detail}</p>
-                </div>
-              </motion.div>
+            {comingSoonItems.map((item, i) => (
+              <ItemCard key={item.name} item={item} status="soon" index={i} />
             ))}
           </div>
         </motion.div>

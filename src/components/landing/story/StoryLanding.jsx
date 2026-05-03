@@ -2,8 +2,8 @@ import StatsStrip from '../StatsStrip';
 import HowItWorksSection from '../HowItWorksSection';
 import CostComparisonSection from '../CostComparisonSection';
 import CompetitorComparisonSection from '../CompetitorComparisonSection';
-import TestimonialsSection from '../TestimonialsSection';
 import SupportedBrokers from '../SupportedBrokers';
+import PropFirmBeat from '../PropFirmBeat';
 import FAQ from '../FAQ';
 import StoryHero from './StoryHero';
 import StoryAIJournal from './StoryAIJournal';
@@ -45,7 +45,12 @@ export default function StoryLanding() {
               animation immediately below the headline copy) */}
       <StoryHero />
 
-      {/* 2. Feature strip — rule engine · AI journal · any broker · free */}
+      {/* 2. Prop-firm wedge beat — surfaces the funded-account audience
+              (TFR live, FundedPips/Goat Traders soon) and the ~$300 reset
+              vs $25/mo Pro math right under the hero. */}
+      <PropFirmBeat />
+
+      {/* 3. Feature strip — rule engine · AI journal · any broker · free */}
       <StatsStrip />
 
       {/* 3. How it works — 3-step setup */}
@@ -73,10 +78,6 @@ export default function StoryLanding() {
       {/* 8. Trade replay — journal in action */}
       <div className="section-gap" />
       <StoryReplayBeat />
-
-      {/* 9. Testimonials — social proof */}
-      <div className="section-gap" />
-      <TestimonialsSection />
 
       {/* 10. Competitor comparison — why TGX vs other tools */}
       <div className="section-gap" />
