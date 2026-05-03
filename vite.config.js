@@ -5,8 +5,7 @@ import prerender from '@prerenderer/rollup-plugin';
 // Public, statically-renderable routes. Auth-gated routes (`/dashboard`,
 // `/influencer`) are deliberately excluded — Puppeteer would land on the
 // login redirect and snapshot that, which is worse than letting the SPA
-// render normally on first visit. Dynamic routes like `/help/:slug` would
-// need an explicit slug enumeration; skipping for now.
+// render normally on first visit. Help slug pages enumerated explicitly.
 const PRERENDER_ROUTES = [
   '/',
   '/pricing',
@@ -29,27 +28,47 @@ const PRERENDER_ROUTES = [
   '/roadmap',
 ];
 
-export default defineConfig({
-  plugins: [
-    react(),
-    prerender({
-      routes: PRERENDER_ROUTES,
-      renderer: '@prerenderer/renderer-puppeteer',
-      rendererOptions: {
-        // App.jsx has an artificial 1.2s loader timeout before BrowserRouter
-        // mounts. Wait long enough for that to clear plus initial paint.
-        renderAfterTime: 2500,
-        maxConcurrentRoutes: 4,
-        headless: true,
-      },
-      postProcess(rendered) {
-        // Strip noisy script/style attribute mismatches that cause hydration
-        // warnings if we ever switch to hydrateRoot. Currently we use
-        // createRoot so this is defensive.
-        rendered.html = rendered.html
-          .replace(/<script (?:type="module" )?crossorigin="" /g, '<script type="module" crossorigin ');
-        return rendered;
-      },
-    }),
-  ],
+// Vercel's build environment (Amazon Linux 2023) doesn't ship the system
+// libs Puppeteer's bundled Chromium needs (libnspr4, libnss3, libdrm, etc.).
+// On Vercel we swap in @sparticuz/chromium, which bundles a serverless-
+// friendly Chromium binary that doesn't need those system deps. Locally we
+// keep the default (Puppeteer downloads its own Chromium via npm install).
+async function getLaunchOptions() {
+  if (!process.env.VERCEL) return undefined;
+  const { default: chromium } = await import('@sparticuz/chromium');
+  return {
+    executablePath: await chromium.executablePath(),
+    args: chromium.args,
+    headless: true,
+  };
+}
+
+export default defineConfig(async () => {
+  const launchOptions = await getLaunchOptions();
+
+  return {
+    plugins: [
+      react(),
+      prerender({
+        routes: PRERENDER_ROUTES,
+        renderer: '@prerenderer/renderer-puppeteer',
+        rendererOptions: {
+          renderAfterTime: 2500,
+          maxConcurrentRoutes: 4,
+          headless: true,
+          ...(launchOptions ? { launchOptions } : {}),
+        },
+        postProcess(rendered) {
+          // Strip noisy script attribute mismatches that would cause
+          // hydration warnings if we ever switch to hydrateRoot. Currently
+          // we use createRoot so this is defensive.
+          rendered.html = rendered.html.replace(
+            /<script (?:type="module" )?crossorigin="" /g,
+            '<script type="module" crossorigin '
+          );
+          return rendered;
+        },
+      }),
+    ],
+  };
 });
