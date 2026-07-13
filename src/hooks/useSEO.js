@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 
 const SITE_NAME = 'TradeGuardX';
-const DEFAULT_TITLE = 'TradeGuardX — Protect Every Trade Automatically';
-const DEFAULT_DESC = 'Enforce daily loss limits, drawdown rules, and hedging prevention in real time. Built for prop traders and self-funded accounts.';
+const DEFAULT_TITLE = "India's First Crypto Trading Kill Switch — TradeGuardX";
+const DEFAULT_DESC = "India's first crypto trading kill switch for Delta Exchange. Block new orders, close open positions, and lock your account the moment you break your daily-loss or risk limits.";
 const DEFAULT_URL = 'https://tradeguardx.com';
 
 const PAGE_SCHEMA_ID = 'page-schema';
