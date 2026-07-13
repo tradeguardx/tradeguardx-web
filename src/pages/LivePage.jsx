@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import SessionHero from '../components/dashboard/SessionHero';
+import OpenPositions from '../components/dashboard/OpenPositions';
 import RuleStatusCards from '../components/dashboard/RuleStatusCards';
 import ActivityFeed from '../components/dashboard/ActivityFeed';
 import ProtectionBanner from '../components/dashboard/ProtectionBanner';
@@ -53,6 +54,7 @@ export default function LivePage() {
         <div>
           <ProtectionBanner accessToken={accessToken} account={selectedAccount} />
           <SessionHero accessToken={accessToken} tradingAccountId={tradingAccountId} account={selectedAccount} />
+          <OpenPositions accessToken={accessToken} tradingAccountId={tradingAccountId} />
           <RuleStatusCards accessToken={accessToken} tradingAccountId={tradingAccountId} account={selectedAccount} />
         </div>
       ) : (
