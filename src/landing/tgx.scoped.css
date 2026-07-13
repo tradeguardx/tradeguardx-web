@@ -1759,7 +1759,8 @@
   @media (max-width: 960px) {
     .tgx-home .hero-grid, .tgx-home .enforce-grid, .tgx-home .journal-grid{ grid-template-columns: 1fr; gap: 48px; }
     .tgx-home .pain-grid, .tgx-home .steps, .tgx-home .rules-grid{ grid-template-columns: 1fr; }
-    .tgx-home .trust-grid{ grid-template-columns: 1fr 1fr; gap: 24px; }
+    .tgx-home .trust-grid{ grid-template-columns: repeat(3, 1fr); gap: 28px 20px; text-align: center; }
+    .tgx-home .trust-exchanges{ grid-column: 1 / -1; justify-content: center; flex-wrap: wrap; }
     .tgx-home .price-grid{ grid-template-columns: 1fr; }
     .tgx-home .footer-grid{ grid-template-columns: 1fr 1fr; gap: 36px; }
     .tgx-home .nav-links{ display: none; }
@@ -1792,7 +1793,10 @@
   }
   @media (max-width: 560px) {
     .tgx-home .wrap{ padding: 0 18px; }
-    .tgx-home .trust-grid{ grid-template-columns: 1fr; }
+    /* 3 stats stay in a compact centered row; just shrink so they fit */
+    .tgx-home .trust-grid{ gap: 22px 8px; }
+    .tgx-home .trust-stat .num-big{ font-size: 26px; }
+    .tgx-home .trust-stat .label{ font-size: 8.5px; letter-spacing: 0.08em; }
     .tgx-home .je-grid{ grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .tgx-home .je-cell .val{ font-size: 14px; }
     .tgx-home .footer-grid{ grid-template-columns: 1fr; }
