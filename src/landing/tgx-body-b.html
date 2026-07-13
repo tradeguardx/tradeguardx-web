@@ -1,0 +1,108 @@
+
+<!-- SECURITY / TRUST -->
+<section class="block" id="security">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Security &amp; trust</span>
+      <h2 class="display h2" style="margin-top:16px;">Your keys. Your funds. Always yours.</h2>
+      <p>You&rsquo;re connecting an exchange account &mdash; so we built TradeGuardX to be impossible to abuse, by design. We can enforce your rules, and nothing else.</p>
+    </div>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">API SCOPE</div>
+        <h4>No withdrawal access</h4>
+        <p>Your Delta Exchange API key is scoped to <b>trade + balance read only</b>. TradeGuardX literally cannot move or withdraw your funds &mdash; the permission isn&rsquo;t there to begin with.</p>
+        <div class="step-meta">&rarr; Read + trade scope &middot; <b>never</b> withdrawal</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">ENCRYPTION</div>
+        <h4>Encrypted &amp; IP-locked</h4>
+        <p>Keys are <b>encrypted at rest</b> and used only from our fixed, <b>whitelisted IP</b>. Even in the unlikely event of a leak, they&rsquo;re useless from anywhere else.</p>
+        <div class="step-meta">&rarr; Encrypted at rest &middot; single whitelisted IP</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">CUSTODY</div>
+        <h4>We never hold your money</h4>
+        <p>Your funds never leave your own Delta Exchange wallet. Our API key can only trade and read balances &mdash; it can never withdraw. During a cooldown we don't move anything: we close your open positions and block new trades until the lock lifts.</p>
+        <div class="step-meta">&rarr; Zero custody &middot; no withdrawal access</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING (short) -->
+<div class="pricing-wrap">
+  <section class="block" id="get-started">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Pricing</span>
+        <h2 class="display h2">Start free for 3 days.</h2>
+        <p>Every account gets <strong>full access, free for 3 days</strong> &mdash; no card. Keep it going with the plan that fits.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:28px;">
+        <div style="border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px;background:rgba(255,255,255,0.02);">
+          <div style="font-weight:700;font-size:15px;color:var(--text);">Free trial</div>
+          <div style="font-family:var(--mono);font-size:26px;font-weight:600;margin-top:8px;color:var(--text);">&#8377;0 <span style="font-size:13px;color:var(--text-3);">/ 3 days</span></div>
+          <p style="font-size:13px;color:var(--text-3);margin-top:8px;line-height:1.5;">Everything unlocked. No credit card.</p>
+        </div>
+        <div style="border:1px solid rgba(0,212,170,0.32);border-radius:16px;padding:22px;background:rgba(0,212,170,0.05);">
+          <div style="font-weight:700;font-size:15px;color:var(--text);">Pro <span style="font-size:9px;color:var(--accent);border:1px solid rgba(0,212,170,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;letter-spacing:0.08em;">POPULAR</span></div>
+          <div style="font-family:var(--mono);font-size:26px;font-weight:600;margin-top:8px;color:var(--text);">&#8377;1,299 <span style="font-size:13px;color:var(--text-3);">/mo</span></div>
+          <p style="font-size:13px;color:var(--text-3);margin-top:8px;line-height:1.5;">Kill switch + all guardrails, up to 5 accounts, 90-day journal.</p>
+        </div>
+        <div style="border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px;background:rgba(255,255,255,0.02);">
+          <div style="font-weight:700;font-size:15px;color:var(--text);">Pro+</div>
+          <div style="font-family:var(--mono);font-size:26px;font-weight:600;margin-top:8px;color:var(--text);">&#8377;2,999 <span style="font-size:13px;color:var(--text-3);">/mo</span></div>
+          <p style="font-size:13px;color:var(--text-3);margin-top:8px;line-height:1.5;">Unlimited accounts &amp; history, advanced analytics.</p>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:24px;">
+        <a href="/signup" class="btn btn-primary btn-lg">
+          Start free
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+        <div style="margin-top:14px;font-family:var(--mono);font-size:12px;color:var(--text-3);letter-spacing:0.04em;">&#10022; incl. 18% GST &middot; &#10022; No card to start &middot; <a href="/pricing" style="color:var(--accent);text-decoration:none;">Full pricing &rarr;</a></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- FAQ -->
+<section class="block" id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Frequently asked</span>
+      <h2 class="display h2">The honest answers.</h2>
+    </div>
+
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>Will TradeGuardX have access to my funds?</summary>
+        <p>No. Your Delta Exchange API key only has trade and balance-read scope &mdash; it can never withdraw, and your funds never leave your own Delta wallet. During a cooldown we don't move anything: we cancel your orders, close your positions, and block new trades until the lock lifts.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What happens if the Delta Exchange API goes down?</summary>
+        <p>If we lose connection to Delta Exchange, you're notified immediately on Telegram and email. Existing positions remain on Delta Exchange &mdash; we don't hold them. When the API is restored, we resume monitoring exactly where we left off. We also run a backup heartbeat that triggers a "full close" if connection is lost for &gt;60 seconds during an active session, configurable per account.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Can I just disable the rules when I want to trade more?</summary>
+        <p>You can change rules in your dashboard, but changes go through a 12-hour cooling-off window &mdash; you can't loosen a limit while you're in the heat of a bad session. You can <em>tighten</em> any rule instantly. This is intentional. It's the whole point of the product.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Why Delta Exchange first? When does CoinDCX go live?</summary>
+        <p>Delta Exchange has the best perp API in India for what we need &mdash; granular, fast, and stable. CoinDCX integration is in active build; we're targeting public launch within 30 days. Pro subscribers get CoinDCX access the day it ships, no upgrade required.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Is this regulated? Is it safe to give you API access?</summary>
+        <p>API keys are scoped (no withdrawal), encrypted at rest, and tied to whitelisted IPs only. We're not a financial advisor and don't custody funds &mdash; we're a risk-enforcement layer that talks to Delta Exchange on your behalf. Read our docs for the full security posture.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Does this work on the Delta Exchange mobile app?</summary>
+        <p>Yes. Enforcement is server-side via Delta Exchange's API, so it doesn't matter whether you place the trade from web, mobile, or any third-party client. If a trade hits your account, we see it within ~120ms and act if it breaks a rule. Alerts go to your choice of WhatsApp, Telegram, or email &mdash; you don't need to keep anything open.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+

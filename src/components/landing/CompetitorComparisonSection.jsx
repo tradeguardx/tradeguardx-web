@@ -3,8 +3,8 @@ import { motion, useInView } from 'framer-motion';
 
 const features = [
   {
-    label: 'Blocks trades in real time',
-    tgx: { value: true, note: 'Warn → alert → hard block' },
+    label: 'Stops you in real time',
+    tgx: { value: true, note: 'Auto-close + fund lock on breach' },
     broker: { value: 'partial', note: 'Margin / basic limits only' },
     journal: { value: false, note: 'Records after the fact' },
     manual: { value: false, note: 'Fails under pressure' },
@@ -17,21 +17,21 @@ const features = [
     manual: { value: false, note: 'Blind spots persist' },
   },
   {
-    label: 'Works on any broker',
-    tgx: { value: true, note: 'Universal — reads the UI' },
-    broker: { value: false, note: 'Tied to one platform' },
-    journal: { value: true, note: 'Post-trade import' },
-    manual: { value: true, note: "You're on your own" },
+    label: 'Acts even when your screen is off',
+    tgx: { value: true, note: 'Server-side, always on' },
+    broker: { value: 'partial', note: 'Auto-liquidation only' },
+    journal: { value: false, note: 'Only when you review' },
+    manual: { value: false, note: 'Needs you watching' },
   },
   {
-    label: 'No API key or integration',
-    tgx: { value: true, note: 'Zero broker setup' },
-    broker: { value: 'na', note: 'Built into platform' },
-    journal: { value: 'partial', note: 'Some require API' },
-    manual: { value: true, note: 'Nothing to connect' },
+    label: 'Force-closes positions & locks out on breach',
+    tgx: { value: true, note: 'Positions closed, account locked' },
+    broker: { value: false, note: "Can't stop your own trading" },
+    journal: { value: false, note: 'No account access' },
+    manual: { value: false, note: 'Willpower only' },
   },
   {
-    label: 'Prop firm rule enforcement',
+    label: 'Auto-enforce rules on breach',
     tgx: { value: true, note: 'Daily loss, drawdown, hedging…' },
     broker: { value: 'partial', note: 'Margin protection only' },
     journal: { value: false, note: 'Review only, no blocking' },
@@ -39,7 +39,7 @@ const features = [
   },
   {
     label: 'Prevents emotional trading',
-    tgx: { value: true, note: 'Hard blocks in moments of tilt' },
+    tgx: { value: true, note: 'Locks you out in moments of tilt' },
     broker: { value: false, note: "Doesn't know your intent" },
     journal: { value: false, note: "Analyses it, can't stop it" },
     manual: { value: false, note: "That's the whole problem" },

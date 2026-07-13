@@ -24,23 +24,23 @@ function useCountUp(target, durationMs, triggered) {
 
 const withoutItems = [
   {
-    label: 'Failed prop challenge reset',
-    cost: '~ $300',
-    note: 'One bad day. One violated rule. Full reset fee.',
+    label: 'One blow-up day',
+    cost: '~ ₹25,000',
+    note: 'One bad session. Stops removed, position sized up. Weeks of gains gone.',
   },
   {
     label: 'Revenge trading session',
-    cost: '~ $400',
+    cost: '~ ₹35,000',
     note: 'Emotional spiral after a loss — average damage per incident.',
   },
   {
     label: 'Overtrading a losing week',
-    cost: '~ $600+',
+    cost: '~ ₹50,000+',
     note: 'No hard stop on daily trades. Judgment goes, account follows.',
   },
   {
     label: 'Undisciplined position sizing',
-    cost: '~ $250',
+    cost: '~ ₹20,000',
     note: 'One oversized trade on a whim. Risk management ignored.',
   },
 ];
@@ -52,9 +52,9 @@ const withItems = [
     note: 'Full rule engine + AI journal + behavior pattern reports.',
   },
   {
-    label: 'One prevented mistake',
+    label: 'One prevented blow-up',
     cost: '= 12 months',
-    note: 'A single avoided prop reset covers a full year of Pro.',
+    note: 'A single avoided bad day covers a full year of Pro.',
   },
   {
     label: 'AI behavior analysis',

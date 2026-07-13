@@ -10,6 +10,11 @@ const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z" />
     </svg>
   ),
+  live: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12h4l2 6 4-14 2 8h6" />
+    </svg>
+  ),
   rules: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -51,18 +56,24 @@ const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
     </svg>
   ),
+  guide: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+    </svg>
+  ),
 };
 
 /** Primary workflow navigation with section group labels. */
 const NAV_ITEMS = [
   { to: '/dashboard/overview', end: true, label: 'Overview', iconKey: 'overview', groupLabel: 'Analytics' },
+  { to: '/dashboard/live', end: false, label: 'Live', iconKey: 'live' },
   { to: '/dashboard/rules', end: false, label: 'Rules', iconKey: 'rules' },
   { to: '/dashboard/journal', end: false, label: 'AI Journal', iconKey: 'journal' },
   { to: '/dashboard/trades', end: false, label: 'All Trades', iconKey: 'trades' },
-  { to: '/dashboard/install-extension', end: false, label: 'Extension', iconKey: 'extension', groupLabel: 'Setup', dividerBefore: true },
-  { to: '/dashboard/pairing', end: false, label: 'Pairing', iconKey: 'pairing' },
+  { to: '/dashboard/pairing', end: false, label: 'Pairing', iconKey: 'pairing', groupLabel: 'Setup', dividerBefore: true },
   { to: '/dashboard/account/trading', end: false, label: 'Accounts', iconKey: 'tradingAccounts' },
   { to: '/dashboard/account/billing', end: false, label: 'Billing', iconKey: 'billing' },
+  { to: '/help', end: false, label: 'Guide', iconKey: 'guide', groupLabel: 'Resources', dividerBefore: true, newTab: true },
 ];
 
 function itemIsActive(pathname, item) {
@@ -288,6 +299,8 @@ export default function DashboardSidebar() {
                   <NavLink
                     to={item.to}
                     end={item.end}
+                    target={item.newTab ? '_blank' : undefined}
+                    rel={item.newTab ? 'noopener noreferrer' : undefined}
                     className="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 hover:bg-white/[0.05]"
                   >
                     {active && (

@@ -35,6 +35,20 @@ const TRADE_ENV_BASE_URLS = {
   prod: 'https://api.tradeguardx.com/trades',
 };
 
+/**
+ * Fixed egress IP for all outbound calls to Delta (risk-engine ECS task +
+ * user-service pair-flow Lambda both NAT through this IP). Users put this in
+ * their Delta API key's "Allowed IPs" field. Sourced from the
+ * risk-engine Terraform stack's `egress_ip` output (infra/terraform). Update
+ * here whenever the NAT EIP changes (rare — only on full VPC teardown).
+ * `local` is null because the dev server doesn't NAT.
+ */
+const DELTA_EGRESS_IPS = {
+  local: null,
+  dev: '13.205.214.83',
+  prod: null,
+};
+
 function normalizeBaseUrl(url) {
   return url.replace(/\/+$/, '');
 }
@@ -96,6 +110,21 @@ export function resolveTradeApiBaseUrl() {
 }
 
 export const TRADE_API_BASE_URL = resolveTradeApiBaseUrl();
+
+/**
+ * The single public IP users should whitelist on their Delta API key. Returns
+ * `null` for `local` (no NAT) or when the stage's IP has not been provisioned
+ * yet (e.g., prod before its VPC stack is deployed). Optional Vite override:
+ * `VITE_DELTA_EGRESS_IP`.
+ */
+export function resolveDeltaEgressIp() {
+  const override = readOverride('VITE_DELTA_EGRESS_IP');
+  if (override) return override;
+  const env = resolveApiEnv();
+  return DELTA_EGRESS_IPS[env] ?? null;
+}
+
+export const DELTA_EGRESS_IP = resolveDeltaEgressIp();
 
 /**
  * Resolved bases + which overrides are active (useful for debugging env mismatches).

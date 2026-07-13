@@ -4,15 +4,15 @@ import { CHROME_STORE_URL } from '../../lib/extension';
 
 const links = {
   product: [
-    { label: 'Features', to: { pathname: '/', hash: 'features' } },
-    { label: 'How it Works', to: { pathname: '/', hash: 'how-it-works' } },
+    { label: 'For crypto traders', to: '/' },
+    { label: 'How it Works', to: { pathname: '/', hash: 'how' } },
     { label: 'Pricing', to: '/pricing' },
     { label: 'Roadmap', to: '/roadmap' },
     { label: 'FAQ', to: { pathname: '/', hash: 'faq' } },
   ],
   resources: [
     { label: 'Install for Chrome', to: CHROME_STORE_URL },
-    { label: 'Docs', to: '/help' },
+    { label: 'Guides', to: '/help' },
     { label: 'Support', to: '/support' },
     { label: 'Email Us', to: 'mailto:support@tradeguardx.com' },
     { label: 'Partner program', to: '/partner-with-us' },
@@ -78,7 +78,7 @@ export default function Footer() {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              to="/pricing"
+              to="/signup"
               className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-[#0a0c10] shadow-lg shadow-accent/20 transition hover:bg-accent/90 active:scale-[0.98]"
             >
               Start free

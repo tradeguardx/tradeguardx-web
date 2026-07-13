@@ -152,6 +152,16 @@ export default function HelpPage() {
         <div className="grid gap-10 lg:grid-cols-[240px_1fr] lg:gap-12">
           {/* Sidebar */}
           <aside className="lg:sticky lg:top-24 lg:self-start">
+            {/* Cross-link to the exchange setup guides */}
+            <Link
+              to="/docs"
+              className="mb-6 flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-white/[0.03]"
+              style={{ borderColor: 'rgba(0,212,170,0.25)', backgroundColor: 'rgba(0,212,170,0.06)', color: '#00d4aa' }}
+            >
+              <span>Delta Exchange setup guides</span>
+              <span aria-hidden>→</span>
+            </Link>
+
             <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Articles</p>
             <nav className="flex flex-col gap-1">
               {HELP_ARTICLES.map((a) => {

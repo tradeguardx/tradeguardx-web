@@ -44,6 +44,13 @@ export function AuthProvider({ children }) {
       // founding-member comps (admin) from real Dodo subscriptions (payment) —
       // critical because admin comps have no Dodo customer to manage/cancel.
       subscriptionSource: 'free',
+      // Trial/access state — overwritten by mergePlanIntoUser once the
+      // subscription loads. `access`: 'trial' | 'active' | 'expired' | 'free'.
+      access: 'free',
+      isTrial: false,
+      isExpired: false,
+      trialDaysLeft: null,
+      trialEndsAt: null,
     };
   }, []);
 
@@ -55,21 +62,35 @@ export function AuthProvider({ children }) {
       const status = subData?.subscription?.status ?? 'active';
       const periodEnd = subData?.subscription?.currentPeriodEnd ?? null;
       const source = subData?.subscription?.source ?? 'free';
+      const trial = subData?.trial ?? null;
 
-      // Effective access requires BOTH active status AND a non-expired period.
-      // The period check matters for admin-source comps (free Pro grants) —
-      // the backend leaves status='active' indefinitely on those, so without
-      // this lazy expiry check a 3-month comp would silently last forever.
-      const periodEndMs = periodEnd ? Date.parse(periodEnd) : null;
-      const periodExpired = periodEndMs != null && Number.isFinite(periodEndMs) && periodEndMs <= Date.now();
-      const effectivelyActive = status === 'active' && !periodExpired;
-      // Surface comp expiry as 'expired' so banners can show "Your free trial
-      // ended" rather than "Payment past due" — comp users never had a card.
-      const exposedStatus = status === 'active' && periodExpired ? 'expired' : status;
+      // Prefer the `access` the subscription API now computes: 'trial' (Pro+ free
+      // for the window), 'active' (paid), 'expired' (trial/comp lapsed → locked),
+      // or 'free'. Fall back to deriving it from status+period for older API.
+      let access = subData?.access ?? null;
+      if (!access) {
+        const periodEndMs = periodEnd ? Date.parse(periodEnd) : null;
+        const periodExpired = periodEndMs != null && Number.isFinite(periodEndMs) && periodEndMs <= Date.now();
+        access = status === 'active' && !periodExpired
+          ? 'active'
+          : status === 'active' && periodExpired
+            ? 'expired'
+            : 'free';
+      }
+
+      const isTrial = access === 'trial';
+      const isExpired = access === 'expired';
+      const hasFullAccess = access === 'trial' || access === 'active';
+      const exposedStatus = isExpired ? 'expired' : isTrial ? 'trialing' : status;
+      const trialEndsAt = trial?.endsAt ?? (isTrial ? periodEnd : null);
+      const trialDaysLeft = typeof trial?.daysLeft === 'number' ? trial.daysLeft : null;
+
+      const accessFields = { access, isTrial, isExpired, trialDaysLeft, trialEndsAt };
 
       if (!subData?.plan) {
         return {
           ...base,
+          ...accessFields,
           plan: 'free',
           planLabel: 'Free',
           subscribedPlanSlug: 'free',
@@ -77,7 +98,7 @@ export function AuthProvider({ children }) {
           subscriptionStatus: exposedStatus,
           currentPeriodEnd: periodEnd,
           subscriptionSource: source,
-          limits: effectivelyActive ? (subData?.limits ?? null) : null,
+          limits: hasFullAccess ? (subData?.limits ?? null) : null,
         };
       }
 
@@ -86,12 +107,12 @@ export function AuthProvider({ children }) {
 
       return {
         ...base,
-        // Strict gate — Free unless status is active. Matches user-service's
-        // policy in subscriptionClient.ts so the rules section and the rest of
-        // the app agree on what features the user has access to right now.
-        plan: effectivelyActive ? slug : 'free',
-        planLabel: effectivelyActive ? planName : 'Free',
-        limits: effectivelyActive ? (subData.limits ?? subData.plan?.features ?? null) : null,
+        ...accessFields,
+        // During a trial or paid plan, grant the plan; when expired/free the app
+        // gates to free (the upgrade wall enforces the locked state on top).
+        plan: hasFullAccess ? slug : 'free',
+        planLabel: hasFullAccess ? planName : isExpired ? 'Trial ended' : 'Free',
+        limits: hasFullAccess ? (subData.limits ?? subData.plan?.features ?? null) : null,
         subscribedPlanSlug: slug,
         subscribedPlanLabel: planName,
         subscriptionStatus: exposedStatus,

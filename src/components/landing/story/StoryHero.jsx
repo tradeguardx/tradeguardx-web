@@ -1,15 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import AnimatedChartBackground from './AnimatedChartBackground';
-import StoryRuleShield from './StoryRuleShield';
-import { FoundingMemberPill } from '../../promo/FoundingMember';
-import { CHROME_STORE_URL } from '../../../lib/extension';
 
 export default function StoryHero() {
-  const [mouse, setMouse] = useState({ x: 50, y: 50 });
-  const [pnl, setPnl] = useState(1247.32);
-  const [scrolled, setScrolled] = useState(false);
+  const [mouse, setMouse] = useState({ x: 60, y: 40 });
 
   const onMove = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -19,201 +14,221 @@ export default function StoryHero() {
     });
   }, []);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      setPnl((v) => {
-        const n = v + (Math.random() - 0.48) * 4.2;
-        return Math.round(n * 100) / 100;
-      });
-    }, 1200);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 80);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
   return (
     <section
-      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden pt-24 pb-24"
+      className="relative overflow-hidden pt-20 pb-24 lg:pt-28"
       onMouseMove={onMove}
     >
       <AnimatedChartBackground />
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: `radial-gradient(50vmax at ${mouse.x}% ${mouse.y}%, rgba(0, 212, 170, 0.09) 0%, transparent 55%)`,
+          background: `radial-gradient(50vmax at ${mouse.x}% ${mouse.y}%, rgba(45,234,168,0.08) 0%, transparent 55%)`,
         }}
         aria-hidden
       />
-      <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-[0.12]" aria-hidden />
 
-      <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 inline-flex flex-wrap items-center justify-center gap-3"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-sm text-slate-300 backdrop-blur-md">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-            </span>
-            Monitoring your trade
-          </span>
-          <span className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-500 tabular-nums">
-            <span className="rounded-sm border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-slate-400">
-              Demo
-            </span>
-            Live P&amp;L{' '}
-            <motion.span
-              key={pnl}
-              initial={{ opacity: 0.6 }}
-              animate={{ opacity: 1 }}
-              className="text-accent"
+      <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
+        {/* ---------- left: copy ---------- */}
+        <div className="text-center lg:text-left">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-7 inline-flex items-center gap-2 rounded-full border border-orange-400/30 bg-gradient-to-r from-orange-500/15 via-white/[0.05] to-emerald-500/15 px-4 py-2 text-sm font-semibold text-slate-100 backdrop-blur-md"
+          >
+            <img src="/flag-in.svg" alt="India" className="h-3.5 w-auto rounded-[2px]" />
+            Made in India · The kill switch for crypto traders
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.06 }}
+            className="font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-6xl lg:text-[5.2rem]"
+          >
+            <span className="gradient-text">Set your limit.</span>
+            <br />
+            <span className="gradient-text-accent">We make it unbreakable.</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.12 }}
+            className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-400 lg:mx-0"
+          >
+            Stop blowing up your Delta account. Set your daily loss, risk per trade, and
+            max-trade caps once —{' '}
+            <strong className="font-medium text-slate-200">
+              we cancel your orders, close your positions, and lock the account
+            </strong>{' '}
+            the moment you cross a limit. Works even when your screen is off.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.18 }}
+            className="mt-9 flex flex-col items-center gap-3 sm:flex-row lg:items-start lg:justify-start"
+          >
+            <Link
+              to="/pricing"
+              className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-4 text-base font-semibold text-[#04231a] shadow-lg shadow-accent/25 transition hover:bg-accent/90 active:scale-95"
             >
-              ${pnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </motion.span>
-          </span>
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.06 }}
-          className="font-display text-5xl font-bold tracking-tight sm:text-6xl md:text-6xl lg:text-7xl"
-        >
-          <span className="gradient-text">Pass your prop eval.</span>
-          <br />
-          <span className="gradient-text-accent">Don&apos;t fail it on a bad day.</span>
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.12 }}
-          className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 md:text-xl"
-        >
-          The browser extension that enforces your prop firm&apos;s rules in real time —
-          daily loss, drawdown, hedging, lot size. We block the violation before it
-          triggers a reset.
-        </motion.p>
-
-        {/* Capability pills */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.18 }}
-          className="mt-8 flex flex-wrap items-center justify-center gap-2"
-        >
-          {[
-            { label: 'Rule Engine', icon: '🛡️' },
-            { label: 'AI Journal', icon: '🧠' },
-            { label: 'Behavior Patterns', icon: '📊' },
-            { label: 'Works in your browser', icon: '🌐' },
-          ].map((pill) => (
-            <span
-              key={pill.label}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-slate-400"
+              Start free
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+            <a
+              href="#how-it-works"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.03] px-7 py-4 text-base font-medium text-slate-200 backdrop-blur-sm transition hover:border-accent/25 hover:bg-white/[0.06]"
             >
-              <span>{pill.icon}</span>
-              {pill.label}
-            </span>
-          ))}
-        </motion.div>
+              See how it works
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 5l7 7-7 7" /></svg>
+            </a>
+          </motion.div>
 
-        {/* Founding-100 launch pill (hidden when env vars not set) */}
-        <div className="mt-8 flex justify-center">
-          <FoundingMemberPill />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-[13px] text-slate-500 lg:justify-start"
+          >
+            <span>✦ No credit card</span>
+            <span className="text-slate-700">·</span>
+            <span>✦ Setup in 60s</span>
+            <span className="text-slate-700">·</span>
+            <span className="text-accent">Founding 50 · limited spots</span>
+          </motion.div>
         </div>
 
+        {/* ---------- right: live dashboard device ---------- */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.24 }}
-          className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row"
+          initial={{ opacity: 0, scale: 0.96, y: 18 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mx-auto w-full max-w-md"
         >
-          <Link
-            to="/pricing"
-            className="inline-flex items-center gap-2 rounded-2xl bg-accent px-8 py-4 text-lg font-semibold text-[#0a0c10] shadow-lg shadow-accent/25 transition hover:bg-accent/90 active:scale-95"
-          >
-            Start free
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
-          <a
-            href="#how-it-works"
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-8 py-4 text-lg font-medium text-slate-200 backdrop-blur-sm transition hover:border-accent/25 hover:bg-white/[0.06]"
-          >
-            See how it works
-          </a>
-        </motion.div>
+          {/* device card */}
+          <div className="relative rounded-2xl border border-white/[0.1] bg-gradient-to-b from-surface-900 to-surface-950 p-5 shadow-2xl shadow-black/60">
+            <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-accent/20 to-transparent to-30% [mask:linear-gradient(#000,#000)_content-box,linear-gradient(#000,#000)] [mask-composite:exclude] p-px" />
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.35 }}
-          className="mt-6 flex items-center justify-center"
-        >
-          <a
-            href={CHROME_STORE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 transition-colors hover:text-accent"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 48 48" fill="currentColor" aria-hidden>
-              <path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 36c-8.84 0-16-7.16-16-16 0-2.5.58-4.86 1.6-6.97L17.62 31a8.005 8.005 0 0 0 7.43 5h.01l-3.6 6.94A15.96 15.96 0 0 1 24 40zm0-22c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm15.62 16.97L31.6 21h-.01a8.005 8.005 0 0 0-7.43-5h-.01l3.6-6.94c5.48 1.36 9.84 5.72 11.2 11.2.58 2.32.58 4.41-.33 6.71z"/>
-            </svg>
-            Already trade? Install the Chrome extension
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </a>
-        </motion.div>
+            {/* head */}
+            <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-3.5">
+              <div className="flex items-center gap-2.5 font-mono text-[13px]">
+                <span className="rounded bg-accent/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-accent">
+                  Delta
+                </span>
+                <span className="text-slate-200">BTCUSD</span>
+                <span className="text-slate-500">·</span>
+                <span className="text-slate-400">Perp</span>
+              </div>
+              <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-slate-500">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+                Live
+              </span>
+            </div>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-5 text-xs text-slate-600"
-        >
-          Free plan available · No credit card required · Setup in &lt; 2 minutes
-        </motion.p>
+            {/* P&L cells */}
+            <div className="mb-3.5 grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-white/[0.06] bg-surface-950/60 p-3.5">
+                <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
+                  Today&apos;s P&amp;L
+                </div>
+                <motion.div
+                  className="font-mono text-[22px] font-medium tabular-nums text-rose-400"
+                  animate={{ opacity: [1, 0.55, 1] }}
+                  transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+                >
+                  -₹3,240
+                </motion.div>
+                <div className="mt-1 font-mono text-[11px] text-slate-500">Cap: -₹5,000</div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-surface-950/60 p-3.5">
+                <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
+                  Trades
+                </div>
+                <div className="font-mono text-[22px] font-medium tabular-nums text-slate-200">
+                  4 <span className="text-slate-600">/ 6</span>
+                </div>
+                <div className="mt-1 font-mono text-[11px] text-slate-500">2 remaining</div>
+              </div>
+            </div>
+
+            {/* rule bar */}
+            <div className="mb-3.5 rounded-xl border border-white/[0.06] bg-surface-950/60 p-3.5">
+              <div className="mb-2.5 flex justify-between font-mono text-[11px] uppercase tracking-wider text-slate-500">
+                <span>Daily Loss Limit</span>
+                <span className="text-rose-400">65% used</span>
+              </div>
+              <div className="relative h-1.5 overflow-hidden rounded-full bg-surface-800">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-accent to-rose-500"
+                  initial={{ width: '0%' }}
+                  whileInView={{ width: '65%' }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+                />
+                <motion.div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)' }}
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ repeat: Infinity, duration: 2.6, ease: 'linear' }}
+                />
+              </div>
+              <div className="mt-2 flex justify-between font-mono text-[11px]">
+                <span className="text-rose-400">-₹3,240 used</span>
+                <span className="text-slate-400">₹1,760 remaining</span>
+              </div>
+            </div>
+
+            {/* trade-blocked alert — slides in from the right */}
+            <motion.div
+              initial={{ opacity: 0, x: 28, scale: 0.97 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ duration: 0.6, delay: 1, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-start gap-3 rounded-xl border border-rose-500/25 bg-gradient-to-b from-rose-500/[0.08] to-rose-500/[0.02] p-3.5"
+            >
+              <span className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg bg-rose-500/12 text-rose-400">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" strokeWidth={2} />
+                  <path strokeLinecap="round" strokeWidth={2} d="M15 9l-6 6M9 9l6 6" />
+                </svg>
+              </span>
+              <div className="text-[13px] leading-snug">
+                <span className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-rose-400">
+                  Trade blocked
+                </span>
+                <span className="text-slate-200">
+                  Entry attempt on <b className="font-semibold">BTCUSD</b> rejected — daily loss cap proximity. Cooldown 2h.
+                </span>
+                <span className="mt-1.5 block font-mono text-[11px] text-slate-500">14:23:08 IST · auto-enforced</span>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* floating mini cards */}
+          <motion.div
+            animate={{ y: [0, -8, 0] }}
+            transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
+            className="absolute -left-6 -top-4 hidden items-center gap-2 rounded-xl border border-white/[0.1] bg-surface-900 px-3.5 py-2.5 font-mono text-[11px] shadow-xl shadow-black/50 sm:flex"
+          >
+            <span className="grid h-5 w-5 place-items-center rounded-md bg-accent/12 text-accent">✓</span>
+            Order cancelled
+          </motion.div>
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut', delay: 2 }}
+            className="absolute -bottom-4 -right-5 hidden items-center gap-2 rounded-xl border border-white/[0.1] bg-surface-900 px-3.5 py-2.5 font-mono text-[11px] shadow-xl shadow-black/50 sm:flex"
+          >
+            <span className="grid h-5 w-5 place-items-center rounded-md bg-amber-400/12 text-amber-400">⏳</span>
+            Cooldown · 2h
+          </motion.div>
+        </motion.div>
       </div>
-
-      {/* Rule shield animation — rules → shield → trade. No heading,
-          since the hero copy above already serves as the headline. */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.35 }}
-        className="relative z-10 mt-20 w-full px-6"
-      >
-        <StoryRuleShield />
-      </motion.div>
-
-      {/* Scroll chevron */}
-      <AnimatePresence>
-        {!scrolled && (
-          <motion.a
-            href="#how-it-works"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, y: [0, 8, 0] }}
-            exit={{ opacity: 0 }}
-            transition={{ opacity: { delay: 1, duration: 0.5 }, y: { repeat: Infinity, duration: 1.6, ease: 'easeInOut' } }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-slate-600 transition hover:text-slate-400"
-            aria-label="Scroll down"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 9l-7 7-7-7" />
-            </svg>
-          </motion.a>
-        )}
-      </AnimatePresence>
     </section>
   );
 }

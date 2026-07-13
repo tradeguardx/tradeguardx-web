@@ -15,10 +15,10 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { label: 'Features', to: { pathname: '/', hash: 'features' } },
-    { label: 'How it Works', to: { pathname: '/', hash: 'how-it-works' } },
+    { label: 'How it Works', to: { pathname: '/', hash: 'how' } },
     { label: 'Pricing', to: '/pricing' },
-    { label: 'Docs', to: '/help' },
+    // Prop-firm page hidden for now — Delta Exchange (crypto) is the launch focus.
+    { label: 'Guides', to: '/help' },
   ];
 
   return (
@@ -72,7 +72,7 @@ export default function Navbar() {
                 Sign in
               </Link>
               <Link
-                to="/pricing"
+                to="/signup"
                 className="px-5 py-2.5 rounded-xl bg-accent text-surface-950 font-semibold text-sm hover:bg-accent-hover transition-all duration-200 shadow-sm shadow-accent/20"
               >
                 Get Started
@@ -132,7 +132,7 @@ export default function Navbar() {
                     Sign in
                   </Link>
                   <Link
-                    to="/pricing"
+                    to="/signup"
                     className="block px-4 py-3 rounded-xl bg-accent text-surface-950 font-semibold text-center mt-2"
                     onClick={() => setOpen(false)}
                   >

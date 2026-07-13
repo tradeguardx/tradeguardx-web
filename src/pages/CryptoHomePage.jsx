@@ -1,0 +1,161 @@
+import { useEffect, useRef } from 'react';
+import { useSEO } from '../hooks/useSEO';
+import StoryAIJournal from '../components/landing/story/StoryAIJournal';
+import '../landing/tgx.scoped.css';
+import rawBodyA from '../landing/tgx-body-a.html?raw';
+import rawBodyB from '../landing/tgx-body-b.html?raw';
+
+// Reveal/stagger targets — verbatim from the source <script>.
+const REVEAL_TARGETS = [
+  '.section-head', '.ks-section-head', '.pain-card', '.step-card', '.rule-card',
+  '.price-card', '.journal-card', '.enforce-item', '.alert-card-static',
+  '.terminal', '.device', '.phone-frame', '.cost-note', '.latency-stat',
+  '.mobile-text', '.faq-item', '.trust-stat',
+];
+const STAGGER_CONTAINERS = [
+  '.pain-grid', '.steps', '.rules-grid', '.price-grid', '.journal-grid',
+  '.alert-cards', '.channel-row', '.faq-list',
+];
+
+const FAQ_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    ['Will TradeGuardX have access to my funds?', 'No. Your Delta Exchange API key only has trade and balance-read scope — it can never withdraw, and your funds never leave your own Delta wallet. During a cooldown we don’t move funds; we cancel orders, close positions, and block new trades until the lock lifts.'],
+    ['Does this work on the Delta Exchange mobile app?', 'Yes. Enforcement is server-side via Delta Exchange’s API, so it works whether you trade from web, mobile, or a third-party client. We detect a trade within ~120ms and act if it breaks a rule. Alerts go to WhatsApp, Telegram, or email.'],
+    ['Can I disable the rules when I want to trade more?', 'You can change rules in your dashboard, but loosening any limit goes through a 24-hour cooling-off window — you cannot loosen a rule in the heat of a bad session. You can tighten any rule instantly.'],
+    ['Why Delta Exchange first and when does CoinDCX go live?', 'Delta Exchange has the most granular, stable perp API in India. CoinDCX integration is in active build, targeting public launch within 30 days; Pro subscribers get it at no extra cost.'],
+  ].map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+};
+
+export default function CryptoHomePage() {
+  const aRef = useRef(null);
+  const bRef = useRef(null);
+
+  useSEO({
+    title: "India's First Crypto Trading Kill Switch",
+    description:
+      "Never blow another trading account. Set daily-loss, max-trades, position-size and cooldown rules once — TradeGuardX blocks new orders, closes open positions, and locks your account the moment you break a limit. Built for Delta Exchange; CoinDCX next.",
+    url: 'https://tradeguardx.com',
+    jsonLd: FAQ_LD,
+  });
+
+  useEffect(() => {
+    const roots = [aRef.current, bRef.current].filter(Boolean);
+    if (!roots.length) return;
+    const qAll = (sel) => roots.flatMap((r) => Array.from(r.querySelectorAll(sel)));
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const observers = [];
+    const cleanups = [];
+
+    if (!reduceMotion) {
+      REVEAL_TARGETS.forEach((sel) => qAll(sel).forEach((el) => el.classList.add('reveal')));
+      STAGGER_CONTAINERS.forEach((sel) => qAll(sel).forEach((el) => el.classList.add('stagger')));
+
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+      qAll('.reveal, .stagger').forEach((el) => io.observe(el));
+
+      const termIo = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('live'); termIo.unobserve(e.target); } });
+      }, { threshold: 0.3 });
+      qAll('.terminal-body').forEach((t) => termIo.observe(t));
+
+      const countIo = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting || entry.target.dataset.counted) return;
+          entry.target.dataset.counted = '1';
+          const el = entry.target;
+          const target = parseInt(el.dataset.target, 10) || 0;
+          const prefix = el.dataset.prefix || '';
+          const suffix = el.dataset.suffix || '';
+          const useFormat = el.dataset.format === 'comma';
+          const duration = 1400;
+          const start = performance.now();
+          const tick = (now) => {
+            const t = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            const val = Math.floor(eased * target);
+            el.textContent = prefix + (useFormat ? val.toLocaleString('en-IN') : val) + suffix;
+            if (t < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+          countIo.unobserve(el);
+        });
+      }, { threshold: 0.5 });
+      qAll('.counter').forEach((c) => countIo.observe(c));
+
+      const scIo = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { e.target.classList.toggle('playing', e.isIntersecting); });
+      }, { threshold: 0.35 });
+      qAll('.scenario-card').forEach((c) => scIo.observe(c));
+
+      observers.push(io, termIo, countIo, scIo);
+
+      qAll('[data-cooldown]').forEach((el) => {
+        const base = parseInt(el.dataset.cooldown, 10) || 14400;
+        let seconds = base;
+        const fmt = (s) => [s / 3600, (s % 3600) / 60, s % 60]
+          .map((x) => String(Math.floor(x)).padStart(2, '0')).join(':');
+        const id = setInterval(() => {
+          const card = el.closest('.scenario-card');
+          if (!card || !card.classList.contains('playing')) return;
+          seconds--;
+          if (seconds < base - 360) seconds = base;
+          el.textContent = fmt(seconds);
+        }, 1000);
+        cleanups.push(() => clearInterval(id));
+      });
+    } else {
+      qAll('.counter').forEach((el) => {
+        const target = parseInt(el.dataset.target, 10) || 0;
+        const prefix = el.dataset.prefix || '';
+        const suffix = el.dataset.suffix || '';
+        const useFormat = el.dataset.format === 'comma';
+        el.textContent = prefix + (useFormat ? target.toLocaleString('en-IN') : target) + suffix;
+      });
+    }
+
+    qAll('a[href^="#"]').forEach((a) => {
+      const onClick = (e) => {
+        const id = a.getAttribute('href');
+        if (id.length < 2) return;
+        const target = document.querySelector(`.tgx-home ${id}`) || document.querySelector(id);
+        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }
+      };
+      a.addEventListener('click', onClick);
+      cleanups.push(() => a.removeEventListener('click', onClick));
+    });
+
+    return () => {
+      observers.forEach((o) => o.disconnect());
+      cleanups.forEach((fn) => fn());
+    };
+  }, []);
+
+  return (
+    <>
+      {/* Same star-scatter background as /prop-firm */}
+      <div className="landing-bg" aria-hidden>
+        <span className="star star-sm" style={{ top: '17%', left: '88%' }} />
+        <span className="star star-sm" style={{ top: '44%', left: '76%' }} />
+        <span className="star star-sm" style={{ top: '63%', left: '6%' }} />
+        <span className="star star-sm" style={{ top: '83%', left: '24%' }} />
+        <span className="star star-md star-blink" style={{ top: '14%', left: '20%', animationDelay: '0s' }} />
+        <span className="star star-md star-blink-slow" style={{ top: '36%', left: '60%', animationDelay: '0.6s' }} />
+        <span className="star star-md star-blink" style={{ top: '54%', left: '12%', animationDelay: '1.4s' }} />
+        <span className="star star-md star-blink-slow" style={{ top: '74%', left: '82%', animationDelay: '0.9s' }} />
+        <span className="star star-lg star-blink-slow" style={{ top: '26%', left: '46%', animationDelay: '0.5s' }} />
+        <span className="star star-lg star-blink-slow" style={{ top: '90%', left: '70%', animationDelay: '2.1s' }} />
+        <span className="star star-md star-accent star-blink-slow" style={{ top: '48%', left: '90%', animationDelay: '1.0s' }} />
+        <span className="star star-lg star-accent star-blink-slow" style={{ top: '66%', left: '34%', animationDelay: '0.8s' }} />
+      </div>
+
+      <div className="tgx-home" ref={aRef} dangerouslySetInnerHTML={{ __html: rawBodyA }} />
+      <StoryAIJournal />
+      <div className="tgx-home" ref={bRef} dangerouslySetInnerHTML={{ __html: rawBodyB }} />
+    </>
+  );
+}

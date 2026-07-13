@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { EmptyState, TradeRowSkeleton } from '../components/common/LoadingSkeleton';
 import DashboardPageBanner from '../components/dashboard/DashboardPageBanner';
+import CooldownBanner from '../components/dashboard/CooldownBanner';
 import { staggerContainer, staggerItem } from '../components/dashboard/dashboardMotion';
 
 import { useAuth } from '../context/AuthContext';
@@ -240,7 +241,7 @@ export default function AllTradesPage() {
 
   if (!accountsLoading && accounts.length === 0) {
     return (
-      <div className="max-w-6xl">
+      <div>
         <DashboardPageBanner
           accent="violet"
           title="All Trades"
@@ -256,7 +257,7 @@ export default function AllTradesPage() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
       <DashboardPageBanner
         accent="violet"
         title="All Trades"
@@ -271,6 +272,14 @@ export default function AllTradesPage() {
           </div>
         )}
       />
+
+      {!accountsLoading && selectedTradingAccountId && (
+        <CooldownBanner
+          accessToken={session?.access_token}
+          tradingAccountId={selectedTradingAccountId}
+          account={selectedAccount}
+        />
+      )}
 
       {!accountsLoading && accounts.length > 0 && selectedAccount?.accountSize != null && (
         <div className="mb-5 flex items-center gap-3 rounded-2xl border px-4 py-3" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>

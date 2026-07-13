@@ -3,32 +3,40 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export const faqs = [
   {
-    q: 'How does TradeGuardX work without API keys?',
-    a: 'TradeGuardX is a browser extension that runs directly inside your trading platform. It reads your open positions from the platform UI — no API keys, no broker API connection, and no special account permissions from your broker.',
+    q: 'Is this really the first of its kind in India?',
+    a: 'Yes. TradeGuardX is the first product built in India to actually enforce crypto trading discipline — not just track it or alert you. When you breach a limit you set, we act on your account automatically.',
   },
   {
-    q: 'What is the difference between the web app and the extension?',
-    a: 'Use the web dashboard to configure rules per trading account, manage pairing and billing, and view your journal and trade history when you are signed in. The extension applies those rules in real time while you trade on the platform. Both work together.',
+    q: 'How does it actually work?',
+    a: 'You connect your Delta account with a read-or-trade API key once. Our servers then watch your account in real time and, the moment you breach a rule you set, take action — close trades, lock the account, or just alert you, depending on the rule. Setup takes about a minute.',
   },
   {
-    q: 'Is my trading data safe?',
-    a: 'Rule checks and enforcement run locally in your browser on the platform. When you sign in, optional features such as saving rules, pairing devices, and trade journaling store only what is needed to provide those features in your account. We do not sell your data.',
+    q: 'Can you withdraw my money or trade for me?',
+    a: 'No. Your API keys are scoped to reading data and managing your own positions — never withdrawals. Your funds never leave your own exchange wallet; during a lockout we don’t move money, we just close your positions and block new trades until the cooldown ends. Keys are encrypted at rest.',
   },
   {
-    q: 'Which trading platforms are supported?',
-    a: 'TradeGuardX is built for browser-based platforms in general—forex, crypto, futures, prop dashboards, and more. If your broker runs in the browser, you can use TradeGuardX alongside it. Contact support if you want help with your specific setup.',
+    q: 'What exactly happens when I breach a rule?',
+    a: 'It depends on the rule. Daily-loss and consecutive-loss limits trigger a kill switch — we cancel your orders, close your positions, and lock the account until your cooldown ends (any new trade you open is closed on sight). Hitting your daily trade count locks you out once you’re flat. A stop set too wide for your risk-per-trade limit closes just that trade. Softer rules (drawdown, missing stop-loss) alert you. You configure which rules are on.',
   },
   {
-    q: 'Can I use it for prop firm trading?',
-    a: 'Yes! TradeGuardX is specifically designed for prop firm traders. It enforces daily loss limits, max drawdown, no-hedging rules, and more — exactly the rules prop firms require.',
+    q: 'Where do I get notified?',
+    a: 'On the channels you choose — Telegram and email. You control which rules notify you and the minimum severity worth a ping, so you get the alerts that matter without the noise. Because alerts are server-side, you’re notified even when you’re trading from your phone.',
   },
   {
-    q: 'What happens when a rule is triggered?',
-    a: 'Depending on your configuration, TradeGuardX can warn you, block new trades from being placed, or close positions. You stay in control of which action each rule takes.',
+    q: 'Does it work when my computer is off?',
+    a: 'Yes. Enforcement runs on our always-on servers, connected to your exchange by API — so your rules hold even when your browser is closed and your laptop is off. Nothing to keep running.',
+  },
+  {
+    q: 'What rules can I enforce?',
+    a: 'Daily loss limit, max total drawdown, risk per trade, max trades per day, cooldown after consecutive losses (tilt lockout), hedging prevention, position stacking control, minimum hold time, and stop-loss protection. Turn on whichever fit your style.',
+  },
+  {
+    q: 'Which exchanges are supported?',
+    a: 'Delta Exchange is live today — we’re the first to bring real risk enforcement to it. CoinDCX is next, with more Indian crypto exchanges to follow based on trader demand.',
   },
   {
     q: 'Is there a free plan?',
-    a: 'Yes. The free plan includes daily loss protection, hedging prevention, and basic trade detection. Upgrade to Pro for advanced rules like risk per trade, max drawdown, and trade journaling.',
+    a: 'Yes. The free plan covers real-time alerts and basic protection. Pro unlocks full automatic enforcement — the kill switch, cooldown lockouts, risk-per-trade auto-close — plus trade journaling and AI insights.',
   },
 ];
 

@@ -1,13 +1,22 @@
 import { motion } from 'framer-motion';
 
 // Live now — actively integrated and enforced in production today.
+// India crypto leads (Delta: full server-side auto-enforcement). Exness and
+// The Funded Room are also live (in-browser enforcement).
 const liveItems = [
+  {
+    name: 'Delta Exchange',
+    kind: 'broker',
+    logo: '/brokers/delta-exchange.svg',
+    type: 'Crypto Derivatives · India',
+    detail: 'Auto kill-switch & cooldown lockouts — live',
+  },
   {
     name: 'Exness',
     kind: 'broker',
     logo: '/brokers/exness.svg',
     type: 'Forex · CFD',
-    detail: 'Full rule enforcement on Exness WebTrader',
+    detail: 'Real-time rule enforcement on Exness WebTrader',
   },
   {
     name: 'The Funded Room',
@@ -23,38 +32,15 @@ const liveItems = [
 // Coming soon — integrations in active development, going live next.
 const comingSoonItems = [
   {
-    name: 'FundedPips',
-    kind: 'funded',
-    initials: 'FP',
-    accent: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/25',
-    accentText: 'text-emerald-300',
-    type: 'Funded Prop Firm',
-    detail: 'Prop firm rules — integration in progress',
-  },
-  {
-    name: 'The Goat Traders',
-    kind: 'funded',
-    initials: 'GT',
-    accent: 'from-amber-500/20 to-orange-500/10 border-amber-500/25',
-    accentText: 'text-amber-300',
-    type: 'Funded Prop Firm',
-    detail: 'Prop firm rules — integration in progress',
-  },
-  {
-    name: 'Bybit',
+    // CoinDCX brands as a two-tone wordmark (Coin + DCX), not an icon — the
+    // name renders two-tone in ItemCard; the badge carries the brand orange.
+    name: 'CoinDCX',
     kind: 'broker',
-    initials: 'BY',
-    accent: 'from-yellow-500/20 to-amber-500/10 border-yellow-500/25',
-    accentText: 'text-yellow-300',
-    type: 'Crypto Derivatives',
-    detail: 'Spot + perpetuals — coming soon',
-  },
-  {
-    name: 'Delta Exchange',
-    kind: 'broker',
-    logo: '/brokers/delta-exchange.svg',
-    type: 'Crypto Derivatives',
-    detail: 'Crypto derivatives rule engine — coming soon',
+    initials: 'DCX',
+    accent: 'from-orange-500/20 to-amber-500/10 border-orange-500/25',
+    accentText: 'text-orange-400',
+    type: 'Crypto Derivatives · India',
+    detail: 'Crypto futures rule engine — next up',
   },
 ];
 
@@ -101,7 +87,16 @@ function ItemCard({ item, status, index }) {
       )}
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <p className="font-display text-base font-bold text-white">{item.name}</p>
+          <p className="font-display text-base font-bold text-white">
+            {item.name === 'CoinDCX' ? (
+              <>
+                <span className="text-white">Coin</span>
+                <span className="text-orange-500">DCX</span>
+              </>
+            ) : (
+              item.name
+            )}
+          </p>
           <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-bold ${badgeClass}`}>
             {badgeLabel}
           </span>
@@ -127,14 +122,14 @@ export default function SupportedBrokers() {
           className="mb-16 text-center"
         >
           <span className="mb-4 inline-block text-sm font-semibold uppercase tracking-wider text-accent">
-            Compatibility
+            India crypto, first
           </span>
           <h2 className="font-display text-3xl font-bold text-white md:text-4xl lg:text-5xl">
-            Works where you trade
+            First to bring real risk enforcement to Delta &amp; CoinDCX
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-slate-400">
-            TradeGuardX runs directly inside the broker UI — no API keys, no special
-            permissions from your broker.
+            Delta connects by API for always-on, server-side enforcement — even when your
+            screen is off. Exness and The Funded Room are live too. CoinDCX is next.
           </p>
         </motion.div>
 
@@ -199,12 +194,11 @@ export default function SupportedBrokers() {
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-300">
-                More brokers & funded programs coming
+                More Indian crypto exchanges coming
               </p>
               <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
-                TradeGuardX is designed to work with any browser-based trading platform.
-                If you trade on a platform not listed, reach out — we expand based on
-                trader demand.
+                We&apos;re starting with the exchanges Indian crypto traders actually use.
+                Trade somewhere not listed yet? Reach out — we expand based on trader demand.
               </p>
             </div>
           </div>
@@ -217,7 +211,7 @@ export default function SupportedBrokers() {
           viewport={{ once: true }}
           className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4"
         >
-          {['Prop Firm Traders', 'Forex Traders', 'Crypto Traders', 'Futures Traders'].map(
+          {['Crypto Futures Traders', 'High-Leverage Traders', 'Intraday Scalpers', 'Swing Traders'].map(
             (style, i) => (
               <motion.div
                 key={style}

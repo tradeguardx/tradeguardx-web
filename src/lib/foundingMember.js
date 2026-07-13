@@ -22,8 +22,8 @@ function isTruthy(raw) {
 export function getFoundingMemberConfig() {
   const active = isTruthy(import.meta.env.VITE_FOUNDING_MEMBER_ACTIVE);
   if (!active) return null;
-  const limit = Number(import.meta.env.VITE_FOUNDING_MEMBER_LIMIT) || 100;
-  const months = Number(import.meta.env.VITE_FOUNDING_MEMBER_MONTHS) || 3;
+  const limit = Number(import.meta.env.VITE_FOUNDING_MEMBER_LIMIT) || 50;
+  const months = Number(import.meta.env.VITE_FOUNDING_MEMBER_MONTHS) || 1;
   const plan = (import.meta.env.VITE_FOUNDING_MEMBER_PLAN || 'Pro').trim();
   return { limit, months, plan };
 }

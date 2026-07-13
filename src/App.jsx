@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
+import CryptoHomePage from './pages/CryptoHomePage';
 import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -12,7 +13,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
 import PartnerApplyPage from './pages/PartnerApplyPage';
-import HelpPage from './pages/HelpPage';
+import DocsPage from './pages/DocsPage';
 import SecurityPage from './pages/SecurityPage';
 import RoadmapPage from './pages/RoadmapPage';
 import RiskDisclosurePage from './pages/RiskDisclosurePage';
@@ -26,10 +27,12 @@ import TradeOverviewPage from './pages/TradeOverviewPage';
 import RulesTerminal from './components/dashboard/RulesTerminal';
 import TradeJournal from './components/dashboard/TradeJournal';
 import AllTradesPage from './pages/AllTradesPage';
+import LivePage from './pages/LivePage';
 import TradeDetailPage from './pages/TradeDetailPage';
 import TradingAccountsPage from './pages/TradingAccountsPage';
 import AccountLayout from './pages/AccountLayout';
 import AccountOverviewPage from './pages/AccountOverviewPage';
+import NotificationsPage from './pages/NotificationsPage';
 import RedirectWithSearch from './pages/RedirectWithSearch';
 import InstallExtensionPage from './pages/InstallExtensionPage';
 import BillingPage from './pages/BillingPage';
@@ -54,7 +57,10 @@ function App() {
               <CommandMenu />
               <Routes>
                 <Route path="/" element={<Layout />}>
-                  <Route index element={<HomePage />} />
+                  <Route index element={<CryptoHomePage />} />
+                  <Route path="home-classic" element={<HomePage />} />
+                  {/* Prop-firm page hidden for launch — redirect to the crypto home. */}
+                  <Route path="prop-firm" element={<Navigate to="/" replace />} />
                   <Route path="pricing" element={<PricingPage />} />
                   <Route path="login" element={<LoginPage />} />
                   <Route path="signup" element={<SignupPage />} />
@@ -66,8 +72,12 @@ function App() {
                   <Route path="refund" element={<RefundPolicyPage />} />
                   <Route path="risk-disclosure" element={<RiskDisclosurePage />} />
                   <Route path="partner-with-us" element={<PartnerApplyPage />} />
-                  <Route path="help" element={<HelpPage />} />
-                  <Route path="help/:slug" element={<HelpPage />} />
+                  {/* /help now serves the exchange docs (navbar "Guides" → /help). */}
+                  <Route path="help" element={<DocsPage />} />
+                  <Route path="help/:slug" element={<DocsPage />} />
+                  {/* Old /docs paths redirect to /help. */}
+                  <Route path="docs" element={<Navigate to="/help" replace />} />
+                  <Route path="docs/:slug" element={<Navigate to="/help" replace />} />
                   <Route path="security" element={<SecurityPage />} />
                   <Route path="roadmap" element={<RoadmapPage />} />
                   {/* Catch-all 404 inside Layout so the page keeps nav + footer.
@@ -77,6 +87,7 @@ function App() {
                 <Route path="dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   <Route index element={<Navigate to="/dashboard/overview" replace />} />
                   <Route path="overview" element={<TradeOverviewPage />} />
+                  <Route path="live" element={<LivePage />} />
                   <Route path="rules" element={<RulesTerminal />} />
                   <Route path="journal" element={<TradeJournal />} />
                   <Route path="trades" element={<AllTradesPage />} />
@@ -85,6 +96,7 @@ function App() {
                     <Route index element={<AccountOverviewPage />} />
                     <Route path="billing" element={<BillingPage />} />
                     <Route path="trading" element={<TradingAccountsPage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                   </Route>
                   <Route path="trading-accounts" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
                   <Route path="billing" element={<RedirectWithSearch to="/dashboard/account/billing" />} />

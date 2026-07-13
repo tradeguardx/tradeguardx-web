@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useToast } from '../components/common/ToastProvider';
-import DashboardPageBanner from '../components/dashboard/DashboardPageBanner';
 import { staggerContainer, staggerItem } from '../components/dashboard/dashboardMotion';
 import {
   createTradingAccount,
@@ -13,6 +12,13 @@ import {
   patchTradingAccount,
   reconcileTradingAccount,
 } from '../api/tradingAccountsApi';
+import {
+  connectExchangeCredentials,
+  exchangeFromBrokerSlug,
+  getExchangeCredentialsStatus,
+} from '../api/exchangeCredentialsApi';
+import ExchangeConnectionPanel from '../components/dashboard/ExchangeConnectionPanel';
+import { DELTA_EGRESS_IP } from '../api/config';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 
 function formatCurrency(value, currency = 'USD') {
@@ -212,7 +218,11 @@ function shortTz(iana) {
 
 const PAIRING_STATUS_POLL_MS = 30_000;
 
-function PairingStatusBadge({ accessToken, tradingAccountId }) {
+function PairingStatusBadge({ accessToken, tradingAccountId, propFirmSlug }) {
+  // Delta accounts connect via API key (risk-engine), not the extension — so
+  // their "connected" state comes from the exchange-credentials status, not the
+  // pairing status (which would always read "not connected" for them).
+  const isDelta = exchangeFromBrokerSlug(propFirmSlug) !== null;
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -225,14 +235,26 @@ function PairingStatusBadge({ accessToken, tradingAccountId }) {
       const controller = new AbortController();
       controllers.push(controller);
       try {
-        const result = await fetchPairingStatus({
-          accessToken,
-          tradingAccountId,
-          signal: controller.signal,
-        });
-        if (!cancelled) {
-          setStatus(result || null);
-          setLoading(false);
+        if (isDelta) {
+          const conn = await getExchangeCredentialsStatus({
+            accessToken,
+            accountId: tradingAccountId,
+            signal: controller.signal,
+          });
+          if (!cancelled) {
+            setStatus({ connected: conn?.status === 'active' });
+            setLoading(false);
+          }
+        } else {
+          const result = await fetchPairingStatus({
+            accessToken,
+            tradingAccountId,
+            signal: controller.signal,
+          });
+          if (!cancelled) {
+            setStatus(result || null);
+            setLoading(false);
+          }
         }
       } catch (err) {
         if (cancelled || err?.name === 'AbortError') return;
@@ -247,10 +269,11 @@ function PairingStatusBadge({ accessToken, tradingAccountId }) {
       clearInterval(interval);
       controllers.forEach((c) => c.abort());
     };
-  }, [accessToken, tradingAccountId]);
+  }, [accessToken, tradingAccountId, isDelta]);
 
   const connected = Boolean(status?.connected);
-  const brokerHost = status?.brokerHost || null;
+  // Broker host + DOM-mapping line are extension concepts — hide for Delta.
+  const brokerHost = isDelta ? null : status?.brokerHost || null;
   const accountKind = status?.accountKind === 'funded' ? 'funded' : 'live';
   const mappingApproved = Boolean(status?.mappingApproved);
 
@@ -300,6 +323,8 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(collapsible ? defaultExpanded : true);
   const isFunded = account.equityMode === 'funded';
+  // Delta accounts connect via API key, not the extension — hide extension-only UI.
+  const isDelta = exchangeFromBrokerSlug(account.propFirmSlug) !== null;
 
   useEffect(() => {
     setName(account.name || '');
@@ -378,7 +403,11 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
             {account.id}
           </p>
           <div className="mt-2">
-            <PairingStatusBadge accessToken={accessToken} tradingAccountId={account.id} />
+            <PairingStatusBadge
+              accessToken={accessToken}
+              tradingAccountId={account.id}
+              propFirmSlug={account.propFirmSlug}
+            />
           </div>
         </div>
       </div>
@@ -483,20 +512,24 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
           </button>
         </div>
 
-        <div className="pt-4 mt-4 border-t" style={{ borderColor: 'var(--dash-border)' }}>
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--dash-text-muted)' }}>
-            Extension pairing
-          </p>
-          <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-            Generate one-time pairing codes from the dedicated Pairing page for the account selected in the header.
-          </p>
-          <Link
-            to="/dashboard/pairing"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-accent/30 text-accent hover:bg-accent/10 transition-colors"
-          >
-            Open Pairing
-          </Link>
-        </div>
+        <ExchangeConnectionPanel account={account} accessToken={accessToken} toast={toast} />
+
+        {!isDelta && (
+          <div className="pt-4 mt-4 border-t" style={{ borderColor: 'var(--dash-border)' }}>
+            <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--dash-text-muted)' }}>
+              Extension pairing
+            </p>
+            <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+              Generate one-time pairing codes from the dedicated Pairing page for the account selected in the header.
+            </p>
+            <Link
+              to="/dashboard/pairing"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-accent/30 text-accent hover:bg-accent/10 transition-colors"
+            >
+              Open Pairing
+            </Link>
+          </div>
+        )}
             </div>
           </motion.div>
         )}
@@ -514,12 +547,17 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
   const [timezone, setTimezone] = useState('');
   const [resetTime, setResetTime] = useState('');
   const [creating, setCreating] = useState(false);
+  // Delta-only: optional API key/secret entered inline during account creation.
+  const [apiKey, setApiKey] = useState('');
+  const [apiSecret, setApiSecret] = useState('');
 
   const selected = useMemo(
     () => supportedProps.find((p) => p.brokerId === selectedSlug) || null,
     [supportedProps, selectedSlug],
   );
   const isFunded = selected?.equityMode === 'funded';
+  const exchangeSlug = exchangeFromBrokerSlug(selected?.brokerId);
+  const isDelta = Boolean(exchangeSlug);
 
   useEffect(() => {
     if (!selected) return;
@@ -527,6 +565,9 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
     setResetTime(selected.defaultResetTimeLocal || '00:00');
     setSelectedSize(selected.sizes?.[0] ?? null);
     setCustomSize('');
+    // Clear Delta inputs when switching brokers so secrets never leak across selections.
+    setApiKey('');
+    setApiSecret('');
   }, [selected]);
 
   const sizeValue =
@@ -534,17 +575,23 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
       ? Number(customSize)
       : selectedSize ?? null;
 
+  // Delta requires a Trading API key + secret up front — the account isn't
+  // protected without one, so we don't allow creating a "connect later" shell.
+  const deltaCredsProvided =
+    !isDelta || (apiKey.trim() !== '' && apiSecret.trim() !== '');
+
   const canCreate =
     !!selected &&
     selected.status === 'active' &&
     name.trim().length > 0 &&
-    (!isFunded || (Number.isFinite(sizeValue) && sizeValue > 0));
+    (!isFunded || (Number.isFinite(sizeValue) && sizeValue > 0)) &&
+    deltaCredsProvided;
 
   const submit = async () => {
     if (!canCreate || !accessToken) return;
     setCreating(true);
     try {
-      await createTradingAccount({
+      const account = await createTradingAccount({
         accessToken,
         name: name.trim(),
         propFirmSlug: selected.brokerId,
@@ -556,7 +603,31 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
         dailyLossBasis: selected.dailyLossBasis,
         dashboardUrl: selected.dashboardUrl ?? undefined,
       });
-      toast.success('Account created', 'Configure rules and connect the extension next.');
+
+      // For Delta accounts, optionally connect the API key in the same flow.
+      // Account creation already succeeded — credential failure is non-fatal; user can retry from the account page.
+      if (isDelta && account?.id && apiKey.trim() && apiSecret.trim()) {
+        try {
+          await connectExchangeCredentials({
+            accessToken,
+            accountId: account.id,
+            exchange: exchangeSlug,
+            apiKey: apiKey.trim(),
+            apiSecret: apiSecret.trim(),
+          });
+          toast.success(
+            'Account created & connected',
+            'Delta read-only access verified. We will start streaming your positions.',
+          );
+        } catch (credErr) {
+          toast.error(
+            'Account created, but Delta connect failed',
+            credErr?.message || 'You can retry connecting from the account details.',
+          );
+        }
+      } else {
+        toast.success('Account created', 'Configure rules and connect the extension next.');
+      }
       onCreated?.();
     } catch (e) {
       toast.error('Could not create', e?.message || 'Try again.');
@@ -773,6 +844,125 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
             </div>
           )}
 
+          {isDelta && (
+            <div>
+              <p
+                className="text-[11px] font-semibold uppercase tracking-wider mb-3"
+                style={{ color: 'var(--dash-text-muted)' }}
+              >
+                {isFunded ? '5.' : '3.'} Connect Delta API key{' '}
+                <span style={{ color: '#f59e0b' }}>(required)</span>
+              </p>
+              <div
+                className="rounded-xl border px-3.5 py-3.5 mb-3"
+                style={{
+                  borderColor: 'rgba(0,212,170,0.25)',
+                  backgroundColor: 'rgba(0,212,170,0.04)',
+                }}
+              >
+                <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--dash-text-primary)' }}>
+                  Create your key on Delta (takes ~2 min):
+                </p>
+                <ol className="space-y-2 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                  <li>
+                    <strong>1.</strong> Open{' '}
+                    <a
+                      href="https://www.delta.exchange/algo/delta-exchange-apis"
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: 'var(--accent, #00d4aa)' }}
+                      className="underline"
+                    >
+                      Delta → API Keys
+                    </a>{' '}
+                    and click <strong>Create a new API key</strong>.
+                  </li>
+                  <li>
+                    <strong>2. API Key Name:</strong> type anything you like (e.g. <span className="font-mono">TradeGuardX</span>).
+                  </li>
+                  <li>
+                    <strong>3. Whitelisted IP:</strong> paste our IP
+                    {DELTA_EGRESS_IP ? (
+                      <button
+                        type="button"
+                        onClick={() => { navigator.clipboard?.writeText(DELTA_EGRESS_IP); toast?.success?.('Copied', 'IP copied to clipboard.'); }}
+                        className="ml-1.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[11px]"
+                        style={{ borderColor: 'rgba(0,212,170,0.3)', color: 'var(--accent, #00d4aa)' }}
+                        title="Copy IP"
+                      >
+                        {DELTA_EGRESS_IP} <span>Copy</span>
+                      </button>
+                    ) : (
+                      <span> (shown after you select a live environment)</span>
+                    )}
+                  </li>
+                  <li>
+                    <strong>4. Permissions:</strong> tick <strong>Trading</strong>. (“Read Data” is always on — leave it. A read-only key can’t run the kill switch.)
+                  </li>
+                  <li>
+                    <strong>5.</strong> Click <strong>Create API key</strong>, then paste the <strong>API Key</strong> and <strong>API Secret</strong> below.
+                  </li>
+                </ol>
+                <p className="mt-2.5 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
+                  Delta shows the secret only once — copy it right away. Your secret is encrypted (KMS) before storage and never shown again.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
+                    API Key
+                  </span>
+                  <input
+                    type="text"
+                    name="tgx-delta-key"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
+                    spellCheck={false}
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Paste API Key"
+                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                    style={{
+                      borderColor: 'var(--dash-border)',
+                      backgroundColor: 'var(--dash-bg-input)',
+                      color: 'var(--dash-text-primary)',
+                    }}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
+                    API Secret
+                  </span>
+                  <input
+                    type="password"
+                    name="tgx-delta-secret"
+                    autoComplete="new-password"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
+                    spellCheck={false}
+                    value={apiSecret}
+                    onChange={(e) => setApiSecret(e.target.value)}
+                    placeholder="Paste API Secret"
+                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                    style={{
+                      borderColor: 'var(--dash-border)',
+                      backgroundColor: 'var(--dash-bg-input)',
+                      color: 'var(--dash-text-primary)',
+                    }}
+                  />
+                </label>
+              </div>
+              {(!apiKey.trim() || !apiSecret.trim()) && (
+                <p className="text-[11px] mt-2" style={{ color: 'rgb(251, 191, 36)' }}>
+                  Both the API Key and Secret are required to create a Delta account.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-2 pt-2">
             <button
               type="button"
@@ -780,7 +970,9 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
               disabled={!canCreate || creating}
               className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-surface-950 hover:bg-accent-hover disabled:opacity-50"
             >
-              {creating ? 'Creating…' : 'Create account'}
+              {creating
+                ? (isDelta && apiKey && apiSecret ? 'Creating & connecting…' : 'Creating…')
+                : (isDelta && apiKey && apiSecret ? 'Create & connect' : 'Create account')}
             </button>
             <button
               type="button"
@@ -866,46 +1058,6 @@ export default function TradingAccountsPage() {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-3xl"
     >
-      <DashboardPageBanner
-        accent="accent"
-        title="Trading accounts"
-        subtitle="Each account is a separate prop or platform context. Funded prop accounts track their own starting balance and daily reset cutoff."
-        badge={(
-          <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
-            {loading
-              ? '…'
-              : accountCap != null
-                ? `${accounts.length} / ${accountCap} accounts`
-                : `${accounts.length} account${accounts.length === 1 ? '' : 's'}`}
-          </span>
-        )}
-        actions={(
-          <div className="flex flex-wrap gap-2 justify-end">
-            <Link
-              to="/dashboard/account"
-              className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors hover:border-accent/25"
-              style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
-            >
-              Account home
-            </Link>
-            <Link
-              to="/dashboard/install-extension"
-              className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors hover:border-accent/25"
-              style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
-            >
-              Extension setup
-            </Link>
-            <Link
-              to="/dashboard/pairing"
-              className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors hover:border-accent/25"
-              style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
-            >
-              Pairing
-            </Link>
-          </div>
-        )}
-      />
-
       {error && (
         <p className="mb-4 text-sm text-amber-400/90">{error}</p>
       )}

@@ -17,9 +17,9 @@ const faqJsonLd = {
 
 export default function HomePage() {
   useSEO({
-    title: 'Pass your prop eval. Don’t fail it on a bad day',
+    title: 'TradeGuardX — India’s first risk engine for crypto traders',
     description:
-      'Browser extension that enforces your prop firm’s rules in real time — daily loss, drawdown, hedging, lot size. Block the violation before it triggers a reset.',
+      'India’s first real-time risk enforcement for crypto. Connect Delta Exchange — the moment you breach a daily-loss, tilt, overtrading, or risk-per-trade limit you set, we auto-close your positions and lock the account. CoinDCX coming soon.',
     url: 'https://tradeguardx.com',
     jsonLd: faqJsonLd,
   });

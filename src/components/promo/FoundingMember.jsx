@@ -17,10 +17,11 @@ export function FoundingMemberCallout({ context = 'pricing' }) {
   const cfg = getFoundingMemberConfig();
   if (!cfg) return null;
 
+  const monthLabel = `${cfg.months} month${cfg.months === 1 ? '' : 's'}`;
   const headline =
     context === 'signup'
-      ? `Sign up now and get ${cfg.plan} free for ${cfg.months} months`
-      : `Founding ${cfg.limit}: ${cfg.plan} free for ${cfg.months} months`;
+      ? `Sign up now and get ${cfg.plan} free for ${monthLabel}`
+      : `Founding ${cfg.limit}: ${cfg.plan} free for ${monthLabel}`;
 
   const sub =
     context === 'signup'
@@ -110,7 +111,7 @@ export function FoundingMemberPill() {
         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
       </span>
       <span>
-        First {cfg.limit} signups: {cfg.plan} free for {cfg.months} months
+        First {cfg.limit} signups: {cfg.plan} free for {cfg.months} month{cfg.months === 1 ? '' : 's'}
       </span>
     </motion.div>
   );

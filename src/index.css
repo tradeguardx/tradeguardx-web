@@ -820,3 +820,47 @@
 [data-dash-theme="dark"] .pairing-disconnect-btn:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
+/* ==========================================================================
+   Crypto landing — continuous animations ported from the reference artifact.
+   Used by the StoryHero device, rules grid, and phone/alerts mockups.
+   ========================================================================== */
+@keyframes tgx-live-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+.tgx-live-blink { animation: tgx-live-blink 4s ease-in-out 2s infinite; }
+
+/* sweeping highlight across a progress bar */
+@keyframes tgx-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.tgx-shimmer { position: relative; overflow: hidden; }
+.tgx-shimmer::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: tgx-shimmer 2.6s linear infinite;
+}
+
+/* phone gently bobbing while held at a slight tilt */
+@keyframes tgx-phone-bob {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50%      { transform: rotate(-3deg) translateY(-10px); }
+}
+.tgx-phone-bob { animation: tgx-phone-bob 6s ease-in-out infinite; }
+
+/* floating mini-cards */
+@keyframes tgx-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+.tgx-float-a { animation: tgx-float 6s ease-in-out infinite; }
+.tgx-float-b { animation: tgx-float 6s ease-in-out 2s infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tgx-live-blink, .tgx-shimmer::after, .tgx-phone-bob, .tgx-float-a, .tgx-float-b {
+    animation: none !important;
+  }
+}

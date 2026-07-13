@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import DashboardPageBanner, { DashboardSectionHeading } from './DashboardPageBanner';
 import { staggerContainer, staggerItem } from './dashboardMotion';
@@ -152,35 +152,138 @@ function groupRulesByPlanSection(rules) {
   return [...map.values()].sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
 }
 
-function RuleCard({ rule, index, accessToken, tradingAccountId, onSaved }) {
+// Detailed, plain-English documentation per rule — surfaced by the "How it
+// works" toggle in each card. Kept accurate to the current engine behaviour
+// (soft profit target, kill-switch flatten, cooldown locks).
+const RULE_DOCS = {
+  'daily-loss': {
+    summary: 'Caps how much you can lose in a single trading day. When the loss hits your limit, the kill switch closes everything and locks the account until the next daily reset — so one bad day can’t become a blown account.',
+    how: [
+      'Measured on your trading P&L (realized + unrealized) since the daily reset.',
+      'Deposits and withdrawals are ignored — only real trading results count toward the limit.',
+      'You can set it as a fixed amount or a percentage of your equity.',
+    ],
+    trigger: 'The kill switch fires — it cancels open orders, market-closes all positions, and locks the account until the next reset.',
+  },
+  'daily-profit-target': {
+    summary: 'Locks in a winning day once you’ve booked your target, so you stop while you’re ahead instead of giving it back. This is a soft lock — it never force-closes an open winner.',
+    how: [
+      'Measured on realized (booked) profit only — an open trade keeps running, so you book on your own terms.',
+      'Deposits are ignored, so adding funds can never look like profit.',
+      'The lock only arms once your booked profit clears the target AND the account is flat (no open position).',
+    ],
+    trigger: 'New trades are locked until the next daily reset. Any position you already have open is left alone to run.',
+  },
+  'max-total-loss': {
+    summary: 'A hard floor on total account drawdown across the whole account life — the last line of defence beneath your daily limit.',
+    how: [
+      'Watches your equity against your starting balance / high-water mark.',
+      'Set as a fixed amount or a percentage of the account.',
+      'Independent of the daily reset — this one does not reset each day.',
+    ],
+    trigger: 'Alerts when the account draws down past the configured amount so you can step in before deeper damage.',
+  },
+  'risk-per-trade': {
+    summary: 'Caps how much any single trade can risk, based on where your stop-loss sits. Stops one oversized bet from doing outsized damage.',
+    how: [
+      'For each open position, it computes the loss your stop-loss implies as a percentage of equity.',
+      'Uses the contract size and mark price, so the risk figure is accurate for Delta contracts.',
+      'Only affects the offending position — the rest of your account is untouched.',
+    ],
+    trigger: 'If a trade’s stop implies more than your limit, that single position is auto-closed (reduce-only). The rest of the account keeps trading.',
+  },
+  'max-trades-day': {
+    summary: 'Caps how many trades you can take in a day — a guard against overtrading and death-by-a-thousand-cuts.',
+    how: [
+      'Counts new positions opened since the daily reset.',
+      'Trades that were blocked during a cooldown do NOT count against your allowance.',
+      'It waits until you’re flat before locking, so it never force-closes a live trade.',
+    ],
+    trigger: 'Once you hit the cap and the account is flat, trading locks until the next daily reset.',
+  },
+  'close-after-losses': {
+    summary: 'Breaks the revenge-trading spiral: after a run of losing trades in a row, it pauses you so you can reset instead of tilting into more losses.',
+    how: [
+      'Counts consecutive losing trades. A single winning trade resets the streak to zero.',
+      'Two tiers: a shorter soft cooldown first, then a longer hard lock if the streak keeps going.',
+      'The streak survives restarts and ignores trades that were blocked during a cooldown.',
+    ],
+    trigger: 'After the configured losses in a row, trading pauses for the cooldown window; a further streak escalates to the longer lock.',
+  },
+  'stop-loss-alert': {
+    summary: 'Warns you when a position has been sitting open without a stop-loss attached — the single most common way traders turn a small loss into a big one.',
+    how: [
+      'Watches every open position for an attached stop order.',
+      'If a position stays open past your configured window with no stop, it alerts.',
+      'This rule alerts only — it does not auto-close, so you stay in control.',
+    ],
+    trigger: 'Sends an alert (dashboard + your notification channels) so you can add a stop before it hurts.',
+  },
+};
+
+function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved }) {
   const toast = useToast();
   const { isDark } = useDashboardTheme();
-  const [values, setValues] = useState(() =>
-    rule.fields.reduce((acc, f) => ({ ...acc, [f.key]: f.value }), {}),
-  );
+  const hasMode = rule.fields.some((f) => f.key === 'mode');
+  const [values, setValues] = useState(() => {
+    const base = rule.fields.reduce((acc, f) => ({ ...acc, [f.key]: f.value }), {});
+    if (hasMode) {
+      // Prop accounts are pinned to percent; retail defaults to a $ amount for new rules.
+      if (!isRetail) base.mode = 'percent';
+      else if (!rule.hasSavedInstance) base.mode = 'amount';
+    }
+    return base;
+  });
+  /** Fields shown for the current mode; the mode selector itself is retail-only. */
+  const visibleFields = rule.fields.filter((f) => {
+    if (f.key === 'mode' && !isRetail) return false;
+    if (f.showWhen && values[f.showWhen.key] !== f.showWhen.equals) return false;
+    return true;
+  });
   /** Collapse new rules by default so template defaults are not mistaken for active config. */
   const [expanded, setExpanded] = useState(() => Boolean(rule.hasSavedInstance && !rule.locked));
   const [saving, setSaving] = useState(false);
+  const [showDocs, setShowDocs] = useState(false);
+  const docs = RULE_DOCS[rule.id];
   const handleSave = async () => {
     if (!accessToken || !tradingAccountId || rule.locked) return;
     setSaving(true);
     try {
-      const config = { ...values };
-      Object.keys(config).forEach((k) => {
+      // Persist only fields relevant to the active mode (the mode key itself has
+      // no showWhen, so it's always kept); skips the hidden mode's stale values.
+      const relevant = new Set(
+        rule.fields
+          .filter((f) => !f.showWhen || values[f.showWhen.key] === f.showWhen.equals)
+          .map((f) => f.key),
+      );
+      const config = {};
+      for (const k of Object.keys(values)) {
+        if (!relevant.has(k)) continue;
         const field = rule.fields.find((x) => x.key === k);
-        if (field?.type === 'number' && typeof config[k] === 'string' && config[k] !== '') {
-          const n = Number(config[k]);
-          if (!Number.isNaN(n)) config[k] = n;
+        let val = values[k];
+        if (field?.type === 'number' && typeof val === 'string' && val !== '') {
+          const n = Number(val);
+          if (!Number.isNaN(n)) val = n;
         }
-      });
-      await saveRuleInstance({
+        config[k] = val;
+      }
+      const res = await saveRuleInstance({
         accessToken,
         tradingAccountId,
         templateSlug: rule.id,
         config,
         enabled: true,
       });
-      toast.success('Saved', `${rule.name} updated.`);
+      if (res?.deferred?.effectiveAt) {
+        const when = new Date(res.deferred.effectiveAt);
+        const hrs = Math.max(1, Math.round((when.getTime() - Date.now()) / 3600000));
+        toast.success(
+          'Tightening applied — loosening scheduled',
+          `Making a limit looser waits ${hrs}h (protects you from impulse changes). It takes effect ${when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}.`,
+        );
+      } else {
+        toast.success('Saved', `${rule.name} updated.`);
+      }
       onSaved?.();
     } catch (e) {
       toast.error('Save failed', e?.message || 'Try again.');
@@ -240,6 +343,15 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, onSaved }) {
                   Not saved — defaults only
                 </span>
               )}
+              {!rule.locked && rule.pendingEffectiveAt && (
+                <span
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 text-sky-400"
+                  title={`Looser limit takes effect ${new Date(rule.pendingEffectiveAt).toLocaleString()}`}
+                  style={{ backgroundColor: isDark ? 'rgba(56,189,248,0.10)' : 'rgba(56,189,248,0.08)', border: `1px solid rgba(56,189,248,${isDark ? '0.25' : '0.35'})` }}>
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Looser limit pending
+                </span>
+              )}
             </div>
             <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--dash-text-muted)' }}>{rule.description}</p>
           </div>
@@ -278,7 +390,61 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, onSaved }) {
           className="overflow-hidden"
         >
           <div className="px-5 pb-5 pt-1" style={{ borderTop: '1px solid var(--dash-border)' }}>
-            <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--dash-text-muted)' }}>{rule.description}</p>
+            <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--dash-text-muted)' }}>{rule.description}</p>
+
+            {docs && (
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => setShowDocs((s) => !s)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors hover:bg-[var(--dash-bg-card-hover)]"
+                  style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
+                  aria-expanded={showDocs}
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  How it works
+                  <svg className="h-3 w-3 transition-transform" style={{ transform: showDocs ? 'rotate(180deg)' : 'none' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {showDocs && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.22, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div
+                        className="mt-2 rounded-xl border p-3.5 text-xs leading-relaxed"
+                        style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)', color: 'var(--dash-text-secondary)' }}
+                      >
+                        <p style={{ color: 'var(--dash-text-secondary)' }}>{docs.summary}</p>
+
+                        <p className="mt-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--dash-text-faint)' }}>How it works</p>
+                        <ul className="space-y-1.5">
+                          {docs.how.map((line, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
+                              <span>{line}</span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        <p className="mt-3 rounded-lg px-2.5 py-2" style={{ backgroundColor: 'var(--dash-bg-card)' }}>
+                          <span className="font-semibold" style={{ color: 'var(--dash-text-primary)' }}>When it triggers: </span>
+                          {docs.trigger}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             {!rule.locked && !rule.hasSavedInstance && (
               <div
@@ -295,12 +461,32 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, onSaved }) {
             )}
 
             <div className="space-y-3">
-              {rule.fields.map((field) => (
+              {visibleFields.map((field) => (
                 <div key={field.key} className="flex items-center justify-between gap-4">
                   <label className="text-sm font-medium" style={{ color: 'var(--dash-text-secondary)' }}>{field.label}</label>
 
                   {rule.locked ? (
                     <span className="text-sm italic" style={{ color: 'var(--dash-text-faint)' }}>Upgrade to configure</span>
+                  ) : field.type === 'select' ? (
+                    <div className="inline-flex rounded-xl p-0.5" style={{ backgroundColor: 'var(--dash-bg-input)', border: '1px solid var(--dash-border)' }}>
+                      {(field.options || []).map((opt) => {
+                        const active = values[field.key] === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setValues((v) => ({ ...v, [field.key]: opt.value }))}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                            style={{
+                              backgroundColor: active ? 'var(--accent)' : 'transparent',
+                              color: active ? 'var(--surface-950, #0d0f14)' : 'var(--dash-text-muted)',
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   ) : field.type === 'toggle' ? (
                     <button
                       type="button"
@@ -427,6 +613,7 @@ export default function RulesTerminal() {
         locked: !t.eligible,
         eligible: t.eligible,
         hasSavedInstance: Boolean(inst),
+        pendingEffectiveAt: inst?.pendingEffectiveAt ?? null,
         fields: buildFields(t, inst),
         planSlugs: t.planSlugs,
         minPlanSlug: t.minPlanSlug,
@@ -589,6 +776,7 @@ export default function RulesTerminal() {
                         index={i}
                         accessToken={session?.access_token}
                         tradingAccountId={selectedTradingAccountId}
+                        isRetail={bundle?.isRetail}
                         onSaved={load}
                       />
                     ))}
@@ -628,6 +816,7 @@ export default function RulesTerminal() {
                           index={i + availableRules.length}
                           accessToken={session?.access_token}
                           tradingAccountId={selectedTradingAccountId}
+                          isRetail={bundle?.isRetail}
                           onSaved={load}
                         />
                       ))}

@@ -6,7 +6,10 @@ import { TradingAccountProvider } from '../../context/TradingAccountContext';
 import { DashboardThemeProvider, useDashboardTheme } from '../../context/DashboardThemeContext';
 import DashboardSidebar from './DashboardSidebar';
 import AccountSelector from './AccountSelector';
+import HeaderStatusPill from './HeaderStatusPill';
+import { TrialBanner, UpgradeWall } from './TrialGate';
 import WelcomeCelebration from './WelcomeCelebration';
+import BreachBanner from './BreachBanner';
 
 const ROUTE_LABELS = {
   '/dashboard/overview': 'Overview',
@@ -39,9 +42,6 @@ const mobileNavItems = [
   { to: '/dashboard/trades', end: false, label: 'Trades', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-6a2 2 0 012-2h6M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h6m-6 6h6m0 0v6m0-6h6" /></svg>
   )},
-  { to: '/dashboard/install-extension', end: false, label: 'Extension', icon: (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-  )},
   { to: '/dashboard/pairing', end: false, label: 'Pairing', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 9h10M7 15h10" /></svg>
   )},
@@ -53,6 +53,9 @@ const mobileNavItems = [
   )},
   { to: '/dashboard/account', end: true, label: 'Account', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+  )},
+  { to: '/help', end: false, label: 'Guide', newTab: true, icon: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
   )},
 ];
 
@@ -103,12 +106,17 @@ function ThemeToggle() {
 }
 
 function DashboardInner() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { theme, isDark } = useDashboardTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pageLabel = usePageLabel();
   const { pathname } = useLocation();
   const mainRef = useRef(null);
+
+  // Trial lapsed → lock the app behind an upgrade wall, but keep the billing/
+  // account area reachable so they can actually upgrade.
+  const billingArea = pathname.includes('/account') || pathname.includes('/billing');
+  const locked = Boolean(user?.isExpired) && !billingArea;
 
   // Clear any inline body padding inherited from the prerendered home page
   // HTML (Vercel serves dist/index.html as the SPA fallback for /dashboard,
@@ -216,6 +224,7 @@ function DashboardInner() {
               </div>
 
               <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
+                <HeaderStatusPill />
                 <ThemeToggle />
 
                 <button
@@ -248,6 +257,8 @@ function DashboardInner() {
                       key={item.to}
                       to={item.to}
                       end={item.end}
+                      target={item.newTab ? '_blank' : undefined}
+                      rel={item.newTab ? 'noopener noreferrer' : undefined}
                       onClick={() => setMobileMenuOpen(false)}
                       className={({ isActive }) =>
                         `flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
@@ -283,8 +294,10 @@ function DashboardInner() {
             className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-[min(28vh,240px)] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(0,212,170,0.04),transparent)]"
             aria-hidden
           />
-          <div className="relative z-[2] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-            <Outlet />
+          <div className="relative z-[2] mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+            <BreachBanner />
+            <TrialBanner />
+            {locked ? <UpgradeWall /> : <Outlet />}
           </div>
         </main>
       </div>

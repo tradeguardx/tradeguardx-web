@@ -32,8 +32,8 @@ const stats = [
     color: 'text-violet-400',
   },
   {
-    value: 'Any broker',
-    label: 'No API key or integration',
+    value: 'Mobile + web',
+    label: 'Covered on the Delta app, even with your screen off',
     icon: (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path

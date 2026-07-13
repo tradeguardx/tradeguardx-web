@@ -11,6 +11,8 @@ import {
   fetchPairingStatus,
   revokePairingSessions,
 } from '../api/tradingAccountsApi';
+import { exchangeFromBrokerSlug } from '../api/exchangeCredentialsApi';
+import ExchangeConnectionPanel from '../components/dashboard/ExchangeConnectionPanel';
 
 const stepFade = {
   hidden: { opacity: 0, y: 8 },
@@ -81,6 +83,14 @@ export default function PairingPage() {
     const suffix = selectedAccount.propFirmSlug ? ` · ${selectedAccount.propFirmSlug}` : '';
     return `${name}${suffix}`;
   }, [selectedAccount]);
+
+  // Delta (retail exchange) accounts connect via an API key + the risk-engine —
+  // NOT the browser extension. For those, this page shows the API-key flow
+  // instead of the extension pairing code.
+  const isDeltaAccount = useMemo(
+    () => exchangeFromBrokerSlug(selectedAccount?.propFirmSlug) !== null,
+    [selectedAccount?.propFirmSlug],
+  );
 
   const loadStatus = useCallback(async () => {
     if (!session?.access_token || !selectedAccount?.id) {
@@ -258,6 +268,72 @@ export default function PairingPage() {
     );
   }
 
+  // Delta accounts: show the API-key connection flow instead of the extension
+  // pairing code — the risk-engine, not the extension, watches these accounts.
+  if (isDeltaAccount) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-auto max-w-4xl"
+      >
+        <DashboardPageBanner
+          accent="accent"
+          title="Connect Delta"
+          subtitle="Link your Delta account with a Trading API key. The risk-engine streams your positions in real time and enforces your rules — no browser extension needed."
+          badge={(
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-accent">
+              <span className="h-1 w-1 rounded-full bg-accent shadow-[0_0_6px_var(--tw-shadow-color)] shadow-accent" />
+              Delta API
+            </span>
+          )}
+          actions={(
+            <Link
+              to="/dashboard/account/trading"
+              className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all hover:border-accent/40 hover:bg-accent/10"
+              style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)', color: 'var(--dash-text-secondary)' }}
+            >
+              Manage accounts
+            </Link>
+          )}
+        />
+
+        <div
+          className="relative overflow-hidden rounded-2xl border p-6 sm:p-8"
+          style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)', boxShadow: 'var(--dash-shadow-card)' }}
+        >
+          <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-accent/[0.12] blur-2xl" />
+          <div className="relative z-10">
+            <div className="flex gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/15 to-emerald-500/5 text-accent shadow-[0_0_24px_rgba(0,212,170,0.12)]">
+                <IconAccount />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--dash-text-muted)' }}>
+                  Selected account
+                </p>
+                <p className="mt-1 font-display text-lg font-bold tracking-tight" style={{ color: 'var(--dash-text-primary)' }}>
+                  {accountsLoading ? 'Loading…' : accountLabel}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--dash-text-faint)' }}>
+                  Use the header switcher to pick which account to connect.
+                </p>
+              </div>
+            </div>
+
+            {selectedAccount?.id && (
+              <ExchangeConnectionPanel
+                account={selectedAccount}
+                accessToken={session?.access_token}
+                toast={toast}
+              />
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -364,7 +440,7 @@ export default function PairingPage() {
                 { n: 1, t: 'Generate', d: 'One-time code, 5 min' },
                 { n: 2, t: 'Copy', d: 'Use the copy button' },
                 { n: 3, t: 'Paste', d: 'In the extension' },
-              ].map((s, i) => (
+              ].map((s) => (
                 <div
                   key={s.n}
                   className="flex gap-3 rounded-xl border px-3 py-3 sm:flex-col sm:items-start"

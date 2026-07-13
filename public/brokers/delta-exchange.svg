@@ -1,10 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <!-- Delta (triangle) symbol - Delta Exchange brand style -->
-  <path d="M24 6L6 42h36L24 6z" fill="url(#dg)" stroke="url(#dg)" stroke-width=".5"/>
-  <defs>
-    <linearGradient id="dg" x1="6" y1="42" x2="42" y2="6" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#00D4AA"/>
-      <stop offset="1" stop-color="#0D9488"/>
-    </linearGradient>
-  </defs>
+
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M7.80664 8.00006L15.6132 12.0001L23.4197 8.00006L7.80664 0V8.00006Z" fill="#FD7D02"/>
+<path d="M7.80762 15.9999V24L23.4207 15.9999L15.6141 11.9999L7.80762 15.9999Z" fill="url(#paint0_linear_552_5865)"/>
+<path d="M23.4208 16.0002V8.00012L15.6143 12.0002L23.4208 16.0002Z" fill="#2CB72C"/>
+<path d="M7.80652 8.00012V16.0002L0 12.0002L7.80652 8.00012Z" fill="#FF9300"/>
+<defs>
+<linearGradient id="paint0_linear_552_5865" x1="18.0135" y1="8.62916" x2="9.25394" y2="16.5192" gradientUnits="userSpaceOnUse">
+<stop stop-color="#168016"/>
+<stop offset="1" stop-color="#2CB72C"/>
+</linearGradient>
+</defs>
 </svg>

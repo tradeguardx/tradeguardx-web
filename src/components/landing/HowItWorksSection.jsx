@@ -4,9 +4,9 @@ import { motion, useInView } from 'framer-motion';
 const steps = [
   {
     number: '01',
-    title: 'Install the extension',
+    title: 'Connect your exchange',
     description:
-      'Add TradeGuardX to Chrome or Edge in one click from the Web Store. Takes under 30 seconds — no account needed to install.',
+      'Generate a Delta API key, whitelist our IP, and paste it once in the dashboard. Enable the Trading permission so the kill switch can close positions — Delta keys never have withdrawal access.',
     gradient: 'from-accent/15 to-emerald-500/5',
     border: 'border-accent/20 hover:border-accent/35',
     numColor: 'text-accent',
@@ -22,13 +22,13 @@ const steps = [
         />
       </svg>
     ),
-    detail: 'Chrome · Edge · Any Chromium browser',
+    detail: 'Delta · CoinDCX soon · 60 seconds',
   },
   {
     number: '02',
-    title: 'Pair & configure your rules',
+    title: 'Set your limits',
     description:
-      'Link the extension to your trading account using a pairing code from the dashboard. Set daily loss limits, risk per trade, hedging rules — individually per account.',
+      'Daily loss, risk per trade, max trades per day, cooldown after losses, and more. Set them once while you’re calm — individually per account.',
     gradient: 'from-blue-500/15 to-indigo-500/5',
     border: 'border-blue-500/20 hover:border-blue-500/35',
     numColor: 'text-blue-400',
@@ -50,13 +50,13 @@ const steps = [
         />
       </svg>
     ),
-    detail: '9 rule types · Per-account configuration',
+    detail: '7 rule types · Per-account configuration',
   },
   {
     number: '03',
-    title: 'Trade protected, every session',
+    title: 'Trade protected, 24/7',
     description:
-      'Open your broker as normal. TradeGuardX monitors every trade in real time — warning you, alerting you, and blocking when your rules are at risk.',
+      'Trade on Delta as normal. Our servers watch your account in real time — and the moment you cross a line, we close your positions and lock the account. Works even when your screen is off.',
     gradient: 'from-emerald-500/15 to-teal-500/5',
     border: 'border-emerald-500/20 hover:border-emerald-500/35',
     numColor: 'text-emerald-400',
@@ -72,7 +72,7 @@ const steps = [
         />
       </svg>
     ),
-    detail: 'Warn → Alert → Block · Automatic escalation',
+    detail: 'Alert → Auto-close → Lock · Always on',
   },
 ];
 
@@ -98,7 +98,8 @@ export default function HowItWorksSection() {
             Up and running in 3 steps
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-lg text-slate-400">
-            No broker API. No complicated integration. Install, pair, and you&apos;re protected.
+            Connect your exchange once. We watch your account around the clock and step in
+            the moment you cross a line — no software to keep open.
           </p>
         </motion.div>
 
