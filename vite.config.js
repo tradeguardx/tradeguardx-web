@@ -12,7 +12,6 @@ const PRERENDER_ROUTES = [
   '/login',
   '/signup',
   '/support',
-  '/beta-traders',
   '/privacy',
   '/terms',
   '/refund',

@@ -108,7 +108,7 @@ function normalizePlan(raw, index) {
     )
     .filter((f) => f.text);
   const monthlyPrice = Number(raw.priceMonthly ?? raw.monthlyPrice ?? 0);
-  const ctaLink = raw.features?.ctaLink || (key === 'free' ? '/beta-traders' : `/beta-traders?plan=${key}`);
+  const ctaLink = raw.features?.ctaLink || (key === 'free' ? '/signup' : `/signup?plan=${key}`);
 
   return {
     id: raw.id || key || `${index}`,
@@ -752,7 +752,7 @@ export default function PricingPage() {
                 whileTap={{ scale: 0.97 }}
               >
                 <Link
-                  to={session?.access_token ? '/dashboard' : '/beta-traders'}
+                  to={session?.access_token ? '/dashboard' : '/signup'}
                   className="inline-flex items-center gap-2.5 rounded-2xl px-8 py-4 text-base font-bold text-[#07090f] transition-all duration-200"
                   style={{
                     background: 'linear-gradient(135deg, #00d4aa 0%, #10b981 100%)',

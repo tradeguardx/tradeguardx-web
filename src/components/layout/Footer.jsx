@@ -16,7 +16,6 @@ const links = {
     { label: 'Support', to: '/support' },
     { label: 'Email Us', to: 'mailto:support@tradeguardx.com' },
     { label: 'Partner program', to: '/partner-with-us' },
-    { label: 'Beta program', to: '/beta-traders' },
   ],
   legal: [
     { label: 'Privacy Policy', to: '/privacy' },
