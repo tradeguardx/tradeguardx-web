@@ -1,35 +1,4 @@
 
-<!-- SECURITY / TRUST -->
-<section class="block" id="security">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Security &amp; trust</span>
-      <h2 class="display h2" style="margin-top:16px;">Your keys. Your funds. Always yours.</h2>
-      <p>You&rsquo;re connecting an exchange account &mdash; so we built TradeGuardX to be impossible to abuse, by design. We can enforce your rules, and nothing else.</p>
-    </div>
-    <div class="steps">
-      <div class="step-card">
-        <div class="step-num">API SCOPE</div>
-        <h4>No withdrawal access</h4>
-        <p>Your Delta Exchange API key is scoped to <b>trade + balance read only</b>. TradeGuardX literally cannot move or withdraw your funds &mdash; the permission isn&rsquo;t there to begin with.</p>
-        <div class="step-meta">&rarr; Read + trade scope &middot; <b>never</b> withdrawal</div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">ENCRYPTION</div>
-        <h4>Encrypted &amp; IP-locked</h4>
-        <p>Keys are <b>encrypted at rest</b> and used only from our fixed, <b>whitelisted IP</b>. Even in the unlikely event of a leak, they&rsquo;re useless from anywhere else.</p>
-        <div class="step-meta">&rarr; Encrypted at rest &middot; single whitelisted IP</div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">CUSTODY</div>
-        <h4>We never hold your money</h4>
-        <p>Your funds never leave your own Delta Exchange wallet. Our API key can only trade and read balances &mdash; it can never withdraw. During a cooldown we don't move anything: we close your open positions and block new trades until the lock lifts.</p>
-        <div class="step-meta">&rarr; Zero custody &middot; no withdrawal access</div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- PRICING (short) -->
 <div class="pricing-wrap">
   <section class="block" id="get-started">
@@ -79,6 +48,10 @@
       <details class="faq-item">
         <summary>Will TradeGuardX have access to my funds?</summary>
         <p>No. Your Delta Exchange API key only has trade and balance-read scope &mdash; it can never withdraw, and your funds never leave your own Delta wallet. During a cooldown we don't move anything: we cancel your orders, close your positions, and block new trades until the lock lifts.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How are my API keys stored and secured?</summary>
+        <p>Your keys are <b>encrypted at rest</b> and used only from our single fixed, <b>IP-whitelisted</b> server &mdash; so even in the unlikely event of a leak, they'd be useless from anywhere else. Combined with the trade-only scope (never withdrawal), TradeGuardX is designed to enforce your rules and nothing else.</p>
       </details>
       <details class="faq-item">
         <summary>What happens if the Delta Exchange API goes down?</summary>
