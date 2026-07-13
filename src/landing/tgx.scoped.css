@@ -227,7 +227,7 @@
   .tgx-home .hero-sub strong{ color: var(--text); font-weight: 500; }
   .tgx-home .hero-ctas{ display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
   .tgx-home .hero-trust{
-    display: flex; align-items: center; gap: 14px; font-size: 13px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 13px;
     color: var(--text-3);
   }
   .tgx-home .hero-trust .spots{ color: var(--accent); font-family: var(--mono); }
@@ -1764,12 +1764,18 @@
     .tgx-home .promo-close{ width: 28px; height: 28px; }
   }
   @media (max-width: 560px) {
+    .tgx-home .wrap{ padding: 0 18px; }
     .tgx-home .trust-grid{ grid-template-columns: 1fr; }
     .tgx-home .je-grid{ grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .tgx-home .je-cell .val{ font-size: 14px; }
     .tgx-home .footer-grid{ grid-template-columns: 1fr; }
     .tgx-home .footer-bot{ flex-direction: column; gap: 12px; }
     .tgx-home .ks-why-grid{ grid-template-columns: 1fr; }
+    /* Compact the USP badge so it fits one line on phones */
+    .tgx-home .hero-eyebrow{ padding: 6px 10px; gap: 7px; }
+    .tgx-home .hero-eyebrow span{ font-size: 9.5px; letter-spacing: 0.05em; }
+    .tgx-home .hero-sub{ font-size: 16px; }
+    .tgx-home .device{ padding: 14px; }
   }
 
 .tgx-home{background:transparent;color:#f1f5f9;}
