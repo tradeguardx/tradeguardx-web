@@ -53,10 +53,179 @@ const mobileNavItems = [
   { to: '/dashboard/account', end: true, label: 'Account', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
   )},
-  { to: '/help', end: false, label: 'Guide', newTab: true, icon: (
+  { to: '/help', end: false, label: 'Guide', newTab: true, groupLabel: 'Resources', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
   )},
 ];
+
+/**
+ * Mobile navigation — a conventional slide-in drawer.
+ *
+ * Replaces an inline dropdown that laid the links out as a 2-column grid of
+ * bordered buttons; at phone width that read as a gallery of cards rather than a
+ * nav, and it pushed the page content down instead of overlaying it. This is the
+ * pattern people already know: tap the hamburger, a panel slides in from the
+ * left over a dimmed backdrop, tap a link or the backdrop to dismiss.
+ */
+function MobileNavDrawer({ open, onClose, user, onSignOut }) {
+  const { pathname } = useLocation();
+
+  // Close on route change — otherwise the drawer stays open over the page you
+  // just navigated to.
+  useEffect(() => {
+    onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // Escape to close, and lock body scroll so the page behind doesn't scroll
+  // under the drawer (the classic mobile-drawer bug).
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open, onClose]);
+
+  const initial = user?.name?.[0] || user?.email?.[0] || 'U';
+  const isTrial = Boolean(user?.isTrial);
+  const planLabel = isTrial
+    ? user?.trialDaysLeft != null
+      ? `Trial · ${user.trialDaysLeft}d left`
+      : 'Free trial'
+    : user?.planLabel || 'Free';
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Dimmed backdrop — tap anywhere to dismiss. */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            aria-hidden
+          />
+
+          <motion.aside
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ type: 'spring', stiffness: 420, damping: 40 }}
+            className="absolute inset-y-0 left-0 flex w-[82%] max-w-[300px] flex-col shadow-2xl"
+            style={{ backgroundColor: 'var(--dash-bg-header)', borderRight: '1px solid var(--dash-border)' }}
+            role="dialog"
+            aria-label="Navigation"
+          >
+            {/* Brand + plan */}
+            <div className="flex items-center justify-between gap-3 px-4 py-4" style={{ borderBottom: '1px solid var(--dash-border)' }}>
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent via-emerald-400 to-teal-500">
+                  <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="font-display text-sm font-bold leading-tight" style={{ color: 'var(--dash-text-primary)' }}>TradeGuardX</p>
+                  <span
+                    className="mt-0.5 inline-flex max-w-full items-center rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                    style={
+                      isTrial
+                        ? { borderColor: 'rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.12)', color: '#fbbf24' }
+                        : { borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)', color: 'var(--dash-text-muted)' }
+                    }
+                  >
+                    {planLabel}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close menu"
+                className="rounded-lg p-1.5 transition-colors hover:bg-[var(--dash-bg-card-hover)]"
+                style={{ color: 'var(--dash-text-muted)' }}
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Links — a vertical list, like every mobile nav */}
+            <nav className="flex-1 overflow-y-auto px-2 py-3">
+              {mobileNavItems.map((item) => (
+                <div key={item.to}>
+                  {item.groupLabel && (
+                    <p
+                      className="px-3 pb-1 pt-3 text-[10px] font-bold uppercase tracking-[0.14em]"
+                      style={{ color: 'var(--dash-text-faint)' }}
+                    >
+                      {item.groupLabel}
+                    </p>
+                  )}
+                  <NavLink
+                    to={item.to}
+                    end={item.end}
+                    target={item.newTab ? '_blank' : undefined}
+                    rel={item.newTab ? 'noopener noreferrer' : undefined}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors ${
+                        isActive ? 'bg-accent/10 text-accent' : 'hover:bg-[var(--dash-bg-card-hover)]'
+                      }`
+                    }
+                    style={({ isActive }) => (isActive ? {} : { color: 'var(--dash-text-secondary)' })}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </NavLink>
+                </div>
+              ))}
+            </nav>
+
+            {/* User + sign out, pinned to the bottom */}
+            <div className="px-3 py-3" style={{ borderTop: '1px solid var(--dash-border)' }}>
+              <div className="mb-2 flex items-center gap-3 px-1">
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold uppercase"
+                  style={{ backgroundColor: 'var(--dash-bg-card)', color: 'var(--dash-text-secondary)', border: '1px solid var(--dash-border)' }}
+                >
+                  {initial}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
+                    {user?.name || 'Trader'}
+                  </p>
+                  <p className="truncate text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>{user?.email}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { onClose(); onSignOut(); }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.06] px-3 py-2.5 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/15"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Sign out
+              </button>
+            </div>
+          </motion.aside>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 function ThemeToggle() {
   const { isDark, toggleTheme } = useDashboardTheme();
@@ -240,51 +409,17 @@ function DashboardInner() {
             </div>
           </div>
 
-          {/* Mobile menu */}
-          <AnimatePresence>
-            {mobileMenuOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="lg:hidden overflow-hidden backdrop-blur-xl"
-                style={{ borderBottom: '1px solid var(--dash-border)', backgroundColor: 'var(--dash-bg-header)' }}
-              >
-                <div className="grid grid-cols-2 gap-2 px-4 py-3 sm:flex sm:flex-wrap">
-                  {mobileNavItems.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      end={item.end}
-                      target={item.newTab ? '_blank' : undefined}
-                      rel={item.newTab ? 'noopener noreferrer' : undefined}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                          isActive ? 'bg-accent/10 text-accent border border-accent/15' : 'border hover:bg-[var(--dash-bg-card-hover)]'
-                        }`
-                      }
-                      style={({ isActive }) => isActive ? {} : { color: 'var(--dash-text-muted)', borderColor: 'var(--dash-border)' }}
-                    >
-                      {item.icon}
-                      {item.label}
-                    </NavLink>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => { setMobileMenuOpen(false); logout(); }}
-                    className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.06] px-3.5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/15 sm:col-span-1"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Sign out
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </header>
+
+        {/* Mobile nav — a standard slide-in drawer (mirrors the desktop sidebar),
+            not the old inline 2-column grid of buttons, which read as a card
+            gallery rather than navigation. */}
+        <MobileNavDrawer
+          open={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+          user={user}
+          onSignOut={logout}
+        />
 
         {/* Content */}
         <main ref={mainRef} className="relative flex-1 overflow-auto">
