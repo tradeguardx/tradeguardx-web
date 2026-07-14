@@ -70,8 +70,12 @@ const NAV_ITEMS = [
   { to: '/dashboard/rules', end: false, label: 'Rules', iconKey: 'rules' },
   { to: '/dashboard/journal', end: false, label: 'AI Journal', iconKey: 'journal' },
   { to: '/dashboard/trades', end: false, label: 'All Trades', iconKey: 'trades' },
-  { to: '/dashboard/pairing', end: false, label: 'Pairing', iconKey: 'pairing', groupLabel: 'Setup', dividerBefore: true },
-  { to: '/dashboard/account/trading', end: false, label: 'Accounts', iconKey: 'tradingAccounts' },
+  // "Pairing" (browser-extension pairing) is the PROP-FIRM enforcement path. The
+  // crypto launch enforces server-side against the user's exchange API key, so a
+  // Delta user never pairs anything — sending them to a page that says "add a
+  // trading account first" to set up an extension they don't need is a dead end.
+  // Hidden from nav; the route still resolves for any prop-firm user with a link.
+  { to: '/dashboard/account/trading', end: false, label: 'Accounts', iconKey: 'tradingAccounts', groupLabel: 'Setup', dividerBefore: true },
   { to: '/dashboard/account/billing', end: false, label: 'Billing', iconKey: 'billing' },
   { to: '/help', end: false, label: 'Guide', iconKey: 'guide', groupLabel: 'Resources', dividerBefore: true, newTab: true },
 ];

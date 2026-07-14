@@ -42,9 +42,8 @@ const mobileNavItems = [
   { to: '/dashboard/trades', end: false, label: 'Trades', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-6a2 2 0 012-2h6M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h6m-6 6h6m0 0v6m0-6h6" /></svg>
   )},
-  { to: '/dashboard/pairing', end: false, label: 'Pairing', icon: (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 9h10M7 15h10" /></svg>
-  )},
+  // Pairing (browser extension) is the prop-firm path — hidden for the crypto
+  // launch, which enforces server-side via the exchange API key. See DashboardSidebar.
   { to: '/dashboard/account/trading', end: false, label: 'Accounts', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
   )},
