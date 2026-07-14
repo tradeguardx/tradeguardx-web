@@ -163,13 +163,32 @@ function send(envelope) {
   if (!INGEST_URL) return;
   try {
     const body = JSON.stringify(envelope);
+
+    // Content-Type MUST be text/plain, not application/json.
+    //
+    // This endpoint is cross-origin (tradeguardx.com → api.tradeguardx.com).
+    // `application/json` is NOT a CORS-safelisted content type, so it forces a
+    // preflight — and sendBeacon CANNOT perform preflighted requests, so the
+    // browser silently drops the beacon. Worse, sendBeacon still returns `true`
+    // (it only reports that the request was queued), so the `return` below fired
+    // and the fetch fallback never ran. Every real pageview was discarded, with
+    // no error anywhere: Vercel showed 94 visitors on a day we recorded 0.
+    //
+    // text/plain IS safelisted → no preflight → the beacon actually goes out. The
+    // ingest Lambda does JSON.parse(event.body) and never inspects Content-Type,
+    // so the payload parses exactly the same.
+    const type = 'text/plain;charset=UTF-8';
+
     if (navigator.sendBeacon) {
-      const blob = new Blob([body], { type: 'application/json' });
+      const blob = new Blob([body], { type });
       if (navigator.sendBeacon(INGEST_URL, blob)) return;
     }
+
+    // Fallback for browsers without sendBeacon. Same reasoning on the header:
+    // keep it safelisted so this never costs an extra preflight round-trip.
     fetch(INGEST_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': type },
       body,
       keepalive: true,
     }).catch(() => {
