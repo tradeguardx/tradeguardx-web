@@ -22,6 +22,7 @@
 const INGEST_URL = (import.meta.env.VITE_ANALYTICS_INGEST_URL || '').trim();
 
 const VID_KEY = 'tgx_vid';
+const ATTR_KEY = 'tgx_attr';
 const IST_OFFSET_MIN = 330;
 
 /** Authenticated user id, attached to events once we know it. */
@@ -96,6 +97,64 @@ function originOf() {
 }
 
 /**
+ * FIRST-TOUCH ATTRIBUTION — the channel that actually won this person.
+ *
+ * Captured once, on their first ever visit, and kept in localStorage forever
+ * after. Every later event carries it, so a visitor who arrives from a Google ad
+ * today and signs up three days later is still credited to that ad — reading
+ * document.referrer at signup time would have called them "direct" and the
+ * campaign that paid for them would look like it converted nobody.
+ *
+ * UTM tags win over the referrer, because that's the whole point of tagging a
+ * campaign: two clicks from instagram.com are indistinguishable by referrer, but
+ * `utm_campaign=launch-a` vs `launch-b` tells you which creative worked. Click
+ * ids (gclid/fbclid) are treated as ad traffic even when the tags are missing —
+ * ad platforms often strip the referrer.
+ */
+function firstTouch() {
+  try {
+    const saved = localStorage.getItem(ATTR_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {
+    /* storage blocked — fall through and compute a session-only value */
+  }
+
+  const q = new URLSearchParams(location.search);
+  const get = (k) => (q.get(k) || '').trim().slice(0, 60) || undefined;
+
+  const utmSource = get('utm_source');
+  const utmMedium = get('utm_medium');
+  const campaign = get('utm_campaign');
+  const content = get('utm_content');
+  const term = get('utm_term');
+  const hasClickId = Boolean(get('gclid') || get('fbclid') || get('ttclid'));
+
+  const { origin, ref } = originOf();
+
+  // Precedence: explicit UTM > click id > referrer host > direct.
+  const source = utmSource || (hasClickId ? 'paid_ad' : origin === 'internal' ? 'direct' : origin);
+  const medium = utmMedium || (hasClickId ? 'cpc' : origin === 'direct' || origin === 'internal' ? 'none' : 'referral');
+
+  const attr = {
+    source,
+    medium,
+    campaign,
+    content,
+    term,
+    referrer: ref,
+    landing: location.pathname,
+    at: Date.now(),
+  };
+
+  try {
+    localStorage.setItem(ATTR_KEY, JSON.stringify(attr));
+  } catch {
+    /* best-effort */
+  }
+  return attr;
+}
+
+/**
  * POST an event. Uses sendBeacon when available so the event survives a page
  * unload (nav away / tab close); falls back to keepalive fetch. Never throws,
  * never blocks — do not await this on a user-visible path.
@@ -123,12 +182,19 @@ function send(envelope) {
 
 function emit(type, extra = {}) {
   if (!INGEST_URL) return;
+  // First-touch rides on EVERY event — that's what lets the backend answer
+  // "which campaign produced paying customers", not just "which page got hits".
+  const a = firstTouch();
   send({
     id: uuid(),
     type,
     ts: Date.now(),
     date: istDate(),
     userId: currentUserId ?? undefined,
+    source: a.source,
+    medium: a.medium,
+    campaign: a.campaign,
+    landing: a.landing,
     ...extra,
   });
 }
