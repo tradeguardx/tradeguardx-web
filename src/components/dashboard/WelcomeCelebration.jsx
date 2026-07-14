@@ -58,16 +58,25 @@ export default function WelcomeCelebration() {
 
   if (!open) return null;
 
-  const tier = user?.subscribedPlanSlug || user?.plan || 'free';
+  // A new signup is on the 3-day trial: full access, but they've paid nothing.
+  // Don't congratulate them on a purchase they didn't make — tell them the clock
+  // is running and what to do next.
+  const isTrial = Boolean(user?.isTrial);
+  const trialDaysLeft = user?.trialDaysLeft ?? null;
+  const tier = user?.billingPlan || 'free';
   const isPaid = isPaidPlan(tier);
   const planLabel = planDisplayLabel(tier);
 
-  const headline = isPaid
-    ? `Welcome — you're a founding member`
-    : `Welcome to TradeGuardX`;
-  const sub = isPaid
-    ? `Your ${planLabel} access is unlocked. Start setting up your trading rules and protect your next session.`
-    : `You're in. Start by adding a trading account and configuring your first risk rules.`;
+  const headline = isTrial
+    ? `Welcome — your free trial has started`
+    : isPaid
+      ? `Welcome — you're all set`
+      : `Welcome to TradeGuardX`;
+  const sub = isTrial
+    ? `You've got everything unlocked${trialDaysLeft != null ? ` for ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}` : ''} — no card needed. Add a trading account, connect your exchange, and set your rules.`
+    : isPaid
+      ? `Your ${planLabel} access is unlocked. Start setting up your trading rules and protect your next session.`
+      : `You're in. Start by adding a trading account and configuring your first risk rules.`;
 
   return (
     <AnimatePresence>

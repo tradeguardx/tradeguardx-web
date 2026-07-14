@@ -7,6 +7,9 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Without this, Chrome paints scrollbars, form controls, and the macOS
+       rubber-band overscroll area in light mode on our dark surfaces. */
+    color-scheme: dark;
   }
 
   body {

@@ -43,6 +43,7 @@ import CommandMenu from './components/common/CommandMenu';
 import { ToastProvider } from './components/common/ToastProvider';
 import AppErrorBoundary from './components/common/AppErrorBoundary';
 import VercelRouteAnalytics from './components/common/VercelRouteAnalytics';
+import AnalyticsRouteTracker from './components/common/AnalyticsRouteTracker';
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
           <ToastProvider>
             <AuthProvider>
               <VercelRouteAnalytics />
+              <AnalyticsRouteTracker />
               <ScrollToTop />
               <ReferralCapture />
               <CommandMenu />
@@ -85,7 +87,9 @@ function App() {
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>
                 <Route path="dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                  <Route index element={<Navigate to="/dashboard/overview" replace />} />
+                  {/* Preserve the query string — signup lands on /dashboard?welcome=1
+                      and a bare Navigate would drop it, so the welcome never fired. */}
+                  <Route index element={<RedirectWithSearch to="/dashboard/overview" />} />
                   <Route path="overview" element={<TradeOverviewPage />} />
                   <Route path="live" element={<LivePage />} />
                   <Route path="rules" element={<RulesTerminal />} />

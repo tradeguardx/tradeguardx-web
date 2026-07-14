@@ -35,6 +35,13 @@ const TRADE_ENV_BASE_URLS = {
   prod: 'https://api.tradeguardx.com/trades',
 };
 
+/** Analytics service (serverless basePath `analytics`). Public ingest endpoint. */
+const ANALYTICS_ENV_BASE_URLS = {
+  local: 'http://localhost:3010',
+  dev: 'https://dev.api.tradeguardx.com/analytics',
+  prod: 'https://api.tradeguardx.com/analytics',
+};
+
 /**
  * Fixed egress IP for all outbound calls to Delta (risk-engine ECS task +
  * user-service pair-flow Lambda both NAT through this IP). Users put this in
@@ -45,8 +52,12 @@ const TRADE_ENV_BASE_URLS = {
  */
 const DELTA_EGRESS_IPS = {
   local: null,
+  // dev and prod share ONE risk-engine VPC (the kill switch runs there and
+  // covers both stages via the shared DB), so both egress from the same NAT —
+  // and users whitelist a single IP regardless of stage. Prod was `null` here,
+  // which showed prod users no IP to whitelist at all.
   dev: '13.205.214.83',
-  prod: null,
+  prod: '13.205.214.83',
 };
 
 function normalizeBaseUrl(url) {
@@ -110,6 +121,12 @@ export function resolveTradeApiBaseUrl() {
 }
 
 export const TRADE_API_BASE_URL = resolveTradeApiBaseUrl();
+
+export function resolveAnalyticsApiBaseUrl() {
+  return resolveServiceBaseUrl('VITE_ANALYTICS_API_BASE_URL', ANALYTICS_ENV_BASE_URLS);
+}
+
+export const ANALYTICS_API_BASE_URL = resolveAnalyticsApiBaseUrl();
 
 /**
  * The single public IP users should whitelist on their Delta API key. Returns

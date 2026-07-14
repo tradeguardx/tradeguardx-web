@@ -254,11 +254,25 @@ export default function AccountOverviewPage() {
               {subscriptionLoading ? 'Loading…' : (user?.planLabel || 'Free')}
             </h2>
             <p className="mt-2 text-sm" style={{ color: 'var(--dash-text-muted)' }}>
-              Here is what your current plan includes right now.
+              {user?.isTrial
+                ? 'Everything below is unlocked for your free trial. Pick a plan to keep it.'
+                : 'Here is what your current plan includes right now.'}
             </p>
           </div>
-          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${tierBadgeClass}`}>
-            {tier === 'proplus' ? 'Pro+' : tier === 'pro' ? 'Pro' : 'Free'}
+          <span
+            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+              user?.isTrial ? 'border-amber-500/35 bg-amber-500/12 text-amber-300' : tierBadgeClass
+            }`}
+          >
+            {user?.isTrial
+              ? user?.trialDaysLeft != null
+                ? `Trial · ${user.trialDaysLeft}d left`
+                : 'Free trial'
+              : tier === 'proplus'
+                ? 'Pro+'
+                : tier === 'pro'
+                  ? 'Pro'
+                  : 'Free'}
           </span>
         </div>
 

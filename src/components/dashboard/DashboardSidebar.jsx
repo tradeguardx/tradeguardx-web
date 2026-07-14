@@ -82,7 +82,24 @@ function itemIsActive(pathname, item) {
 }
 
 /** Upgrade nudge: gradient frame, spotlight, glow + hover shimmer (reads clearly in a narrow sidebar). */
-function SidebarUpgradeCard({ isPro }) {
+function SidebarUpgradeCard({ isPro, isTrial, daysLeft }) {
+  // Trialists already HAVE the features — the nudge is the clock running out,
+  // not a feature list they're missing.
+  const eyebrow = isTrial ? 'Free trial' : isPro ? 'Go further' : 'Level up';
+  const title = isTrial
+    ? daysLeft != null
+      ? `${daysLeft} day${daysLeft === 1 ? '' : 's'} left`
+      : 'Trial ends soon'
+    : isPro
+      ? 'Unlock Pro+'
+      : 'Upgrade to Pro';
+  const body = isTrial
+    ? 'Keep your kill switch running — pick a plan before your trial ends.'
+    : isPro
+      ? 'Unlimited accounts, full history, full analytics.'
+      : 'More accounts, 90-day insights, stronger protection.';
+  const cta = isTrial ? 'Choose a plan' : isPro ? 'Explore Pro+' : 'See Pro benefits';
+
   const tierStyle = isPro
     ? {
       frame: 'from-violet-500/70 via-fuchsia-500/35 to-violet-600/50',
@@ -177,15 +194,13 @@ function SidebarUpgradeCard({ isPro }) {
               </motion.div>
               <div className="min-w-0 flex-1 pt-0.5">
                 <p className={`text-[10px] font-bold uppercase tracking-[0.16em] ${tierStyle.eyebrow}`}>
-                  {isPro ? 'Go further' : 'Level up'}
+                  {eyebrow}
                 </p>
                 <p className="mt-0.5 font-display text-[15px] font-bold leading-tight text-white [text-shadow:0_1px_12px_rgba(0,0,0,0.35)]">
-                  {isPro ? 'Unlock Pro+' : 'Upgrade to Pro'}
+                  {title}
                 </p>
                 <p className={`mt-1.5 text-[11.5px] leading-snug ${tierStyle.body}`}>
-                  {isPro
-                    ? 'Unlimited accounts, full history, full analytics.'
-                    : 'More accounts, 90-day insights, stronger protection.'}
+                  {body}
                 </p>
               </div>
             </div>
@@ -199,7 +214,7 @@ function SidebarUpgradeCard({ isPro }) {
                   aria-hidden
                   className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 to-white/10 opacity-90"
                 />
-                <span className="relative z-[1]">{isPro ? 'Explore Pro+' : 'See Pro benefits'}</span>
+                <span className="relative z-[1]">{cta}</span>
                 <motion.svg
                   className="relative z-[1] h-4 w-4"
                   fill="none"
@@ -227,9 +242,16 @@ export default function DashboardSidebar() {
   const initial = user?.name?.[0] || user?.email?.[0] || 'U';
   const displayName = user?.name || user?.email?.split('@')[0] || 'Trader';
   const planTier = planTierFromSlug(user?.plan);
-  const planBadgeLabel = user?.planLabel || planDisplayLabel(user?.plan);
-  const planBadgeCls =
-    planTier === 'proplus'
+  const isTrial = Boolean(user?.isTrial);
+  // A trial reads as a trial — not as the Pro+ tier it happens to unlock.
+  const planBadgeLabel = isTrial
+    ? user?.trialDaysLeft != null
+      ? `Trial · ${user.trialDaysLeft}d left`
+      : 'Free trial'
+    : user?.planLabel || planDisplayLabel(user?.plan);
+  const planBadgeCls = isTrial
+    ? 'border-amber-500/35 bg-amber-500/12 text-amber-200'
+    : planTier === 'proplus'
       ? 'border-purple-500/35 bg-purple-500/15 text-purple-200'
       : planTier === 'pro'
         ? 'border-accent/40 bg-accent/12 text-accent'
@@ -347,9 +369,12 @@ export default function DashboardSidebar() {
         </div>
 
         {(() => {
-          const tier = planTierFromSlug(user?.plan);
+          // A trialist's effective tier is proplus, but they've bought nothing —
+          // they're the single most important person to show an upgrade to, so
+          // gate on what they've PAID for, not what they currently have access to.
+          const tier = planTierFromSlug(user?.billingPlan);
           if (tier === 'proplus') return null;
-          return <SidebarUpgradeCard isPro={tier === 'pro'} />;
+          return <SidebarUpgradeCard isPro={tier === 'pro'} isTrial={user?.isTrial} daysLeft={user?.trialDaysLeft} />;
         })()}
       </nav>
 

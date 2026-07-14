@@ -10,6 +10,7 @@ import {
 } from '../lib/planLimits';
 import { ShimmerBlock, StatCardSkeleton } from '../components/common/LoadingSkeleton';
 import DashboardPageBanner from '../components/dashboard/DashboardPageBanner';
+import SetupChecklist from '../components/dashboard/SetupChecklist';
 import { staggerContainer, staggerItem } from '../components/dashboard/dashboardMotion';
 
 /* ─── Protection Status Hero ───────────────────────────────────────── */
@@ -90,7 +91,7 @@ function ProtectionStatus({ accounts, accountsLoading }) {
             </div>
             <p className="mt-0.5 text-sm" style={{ color: 'var(--dash-text-muted)' }}>
               <span className="font-semibold" style={{ color: 'var(--dash-text-primary)' }}>{accounts.length} trading account{accounts.length > 1 ? 's' : ''}</span>
-              {' '}configured · Enforced in-browser via the extension
+              {' '}configured · Enforced server-side on your exchange
             </p>
           </div>
         </div>
@@ -110,13 +111,13 @@ function ProtectionStatus({ accounts, accountsLoading }) {
             <span className="text-xs" style={{ color: 'var(--dash-text-faint)' }}>+{accounts.length - 3} more</span>
           )}
           <Link
-            to="/dashboard/pairing"
+            to="/dashboard/account/trading"
             className="dash-account-chip inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium"
           >
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
-            Manage pairing
+            Manage connections
           </Link>
         </div>
       </div>
@@ -201,10 +202,16 @@ function QuickAction({ to, icon, label, description, iconClass, badge }) {
 
 /* ─── Main page ─────────────────────────────────────────────────────── */
 export default function TradeOverviewPage() {
-  const { user, subscriptionLoading } = useAuth();
+  const { user, session, subscriptionLoading } = useAuth();
   const { accounts, accountsLoading } = useTradingAccounts();
 
   const tier = planTierFromSlug(user?.plan);
+  // Trial = full Pro+ features (tier) but nothing purchased (billingTier), so the
+  // upgrade paths below must key off billingTier or a trialist gets locked out of
+  // /pricing by "you're already on Pro+".
+  const billingTier = planTierFromSlug(user?.billingPlan);
+  const isTrial = Boolean(user?.isTrial);
+  const trialDaysLeft = user?.trialDaysLeft ?? null;
   const cap = maxTradingAccountsForPlan(user?.plan);
   const accountCount = accountsLoading ? null : accounts.length;
   const accountsLabel = accountCount == null ? '—' : cap != null ? `${accountCount} / ${cap}` : `${accountCount}`;
@@ -215,14 +222,21 @@ export default function TradeOverviewPage() {
     {
       label: 'Plan',
       value: subscriptionLoading ? '…' : (user?.planLabel || 'Free'),
-      sub: tier === 'free' ? 'Upgrade for more accounts & history' : 'Active subscription',
-      iconClass: 'dash-icon-violet',
+      sub: isTrial
+        ? trialDaysLeft != null
+          ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left — choose a plan`
+          : 'Trial — choose a plan'
+        : tier === 'free'
+          ? 'Upgrade for more accounts & history'
+          : 'Active subscription',
+      iconClass: isTrial ? 'dash-icon-amber' : 'dash-icon-violet',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
         </svg>
       ),
-      href: tier !== 'proplus' ? '/pricing' : undefined,
+      // Trial users have bought nothing, so /pricing must stay reachable for them.
+      href: billingTier !== 'proplus' ? '/pricing' : undefined,
     },
     {
       label: 'Trading accounts',
@@ -250,19 +264,18 @@ export default function TradeOverviewPage() {
       href: '/dashboard/journal',
     },
     {
-      label: 'Extension',
-      value: 'Set up',
-      sub: 'Install, pair & protect',
-      iconClass: 'dash-icon-amber',
+      label: 'Kill switch',
+      value: accountsLoading ? '…' : accounts.length > 0 ? 'Armed' : 'Set up',
+      sub: accounts.length > 0 ? 'Enforced server-side on Delta' : 'Connect an account to arm it',
+      iconClass: accounts.length > 0 ? 'dash-icon-accent' : 'dash-icon-amber',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
         </svg>
       ),
-      href: '/dashboard/install-extension',
+      href: '/dashboard/live',
     },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [user?.plan, user?.planLabel, subscriptionLoading, accountsLabel, cap, accountCount, accountProgress, tier, accountsLoading]);
+  ], [user?.plan, user?.planLabel, subscriptionLoading, accountsLabel, cap, accountCount, accountProgress, tier, billingTier, isTrial, trialDaysLeft, accountsLoading, accounts.length]);
 
   const quickActions = [
     {
@@ -300,9 +313,9 @@ export default function TradeOverviewPage() {
       ),
     },
     {
-      to: '/dashboard/pairing',
-      label: 'Pair Extension',
-      description: 'Link your browser extension to a trading account using a one-time code.',
+      to: '/dashboard/account/trading',
+      label: 'Connect exchange',
+      description: 'Link your Delta API key so the kill switch can close positions for you.',
       iconClass: 'dash-icon-emerald',
       icon: (
         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -333,12 +346,12 @@ export default function TradeOverviewPage() {
           </span>
         }
         actions={
-          tier !== 'proplus' ? (
+          billingTier !== 'proplus' ? (
             <Link
               to="/pricing"
               className="inline-flex items-center gap-1.5 rounded-xl border border-accent/25 bg-accent/10 px-3.5 py-2 text-xs font-semibold text-accent transition hover:bg-accent/20"
             >
-              Upgrade
+              {isTrial ? 'Choose a plan' : 'Upgrade'}
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -368,6 +381,12 @@ export default function TradeOverviewPage() {
         </motion.div>
       )}
 
+      {/* Onboarding: create account → connect API key → set rules (real state).
+          Sits ABOVE quick access — until setup is finished it's the only thing
+          on this page that matters. It self-hides once all three are done (and
+          carries its own margin, so no gap is left behind when it does). */}
+      <SetupChecklist accounts={accounts} accountsLoading={accountsLoading} accessToken={session?.access_token} />
+
       {/* Quick actions */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -384,43 +403,6 @@ export default function TradeOverviewPage() {
           ))}
         </div>
       </motion.div>
-
-      {/* Setup checklist for new users */}
-      {!accountsLoading && accounts.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.28 }}
-          className="rounded-2xl border p-5"
-          style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)', boxShadow: 'var(--dash-shadow-card)' }}
-        >
-          <p className="mb-4 text-sm font-semibold" style={{ color: 'var(--dash-text-secondary)' }}>
-            Get started in 3 steps
-          </p>
-          <div className="flex flex-col gap-3">
-            {[
-              { num: '1', label: 'Create a trading account', href: '/dashboard/account/trading', done: false },
-              { num: '2', label: 'Install the Chrome extension', href: '/dashboard/install-extension', done: false },
-              { num: '3', label: 'Pair & configure rules', href: '/dashboard/pairing', done: false },
-            ].map((step) => (
-              <Link
-                key={step.num}
-                to={step.href}
-                className="group flex items-center gap-4 rounded-xl border px-4 py-3 transition-colors hover:border-accent/20 hover:bg-accent/[0.03]"
-                style={{ borderColor: 'var(--dash-border)' }}
-              >
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-white/[0.08] text-xs font-bold" style={{ color: 'var(--dash-text-muted)' }}>
-                  {step.num}
-                </span>
-                <span className="flex-1 text-sm font-medium" style={{ color: 'var(--dash-text-secondary)' }}>{step.label}</span>
-                <svg className="h-4 w-4 flex-shrink-0 text-slate-600 transition-transform group-hover:translate-x-0.5 group-hover:text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            ))}
-          </div>
-        </motion.div>
-      )}
     </motion.div>
   );
 }

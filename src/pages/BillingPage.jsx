@@ -157,6 +157,8 @@ export default function BillingPage() {
   // without hitting a temporal-dead-zone ReferenceError).
   const status = user?.subscriptionStatus ?? 'active';
   const isActive = status === 'active';
+  const isTrial = Boolean(user?.isTrial);
+  const trialDaysLeft = user?.trialDaysLeft ?? null;
   const subscribedPlanLabel = user?.subscribedPlanLabel || 'Free';
   const effectivePlanLabel = user?.planLabel || 'Free';
   const subscriptionSource = user?.subscriptionSource || 'free';
@@ -270,7 +272,25 @@ export default function BillingPage() {
           <FoundingMemberInfo periodEnd={sub?.currentPeriodEnd} planLabel={subscribedPlanLabel} />
         )}
 
-        {!subscriptionLoading && !isActive && (
+        {/* Trial: not "active" (status is 'trialing'), so StatusBanner won't fire —
+            and without this the page gives a trialist zero context on the clock. */}
+        {!subscriptionLoading && isTrial && (
+          <div
+            className="mb-6 rounded-xl border p-4"
+            style={{ borderColor: 'rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.08)' }}
+          >
+            <p className="text-sm font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
+              You’re on the free trial
+              {trialDaysLeft != null ? ` — ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left` : ''}
+            </p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--dash-text-muted)' }}>
+              Everything is unlocked and no card is on file. When the trial ends your rules stop being
+              enforced until you pick a plan.
+            </p>
+          </div>
+        )}
+
+        {!subscriptionLoading && !isActive && !isTrial && (
           <StatusBanner
             status={status}
             periodEnd={sub?.currentPeriodEnd}
@@ -306,7 +326,7 @@ export default function BillingPage() {
           {periodEnd && (
             <div className="flex justify-between gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
               <span className="text-[var(--dash-text-muted)]">
-                {isAdminComp && isActive
+                {isTrial || (isAdminComp && isActive)
                   ? 'Free trial ends'
                   : isActive
                     ? 'Next renewal'

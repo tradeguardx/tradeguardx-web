@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { initUserProfile } from '../api/userApi';
 import { getCurrentSubscription } from '../api/subscriptionApi';
 import { identifySentryUser, clearSentryUser } from '../sentry.js';
+import { setAnalyticsUser, trackLogin, trackSignup } from '../lib/analytics';
 
 const AuthContext = createContext(null);
 
@@ -19,6 +20,8 @@ export function AuthProvider({ children }) {
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [subscriptionError, setSubscriptionError] = useState(null);
   const initializedProfilesRef = useRef(new Set());
+  // Set by signup() so the SIGNED_IN that follows isn't also counted as a login.
+  const suppressLoginEventRef = useRef(false);
 
   const toAppUser = useCallback((authUser) => {
     if (!authUser) return null;
@@ -32,6 +35,11 @@ export function AuthProvider({ children }) {
       // collapses to `free` regardless of which plan was originally subscribed to.
       plan: 'free',
       planLabel: 'Free',
+      // `billingPlan` is what the user has actually PAID for — it drives upgrade
+      // and checkout eligibility. It is deliberately NOT the same as `plan`: a
+      // trial unlocks Pro+ features (plan='pro_plus') without being a purchase,
+      // so billingPlan stays 'free' and every paid tier remains buyable.
+      billingPlan: 'free',
       limits: null,
       // `subscribedPlanSlug` and `subscribedPlanLabel` are the literal plan the
       // user is paying for — used by Billing/Account pages to show "Pro — past due"
@@ -93,6 +101,7 @@ export function AuthProvider({ children }) {
           ...accessFields,
           plan: 'free',
           planLabel: 'Free',
+          billingPlan: 'free',
           subscribedPlanSlug: 'free',
           subscribedPlanLabel: 'Free',
           subscriptionStatus: exposedStatus,
@@ -103,15 +112,28 @@ export function AuthProvider({ children }) {
       }
 
       const planName = subData.plan.name || 'Free';
+      // The plan the user is ASSIGNED. During a trial this is deliberately
+      // 'free' — they've bought nothing.
       const slug = (subData.plan.slug || planKeyFromName(planName)) || 'free';
+      // The plan whose features apply RIGHT NOW. Equals `slug` except during a
+      // trial, where the API resolves it to the top plan (Pro+).
+      const entitlementSlug = subData.entitlementPlanSlug || (isTrial ? 'pro_plus' : slug);
 
       return {
         ...base,
         ...accessFields,
-        // During a trial or paid plan, grant the plan; when expired/free the app
-        // gates to free (the upgrade wall enforces the locked state on top).
-        plan: hasFullAccess ? slug : 'free',
-        planLabel: hasFullAccess ? planName : isExpired ? 'Trial ended' : 'Free',
+        // `plan` drives FEATURE GATING, so during a trial it must be the
+        // entitlement (Pro+) — that's what "everything free for 3 days" means.
+        // When expired/free the app gates to free (the upgrade wall enforces the
+        // locked state on top).
+        plan: hasFullAccess ? (isTrial ? entitlementSlug : slug) : 'free',
+        // A trial is NOT a purchase — never show the trialist a paid tier's name,
+        // or they think they already bought it and never convert.
+        planLabel: isTrial ? 'Free trial' : hasFullAccess ? planName : isExpired ? 'Trial ended' : 'Free',
+        // `billingPlan` drives UPGRADE/CHECKOUT eligibility — what they've paid
+        // for, which during a trial is nothing. This is what keeps every paid
+        // plan buyable instead of showing "Current plan ✓".
+        billingPlan: isTrial ? 'free' : hasFullAccess ? slug : 'free',
         limits: hasFullAccess ? (subData.limits ?? subData.plan?.features ?? null) : null,
         subscribedPlanSlug: slug,
         subscribedPlanLabel: planName,
@@ -197,6 +219,8 @@ export function AuthProvider({ children }) {
       setUser(toAppUser(nextSession?.user ?? null));
       setAuthReady(true);
       if (nextSession) {
+        // Identity only — a restored session is not a fresh login.
+        setAnalyticsUser(nextSession.user?.id);
         await bootstrapSession(nextSession);
       }
     }
@@ -208,8 +232,18 @@ export function AuthProvider({ children }) {
       setUser(toAppUser(nextSession?.user ?? null));
       setAuthReady(true);
       if (nextSession) {
+        // Analytics: SIGNED_IN fires for password, OAuth AND signup. A signup
+        // already emitted its own event, so suppress the duplicate login here.
+        // INITIAL_SESSION / TOKEN_REFRESHED don't fire it, so page reloads and
+        // token refreshes never inflate the login count.
+        setAnalyticsUser(nextSession.user?.id);
+        if (_event === 'SIGNED_IN') {
+          if (suppressLoginEventRef.current) suppressLoginEventRef.current = false;
+          else trackLogin(nextSession.user?.id);
+        }
         await bootstrapSession(nextSession);
       } else {
+        setAnalyticsUser(null);
         setSubscription(null);
         setSubscriptionError(null);
         initializedProfilesRef.current = new Set();
@@ -253,6 +287,9 @@ export function AuthProvider({ children }) {
 
   const signup = useCallback(
     async (email, password, name) => {
+      // Mark BEFORE the call: Supabase fires SIGNED_IN on a successful signup,
+      // and that listener must not double-count it as a login.
+      suppressLoginEventRef.current = true;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -262,14 +299,21 @@ export function AuthProvider({ children }) {
           },
         },
       });
-      if (error) throw error;
+      if (error) {
+        suppressLoginEventRef.current = false;
+        throw error;
+      }
 
       const nextSession = data?.session ?? null;
       const nextUser = toAppUser(data?.user ?? null);
       setSession(nextSession);
       setUser(nextUser);
+      trackSignup(data?.user?.id);
       if (nextSession) {
         await bootstrapSession(nextSession, name);
+      } else {
+        // Email confirmation required — no SIGNED_IN will follow, so release.
+        suppressLoginEventRef.current = false;
       }
 
       return {

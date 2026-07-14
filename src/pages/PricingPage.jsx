@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/ToastProvider';
 import { createCheckoutSession } from '../api/paymentsApi';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
+import { trackCheckoutStarted } from '../lib/analytics';
 import { getStoredReferralCode } from '../lib/referralCode';
 import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
 
@@ -182,7 +183,7 @@ export default function PricingPage() {
   async function handlePaidPlanCta(plan) {
     if (plan.key === 'free') { navigate(plan.ctaLink); return; }
     if (!session?.access_token) { navigate(plan.ctaLink); return; }
-    const elig = paidCheckoutEligibility(user?.plan, plan.key);
+    const elig = paidCheckoutEligibility(user?.billingPlan, plan.key);
     if (!elig.allowed) {
       if (elig.reason === 'current') toast.error('Already on this plan', 'You are already subscribed to this tier.');
       else if (elig.reason === 'downgrade') toast.info('Change plan in Billing', 'To switch to a lower tier, use Billing → manage subscription.');
@@ -196,7 +197,7 @@ export default function PricingPage() {
         couponCode: getStoredReferralCode() || undefined,
       });
       const url = res?.data?.checkoutUrl;
-      if (url) { window.location.href = url; return; }
+      if (url) { trackCheckoutStarted(plan.key); window.location.href = url; return; }
       throw new Error('No checkout URL returned');
     } catch (err) {
       toast.error('Checkout failed', err?.message || 'Please try again.');
@@ -216,7 +217,7 @@ export default function PricingPage() {
     const plan = plans.find((p) => normalizePlanSlugForMatch(p.key) === pendingN);
     if (!plan) { clearPendingCheckoutPlan(); return; }
     if (plan.key === 'free') return;
-    const resumeElig = paidCheckoutEligibility(user?.plan, plan.key);
+    const resumeElig = paidCheckoutEligibility(user?.billingPlan, plan.key);
     if (!resumeElig.allowed) { clearPendingCheckoutPlan(); return; }
     if (resumeCheckoutRef.current) return;
     resumeCheckoutRef.current = true;
@@ -231,7 +232,7 @@ export default function PricingPage() {
         });
         if (cancelled) return;
         const url = res?.data?.checkoutUrl;
-        if (url) { clearPendingCheckoutPlan(); window.location.href = url; return; }
+        if (url) { clearPendingCheckoutPlan(); trackCheckoutStarted(plan.key); window.location.href = url; return; }
         throw new Error('No checkout URL returned');
       } catch (err) {
         if (!cancelled) { resumeCheckoutRef.current = false; toast.error('Checkout failed', err?.message || 'Please try again.'); }
@@ -240,7 +241,7 @@ export default function PricingPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [isLoading, loadError, plans, session?.access_token, subscriptionLoading, user?.plan, toast]);
+  }, [isLoading, loadError, plans, session?.access_token, subscriptionLoading, user?.billingPlan, toast]);
 
   useEffect(() => {
     let cancelled = false;
@@ -284,12 +285,12 @@ export default function PricingPage() {
 
     if (plan.key === 'free' && session?.access_token) {
       if (subscriptionLoading) return <button disabled className={`${baseClass} opacity-60 cursor-wait`} style={secondaryStyle}>Loading plan…</button>;
-      if (isPaidPlan(user?.plan)) return <Link to="/dashboard/account/billing" className={`block text-center ${baseClass}`} style={secondaryStyle}>Manage subscription</Link>;
+      if (isPaidPlan(user?.billingPlan)) return <Link to="/dashboard/account/billing" className={`block text-center ${baseClass}`} style={secondaryStyle}>Manage subscription</Link>;
       return <Link to={plan.ctaLink} className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>{plan.cta}</Link>;
     }
 
     if (plan.key !== 'free' && session?.access_token) {
-      const paidElig = paidCheckoutEligibility(user?.plan, plan.key);
+      const paidElig = paidCheckoutEligibility(user?.billingPlan, plan.key);
       if (subscriptionLoading) return <button disabled className={`${baseClass} opacity-60 cursor-wait`} style={isPrimary ? primaryStyle : secondaryStyle}>Loading plan…</button>;
       if (paidElig && !paidElig.allowed && paidElig.reason === 'current') return <button disabled className={`${baseClass} opacity-70 cursor-not-allowed`} style={secondaryStyle}>Current plan ✓</button>;
       if (paidElig && !paidElig.allowed && paidElig.reason === 'downgrade') return <Link to="/dashboard/account/billing" className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>Manage subscription</Link>;
@@ -596,7 +597,7 @@ export default function PricingPage() {
                 Ready to protect your trades?
               </h2>
               <p className="text-base mb-10 max-w-md mx-auto" style={{ color: '#475569' }}>
-                {session?.access_token && !subscriptionLoading && isPaidPlan(user?.plan)
+                {session?.access_token && !subscriptionLoading && isPaidPlan(user?.billingPlan)
                   ? 'You are on a paid plan. Manage billing anytime from your account.'
                   : 'Join traders who trust TradeGuardX. Start free — no card required.'}
               </p>
