@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { initUserProfile } from '../api/userApi';
 import { getCurrentSubscription } from '../api/subscriptionApi';
 import { identifySentryUser, clearSentryUser } from '../sentry.js';
-import { setAnalyticsUser, trackLogin, trackSignup } from '../lib/analytics';
+import { setAnalyticsUser, trackLogin, trackSignup, firstTouch } from '../lib/analytics';
 
 const AuthContext = createContext(null);
 
@@ -160,6 +160,9 @@ export function AuthProvider({ children }) {
           targetSession.user.user_metadata?.name ||
           null,
         email: targetSession.user?.email || null,
+        // The channel that won this user, from their first-ever visit. Stored on
+        // the profile the first time it's created; ignored on later calls.
+        attribution: firstTouch(),
       });
       initializedProfilesRef.current.add(userId);
     } catch {

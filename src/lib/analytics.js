@@ -111,7 +111,7 @@ function originOf() {
  * ids (gclid/fbclid) are treated as ad traffic even when the tags are missing —
  * ad platforms often strip the referrer.
  */
-function firstTouch() {
+export function firstTouch() {
   try {
     const saved = localStorage.getItem(ATTR_KEY);
     if (saved) return JSON.parse(saved);
