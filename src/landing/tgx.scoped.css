@@ -1817,6 +1817,14 @@
     .tgx-home .hero-exchange{ padding: 11px 14px; gap: 8px 12px; }
     .tgx-home .hero-exchange .hx-logo img{ height: 28px; }
     .tgx-home .hero-exchange .hx-name{ font-size: 19px; }
+
+    /* On phones the two hero CTAs were wrapping to different widths and
+       left-aligning, which looked broken. Stack them full-width and centered,
+       so they read as a clean primary/secondary pair. */
+    .tgx-home .hero-ctas{ flex-direction: column; align-items: stretch; gap: 10px; }
+    .tgx-home .hero-ctas .btn{ width: 100%; justify-content: center; }
+    /* Reassurance ticks: two-up rows read better than one long wrap on a phone. */
+    .tgx-home .hero-trust{ gap: 8px 16px; font-size: 13px; }
   }
 
 .tgx-home{background:transparent;color:#f1f5f9;}
