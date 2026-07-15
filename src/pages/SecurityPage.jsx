@@ -3,9 +3,9 @@ import { useSEO } from '../hooks/useSEO';
 
 const SECTIONS = [
   {
-    title: 'We never have your broker login',
+    title: 'We never have your exchange login',
     body:
-      "TradeGuardX runs entirely in your browser as a Chrome extension. We don't ask for, store, or transmit your broker username, password, API keys, or session cookies. The extension reads what's already visible on the broker page (your open positions, the Buy/Sell buttons, your P&L) and enforces rules at the click. No backdoor into your broker.",
+      "We never ask for or store your exchange or broker password or 2FA codes. For crypto exchanges like Delta Exchange, you give us a scoped API key with Read and Trade permissions only — it can cancel orders and close positions to enforce your rules, but it can never withdraw or transfer funds. We encrypt that key at rest with AWS KMS. For prop firms, the browser extension reads only what's already visible on the broker page and enforces rules at the click. Either way: no access to your money, and no backdoor into your account.",
   },
   {
     title: 'Authentication',
@@ -24,7 +24,7 @@ const SECTIONS = [
   {
     title: 'What we do NOT collect',
     list: [
-      { text: "Broker passwords, API keys, 2FA codes, or session cookies." },
+      { text: "Exchange or broker passwords, 2FA codes, or session cookies. (For exchange accounts we hold only a scoped Read + Trade API key, encrypted — never withdrawal access.)" },
       { text: "Page content unrelated to trading (account numbers in non-trading pages, broker chat, support tickets, etc.)." },
       { text: "Browsing activity outside your paired broker domain. The extension stays dormant on every other website." },
       { text: "Personal financial information beyond what you enter (we don't pull credit scores, bank info, etc.)." },
@@ -39,7 +39,7 @@ const SECTIONS = [
     title: 'Encryption',
     list: [
       { bold: 'In transit:', text: 'TLS 1.2+ on every API call and webhook. No HTTP, ever.' },
-      { bold: 'At rest:', text: 'AWS RDS encrypts the database disk; backups are encrypted snapshots.' },
+      { bold: 'At rest:', text: 'The database disk and backups are encrypted. Exchange API credentials get an extra layer — envelope-encrypted with AWS KMS, so they are never stored in plaintext.' },
       { bold: 'Tokens:', text: 'Auth tokens are signed JWTs (HS256) with short expiries. Pairing tokens are scoped to a single trading account and revocable.' },
     ],
   },

@@ -4,24 +4,36 @@ import { motion } from 'framer-motion';
 const sections = [
   {
     title: '1. Introduction',
-    content: 'TradeGuardX ("we", "our", or "us") respects your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our browser extension, web application, and related services. Please read this policy carefully.',
+    content: 'TradeGuardX ("we", "our", or "us") respects your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website, web application, server-side risk engine, and browser extension. Please read this policy carefully.',
   },
   {
     title: '2. Information We Collect',
     content: 'We collect the following types of information:',
     list: [
-      { bold: 'Account information:', text: 'Email address and authentication credentials when you create an account. Authentication is handled by Supabase; we do not store your password directly.' },
-      { bold: 'Trading account metadata:', text: 'Display name, prop firm or broker identifier, equity mode (live or funded), starting balance, current balance, account currency, and timezone for the trading accounts you add.' },
-      { bold: 'Trade events:', text: 'Open, modify, and close events captured by the browser extension on supported broker tabs — symbol, side, quantity, entry/exit prices, stop loss, take profit, P&L, and timestamps.' },
-      { bold: 'Risk rule configuration:', text: 'The risk rules you configure (daily loss limits, per-trade risk, hedging prevention, max trades per day, etc.) and their parameters.' },
+      { bold: 'Account information:', text: 'Email address and authentication credentials when you create an account. Authentication is handled by Supabase; we do not store your password directly. If you sign in with Google, we receive your basic Google profile (name and email) via that sign-in.' },
+      { bold: 'Trading account metadata:', text: 'Display name, exchange or prop firm identifier, equity mode, starting balance, current balance, account currency, and timezone for the trading accounts you add.' },
+      { bold: 'Exchange API credentials:', text: 'For crypto exchange accounts (e.g. Delta Exchange), the API key and secret you provide so the kill switch can cancel orders and close positions on your behalf. These are encrypted at rest using AWS KMS and used only to enforce your rules. Delta API keys carry Read and Trade permissions only and can never withdraw funds; we never receive your exchange login password or 2FA codes.' },
+      { bold: 'Trade events:', text: 'Open, modify, and close events for your trades — symbol, side, quantity, entry/exit prices, stop loss, take profit, P&L, and timestamps. For crypto exchange accounts these are received server-side via your exchange API connection; for prop-firm accounts they are captured by the browser extension on supported broker tabs.' },
+      { bold: 'Risk rule configuration:', text: 'The risk rules you configure (daily loss limits, per-trade risk, hedging prevention, max trades per day, cooldowns, etc.) and their parameters.' },
       { bold: 'Pairing and session tokens:', text: 'When you pair the browser extension with your account, we issue a session token that the extension stores in your browser\'s local storage and sends to our API as proof of authorization.' },
-      { bold: 'Broker host:', text: 'The hostname of the broker your trading account is paired to (e.g., my.exness.com). Used by the extension to determine which page to monitor and by our backend to scope rule evaluation.' },
       { bold: 'Subscription and payment information:', text: 'Subscription tier and billing identifiers. Payment card details are processed by Dodo Payments and never stored on our servers.' },
-      { bold: 'Technical data:', text: 'Browser type, extension version, and device information necessary for the service to function.' },
+      { bold: 'Notification preferences:', text: 'If you enable alerts, the email address or Telegram chat you connect so we can send trade and breach notifications.' },
+      { bold: 'Technical and usage data:', text: 'Browser type, device type, extension version, and website usage analytics described in the next section.' },
     ],
   },
   {
-    title: '3. Browser Extension — Data Practices',
+    title: '3. Analytics, Cookies & Marketing Attribution',
+    content: 'When you visit our website we collect usage analytics to understand traffic and improve the product. This includes:',
+    list: [
+      { text: 'The pages you view and the order you view them in, the website that referred you, your device type, and approximate country.' },
+      { text: 'A first-party visitor identifier and marketing attribution (including UTM campaign tags such as utm_source and utm_campaign) stored in your browser\'s local storage. If you create an account, the marketing source that first brought you is saved to your profile so we can measure which channels bring users.' },
+      { text: 'Your IP address is used only to derive an approximate country and a salted, one-way hash that lets us count distinct networks. We do not store your raw IP address.' },
+      { text: 'For signed-in users, product events such as sign-up, login, adding an account, and starting checkout — so we can see where new users get stuck.' },
+    ],
+    afterList: 'We use Vercel Web Analytics (a privacy-focused, cookie-free provider) and our own first-party analytics service hosted on AWS. We use browser local storage rather than advertising cookies for these identifiers and for essential functions such as keeping you signed in and remembering dismissed banners. Raw analytics events are retained for up to 120 days; aggregated, non-identifying counts are kept longer. We do not use third-party advertising or cross-site tracking cookies.',
+  },
+  {
+    title: '4. Browser Extension — Data Practices',
     content: 'The TradeGuardX Chrome extension is scoped to a defined list of supported broker domains declared in its manifest. On other websites it does not load its monitoring scripts. On supported broker tabs:',
     list: [
       { text: 'It reads the page DOM to detect Buy/Sell buttons, open positions, and order parameters needed to evaluate your configured risk rules.' },
@@ -32,7 +44,7 @@ const sections = [
     ],
   },
   {
-    title: '4. What the Extension Does and Does Not Do',
+    title: '5. What the Extension Does and Does Not Do',
     content: 'To set clear expectations about the scope of the browser extension:',
     list: [
       { text: 'The extension does not execute trades, modify orders, or interact with broker APIs. It only observes trading activity and enforces user-defined rules within the browser interface.' },
@@ -41,7 +53,7 @@ const sections = [
     ],
   },
   {
-    title: '5. Error Reporting',
+    title: '6. Error Reporting',
     content: 'To diagnose crashes and bugs, the extension and web application send error reports to Sentry (sentry.io). Reports are stored in Sentry\'s EU region (ingest.de.sentry.io). Each report includes:',
     list: [
       { text: 'A JavaScript stack trace of the error.' },
@@ -52,7 +64,7 @@ const sections = [
     afterList: 'We do not send console log breadcrumbs (which can include account IDs, P&L, or session tokens that brokers log to console), and we strip query strings from any URLs in the report. Error reporting only initializes on broker tabs the user has paired; the SDK is loaded but stays inactive on unpaired sites.',
   },
   {
-    title: '6. How We Use Your Information',
+    title: '7. How We Use Your Information',
     content: 'We use collected information to:',
     list: [
       { text: 'Provide, maintain, and improve our services' },
@@ -62,33 +74,37 @@ const sections = [
       { text: 'Send you updates, security alerts, and support messages' },
       { text: 'Respond to your requests and comply with legal obligations' },
       { text: 'Diagnose bugs and crashes via aggregated error reports' },
+      { text: 'Understand website traffic and measure which marketing channels bring users, using the analytics described in section 3' },
     ],
   },
   {
-    title: '7. Data Storage and Security',
-    content: 'We implement appropriate technical and organizational measures to protect your personal data. Account data is stored in our PostgreSQL database hosted on AWS. Extension-only data (session token, selector cache, ring-buffer of recent trades) is stored locally in your browser via chrome.storage.local. We do not sell your personal information to third parties.',
+    title: '8. Data Storage, Security & Retention',
+    content: 'We implement appropriate technical and organizational measures to protect your data. Account and trade data is stored in our PostgreSQL database hosted on AWS. Exchange API credentials are encrypted at rest using AWS KMS. Website analytics events are stored in AWS DynamoDB and automatically deleted after 120 days; aggregated counts are retained longer. Extension-only data (session token, selector cache, recent-trade buffer) stays in your browser via chrome.storage.local. We do not sell your personal information to third parties.',
   },
   {
-    title: '8. Third-Party Services',
+    title: '9. Third-Party Services',
     content: 'TradeGuardX integrates with the following third parties. Their handling of your information is governed by their respective privacy policies:',
     list: [
       { bold: 'Supabase:', text: 'Authentication and user identity.' },
-      { bold: 'AWS:', text: 'Application hosting and database storage.' },
+      { bold: 'Google:', text: 'Optional "Sign in with Google" authentication — used only if you choose that sign-in method.' },
+      { bold: 'AWS:', text: 'Application hosting, database, encrypted credential storage (KMS), and our first-party analytics.' },
+      { bold: 'Vercel:', text: 'Website hosting and privacy-focused, cookie-free web analytics.' },
       { bold: 'Dodo Payments:', text: 'Subscription checkout and payment processing.' },
-      { bold: 'Sentry (EU region):', text: 'Crash and error reporting (see section 4).' },
+      { bold: 'Telegram:', text: 'Optional trade and breach notifications, if you connect a Telegram account for alerts.' },
+      { bold: 'Sentry (EU region):', text: 'Crash and error reporting (see section 6).' },
       { bold: 'Anthropic:', text: 'AI generation for trade narratives, behavior tags, and journal insights. Only the trade context you choose to analyze is sent.' },
     ],
   },
   {
-    title: '9. Your Rights',
-    content: 'Depending on your location, you may have the right to access, correct, delete, or port your personal data, and to object to or restrict certain processing. You can disconnect the browser extension from your account at any time from the extension popup, which revokes its session token. To delete your account or exercise other rights, contact us using the details below.',
+    title: '10. Your Rights',
+    content: 'Depending on your location, you may have the right to access, correct, delete, or port your personal data, and to object to or restrict certain processing. You can remove an exchange API connection or disconnect the browser extension from your account at any time, which stops further data collection from that source. To delete your account or exercise other rights, contact us using the details below.',
   },
   {
-    title: '10. Changes to This Policy',
+    title: '11. Changes to This Policy',
     content: 'We may update this Privacy Policy from time to time. We will notify you of material changes by posting the updated policy on this page and updating the "Last updated" date. Your continued use of the service after changes constitutes acceptance.',
   },
   {
-    title: '11. Contact Us',
+    title: '12. Contact Us',
     content: 'For questions about this Privacy Policy or our data practices, contact us at:',
     email: 'privacy@tradeguardx.com',
   },
