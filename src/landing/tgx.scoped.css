@@ -1829,6 +1829,13 @@
     .tgx-home .hero-ctas .btn{ width: 100%; justify-content: center; }
     /* Reassurance ticks: centered, two-up rows read better than one long wrap. */
     .tgx-home .hero-trust{ justify-content: center; gap: 8px 16px; font-size: 13px; }
+
+    /* Scenario "You did / We did" pair: two columns are cramped on a phone and
+       the mono text wraps mid-phrase. Stack them full-width and bump the size so
+       each reads as its own clear before/after card. */
+    .tgx-home .scenario-action{ grid-template-columns: 1fr; gap: 12px; font-size: 13px; }
+    .tgx-home .scenario-action .you-did,
+    .tgx-home .scenario-action .we-did{ padding: 14px 16px; }
   }
 
 .tgx-home{background:transparent;color:#f1f5f9;}
