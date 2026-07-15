@@ -46,7 +46,10 @@ export default function ReadingProgress() {
             transition={{ duration: 0.2 }}
             onClick={goTop}
             aria-label="Scroll to top"
-            className="fixed bottom-6 right-6 z-[70] w-11 h-11 rounded-xl border border-white/[0.1] bg-surface-900/80 backdrop-blur-lg text-slate-200 hover:text-white hover:border-accent/30 hover:bg-surface-800/90 transition-all shadow-lg shadow-black/30"
+            /* Desktop only (hidden lg:flex): on mobile/tablet the floating signup
+               CTA owns the bottom bar, and this scroll-to-top FAB would collide
+               with it. */
+            className="fixed bottom-6 right-6 z-[70] hidden w-11 h-11 rounded-xl border border-white/[0.1] bg-surface-900/80 backdrop-blur-lg text-slate-200 shadow-lg shadow-black/30 transition-all hover:border-accent/30 hover:bg-surface-800/90 hover:text-white lg:flex lg:items-center lg:justify-center"
           >
             <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />

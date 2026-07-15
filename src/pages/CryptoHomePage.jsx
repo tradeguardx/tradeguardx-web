@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSEO } from '../hooks/useSEO';
 import StoryAIJournal from '../components/landing/story/StoryAIJournal';
+import FloatingSignupCTA from '../components/landing/FloatingSignupCTA';
 import '../landing/tgx.scoped.css';
 import rawBodyA from '../landing/tgx-body-a.html?raw';
 import rawBodyB from '../landing/tgx-body-b.html?raw';
@@ -156,6 +157,7 @@ export default function CryptoHomePage() {
       <div className="tgx-home" ref={aRef} dangerouslySetInnerHTML={{ __html: rawBodyA }} />
       <StoryAIJournal />
       <div className="tgx-home" ref={bRef} dangerouslySetInnerHTML={{ __html: rawBodyB }} />
+      <FloatingSignupCTA />
     </>
   );
 }
