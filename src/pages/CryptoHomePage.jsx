@@ -2,9 +2,19 @@ import { useEffect, useRef } from 'react';
 import { useSEO } from '../hooks/useSEO';
 import StoryAIJournal from '../components/landing/story/StoryAIJournal';
 import FloatingSignupCTA from '../components/landing/FloatingSignupCTA';
+import TalkToFounder from '../components/common/TalkToFounder';
 import '../landing/tgx.scoped.css';
 import rawBodyA from '../landing/tgx-body-a.html?raw';
 import rawBodyB from '../landing/tgx-body-b.html?raw';
+
+// Split the landing body right after the hero (before the trust strip) so the
+// Talk-to-founder banner sits between the hero and the "7 rules / 7 days /
+// <120ms" strip. The two halves each get their own ref, both registered with the
+// reveal/animation effect below.
+const SPLIT_MARKER = '<!-- POST HERO';
+const _splitIdx = rawBodyA.indexOf(SPLIT_MARKER);
+const rawBodyAHero = _splitIdx >= 0 ? rawBodyA.slice(0, _splitIdx) : rawBodyA;
+const rawBodyARest = _splitIdx >= 0 ? rawBodyA.slice(_splitIdx) : '';
 
 // Reveal/stagger targets — verbatim from the source <script>.
 const REVEAL_TARGETS = [
@@ -31,6 +41,7 @@ const FAQ_LD = {
 
 export default function CryptoHomePage() {
   const aRef = useRef(null);
+  const a2Ref = useRef(null);
   const bRef = useRef(null);
 
   useSEO({
@@ -42,7 +53,7 @@ export default function CryptoHomePage() {
   });
 
   useEffect(() => {
-    const roots = [aRef.current, bRef.current].filter(Boolean);
+    const roots = [aRef.current, a2Ref.current, bRef.current].filter(Boolean);
     if (!roots.length) return;
     const qAll = (sel) => roots.flatMap((r) => Array.from(r.querySelectorAll(sel)));
 
@@ -154,7 +165,15 @@ export default function CryptoHomePage() {
         <span className="star star-lg star-accent star-blink-slow" style={{ top: '66%', left: '34%', animationDelay: '0.8s' }} />
       </div>
 
-      <div className="tgx-home" ref={aRef} dangerouslySetInnerHTML={{ __html: rawBodyA }} />
+      <div className="tgx-home" ref={aRef} dangerouslySetInnerHTML={{ __html: rawBodyAHero }} />
+      {/* Right under the hero, above the trust strip. */}
+      {rawBodyARest && (
+        // Match the page content width (.wrap = 1240px, 28px gutter).
+        <div className="mx-auto w-full max-w-[1240px] px-[18px] py-8 sm:px-7">
+          <TalkToFounder source="landing_hero_telegram" />
+        </div>
+      )}
+      <div className="tgx-home" ref={a2Ref} dangerouslySetInnerHTML={{ __html: rawBodyARest }} />
       <StoryAIJournal />
       <div className="tgx-home" ref={bRef} dangerouslySetInnerHTML={{ __html: rawBodyB }} />
       <FloatingSignupCTA />

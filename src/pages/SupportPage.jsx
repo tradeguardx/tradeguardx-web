@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useSEO } from '../hooks/useSEO';
 import { motion } from 'framer-motion';
 import { useToast } from '../components/common/ToastProvider';
+import TalkToFounder from '../components/common/TalkToFounder';
 
 const contactMethods = [
   {
@@ -95,6 +96,16 @@ export default function SupportPage() {
           </p>
         </motion.div>
 
+
+        {/* Fastest, most personal channel — front and centre above email. */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-8"
+        >
+          <TalkToFounder source="support_telegram" />
+        </motion.div>
 
         {/* Contact cards */}
         <div className="grid md:grid-cols-2 gap-6 mb-16">

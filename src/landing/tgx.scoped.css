@@ -1840,3 +1840,36 @@
 
 .tgx-home{background:transparent;color:#f1f5f9;}
 .tgx-home .trust-strip,.tgx-home .problem,.tgx-home .pricing-wrap,.tgx-home .mobile-section{background:transparent !important;}
+/* "Available on" exchange lockup — replaces the old trust strip. */
+.tgx-home .exchange-lockup{
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 14px;
+  margin-top: 32px;
+}
+.tgx-home .ex-lockup-card{
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 16px 22px; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+.tgx-home .ex-lockup-card:hover{ transform: translateY(-2px); }
+.tgx-home .ex-lockup-card.live{
+  border-color: rgba(0,212,170,0.30);
+  background: linear-gradient(180deg, rgba(0,212,170,0.06), rgba(0,212,170,0.02));
+}
+.tgx-home .ex-lockup-card.soon{ opacity: 0.9; }
+.tgx-home .ex-lockup-logo{ height: 22px; width: auto; }
+.tgx-home .ex-lockup-name,
+.tgx-home .ex-lockup-word{ font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+.tgx-home .ex-lockup-badge{
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 4px 9px; border-radius: 999px;
+  color: var(--text-3); background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+}
+.tgx-home .ex-lockup-badge.live{
+  color: var(--accent); background: rgba(0,212,170,0.12); border-color: rgba(0,212,170,0.28);
+}
+@media (max-width: 560px){
+  .tgx-home .exchange-lockup{ flex-direction: column; align-items: stretch; gap: 10px; }
+  .tgx-home .ex-lockup-card{ justify-content: center; }
+}
