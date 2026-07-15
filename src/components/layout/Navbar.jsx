@@ -15,7 +15,7 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { label: 'How it Works', to: { pathname: '/', hash: 'how' } },
+    { label: 'How it Works', to: { pathname: '/', hash: 'scenarios' } },
     { label: 'Pricing', to: '/pricing' },
     // Prop-firm page hidden for now — Delta Exchange (crypto) is the launch focus.
     { label: 'Guides', to: '/help' },

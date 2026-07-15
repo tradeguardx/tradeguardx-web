@@ -1,17 +1,18 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CHROME_STORE_URL } from '../../lib/extension';
 
 const links = {
   product: [
     { label: 'For crypto traders', to: '/' },
-    { label: 'How it Works', to: { pathname: '/', hash: 'how' } },
+    { label: 'How it Works', to: { pathname: '/', hash: 'scenarios' } },
     { label: 'Pricing', to: '/pricing' },
     { label: 'Roadmap', to: '/roadmap' },
     { label: 'FAQ', to: { pathname: '/', hash: 'faq' } },
   ],
   resources: [
-    { label: 'Install for Chrome', to: CHROME_STORE_URL },
+    // "Install for Chrome" removed — the crypto/Delta product enforces
+    // server-side via the exchange API key; the browser extension is the
+    // prop-firm path, which isn't part of this launch.
     { label: 'Guides', to: '/help' },
     { label: 'Support', to: '/support' },
     { label: 'Email Us', to: 'mailto:support@tradeguardx.com' },
@@ -114,8 +115,8 @@ export default function Footer() {
               <span className="font-display text-base font-bold text-white">TradeGuardX</span>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-slate-400">
-              Automated trade protection for serious traders. Browser extension
-              that enforces your risk rules in real-time.
+              Automated trade protection for serious traders. A server-side kill
+              switch that enforces your risk rules on Delta Exchange in real time.
             </p>
             {/* Status pill */}
             <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5">
