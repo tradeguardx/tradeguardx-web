@@ -134,73 +134,6 @@
   </div>
 </div>
 
-<!-- PROBLEM -->
-<section class="block problem">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">The pattern every trader knows</span>
-      <h2 class="display h2">
-        You don't lose to the market.<br>
-        <span class="accent-line">You lose to yourself.</span>
-      </h2>
-      <p>Every Delta Exchange trader has the same story. One bad morning. Stops removed. Leverage doubled. A whole month of gains gone in two hours. Discipline by willpower doesn't scale.</p>
-    </div>
-
-    <div class="pain-grid">
-      <div class="pain-card">
-        <div class="cost">$400</div>
-        <div class="cost-label">Avg revenge session</div>
-        <h4>The spiral after a loss</h4>
-        <p>One red trade triggers five more. By the time you stop, you've sized up 4&times; and traded the same pair from both sides. Your plan is gone &mdash; only emotion is left.</p>
-      </div>
-      <div class="pain-card">
-        <div class="cost">$300</div>
-        <div class="cost-label">Avg blow-up day</div>
-        <h4>The one bad morning</h4>
-        <p>Stops removed "for a bit." Leverage cranked to 50&times;. A wick takes out the account. Weeks of patient gains evaporate in a single 15-minute candle.</p>
-      </div>
-      <div class="pain-card">
-        <div class="cost">$600+</div>
-        <div class="cost-label">Avg overtraded week</div>
-        <h4>No hard stop, no end</h4>
-        <p>You said you'd stop after three losers. You took fifteen. Each one smaller, hoping to grind back. The account doesn't recover &mdash; it just bleeds.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section class="block" id="how">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Setup in minutes</span>
-      <h2 class="display h2">Up and running in 3 steps.</h2>
-      <p>Connect your Delta Exchange account once. We watch every position around the clock and step in the moment you cross a line &mdash; no software to keep open.</p>
-    </div>
-
-    <div class="steps">
-      <div class="step-card">
-        <div class="step-num">01 &middot; CONNECT</div>
-        <h4>Generate a Delta Exchange API key</h4>
-        <p>Whitelist our IP and paste the key once. Enable the Trading permission so the kill switch can close positions &mdash; Delta API keys never include withdrawal access, so we can never touch your funds.</p>
-        <div class="step-meta">&rarr; Takes <b>~60 seconds</b></div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">02 &middot; CONFIGURE</div>
-        <h4>Set your limits</h4>
-        <p>Daily loss cap, risk per trade, max trades, cooldown after losses, leverage cap, liquidation distance. Configure once while you're calm &mdash; they apply when you aren't.</p>
-        <div class="step-meta">&rarr; <b>7 rule types</b> &middot; per-account configuration</div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">03 &middot; TRADE</div>
-        <h4>Protected, 24/7</h4>
-        <p>Trade on Delta Exchange as normal. Our servers watch your account in real time. The moment you cross a line, we cancel your orders, close your positions, and lock the account &mdash; any new trade you open during the cooldown is closed on sight.</p>
-        <div class="step-meta">&rarr; Alert &rarr; Auto-close &rarr; <b>Lock</b></div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- SCENARIOS -->
 <section class="block scenarios" id="scenarios">
   <div class="wrap">
@@ -406,6 +339,38 @@
   </div>
 </section>
 
+<!-- HOW IT WORKS -->
+<section class="block" id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Setup in minutes</span>
+      <h2 class="display h2">Up and running in 3 steps.</h2>
+      <p>Connect your Delta Exchange account once. We watch every position around the clock and step in the moment you cross a line &mdash; no software to keep open.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">01 &middot; CONNECT</div>
+        <h4>Generate a Delta Exchange API key</h4>
+        <p>Whitelist our IP and paste the key once. Enable the Trading permission so the kill switch can close positions &mdash; Delta API keys never include withdrawal access, so we can never touch your funds.</p>
+        <div class="step-meta">&rarr; Takes <b>~60 seconds</b></div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02 &middot; CONFIGURE</div>
+        <h4>Set your limits</h4>
+        <p>Daily loss cap, risk per trade, max trades, cooldown after losses, leverage cap, liquidation distance. Configure once while you're calm &mdash; they apply when you aren't.</p>
+        <div class="step-meta">&rarr; <b>7 rule types</b> &middot; per-account configuration</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03 &middot; TRADE</div>
+        <h4>Protected, 24/7</h4>
+        <p>Trade on Delta Exchange as normal. Our servers watch your account in real time. The moment you cross a line, we cancel your orders, close your positions, and lock the account &mdash; any new trade you open during the cooldown is closed on sight.</p>
+        <div class="step-meta">&rarr; Alert &rarr; Auto-close &rarr; <b>Lock</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- RULES -->
 <section class="block" id="rules">
   <div class="wrap">
@@ -496,22 +461,6 @@
         <div class="meta">Saves you from</div>
         <p>The slow walk to zero. We close positions before they reach your liquidation buffer &mdash; no more "I'll add margin in a sec".</p>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- MOBILE / ALERTS (compact strip) -->
-<section class="block" id="mobile">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Screen off? Still covered</span>
-      <h2 class="display h2" style="margin-top:16px;">We watch even when you don't.</h2>
-      <p>Trade from the Delta Exchange app, web, or anywhere &mdash; enforcement runs server-side. The moment a fill breaks a rule we act in <strong>~120ms</strong>, no app open or tab to remember, and ping you on the channel you pick.</p>
-    </div>
-    <div class="channel-row" style="justify-content:center;margin-top:4px;">
-      <div class="channel-chip"><span class="ch-ico wa"></span> WhatsApp</div>
-      <div class="channel-chip"><span class="ch-ico tg"></span> Telegram</div>
-      <div class="channel-chip"><span class="ch-ico em"></span> Email</div>
     </div>
   </div>
 </section>
