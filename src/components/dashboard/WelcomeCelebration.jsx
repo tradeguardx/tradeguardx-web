@@ -58,7 +58,7 @@ export default function WelcomeCelebration() {
 
   if (!open) return null;
 
-  // A new signup is on the 3-day trial: full access, but they've paid nothing.
+  // A new signup is on the 7-day trial: full access, but they've paid nothing.
   // Don't congratulate them on a purchase they didn't make — tell them the clock
   // is running and what to do next.
   const isTrial = Boolean(user?.isTrial);

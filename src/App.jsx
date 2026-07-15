@@ -66,7 +66,7 @@ function App() {
                   <Route path="login" element={<LoginPage />} />
                   <Route path="signup" element={<SignupPage />} />
                   <Route path="support" element={<SupportPage />} />
-                  {/* Beta program retired — redirect old links to signup (3-day trial). */}
+                  {/* Beta program retired — redirect old links to signup (7-day trial). */}
                   <Route path="beta-traders" element={<Navigate to="/signup" replace />} />
                   <Route path="beta-testers" element={<Navigate to="/signup" replace />} />
                   <Route path="privacy" element={<PrivacyPolicyPage />} />

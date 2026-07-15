@@ -28,7 +28,7 @@ function CopyCodeButton({ code }) {
           /* ignore */
         }
       }}
-      className="group relative inline-flex items-center gap-2 rounded-xl px-4 py-2 transition-all"
+      className="group relative inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition-all sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2"
       style={{
         background: 'rgba(255,255,255,0.10)',
         border: '1px solid rgba(255,255,255,0.22)',
@@ -36,7 +36,7 @@ function CopyCodeButton({ code }) {
       }}
       aria-label={`Copy code ${code}`}
     >
-      <span className="font-mono text-base font-bold tracking-[0.18em] text-white">{code}</span>
+      <span className="font-mono text-sm font-bold tracking-[0.16em] text-white sm:text-base sm:tracking-[0.18em]">{code}</span>
       <span className="text-white/80 transition-transform group-hover:scale-110">
         {copied ? (
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -69,34 +69,34 @@ function CodePromoContent({ promo, now }) {
   const headline = promo.discountPct ? `${promo.discountPct}% off all paid plans` : 'Limited-time offer';
 
   return (
-    <div className="relative flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-6">
+    <div className="relative flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between sm:gap-6">
       <div className="text-center sm:text-left">
-        <div className="flex items-center justify-center gap-2 sm:justify-start">
+        <div className="flex items-center justify-center gap-1.5 sm:justify-start">
           <motion.span
             className="inline-block"
             animate={{ scale: [1, 1.18, 1] }}
             transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden
           >
-            <svg className="h-4 w-4 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="h-3.5 w-3.5 text-yellow-300 sm:h-4 sm:w-4" fill="currentColor" viewBox="0 0 20 20">
               <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
             </svg>
           </motion.span>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/90">{promo.headline}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 sm:text-[11px] sm:tracking-[0.22em]">{promo.headline}</p>
         </div>
-        <h2 className="mt-1 font-display text-xl font-bold leading-snug text-white sm:text-2xl">{headline}</h2>
+        <h2 className="font-display text-sm font-bold leading-tight text-white sm:mt-1 sm:text-2xl">{headline}</h2>
       </div>
 
-      <div className="flex items-center gap-4 sm:gap-6">
-        <div className="flex flex-col items-center gap-1 sm:items-start">
-          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">Use code</span>
+      <div className="flex items-center gap-3 sm:gap-6">
+        <div className="flex flex-col items-center gap-0.5 sm:items-start sm:gap-1">
+          <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/70 sm:text-[10px]">Use code</span>
           <CopyCodeButton code={promo.code} />
         </div>
         <div className="hidden h-12 w-px sm:block" style={{ background: 'rgba(255,255,255,0.20)' }} aria-hidden />
-        <div className="flex flex-col items-center gap-1 sm:items-start">
-          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">Ends in</span>
+        <div className="flex flex-col items-center gap-0.5 sm:items-start sm:gap-1">
+          <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/70 sm:text-[10px]">Ends in</span>
           <div
-            className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-lg text-white sm:text-xl"
+            className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-white sm:rounded-xl sm:px-3 sm:py-1.5 sm:text-xl"
             style={{
               background: 'rgba(0,0,0,0.28)',
               border: '1px solid rgba(255,255,255,0.18)',
@@ -294,7 +294,7 @@ export default function ActivePromo() {
           />
         ))}
 
-        <div className="relative mx-auto max-w-7xl px-4 py-4 pr-12 sm:px-6 sm:py-5 sm:pr-16">
+        <div className="relative mx-auto max-w-7xl px-4 py-2 pr-10 sm:px-6 sm:py-5 sm:pr-16">
           {mode === 'founding' && <FoundingMemberContent cfg={foundingCfg} />}
           {mode === 'code' && <CodePromoContent promo={codePromo} now={now} />}
         </div>

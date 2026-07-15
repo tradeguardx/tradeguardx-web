@@ -22,7 +22,7 @@ const PLAN_THEME = {
     badgeBg: 'rgba(100,116,139,0.10)',
     badgeBorder: 'rgba(100,116,139,0.22)',
     badgeText: '#94a3b8',
-    tagline: 'Full access, free for 3 days. No card — then pick a plan.',
+    tagline: 'Full access, free for 7 days. No card — then pick a plan.',
     ctaBg: 'rgba(255,255,255,0.06)',
     ctaBorder: 'rgba(255,255,255,0.08)',
     ctaText: '#e2e8f0',
@@ -343,7 +343,7 @@ export default function PricingPage() {
           </h1>
 
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
-            Every account starts with 3 days of full access — free, no card. Keep it going by picking a plan.
+            Every account starts with 7 days of full access — free, no card. Keep it going by picking a plan.
           </p>
 
           <div className="flex items-center justify-center gap-2 flex-wrap">

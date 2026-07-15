@@ -123,7 +123,7 @@ export function AuthProvider({ children }) {
         ...base,
         ...accessFields,
         // `plan` drives FEATURE GATING, so during a trial it must be the
-        // entitlement (Pro+) — that's what "everything free for 3 days" means.
+        // entitlement (Pro+) — that's what "everything free for 7 days" means.
         // When expired/free the app gates to free (the upgrade wall enforces the
         // locked state on top).
         plan: hasFullAccess ? (isTrial ? entitlementSlug : slug) : 'free',
