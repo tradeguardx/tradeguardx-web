@@ -254,8 +254,15 @@
     letter-spacing: 0.1em; color: var(--text-3);
   }
   .tgx-home .hero-trust{
-    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 13px;
-    color: var(--text-3);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; font-size: 14px;
+    color: var(--text-2); list-style: none; margin: 0; padding: 0;
+  }
+  .tgx-home .hero-trust li{ display: inline-flex; align-items: center; gap: 7px; }
+  .tgx-home .hero-trust .tick{
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 17px; height: 17px; border-radius: 999px; flex-shrink: 0;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent); font-size: 11px; font-weight: 700; line-height: 1;
   }
   .tgx-home .hero-trust .spots{ color: var(--accent); font-family: var(--mono); }
 
