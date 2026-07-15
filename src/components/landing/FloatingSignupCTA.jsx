@@ -89,7 +89,7 @@ export default function FloatingSignupCTA() {
           style={{ pointerEvents: 'none' }}
         >
           <div
-            className="flex w-full max-w-xl items-center gap-3 rounded-2xl border px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3"
+            className="flex w-full max-w-xl items-center gap-3 rounded-2xl border px-3.5 py-3 sm:gap-4 sm:px-4"
             style={{
               pointerEvents: 'auto',
               backgroundColor: 'rgba(11, 16, 26, 0.94)',
@@ -110,10 +110,10 @@ export default function FloatingSignupCTA() {
             </span>
 
             <div className="min-w-0 flex-1">
-              <p className="font-display text-[13.5px] font-bold leading-tight text-white sm:text-[15px]">
+              <p className="font-display text-sm font-bold leading-tight text-white sm:text-[15px]">
                 Start protecting your account
               </p>
-              <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400 sm:text-xs">
+              <p className="mt-0.5 text-[11px] font-medium leading-snug text-slate-400 sm:text-xs">
                 7-day free trial &middot; No card &middot; Cancel anytime
               </p>
             </div>
@@ -121,11 +121,11 @@ export default function FloatingSignupCTA() {
             <button
               type="button"
               onClick={startGoogleSignup}
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-[13px] font-bold text-[#052418] transition-transform hover:scale-[1.03] active:scale-[0.98] sm:px-4 sm:py-2.5 sm:text-sm"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-[#052418] transition-transform hover:scale-[1.03] active:scale-[0.98] sm:px-5 sm:py-3"
               style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
             >
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white sm:h-[18px] sm:w-[18px]">
-                <svg className="h-2.5 w-2.5 sm:h-3 sm:w-3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-white">
+                <svg className="h-3 w-3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" />
