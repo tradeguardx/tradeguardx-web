@@ -7,6 +7,11 @@ import ActivePromo from '../promo/ActivePromo';
 export default function Layout() {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/dashboard');
+  // The flash-sale banner only shows on the pricing page. Leading with a discount
+  // on the landing page frames a still-unfamiliar product as "something to buy"
+  // and creates price-anxiety before the value lands — so the offer appears at
+  // the decision point, not the first thing a new visitor sees.
+  const showPromo = location.pathname === '/pricing';
 
   return (
     // bg-surface-950 lives on <body> already (index.css). Repeating it here
@@ -14,7 +19,7 @@ export default function Layout() {
     // scatter layer, hiding the Sentry-style background. Use a transparent
     // wrapper so the fixed layer shows through; body color is the fallback.
     <div className="min-h-screen flex flex-col">
-      {!isDashboard && <ActivePromo />}
+      {showPromo && <ActivePromo />}
       {!isDashboard && <ReadingProgress />}
       {!isDashboard && <Navbar />}
       <main className={isDashboard ? 'flex-1' : 'flex-1'}>
