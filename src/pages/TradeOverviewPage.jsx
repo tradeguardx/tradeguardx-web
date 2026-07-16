@@ -1,28 +1,30 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
+import { getExchangeCredentialsStatus, exchangeFromBrokerSlug } from '../api/exchangeCredentialsApi';
 import {
   journalPeriodBadgeLabel,
   maxTradingAccountsForPlan,
   planTierFromSlug,
 } from '../lib/planLimits';
 import { ShimmerBlock, StatCardSkeleton } from '../components/common/LoadingSkeleton';
-import DashboardPageBanner from '../components/dashboard/DashboardPageBanner';
 import SetupChecklist from '../components/dashboard/SetupChecklist';
 import { staggerContainer, staggerItem } from '../components/dashboard/dashboardMotion';
 
 /* ─── Protection Status Hero ───────────────────────────────────────── */
-function ProtectionStatus({ accounts, accountsLoading }) {
+function ProtectionStatus({ accounts, accountsLoading, isProtected }) {
   const navigate = useNavigate();
-
-  if (accountsLoading) {
-    return <ShimmerBlock className="h-[116px] w-full rounded-2xl mb-6" />;
-  }
 
   const hasAccounts = accounts.length > 0;
   const firstAccount = accounts[0];
+
+  // Loading if accounts aren't in yet, or we have an account but haven't resolved
+  // whether its key is connected — don't flash a wrong "Active"/"Unprotected".
+  if (accountsLoading || (hasAccounts && isProtected === null)) {
+    return <ShimmerBlock className="h-[116px] w-full rounded-2xl mb-6" />;
+  }
 
   if (!hasAccounts) {
     return (
@@ -50,6 +52,51 @@ function ProtectionStatus({ accounts, accountsLoading }) {
             className="flex-shrink-0 inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/15 px-4 py-2.5 text-sm font-semibold text-amber-600 transition hover:bg-amber-500/25 dark:text-amber-300"
           >
             Create account
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Has an account, but the exchange key isn't connected/enforcing — the kill
+  // switch CANNOT act. Say so plainly; never claim "Active" here.
+  if (!isProtected) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="dash-status-warn relative mb-6 overflow-hidden rounded-2xl p-5"
+      >
+        <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-amber-500/[0.06] blur-3xl" />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="dash-icon-amber flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="font-display text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>Unprotected</p>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/12 px-2.5 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  KILL SWITCH OFF
+                </span>
+              </div>
+              <p className="mt-0.5 text-sm" style={{ color: 'var(--dash-text-muted)' }}>
+                Your exchange key is disconnected — the kill switch can’t close positions until you reconnect.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/dashboard/account/trading')}
+            className="flex-shrink-0 inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/15 px-4 py-2.5 text-sm font-semibold text-amber-600 transition hover:bg-amber-500/25 dark:text-amber-300"
+          >
+            Reconnect key
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
@@ -213,6 +260,32 @@ export default function TradeOverviewPage() {
   const isTrial = Boolean(user?.isTrial);
   const trialDaysLeft = user?.trialDaysLeft ?? null;
   const cap = maxTradingAccountsForPlan(user?.plan);
+
+  // Real protection state for the first exchange account: is a key actually
+  // connected and enforcing? null = still resolving. This is the single source of
+  // truth for the hero + Kill Switch stat, so they can't claim "Active" while the
+  // top-bar pill and the alert say "Unprotected".
+  const protAccount = accounts.find((a) => exchangeFromBrokerSlug(a.propFirmSlug)) ?? accounts[0] ?? null;
+  const protAccountId = protAccount?.id ?? null;
+  // Fetched key state: null = not yet resolved, true/false once known.
+  const [keyActive, setKeyActive] = useState(null);
+  useEffect(() => {
+    if (!session?.access_token || !protAccountId) return undefined;
+    const ctrl = new AbortController();
+    getExchangeCredentialsStatus({ accessToken: session.access_token, accountId: protAccountId, signal: ctrl.signal })
+      .then((conn) => {
+        if (ctrl.signal.aborted) return;
+        setKeyActive(Boolean(conn && (conn.protected ?? (conn.status === 'active' && conn.enforcementCapable !== false))));
+      })
+      .catch(() => {
+        if (!ctrl.signal.aborted) setKeyActive(false);
+      });
+    return () => ctrl.abort();
+  }, [session?.access_token, protAccountId]);
+  // No account → definitively unprotected. Account present → the fetched result
+  // (null while it resolves, so the hero shows a loading state, not a wrong one).
+  const isProtected = accounts.length === 0 ? false : keyActive;
+
   const accountCount = accountsLoading ? null : accounts.length;
   const accountsLabel = accountCount == null ? '—' : cap != null ? `${accountCount} / ${cap}` : `${accountCount}`;
   const accountProgress = cap != null && accountCount != null ? accountCount / cap : null;
@@ -265,17 +338,17 @@ export default function TradeOverviewPage() {
     },
     {
       label: 'Kill switch',
-      value: accountsLoading ? '…' : accounts.length > 0 ? 'Armed' : 'Set up',
-      sub: accounts.length > 0 ? 'Enforced server-side on Delta' : 'Connect an account to arm it',
-      iconClass: accounts.length > 0 ? 'dash-icon-accent' : 'dash-icon-amber',
+      value: accountsLoading ? '…' : accounts.length === 0 ? 'Set up' : isProtected ? 'Armed' : 'Unprotected',
+      sub: accounts.length === 0 ? 'Connect an account to arm it' : isProtected ? 'Enforced server-side on Delta' : 'Key disconnected — reconnect',
+      iconClass: accounts.length > 0 && isProtected ? 'dash-icon-accent' : 'dash-icon-amber',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
         </svg>
       ),
-      href: '/dashboard/live',
+      href: accounts.length > 0 && !isProtected ? '/dashboard/account/trading' : '/dashboard/live',
     },
-  ], [user?.plan, user?.planLabel, subscriptionLoading, accountsLabel, cap, accountCount, accountProgress, tier, billingTier, isTrial, trialDaysLeft, accountsLoading, accounts.length]);
+  ], [user?.plan, user?.planLabel, subscriptionLoading, accountsLabel, cap, accountCount, accountProgress, tier, billingTier, isTrial, trialDaysLeft, accountsLoading, accounts.length, isProtected]);
 
   const quickActions = [
     {
@@ -332,36 +405,11 @@ export default function TradeOverviewPage() {
       transition={{ duration: 0.4 }}
       className="max-w-6xl"
     >
-      <DashboardPageBanner
-        accent="emerald"
-        title="Dashboard"
-        subtitle="Your control center — configure rules, review trades, and monitor protection status."
-        badge={
-          <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-40" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
-            </span>
-            {subscriptionLoading ? 'Loading…' : (user?.planLabel || 'Free')}
-          </span>
-        }
-        actions={
-          billingTier !== 'proplus' ? (
-            <Link
-              to="/pricing"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-accent/25 bg-accent/10 px-3.5 py-2 text-xs font-semibold text-accent transition hover:bg-accent/20"
-            >
-              {isTrial ? 'Choose a plan' : 'Upgrade'}
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </Link>
-          ) : null
-        }
-      />
-
-      {/* Protection status hero */}
-      <ProtectionStatus accounts={accounts} accountsLoading={accountsLoading} />
+      {/* Protection status hero — the page's single source of truth for whether
+          the kill switch is actually active. (The old "Dashboard — your control
+          center" banner was removed: it was pure filler plus a duplicate plan
+          badge and Choose-a-plan link already shown by the trial strip.) */}
+      <ProtectionStatus accounts={accounts} accountsLoading={accountsLoading} isProtected={isProtected} />
 
       {/* Stat cards */}
       {loading ? (

@@ -373,12 +373,13 @@ export default function DashboardSidebar() {
         </div>
 
         {(() => {
-          // A trialist's effective tier is proplus, but they've bought nothing —
-          // they're the single most important person to show an upgrade to, so
-          // gate on what they've PAID for, not what they currently have access to.
+          // Trial users already get a prominent "Free trial · N days · Upgrade"
+          // strip on the dashboard, plus the badge above — a third card here is
+          // just noise, so suppress it for them. Paid users still see the upsell.
+          if (user?.isTrial) return null;
           const tier = planTierFromSlug(user?.billingPlan);
           if (tier === 'proplus') return null;
-          return <SidebarUpgradeCard isPro={tier === 'pro'} isTrial={user?.isTrial} daysLeft={user?.trialDaysLeft} />;
+          return <SidebarUpgradeCard isPro={tier === 'pro'} />;
         })()}
       </nav>
 
