@@ -3,23 +3,30 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getExchangeCredentialsStatus, exchangeFromBrokerSlug } from '../../api/exchangeCredentialsApi';
 import { fetchRulesBundle } from '../../api/rulesApi';
+import { fetchNotificationSettings } from '../../api/notificationsApi';
+
+const DONE_DISMISS_KEY = 'tgx_setup_complete_dismissed';
 
 /**
  * Onboarding checklist on the dashboard landing page — the crypto (Delta) flow:
- * create an account → connect the API key → set the rules.
+ * create an account → connect the API key → set the rules → turn on alerts.
  *
- * This is the path that actually turns a signup into a protected user, so each
- * step reflects REAL state (fetched), not just "do you have an account". It
- * keeps showing until all three are genuinely done, then disappears for good.
- *
- * (It used to list "install the Chrome extension" + "pair" — that's the prop-firm
- * flow, which doesn't apply to an exchange account where enforcement runs
- * server-side against the user's API key.)
+ * Each step reflects REAL, fetched state, not just "do you have an account".
+ * Completed steps stay visible with a check (so progress is legible); only
+ * pending steps are actionable. Once all four are genuinely done it shows a
+ * one-time "setup complete" confirmation the user can dismiss.
  */
 export default function SetupChecklist({ accounts, accountsLoading, accessToken }) {
   // null = not fetched yet. Held as one object so the state only ever lands from
   // the async callback — no synchronous setState inside the effect.
   const [result, setResult] = useState(null);
+  const [doneDismissed, setDoneDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(DONE_DISMISS_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
 
   const hasAccount = accounts.length > 0;
   // Check against the first exchange account — that's the one being onboarded.
@@ -27,19 +34,26 @@ export default function SetupChecklist({ accounts, accountsLoading, accessToken 
   const targetId = target?.id ?? null;
 
   useEffect(() => {
-    if (!accessToken || !targetId) return undefined;
+    if (!accessToken) return undefined;
     const ctrl = new AbortController();
 
     (async () => {
-      const [conn, rules] = await Promise.all([
-        getExchangeCredentialsStatus({ accessToken, accountId: targetId, signal: ctrl.signal }).catch(() => null),
-        fetchRulesBundle({ accessToken, tradingAccountId: targetId, signal: ctrl.signal }).catch(() => null),
+      const [conn, rules, notif] = await Promise.all([
+        // Account-scoped checks need an account; notifications are per-user.
+        targetId
+          ? getExchangeCredentialsStatus({ accessToken, accountId: targetId, signal: ctrl.signal }).catch(() => null)
+          : Promise.resolve(null),
+        targetId
+          ? fetchRulesBundle({ accessToken, tradingAccountId: targetId, signal: ctrl.signal }).catch(() => null)
+          : Promise.resolve(null),
+        fetchNotificationSettings({ accessToken, signal: ctrl.signal }).catch(() => null),
       ]);
       if (ctrl.signal.aborted) return;
       const instances = rules?.instances ?? rules?.rules ?? [];
       setResult({
         keyConnected: conn?.status === 'active',
         rulesSet: Array.isArray(instances) && instances.some((r) => r?.enabled !== false),
+        notifSet: Boolean(notif?.emailNotificationsEnabled || notif?.telegramNotificationsEnabled),
       });
     })();
 
@@ -48,8 +62,9 @@ export default function SetupChecklist({ accounts, accountsLoading, accessToken 
 
   const keyConnected = result?.keyConnected ?? false;
   const rulesSet = result?.rulesSet ?? false;
-  // Only "checking" when there's actually something to check and it hasn't landed.
-  const checking = Boolean(accessToken && targetId) && result === null;
+  const notifSet = result?.notifSet ?? false;
+  // Only "checking" while the fetch is genuinely in flight.
+  const checking = Boolean(accessToken) && result === null;
 
   const steps = [
     {
@@ -73,13 +88,68 @@ export default function SetupChecklist({ accounts, accountsLoading, accessToken 
       href: '/dashboard/rules',
       done: rulesSet,
     },
+    {
+      num: 4,
+      label: 'Turn on breach alerts',
+      hint: 'Get pinged on Telegram or email the moment a rule trips.',
+      href: '/dashboard/account/notifications',
+      done: notifSet,
+    },
   ];
 
   const doneCount = steps.filter((s) => s.done).length;
+  const allDone = doneCount === steps.length;
 
-  // Everything done (or nothing to check yet) → the checklist has served its purpose.
   if (accountsLoading || checking) return null;
-  if (doneCount === steps.length) return null;
+
+  // Everything done → one-time "you're fully protected" confirmation, dismissible.
+  if (allDone) {
+    if (doneDismissed) return null;
+    const dismiss = () => {
+      try {
+        localStorage.setItem(DONE_DISMISS_KEY, '1');
+      } catch {
+        /* ignore */
+      }
+      setDoneDismissed(true);
+    };
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6 flex items-center gap-4 rounded-2xl border p-5"
+        style={{ borderColor: 'rgba(0,212,170,0.3)', backgroundColor: 'var(--dash-bg-raised)', boxShadow: 'var(--dash-shadow-card)' }}
+      >
+        <span
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c' }}
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold" style={{ color: 'var(--dash-text-primary)' }}>
+            Setup complete — you’re fully protected.
+          </p>
+          <p className="mt-0.5 text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
+            Your kill switch is armed and alerts are on. Trade as normal — we’ll step in if you cross a line.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Dismiss"
+          className="flex-shrink-0 rounded-lg p-1.5 transition-colors hover:bg-white/5"
+          style={{ color: 'var(--dash-text-faint)' }}
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
