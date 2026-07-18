@@ -30,6 +30,9 @@ import LivePage from './pages/LivePage';
 import TradeDetailPage from './pages/TradeDetailPage';
 import TradingAccountsPage from './pages/TradingAccountsPage';
 import AccountLayout from './pages/AccountLayout';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import AccountOverviewPage from './pages/AccountOverviewPage';
 import NotificationsPage from './pages/NotificationsPage';
 import RedirectWithSearch from './pages/RedirectWithSearch';
@@ -65,6 +68,10 @@ function App() {
                   <Route path="pricing" element={<PricingPage />} />
                   <Route path="login" element={<LoginPage />} />
                   <Route path="signup" element={<SignupPage />} />
+                  <Route path="forgot-password" element={<ForgotPasswordPage />} />
+                  {/* Opened from the emailed recovery link — public, since the
+                      recovery session is what authorises the change. */}
+                  <Route path="reset-password" element={<ResetPasswordPage />} />
                   <Route path="support" element={<SupportPage />} />
                   {/* Beta program retired — redirect old links to signup (7-day trial). */}
                   <Route path="beta-traders" element={<Navigate to="/signup" replace />} />
@@ -101,6 +108,7 @@ function App() {
                     <Route path="billing" element={<BillingPage />} />
                     <Route path="trading" element={<TradingAccountsPage />} />
                     <Route path="notifications" element={<NotificationsPage />} />
+                    <Route path="security" element={<SecuritySettingsPage />} />
                   </Route>
                   <Route path="trading-accounts" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
                   <Route path="billing" element={<RedirectWithSearch to="/dashboard/account/billing" />} />

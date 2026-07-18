@@ -337,6 +337,41 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   }, []);
 
+  /**
+   * Send the "reset your password" email. Supabase deliberately succeeds even
+   * when the address has no account, so the UI must never confirm or deny that
+   * an email is registered — that would turn this form into an account-existence
+   * oracle for anyone who wants to enumerate our users.
+   */
+  const requestPasswordReset = useCallback(async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+  }, []);
+
+  /**
+   * Set a new password for the CURRENT session. Used by both flows: the recovery
+   * link (which signs the user in with a short-lived recovery session) and the
+   * signed-in "change password" form in account settings.
+   */
+  const updatePassword = useCallback(async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  }, []);
+
+  /**
+   * Confirm the account's current password without disturbing the active
+   * session. Supabase lets a signed-in user change their password without
+   * proving they know the old one, which means an unattended logged-in browser
+   * is enough to take the account over — so the change-password form re-checks
+   * it first.
+   */
+  const verifyPassword = useCallback(async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return !error;
+  }, []);
+
   const logout = useCallback(() => {
     supabase.auth.signOut();
     setUser(null);
@@ -360,6 +395,9 @@ export function AuthProvider({ children }) {
         signup,
         logout,
         loginWithGoogle,
+        requestPasswordReset,
+        updatePassword,
+        verifyPassword,
       }}
     >
       {children}

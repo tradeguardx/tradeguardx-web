@@ -6,6 +6,7 @@ const tabs = [
   { to: '/dashboard/account/billing', end: false, label: 'Billing' },
   { to: '/dashboard/account/trading', end: false, label: 'Trading accounts' },
   { to: '/dashboard/account/notifications', end: false, label: 'Notifications' },
+  { to: '/dashboard/account/security', end: false, label: 'Security' },
 ];
 
 export default function AccountLayout() {
