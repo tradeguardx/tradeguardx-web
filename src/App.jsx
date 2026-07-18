@@ -31,6 +31,7 @@ import TradeDetailPage from './pages/TradeDetailPage';
 import TradingAccountsPage from './pages/TradingAccountsPage';
 import AccountLayout from './pages/AccountLayout';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import AccountOverviewPage from './pages/AccountOverviewPage';
@@ -69,6 +70,7 @@ function App() {
                   <Route path="login" element={<LoginPage />} />
                   <Route path="signup" element={<SignupPage />} />
                   <Route path="forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="verify-email" element={<VerifyEmailPage />} />
                   {/* Opened from the emailed recovery link — public, since the
                       recovery session is what authorises the change. */}
                   <Route path="reset-password" element={<ResetPasswordPage />} />

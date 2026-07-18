@@ -57,8 +57,10 @@ export default function SignupPage() {
     try {
       const result = await signup(email, password, name);
       if (result?.requiresEmailConfirmation) {
-        toast.success('Verify your email', 'Check your inbox and confirm your email before signing in.');
-        navigate('/login', { replace: true });
+        // No session exists yet, so the dashboard is unreachable. Land them on a
+        // page that says exactly that and can re-send the email — bouncing to
+        // /login just showed a form their brand-new credentials would fail.
+        navigate('/verify-email', { replace: true, state: { email } });
       } else {
         if (plan !== 'free') {
           setPendingCheckoutPlan(plan);

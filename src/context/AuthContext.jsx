@@ -372,6 +372,19 @@ export function AuthProvider({ children }) {
     return !error;
   }, []);
 
+  /**
+   * Re-send the signup confirmation email. Supabase rate-limits this per address,
+   * so the UI must treat a failure as "wait a moment", not "something is broken".
+   */
+  const resendVerificationEmail = useCallback(async (email) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/dashboard?welcome=1` },
+    });
+    if (error) throw error;
+  }, []);
+
   const logout = useCallback(() => {
     supabase.auth.signOut();
     setUser(null);
@@ -396,6 +409,7 @@ export function AuthProvider({ children }) {
         logout,
         loginWithGoogle,
         requestPasswordReset,
+        resendVerificationEmail,
         updatePassword,
         verifyPassword,
       }}
