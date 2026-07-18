@@ -3,6 +3,7 @@ import { useSEO } from '../hooks/useSEO';
 import StoryAIJournal from '../components/landing/story/StoryAIJournal';
 import FloatingSignupCTA from '../components/landing/FloatingSignupCTA';
 import TalkToFounder from '../components/common/TalkToFounder';
+import DemoVideoSection from '../components/landing/DemoVideoSection';
 import '../landing/tgx.scoped.css';
 import rawBodyA from '../landing/tgx-body-a.html?raw';
 import rawBodyB from '../landing/tgx-body-b.html?raw';
@@ -27,6 +28,21 @@ const STAGGER_CONTAINERS = [
   '.pain-grid', '.steps', '.rules-grid', '.price-grid', '.journal-grid',
   '.alert-cards', '.channel-row', '.faq-list',
 ];
+
+/**
+ * Section rule — a hairline that fades out at both ends so it reads as a soft
+ * separator on the dark background rather than a hard border.
+ */
+function LandingDivider() {
+  return (
+    <div className="mx-auto w-full max-w-[1240px] px-[18px] sm:px-7" aria-hidden>
+      <div
+        className="h-px w-full"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 15%, rgba(255,255,255,0.10) 85%, transparent)' }}
+      />
+    </div>
+  );
+}
 
 const FAQ_LD = {
   '@context': 'https://schema.org',
@@ -166,13 +182,22 @@ export default function CryptoHomePage() {
       </div>
 
       <div className="tgx-home" ref={aRef} dangerouslySetInnerHTML={{ __html: rawBodyAHero }} />
-      {/* Right under the hero, above the trust strip. */}
+      {/* Right under the hero, above the trust strip. Hairline rules above and
+          below separate the founder banner and the demo into their own sections
+          instead of letting them run together as one loose stack. */}
       {rawBodyARest && (
-        // Match the page content width (.wrap = 1240px, 28px gutter).
-        <div className="mx-auto w-full max-w-[1240px] px-[18px] py-8 sm:px-7">
-          <TalkToFounder source="landing_hero_telegram" />
-        </div>
+        <>
+          <LandingDivider />
+          {/* Match the page content width (.wrap = 1240px, 28px gutter). */}
+          <div className="mx-auto w-full max-w-[1240px] px-[18px] py-8 sm:px-7">
+            <TalkToFounder source="landing_hero_telegram" />
+          </div>
+          <LandingDivider />
+        </>
       )}
+      {/* Demo sits right under the founder banner — plays in a lightbox, not on YouTube. */}
+      <DemoVideoSection />
+      <LandingDivider />
       <div className="tgx-home" ref={a2Ref} dangerouslySetInnerHTML={{ __html: rawBodyARest }} />
       <StoryAIJournal />
       <div className="tgx-home" ref={bRef} dangerouslySetInnerHTML={{ __html: rawBodyB }} />
