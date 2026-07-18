@@ -173,7 +173,7 @@ export default function Footer() {
               &copy; {new Date().getFullYear()} TradeGuardX. All rights reserved.
             </p>
             <p className="mt-1 text-[11px] text-slate-600">
-              TradeGuardX is not affiliated with any broker or prop firm. Trading
+              TradeGuardX is not affiliated with any exchange or broker. Trading
               involves risk — use at your own discretion.
             </p>
           </div>

@@ -6,7 +6,7 @@ const STEPS = [
     kicker: 'Connect',
     title: 'Generate a Delta API key',
     body: 'Whitelist our IP and paste the key once. Enable the Trading permission so the kill switch can close positions — Delta keys never include withdrawal access, so we can never touch your funds.',
-    meta: <>Takes <b>~60 seconds</b></>,
+    meta: <>Takes <b>~2 minutes</b></>,
   },
   {
     num: '02',

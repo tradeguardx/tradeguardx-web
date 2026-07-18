@@ -22,7 +22,7 @@ const steps = [
         />
       </svg>
     ),
-    detail: 'Delta · CoinDCX soon · 60 seconds',
+    detail: 'Delta · CoinDCX soon · ~2 minutes',
   },
   {
     number: '02',

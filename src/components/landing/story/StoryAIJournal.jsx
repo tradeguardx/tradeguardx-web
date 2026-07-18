@@ -57,6 +57,9 @@ export default function StoryAIJournal() {
             of trading into a behavior map — so you can fix the habit, not just
             the next trade.
           </p>
+          <p className="mt-3 text-sm text-slate-500">
+            Entries below are sample data, shown to illustrate the format.
+          </p>
         </motion.div>
 
         {/* Two-column content */}
@@ -419,19 +422,19 @@ const REPLAYS = [
     spark: [10, 12, 11, 14, 16, 15, 18, 22, 20, 24],
   },
   {
-    symbol: 'EURUSD',
+    symbol: 'ETHUSD',
     side: 'SELL',
-    entry: 1.0875,
-    exit: 1.0860,
+    entry: 3120.5,
+    exit: 3108.0,
     pnl: 150,
     duration: '8m',
     spark: [22, 20, 21, 18, 16, 17, 14, 13, 12, 10],
   },
   {
-    symbol: 'XAUUSD',
+    symbol: 'SOLUSD',
     side: 'BUY',
-    entry: 2640.5,
-    exit: 2638.2,
+    entry: 182.4,
+    exit: 179.1,
     pnl: -230,
     duration: '22m',
     spark: [14, 16, 15, 17, 14, 11, 12, 9, 10, 8],
@@ -490,7 +493,7 @@ function TradeReplays() {
           <p className="mt-1 font-display text-lg font-bold text-white">Recent — relive each one</p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-          3 of 47
+          Sample data
         </span>
       </div>
 
