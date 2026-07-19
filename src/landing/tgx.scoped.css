@@ -225,6 +225,11 @@
     margin-bottom: 36px;
   }
   .tgx-home .hero-sub strong{ color: var(--text); font-weight: 500; }
+  /* Supporting line under the hero promise: the "what you configure" detail.
+     Smaller and dimmer so the outcome above it stays the thing you read first. */
+  .tgx-home .hero-sub + .hero-sub-meta{
+    font-size: 15.5px; color: var(--text-3); margin-top: -22px; margin-bottom: 34px;
+  }
   .tgx-home .hero-ctas{ display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
   /* Prominent "we run on Delta Exchange" lockup in the hero */
   .tgx-home .hero-exchange{
