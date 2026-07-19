@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { trackCtaClick } from '../../lib/analytics';
+import { demoVideoPoster, demoVideoEmbedUrl } from '../../lib/demoVideo';
 
-const VIDEO_ID = 'rHXl3EWuO6E';
-// maxres isn't guaranteed to exist for every upload; hqdefault always does, so
-// it's the fallback when the high-res poster 404s.
-const POSTER_MAX = `https://i.ytimg.com/vi/${VIDEO_ID}/maxresdefault.jpg`;
-const POSTER_FALLBACK = `https://i.ytimg.com/vi/${VIDEO_ID}/hqdefault.jpg`;
+// Video identity lives in lib/demoVideo so the landing page, the guides, and the
+// structured data can't drift apart.
+const POSTER_MAX = demoVideoPoster('maxres');
+const POSTER_FALLBACK = demoVideoPoster('hq');
 
 /** Full-colour YouTube mark — kept red-on-white per brand guidance so it stays recognisable. */
 function YouTubeGlyph({ className }) {
@@ -159,7 +159,7 @@ export default function DemoVideoSection() {
             <div className="aspect-video w-full">
               <iframe
                 className="h-full w-full"
-                src={`https://www.youtube-nocookie.com/embed/${VIDEO_ID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+                src={demoVideoEmbedUrl({ autoplay: true })}
                 title="TradeGuardX demo"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

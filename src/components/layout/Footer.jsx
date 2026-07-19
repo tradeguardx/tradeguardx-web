@@ -13,6 +13,7 @@ const links = {
     // "Install for Chrome" removed — the crypto/Delta product enforces
     // server-side via the exchange API key; the browser extension is the
     // prop-firm path, which isn't part of this launch.
+    { label: 'What is a crypto kill switch?', to: '/crypto-kill-switch' },
     { label: 'Guides', to: '/help' },
     { label: 'Support', to: '/support' },
     { label: 'Email Us', to: 'mailto:support@tradeguardx.com' },

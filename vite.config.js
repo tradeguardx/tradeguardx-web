@@ -27,6 +27,7 @@ const PRERENDER_ROUTES = [
   '/help/live-dashboard',
   '/help/troubleshooting',
   '/security',
+  '/crypto-kill-switch',
   '/roadmap',
 ];
 

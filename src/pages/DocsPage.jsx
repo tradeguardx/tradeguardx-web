@@ -3,6 +3,8 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useSEO } from '../hooks/useSEO';
 import { DOCS, DOC_BROKERS } from '../lib/exchangeDocs';
+import WatchDemoCard from '../components/common/WatchDemoCard';
+import { demoVideoSchema } from '../lib/demoVideo';
 
 const SITE = 'https://tradeguardx.com';
 // The docs live at /help (the navbar "Guides" link points here).
@@ -61,6 +63,12 @@ function buildDocsSchema(doc, article, pageUrl, description) {
     });
   }
 
+  // The walkthrough documents the setup flow, so the VideoObject belongs on
+  // that article only — attaching it everywhere would misdescribe the others.
+  if (article.slug === 'getting-started') {
+    graph.push(demoVideoSchema());
+  }
+
   const faqList = article.slug === 'troubleshooting'
     ? (article.sections[0]?.list || [])
     : [];
@@ -96,6 +104,10 @@ function ArticleBody({ article }) {
     <article className="min-w-0">
       <h1 className="font-display text-3xl font-bold leading-tight text-white md:text-4xl">{article.title}</h1>
       {article.intro && <p className="mt-4 text-[15px] leading-relaxed text-slate-400">{article.intro}</p>}
+
+      {/* Setup guide leads with the video — most people would rather watch the
+          key-generation step than read it. Plays in a lightbox, not on YouTube. */}
+      {article.slug === 'getting-started' && <WatchDemoCard className="mt-6" />}
 
       <div className="mt-8 space-y-10">
         {article.sections.map((s, si) => (

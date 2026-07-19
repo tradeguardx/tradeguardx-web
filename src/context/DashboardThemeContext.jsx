@@ -3,12 +3,16 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 const STORAGE_KEY = 'tradeguardx-dash-theme';
 const DashboardThemeContext = createContext(null);
 
+// Light is the default a new user lands on. Anyone who has toggled before keeps
+// their choice — the stored value always wins, so this only affects first visits.
+const DEFAULT_THEME = 'light';
+
 export function DashboardThemeProvider({ children }) {
   const [theme, setThemeRaw] = useState(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) || 'dark';
+      return localStorage.getItem(STORAGE_KEY) || DEFAULT_THEME;
     } catch {
-      return 'dark';
+      return DEFAULT_THEME;
     }
   });
 

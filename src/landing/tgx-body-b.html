@@ -72,6 +72,10 @@
 
     <div class="faq-list">
       <details class="faq-item">
+        <summary>What is a crypto killswitch, and how is it different from a stop loss?</summary>
+        <p>A stop loss protects a single trade. A crypto killswitch protects the <b>account</b>: you set a daily loss cap, a maximum number of trades and a cooldown once, and when you cross one we cancel your open orders, close your positions, and block new entries until the lock lifts. It's aimed at the behaviour that actually blows accounts &mdash; the fast re-entry after a loss, the doubled size to win it back. <a href="/crypto-kill-switch">Read the full explainer &rarr;</a></p>
+      </details>
+      <details class="faq-item">
         <summary>Will TradeGuardX have access to my funds?</summary>
         <p>No. Your Delta Exchange API key only has trade and balance-read scope &mdash; it can never withdraw, and your funds never leave your own Delta wallet. During a cooldown we don't move anything: we cancel your orders, close your positions, and block new trades until the lock lifts.</p>
       </details>
