@@ -192,8 +192,153 @@
 
   /* ---------- hero ---------- */
   .tgx-home .hero{ padding: 90px 0 80px; position: relative; }
+  /* Exchange banner — the "what it runs on" statement above the hero. A split
+     gradient (our teal into Delta's warm side) so the two brands each own half
+     the field, rather than one sitting on the other's background. */
+  .tgx-home .xbanner{
+    position: relative; overflow: hidden;
+    width: 100%; margin: 0 0 44px; padding: 22px 24px 18px;
+    border-radius: 20px; text-align: center;
+    background:
+      radial-gradient(80% 140% at 0% 50%, rgba(0,212,170,0.20) 0%, transparent 60%),
+      radial-gradient(80% 140% at 100% 50%, rgba(249,115,22,0.16) 0%, transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 24px 60px -34px rgba(0,0,0,0.9);
+  }
+  /* Faint diagonal sheen, the light-streak the reference banners use. */
+  .tgx-home .xbanner::after{
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(112deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 90px);
+    opacity: 0.5;
+  }
+
+  .tgx-home .xbanner-eyebrow{
+    position: relative; z-index: 1;
+    display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 10px;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--text-2);
+  }
+  .tgx-home .xb-flag{ height: 12px; width: auto; border-radius: 2px; }
+  .tgx-home .xb-accent{ color: var(--accent); }
+  .tgx-home .xb-div{
+    display: inline-block; width: 1px; height: 12px; background: rgba(255,255,255,0.20);
+  }
+
+  .tgx-home .xbanner-lockup{
+    position: relative; z-index: 1;
+    display: flex; align-items: center; flex-wrap: wrap; justify-content: center;
+    gap: 12px 18px; margin-top: 14px;
+  }
+  .tgx-home .xb-brand,
+  .tgx-home .xb-partner{
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 18px; border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    font-family: var(--sans); font-weight: 800; letter-spacing: -0.02em;
+    font-size: clamp(18px, 1.2vw + 12px, 26px); color: #fff;
+  }
+  .tgx-home .xb-brand img{ height: 26px; width: auto; }
+  .tgx-home .xb-partner img{ height: 24px; width: auto; }
+  .tgx-home .xb-plus{ font-size: 22px; font-weight: 700; color: var(--text-3); }
+
+  /* CoinDCX rides in the lockup rather than the fine print — but dashed and
+     dimmed so it still reads as next, not live. */
+  .tgx-home .xb-next{
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 999px;
+    background: rgba(255,255,255,0.03);
+    border: 1px dashed rgba(255,255,255,0.18);
+  }
+  .tgx-home .xb-coindcx{
+    font-family: var(--sans); font-weight: 800; letter-spacing: -0.01em;
+    font-size: clamp(15px, 0.7vw + 11px, 19px); color: var(--text-2);
+  }
+  .tgx-home .xb-coindcx b{ color: #f97316; font-weight: 800; }
+  .tgx-home .xbanner .xb-short{ display: none; }
+  .tgx-home .xb-next-tag{
+    padding: 3px 8px; border-radius: 999px;
+    background: rgba(249,115,22,0.14); color: #fb923c;
+    font-size: 9.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+
+  .tgx-home .xbanner-feats{
+    position: relative; z-index: 1;
+    display: flex; align-items: center; flex-wrap: wrap; justify-content: center;
+    gap: 8px 14px; margin-top: 16px;
+    font-size: 12px; color: var(--text-2);
+  }
+  .tgx-home .xbanner-feats span{ display: inline-flex; align-items: center; gap: 7px; }
+  .tgx-home .xb-dot{ width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
+  .tgx-home .xb-dot-teal{ background: var(--accent); box-shadow: 0 0 8px rgba(0,212,170,0.7); }
+  .tgx-home .xb-dot-amber{ background: #fbbf24; }
+  .tgx-home .xb-dot-slate{ background: #94a3b8; }
+  .tgx-home .xb-soon{ color: var(--text-3); }
+  .tgx-home .xb-soon b{ color: #f97316; font-weight: 700; }
+  .tgx-home .xb-soon em{
+    font-style: normal; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+
+  /* Laptop: pills lose padding before they lose meaning. */
+  @media (max-width: 1100px){
+    .tgx-home .xb-brand, .tgx-home .xb-partner{ padding: 9px 15px; }
+    .tgx-home .xbanner-lockup{ gap: 10px 14px; }
+  }
+
+  /* Tablet */
+  @media (max-width: 860px){
+    .tgx-home .xbanner{ padding: 20px 18px 16px; }
+    .tgx-home .xbanner-feats{ font-size: 11.5px; gap: 8px 12px; }
+  }
+
+  /* Phone: three lines, in order — the claim, the three brands, the guarantees.
+     Each holds ONE row; "Now live on" goes because the brands below say it. */
+  @media (max-width: 640px){
+    .tgx-home .xbanner{ padding: 14px 10px 13px; margin-bottom: 26px; border-radius: 16px; }
+
+    .tgx-home .xbanner .xb-long{ display: none; }
+    .tgx-home .xbanner .xb-short{ display: inline-flex; }
+
+    /* Line 1 — flag + claim only. */
+    .tgx-home .xbanner-eyebrow{ font-size: 10px; letter-spacing: 0.08em; gap: 7px; }
+    .tgx-home .xbanner-eyebrow .xb-div,
+    .tgx-home .xbanner-eyebrow .xb-accent{ display: none; }
+
+    /* Line 2 — TradeGuardX + Delta + CoinDCX, one row, no wrapping. */
+    .tgx-home .xbanner-lockup{
+      flex-wrap: nowrap; gap: 5px; margin-top: 11px;
+      justify-content: center; align-items: stretch;
+    }
+    .tgx-home .xb-brand,
+    .tgx-home .xb-partner,
+    .tgx-home .xb-next{
+      padding: 6px 8px; gap: 5px; border-radius: 12px; white-space: nowrap; min-width: 0;
+    }
+    .tgx-home .xb-brand,
+    .tgx-home .xb-partner{ font-size: 12.5px; letter-spacing: -0.01em; }
+    .tgx-home .xb-brand img{ height: 15px; }
+    .tgx-home .xb-partner img{ height: 14px; }
+    .tgx-home .xb-plus{ font-size: 13px; align-self: center; }
+    .tgx-home .xb-coindcx{ font-size: 12.5px; }
+    .tgx-home .xb-next-tag{ padding: 2px 5px; font-size: 8px; letter-spacing: 0.08em; }
+
+    /* Line 3 — the guarantees, one row. */
+    .tgx-home .xbanner-feats{
+      flex-wrap: nowrap; gap: 8px; margin-top: 11px; font-size: 9.5px; white-space: nowrap;
+    }
+    .tgx-home .xbanner-feats span{ gap: 5px; }
+    .tgx-home .xbanner-feats .xb-dot{ display: none; }
+    .tgx-home .xbanner-feats .xb-div{ height: 10px; }
+  }
+
+  @media (max-width: 360px){
+    .tgx-home .xb-brand, .tgx-home .xb-partner{ font-size: 11.5px; }
+    .tgx-home .xbanner-feats{ font-size: 9px; gap: 6px; }
+  }
+
   .tgx-home .hero-grid{
-    display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 64px; align-items: center;
+    display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 52px; align-items: center;
   }
   .tgx-home .hero-eyebrow{
     display: inline-flex; align-items: center; gap: 10px;
@@ -274,6 +419,13 @@
   /* hero visual - live dashboard card */
   .tgx-home .hero-visual{
     position: relative;
+  }
+  /* Held at the taller of the demo's two screens so the card doesn't resize as
+     phases swap. Released on phones, where the content is taller anyway and a
+     floor only adds dead space under the last row. */
+  .tgx-home .tgx-demo-card{ min-height: 436px; }
+  @media (max-width: 640px){
+    .tgx-home .tgx-demo-card{ min-height: 0; padding: 16px !important; }
   }
   .tgx-home .device{
     background: linear-gradient(180deg, var(--surface), var(--bg-2));
@@ -1769,7 +1921,21 @@
 
   /* ---------- responsive ---------- */
   @media (max-width: 960px) {
-    .tgx-home .hero-grid, .tgx-home .enforce-grid, .tgx-home .journal-grid{ grid-template-columns: 1fr; gap: 48px; }
+    .tgx-home .enforce-grid, .tgx-home .journal-grid{ grid-template-columns: 1fr; gap: 48px; }
+
+    /* Stacked hero: the demo belongs directly under the promise, not below the
+       CTAs — proof should land before we ask for the click. `display: contents`
+       dissolves the copy column so its children and the demo can be ordered
+       against each other in one flex flow. */
+    .tgx-home .hero-grid{
+      display: flex; flex-direction: column; gap: 0; align-items: stretch;
+    }
+    .tgx-home .hero-grid > div:first-child{ display: contents; }
+    .tgx-home .hero-grid .h1{ order: 1; }
+    .tgx-home .hero-grid .hero-sub{ order: 2; margin-bottom: 26px; }
+    .tgx-home .hero-visual{ order: 3; margin-bottom: 30px; }
+    .tgx-home .hero-grid .hero-ctas{ order: 4; }
+    .tgx-home .hero-grid .hero-trust{ order: 5; }
     .tgx-home .pain-grid, .tgx-home .steps, .tgx-home .rules-grid{ grid-template-columns: 1fr; }
     .tgx-home .trust-grid{ grid-template-columns: repeat(3, 1fr); gap: 28px 20px; text-align: center; }
     .tgx-home .trust-exchanges{ grid-column: 1 / -1; justify-content: center; flex-wrap: wrap; }

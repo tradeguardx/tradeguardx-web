@@ -4,32 +4,57 @@
 <!-- HERO -->
 <section class="hero">
   <div class="wrap">
+    <!-- Centred above the whole hero: the claim, then who it runs on. Putting
+         the exchange lockup here rather than in the copy column makes it read
+         as "TradeGuardX works with Delta" instead of another feature bullet. -->
+    <!-- Exchange banner: what TradeGuardX runs on, stated once, before anything
+         else. Deliberately "now live on" rather than "partners" — we don't have
+         a partnership agreement with Delta and shouldn't imply one. -->
+    <div class="xbanner">
+      <div class="xbanner-eyebrow">
+        <img src="/flag-in.svg" alt="India" class="xb-flag">
+        <span>India's first crypto kill switch</span>
+        <i class="xb-div"></i>
+        <span class="xb-accent">Now live on</span>
+      </div>
+
+      <div class="xbanner-lockup">
+        <span class="xb-brand">
+          <img src="/favicon.svg" alt="">
+          <span>TradeGuardX</span>
+        </span>
+        <span class="xb-plus">+</span>
+        <span class="xb-partner">
+          <img src="/brokers/delta-exchange.svg" alt="Delta Exchange">
+          <span class="xb-long">Delta Exchange</span><span class="xb-short">Delta</span>
+        </span>
+        <span class="xb-next">
+          <span class="xb-coindcx"><b>Coin</b>DCX</span>
+          <span class="xb-next-tag">Soon</span>
+        </span>
+      </div>
+
+      <div class="xbanner-feats">
+        <span><i class="xb-dot xb-dot-teal"></i> <span class="xb-long">Server-side enforcement</span><span class="xb-short">Server-side</span></span>
+        <i class="xb-div"></i>
+        <span><i class="xb-dot xb-dot-amber"></i> <span class="xb-long">Acts in ~120ms</span><span class="xb-short">~120ms</span></span>
+        <i class="xb-div"></i>
+        <span><i class="xb-dot xb-dot-slate"></i> <span class="xb-long">Trade-only key · never withdrawal</span><span class="xb-short">Trade-only key</span></span>
+      </div>
+    </div>
+
     <div class="hero-grid">
       <div>
-        <div class="hero-eyebrow">
-          <img src="/flag-in.svg" alt="India" style="height:13px;width:auto;border-radius:2px">
-          <span style="font-weight:700;color:var(--text);">India's First Crypto Trading Kill Switch</span>
-        </div>
-        <div class="hero-exchange">
-          <span class="hx-logo">
-            <img src="/brokers/delta-exchange.svg" alt="Delta Exchange">
-            <span class="hx-name">Delta Exchange</span>
-          </span>
-          <span class="hx-live"><i></i> Live</span>
-        </div>
         <h1 class="display h1">
-          Never Blow Another<br>
+          <span style="white-space:nowrap;">Never Blow Another</span><br>
           <span class="accent-line">Trading Account.</span>
         </h1>
         <p class="hero-sub">
           <strong>TradeGuardX automatically closes positions, blocks new orders, and locks your account the moment you break your trading rules</strong>&mdash;so one emotional decision never turns into a blown account.
         </p>
-        <p class="hero-sub hero-sub-meta">
-          Configure daily loss limits, profit lock, maximum trades, cooldowns, and risk limits in under 2 minutes.
-        </p>
         <div class="hero-ctas">
           <a href="/signup" class="btn btn-primary btn-lg">
-            Try Free for 7 Days
+            Create free account
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </a>
           <!-- Goes straight to the walkthrough on YouTube (new tab). The on-page
@@ -47,64 +72,9 @@
       </div>
 
       <div class="hero-visual">
-        <div class="float-card float-card-1" style="z-index:3;top:-40px;left:-56px;">
-          <img src="/brokers/delta-exchange.svg" alt="Delta Exchange" style="height:18px;width:auto">
-          Delta Exchange
-          <span style="margin-left:2px;color:var(--accent);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;">Live</span>
-        </div>
-        <div class="float-card float-card-2" style="z-index:3;bottom:-18px;right:-44px;">
-          <span style="font-family:var(--sans);font-weight:700;letter-spacing:-0.01em;">
-            <span style="color:#f1f5f9">Coin</span><span style="color:#f97316">DCX</span>
-          </span>
-          <span style="margin-left:2px;color:var(--text-3);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;">Soon</span>
-        </div>
-
-        <div class="device">
-          <div class="device-head">
-            <div class="pair">
-              <span class="ex" style="display:inline-flex;align-items:center;gap:5px;"><img src="/brokers/delta-exchange.svg" alt="Delta Exchange" style="height:13px;width:auto">Delta Exchange</span>
-              <span>BTCUSD &middot; Perp</span>
-            </div>
-            <div class="live">Live</div>
-          </div>
-
-          <div class="pl-row">
-            <div class="pl-cell">
-              <div class="label">Today's P&amp;L</div>
-              <div class="val neg">&minus;$325</div>
-              <div class="sub">Cap: $500</div>
-            </div>
-            <div class="pl-cell">
-              <div class="label">Trades</div>
-              <div class="val">4<span style="color: var(--text-3); font-size: 16px;"> / 6</span></div>
-              <div class="sub">2 remaining</div>
-            </div>
-          </div>
-
-          <div class="rule-bar">
-            <div class="label-row">
-              <span>Daily loss limit</span>
-              <span style="color: var(--danger)">65% used</span>
-            </div>
-            <div class="bar"><div class="fill"></div></div>
-            <div class="meta">
-              <span class="used">$325 used</span>
-              <span>$175 remaining</span>
-            </div>
-          </div>
-
-          <div class="alert">
-            <div class="alert-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </div>
-            <div class="alert-body">
-              <span class="tag">Trade blocked</span>
-              <div class="msg">Entry attempt on <b>BTCUSD</b> rejected &mdash; daily loss cap proximity. <b>Cooldown 2h</b>.</div>
-              <div class="timestamp">14:23:08 IST &middot; auto-enforced</div>
-            </div>
-          </div>
-        </div>
+        <div id="tgx-hero-demo"></div>
       </div>
+
     </div>
   </div>
 </section>

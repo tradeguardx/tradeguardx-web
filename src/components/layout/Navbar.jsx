@@ -2,6 +2,47 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { founderTelegramUrl, FOUNDER_TELEGRAM_CONFIGURED } from '../../lib/founderContact';
+import { trackCtaClick } from '../../lib/analytics';
+
+function TelegramGlyph({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+    </svg>
+  );
+}
+
+/** Direct line to the founder. Hidden entirely when no handle is configured, so
+ *  the nav never ships a dead link. */
+function TalkToFounderLink({ mobile = false, onClick }) {
+  if (!FOUNDER_TELEGRAM_CONFIGURED) return null;
+  const handle = () => {
+    try {
+      trackCtaClick(mobile ? 'nav_telegram_mobile' : 'nav_telegram');
+    } catch {
+      /* analytics is best-effort */
+    }
+    onClick?.();
+  };
+  return (
+    <a
+      href={founderTelegramUrl('Hi — I have a question about TradeGuardX.')}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={handle}
+      className={
+        mobile
+          ? 'flex items-center gap-2.5 rounded-xl px-4 py-3 font-medium text-slate-300 transition-all hover:bg-white/[0.04] hover:text-white'
+          : 'inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200'
+      }
+      style={mobile ? undefined : { color: '#5ec2ee' }}
+    >
+      <TelegramGlyph className={mobile ? 'h-[18px] w-[18px]' : 'h-4 w-4'} />
+      Talk to founder
+    </a>
+  );
+}
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -53,6 +94,8 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+          <span className="mx-1 h-4 w-px bg-white/10" aria-hidden />
+          <TalkToFounderLink />
         </div>
 
         <div className="hidden md:flex items-center gap-3">
@@ -117,6 +160,7 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            <TalkToFounderLink mobile onClick={() => setOpen(false)} />
             <div className="pt-3 border-t border-white/[0.06] mt-3">
               {user ? (
                 <Link

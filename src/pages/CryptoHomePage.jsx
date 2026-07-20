@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSEO } from '../hooks/useSEO';
 import StoryAIJournal from '../components/landing/story/StoryAIJournal';
 import FloatingSignupCTA from '../components/landing/FloatingSignupCTA';
 import TalkToFounder from '../components/common/TalkToFounder';
 import DemoVideoSection from '../components/landing/DemoVideoSection';
+import HeroLiveDemo from '../components/landing/HeroLiveDemo';
 import '../landing/tgx.scoped.css';
 import rawBodyA from '../landing/tgx-body-a.html?raw';
 import rawBodyB from '../landing/tgx-body-b.html?raw';
@@ -44,6 +46,10 @@ function LandingDivider() {
   );
 }
 
+const RawHtml = memo(function RawHtml({ html, innerRef, className }) {
+  return <div className={className} ref={innerRef} dangerouslySetInnerHTML={{ __html: html }} />;
+});
+
 const FAQ_LD = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -59,6 +65,7 @@ export default function CryptoHomePage() {
   const aRef = useRef(null);
   const a2Ref = useRef(null);
   const bRef = useRef(null);
+  const [heroDemoNode, setHeroDemoNode] = useState(null);
 
   useSEO({
     title: "India's First Crypto Trading Kill Switch",
@@ -67,6 +74,27 @@ export default function CryptoHomePage() {
     url: 'https://tradeguardx.com',
     jsonLd: FAQ_LD,
   });
+
+  // The hero is injected as raw HTML, so the animated device is portalled into a
+  // placeholder inside it rather than rewriting the whole hero as JSX.
+  useEffect(() => {
+    const root = aRef.current;
+    if (!root) return undefined;
+
+    const acquire = () => {
+      const next = root.querySelector('#tgx-hero-demo') ?? null;
+      // Re-point only when the node we hold is gone or replaced. Anything that
+      // re-sets this subtree's innerHTML (an HMR update, a future re-render of
+      // the raw HTML) detaches the placeholder, and a portal into a detached
+      // node renders nothing — the demo silently disappears until reload.
+      setHeroDemoNode((prev) => (prev && prev.isConnected && prev === next ? prev : next));
+    };
+
+    acquire();
+    const mo = new MutationObserver(acquire);
+    mo.observe(root, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, []);
 
   useEffect(() => {
     const roots = [aRef.current, a2Ref.current, bRef.current].filter(Boolean);
@@ -165,6 +193,8 @@ export default function CryptoHomePage() {
 
   return (
     <>
+      {heroDemoNode && createPortal(<HeroLiveDemo />, heroDemoNode)}
+
       {/* Same star-scatter background as /prop-firm */}
       <div className="landing-bg" aria-hidden>
         <span className="star star-sm" style={{ top: '17%', left: '88%' }} />
@@ -181,7 +211,7 @@ export default function CryptoHomePage() {
         <span className="star star-lg star-accent star-blink-slow" style={{ top: '66%', left: '34%', animationDelay: '0.8s' }} />
       </div>
 
-      <div className="tgx-home" ref={aRef} dangerouslySetInnerHTML={{ __html: rawBodyAHero }} />
+      <RawHtml className="tgx-home" innerRef={aRef} html={rawBodyAHero} />
       {/* Right under the hero, above the trust strip. Hairline rules above and
           below separate the founder banner and the demo into their own sections
           instead of letting them run together as one loose stack. */}
@@ -198,9 +228,9 @@ export default function CryptoHomePage() {
       {/* Demo sits right under the founder banner — plays in a lightbox, not on YouTube. */}
       <DemoVideoSection />
       <LandingDivider />
-      <div className="tgx-home" ref={a2Ref} dangerouslySetInnerHTML={{ __html: rawBodyARest }} />
+      <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyARest} />
       <StoryAIJournal />
-      <div className="tgx-home" ref={bRef} dangerouslySetInnerHTML={{ __html: rawBodyB }} />
+      <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyB} />
       <FloatingSignupCTA />
     </>
   );
