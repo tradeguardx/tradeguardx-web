@@ -9,6 +9,8 @@ import { useDashboardTheme } from '../../context/DashboardThemeContext';
 import { useToast } from '../common/ToastProvider';
 import { ShimmerBlock } from '../common/LoadingSkeleton';
 import { fetchRulesBundle, saveRuleInstance } from '../../api/rulesApi';
+import CooldownBanner from './CooldownBanner';
+import { useCooldown } from '../../hooks/useCooldown';
 
 const RULE_VISUALS = {
   _default: {
@@ -221,7 +223,7 @@ const RULE_DOCS = {
   },
 };
 
-function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved }) {
+function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked = false }) {
   const toast = useToast();
   const { isDark } = useDashboardTheme();
   const hasMode = rule.fields.some((f) => f.key === 'mode');
@@ -491,7 +493,8 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                     <button
                       type="button"
                       onClick={() => setValues((v) => ({ ...v, [field.key]: !v[field.key] }))}
-                      className="relative w-14 h-8 rounded-full transition-all duration-300"
+                      disabled={accountLocked}
+                      className="relative w-14 h-8 rounded-full transition-all duration-300 disabled:opacity-50"
                       style={{ backgroundColor: values[field.key] ? undefined : 'var(--dash-toggle-track)' }}
                     >
                       {values[field.key] && (
@@ -515,6 +518,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                         type={field.type === 'number' ? 'number' : 'text'}
                         value={values[field.key]}
                         onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))}
+                        disabled={accountLocked}
                         className={`w-28 py-2.5 rounded-xl text-sm font-medium text-right focus:outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/30 transition-all ${
                           field.prefix ? 'pl-7 pr-3' : 'px-3'
                         } ${field.suffix ? 'pr-11' : ''}`}
@@ -543,7 +547,8 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                 <button
                   type="button"
                   onClick={handleSave}
-                  disabled={saving}
+                  disabled={saving || accountLocked}
+                  title={accountLocked ? 'Locked until the cooldown ends' : undefined}
                   className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-surface-950 hover:bg-accent-hover disabled:opacity-50 transition-colors"
                 >
                   {saving ? 'Saving…' : rule.hasSavedInstance ? 'Save changes' : 'Save & enable'}
@@ -561,6 +566,13 @@ export default function RulesTerminal() {
   const { session } = useAuth();
   const { isDark } = useDashboardTheme();
   const { accounts, accountsLoading, selectedTradingAccountId, selectedAccount } = useTradingAccounts();
+  // While the account is locked the API rejects rule edits and deletes, so the
+  // UI disables them rather than letting someone type a change that can't save.
+  const { locked: accountLocked } = useCooldown({
+    accessToken: session?.access_token,
+    tradingAccountId: selectedTradingAccountId,
+    account: selectedAccount,
+  });
   const [bundle, setBundle] = useState(null);
   const [bundleLoading, setBundleLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
@@ -658,6 +670,15 @@ export default function RulesTerminal() {
 
       {loadError && (
         <p className="mb-6 text-sm text-amber-400/90">{loadError}</p>
+      )}
+
+      {!accountsLoading && selectedTradingAccountId && (
+        <CooldownBanner
+          accessToken={session?.access_token}
+          tradingAccountId={selectedTradingAccountId}
+          account={selectedAccount}
+          note="Your rules are locked while the cooldown runs — you can update them the moment it lifts. You can still add a new rule to tighten protection."
+        />
       )}
 
       {!accountsLoading && accounts.length > 0 && selectedAccount && (
@@ -771,6 +792,7 @@ export default function RulesTerminal() {
                   <div className="space-y-3">
                     {section.rules.map((rule, i) => (
                       <RuleCard
+                        accountLocked={accountLocked}
                         key={`${rule.id}-${reloadNonce}`}
                         rule={rule}
                         index={i}
@@ -811,6 +833,7 @@ export default function RulesTerminal() {
                     <div className="space-y-3">
                       {section.rules.map((rule, i) => (
                         <RuleCard
+                          accountLocked={accountLocked}
                           key={`${rule.id}-${reloadNonce}`}
                           rule={rule}
                           index={i + availableRules.length}

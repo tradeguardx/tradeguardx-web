@@ -1,83 +1,19 @@
-import { useEffect, useState } from 'react';
-import { fetchTradingAccounts } from '../../api/tradingAccountsApi';
-import { supabase } from '../../lib/supabaseClient';
-
-const FALLBACK_POLL_MS = 30000;
-
-const REASON_LABEL = {
-  daily_loss: 'Daily loss limit hit',
-  daily_target: 'Daily profit target reached',
-  consecutive_losses: 'Too many losses in a row',
-  max_trades_day: 'Daily trade limit reached',
-  manual: 'Manually locked',
-};
-
-function fmtCountdown(ms) {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
-}
+import { useCooldown, formatCountdown, COOLDOWN_REASON_LABEL } from '../../hooks/useCooldown';
 
 /**
  * Lockout banner with a live countdown. While the account's cooldown_until is in
- * the future, shows why it's locked and when it unlocks. Equity/cooldown state
- * is pushed via Supabase Realtime with a slow poll fallback.
+ * the future, shows why it's locked and when it unlocks.
+ *
+ * `note` lets a screen add what the lock means *there* — on the rules screen it
+ * explains that rules are frozen, which is otherwise invisible until a save is
+ * rejected by the API.
  */
-export default function CooldownBanner({ accessToken, tradingAccountId, account }) {
-  const [cd, setCd] = useState(() => ({
-    until: account?.cooldownUntil ?? null,
-    reason: account?.cooldownReason ?? null,
-  }));
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (!accessToken || !tradingAccountId) return undefined;
-    let cancelled = false;
-    const apply = (row) => {
-      if (!row || cancelled) return;
-      setCd({
-        until: row.cooldown_until ?? row.cooldownUntil ?? null,
-        reason: row.cooldown_reason ?? row.cooldownReason ?? null,
-      });
-    };
-    const snapshot = async () => {
-      try {
-        const accounts = await fetchTradingAccounts({ accessToken });
-        const a = accounts.find((x) => x.id === tradingAccountId);
-        if (a) apply(a);
-      } catch {
-        /* keep last known */
-      }
-    };
-    snapshot();
-    const channel = supabase
-      .channel(`acct-cooldown-${tradingAccountId}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'trading_accounts', filter: `id=eq.${tradingAccountId}` },
-        (p) => apply(p.new),
-      )
-      .subscribe();
-    const id = setInterval(snapshot, FALLBACK_POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-      supabase.removeChannel(channel);
-    };
-  }, [accessToken, tradingAccountId]);
-
-  const untilMs = cd.until ? new Date(cd.until).getTime() : null;
-  const locked = untilMs != null && untilMs > now;
-
-  useEffect(() => {
-    if (!locked) return undefined;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [locked]);
+export default function CooldownBanner({ accessToken, tradingAccountId, account, note }) {
+  const { locked, untilMs, reason, remainingMs } = useCooldown({ accessToken, tradingAccountId, account });
 
   if (!locked) return null;
 
-  const reasonLabel = REASON_LABEL[cd.reason] || 'Risk lockout';
+  const reasonLabel = COOLDOWN_REASON_LABEL[reason] || 'Risk lockout';
   const unlockTime = new Date(untilMs).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
   return (
@@ -95,13 +31,13 @@ export default function CooldownBanner({ accessToken, tradingAccountId, account 
           <div>
             <p className="text-sm font-bold" style={{ color: '#ef4444' }}>Account locked — cooldown active</p>
             <p className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
-              {reasonLabel} · new trades auto-close until unlock at {unlockTime}.
+              {note || `${reasonLabel} · new trades auto-close until unlock at ${unlockTime}.`}
             </p>
           </div>
         </div>
         <div className="text-right">
           <p className="font-mono text-xl font-bold tabular-nums" style={{ color: '#ef4444' }}>
-            {fmtCountdown(untilMs - now)}
+            {formatCountdown(remainingMs)}
           </p>
           <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--dash-text-faint)' }}>until unlock</p>
         </div>
