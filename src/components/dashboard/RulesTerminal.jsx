@@ -12,6 +12,20 @@ import { fetchRulesBundle, saveRuleInstance } from '../../api/rulesApi';
 import CooldownBanner from './CooldownBanner';
 import { useCooldown } from '../../hooks/useCooldown';
 
+/**
+ * Plan slugs are storage keys, not copy. "pro_plus" leaked straight into the
+ * stat card, where it also overflowed the box.
+ */
+function planDisplayName(slug) {
+  if (!slug) return '—';
+  const key = String(slug).toLowerCase().replace(/[\s-]/g, '_');
+  return (
+    { free: 'Free', pro: 'Pro', pro_plus: 'Pro+', proplus: 'Pro+' }[key]
+    ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  );
+}
+
+
 const RULE_VISUALS = {
   _default: {
     gradient: 'from-slate-500 to-slate-400',
@@ -677,7 +691,7 @@ export default function RulesTerminal() {
           accessToken={session?.access_token}
           tradingAccountId={selectedTradingAccountId}
           account={selectedAccount}
-          note="Your rules are locked while the cooldown runs — you can update them the moment it lifts. You can still add a new rule to tighten protection."
+          note="Rules are locked until the cooldown lifts. You can still add a new rule."
         />
       )}
 
@@ -736,7 +750,7 @@ export default function RulesTerminal() {
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            className="mb-8 grid grid-cols-3 gap-3 sm:gap-4"
+            className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3"
           >
             <motion.div
               variants={staggerItem}
@@ -761,11 +775,11 @@ export default function RulesTerminal() {
             <motion.div
               variants={staggerItem}
               whileHover={{ y: -3 }}
-              className="relative overflow-hidden rounded-2xl border p-4 transition-shadow duration-300 hover:shadow-md sm:p-5"
+              className="relative col-span-2 overflow-hidden rounded-2xl border p-4 transition-shadow duration-300 hover:shadow-md sm:p-5 lg:col-span-1"
               style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)', boxShadow: 'var(--dash-shadow-card)' }}
             >
               <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-emerald-500/[0.08] blur-2xl" />
-              <p className="relative text-2xl font-display font-bold text-emerald-400 sm:text-3xl">{bundle?.planSlug || '—'}</p>
+              <p className="relative truncate text-2xl font-display font-bold text-emerald-400 sm:text-3xl">{planDisplayName(bundle?.planSlug)}</p>
               <p className="relative mt-1 text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--dash-text-muted)' }}>Current plan</p>
             </motion.div>
           </motion.div>
