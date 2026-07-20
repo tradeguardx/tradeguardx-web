@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { fetchTradingAccounts } from '../../api/tradingAccountsApi';
 import { fetchRulesBundle } from '../../api/rulesApi';
@@ -36,6 +37,76 @@ function fmtCountdown(ms) {
 }
 
 // Palette (dark hero, terminal-ish labels)
+/**
+ * One-shot celebration for a green day.
+ *
+ * Fires only when the profit target is actually banked, and only once per day —
+ * a burst that replays on every navigation stops reading as a reward and starts
+ * reading as a bug. Ribbons animate out and fade; nothing loops, so the card
+ * settles into a calm state you can still read the numbers off.
+ *
+ * Respects prefers-reduced-motion via CSS at the call site.
+ */
+function WinBurst({ storageKey }) {
+  // Decided at mount, not in an effect: the answer is already known from
+  // storage, and setting state in an effect just costs an extra render.
+  const [play] = useState(() => {
+    try {
+      return localStorage.getItem(storageKey) !== '1';
+    } catch {
+      return true; // private mode — a replay beats never celebrating
+    }
+  });
+
+  // The effect only records that we've played, so it stays a pure write-out.
+  useEffect(() => {
+    if (!play) return;
+    try {
+      localStorage.setItem(storageKey, '1');
+    } catch {
+      /* ignore */
+    }
+  }, [play, storageKey]);
+
+  if (!play) return null;
+
+  // Deterministic spread so the burst looks designed, not random.
+  const bits = Array.from({ length: 18 }, (_, i) => {
+    const angle = (i / 18) * Math.PI * 2;
+    const spread = 120 + (i % 5) * 26;
+    return {
+      i,
+      x: Math.cos(angle) * spread,
+      y: Math.sin(angle) * spread * 0.55,
+      rotate: (i % 2 ? 1 : -1) * (90 + i * 12),
+      color: ['#34d399', '#6ee7b7', '#a7f3d0', '#fbbf24'][i % 4],
+      delay: (i % 6) * 0.03,
+    };
+  });
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-10 motion-reduce:hidden" aria-hidden>
+      <div className="absolute left-1/2 top-1/2">
+        {bits.map((b) => (
+          <motion.span
+            key={b.i}
+            initial={{ opacity: 0, x: 0, y: 0, scale: 0.4, rotate: 0 }}
+            animate={{ opacity: [0, 1, 1, 0], x: b.x, y: [0, b.y, b.y + 40], scale: 1, rotate: b.rotate }}
+            transition={{ duration: 1.5, delay: b.delay, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              position: 'absolute',
+              width: 7,
+              height: 12,
+              borderRadius: 2,
+              backgroundColor: b.color,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const GREEN = '#34d399';
 const RED = '#f87171';
 const AMBER = '#fbbf24';
@@ -199,6 +270,10 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
     summary = `All guardrails armed.${closest ? ` Your closest limit is the ${closest.kind === 'streak' ? 'loss streak' : closest.kind === 'loss' ? 'daily loss' : 'trade count'} — ${closest.text}.` : ''}`;
   }
 
+  // Key is day-scoped so the celebration returns tomorrow. Memoised because
+  // reading the clock during render is impure.
+  const winKey = useMemo(() => `tgx_win_celebrated_${new Date().toISOString().slice(0, 10)}`, []);
+
   // Slider marker (0..100, 50=start). Loss left, profit right.
   let markerLeft = 50;
   if (pnl < 0 && lossLimit) markerLeft = Math.max(50 - (Math.min(-pnl, lossLimit) / lossLimit) * 50, 0);
@@ -216,14 +291,27 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
   return (
     <div className="mb-4">
       {/* HERO */}
-      <div className="relative overflow-hidden rounded-2xl p-6 sm:p-7" style={{ background: S.bg, border: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex items-start justify-between gap-3">
+      <div
+        className="relative overflow-hidden rounded-2xl p-6 sm:p-7"
+        style={{
+          background: S.bg,
+          border: state === 'targetHit' ? '1px solid rgba(52,211,153,0.35)' : '1px solid rgba(255,255,255,0.06)',
+          boxShadow: state === 'targetHit' ? '0 0 60px -20px rgba(52,211,153,0.45)' : undefined,
+        }}
+      >
+        {state === 'targetHit' && <WinBurst storageKey={winKey} />}
+        <div className="relative flex items-start justify-between gap-3">
           <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-widest" style={{ borderColor: 'rgba(255,255,255,0.14)', color: '#e6edf3' }}>
             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: S.dot, boxShadow: `0 0 8px ${S.dot}` }} />
             {S.pill}
           </span>
           <span className="font-mono text-[11px]" style={{ color: MUTED }}>
-            <span style={{ color: stale ? AMBER : GREEN }}>●</span> {stale ? 'Feed delayed · showing last known equity' : `Live · ${exchange} linked`}
+            <span style={{ color: closed ? MUTED : stale ? AMBER : GREEN }}>●</span>{' '}
+            {closed
+              ? 'Session closed · final for today'
+              : stale
+                ? 'Feed delayed · showing last known equity'
+                : `Live · ${exchange} linked`}
           </span>
         </div>
 

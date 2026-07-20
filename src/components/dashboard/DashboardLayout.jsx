@@ -323,9 +323,13 @@ function DashboardInner() {
   }, [pathname]);
 
   return (
+    // 100dvh, not 100vh: on Android Chrome 100vh includes the space behind the
+    // collapsing URL bar, so with overflow-hidden here the shell is taller than
+    // what's visible and the header can sit behind the browser chrome. dvh tracks
+    // the toolbar. min-h-screen stays as the fallback for older browsers.
     <div
       data-dash-theme={theme}
-      className="flex min-h-screen relative overflow-hidden transition-colors duration-300"
+      className="flex min-h-screen min-h-[100dvh] relative overflow-hidden transition-colors duration-300"
       style={{ backgroundColor: 'var(--dash-bg)' }}
     >
       {/* Ambient background (dark only) */}
