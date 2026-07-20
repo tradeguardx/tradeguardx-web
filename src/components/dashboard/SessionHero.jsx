@@ -229,6 +229,11 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
     return { dp, ce, base, lossLimit, target, soft, softHrs, hard, hardHrs, streak, used, maxTrades, cooling, reason, state };
   }, [live, cfgBySlug, nowTick]);
 
+  // Day-scoped key for the win celebration. Declared BEFORE the early return
+  // below — a hook after a conditional return changes the hook count between
+  // renders, which is React error #310.
+  const winKey = useMemo(() => `tgx_win_celebrated_${new Date().toISOString().slice(0, 10)}`, []);
+
   if (!bundle) return null;
 
   const fmt = (v) => new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 2 }).format(Math.abs(v));
@@ -269,10 +274,6 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
     const closest = bits.sort((a, b) => a.dist - b.dist)[0];
     summary = `All guardrails armed.${closest ? ` Your closest limit is the ${closest.kind === 'streak' ? 'loss streak' : closest.kind === 'loss' ? 'daily loss' : 'trade count'} — ${closest.text}.` : ''}`;
   }
-
-  // Key is day-scoped so the celebration returns tomorrow. Memoised because
-  // reading the clock during render is impure.
-  const winKey = useMemo(() => `tgx_win_celebrated_${new Date().toISOString().slice(0, 10)}`, []);
 
   // Slider marker (0..100, 50=start). Loss left, profit right.
   let markerLeft = 50;
