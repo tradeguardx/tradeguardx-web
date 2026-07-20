@@ -406,7 +406,6 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
           className="overflow-hidden"
         >
           <div className="px-5 pb-5 pt-1" style={{ borderTop: '1px solid var(--dash-border)' }}>
-            <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--dash-text-muted)' }}>{rule.description}</p>
 
             {docs && (
               <div className="mb-4">
@@ -476,15 +475,15 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
               </div>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {visibleFields.map((field) => (
                 <div key={field.key} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                  <label className="text-sm font-medium" style={{ color: 'var(--dash-text-secondary)' }}>{field.label}</label>
+                  <label className="text-sm font-semibold sm:font-medium" style={{ color: 'var(--dash-text-secondary)' }}>{field.label}</label>
 
                   {rule.locked ? (
                     <span className="text-sm italic" style={{ color: 'var(--dash-text-faint)' }}>Upgrade to configure</span>
                   ) : field.type === 'select' ? (
-                    <div className="inline-flex rounded-xl p-0.5" style={{ backgroundColor: 'var(--dash-bg-input)', border: '1px solid var(--dash-border)' }}>
+                    <div className="flex w-full rounded-xl p-1 sm:inline-flex sm:w-auto" style={{ backgroundColor: 'var(--dash-bg-input)', border: '1px solid var(--dash-border)' }}>
                       {(field.options || []).map((opt) => {
                         const active = values[field.key] === opt.value;
                         return (
@@ -492,7 +491,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                             key={opt.value}
                             type="button"
                             onClick={() => setValues((v) => ({ ...v, [field.key]: opt.value }))}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                            className="flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-colors sm:flex-none"
                             style={{
                               backgroundColor: active ? 'var(--accent)' : 'transparent',
                               color: active ? 'var(--surface-950, #0d0f14)' : 'var(--dash-text-muted)',
@@ -522,7 +521,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                       <span className="sr-only">{values[field.key] ? 'Enabled' : 'Disabled'}</span>
                     </button>
                   ) : (
-                    <div className="relative">
+                    <div className="relative w-full sm:w-auto">
                       {field.prefix && (
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{ color: 'var(--dash-text-muted)' }}>
                           {field.prefix}
@@ -533,8 +532,8 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                         value={values[field.key]}
                         onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))}
                         disabled={accountLocked}
-                        className={`w-28 py-2.5 rounded-xl text-sm font-medium text-right focus:outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/30 transition-all ${
-                          field.prefix ? 'pl-7 pr-3' : 'px-3'
+                        className={`h-11 w-full rounded-xl text-sm font-semibold tabular-nums transition-all focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 disabled:opacity-60 sm:w-36 ${
+                          field.prefix ? 'pl-8 pr-3' : 'px-3.5'
                         } ${field.suffix ? 'pr-11' : ''}`}
                         style={{
                           backgroundColor: 'var(--dash-bg-input)',
@@ -557,13 +556,13 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
             </div>
 
             {!rule.locked && (
-              <div className="mt-4 flex justify-end">
+              <div className="mt-5 flex justify-stretch sm:justify-end">
                 <button
                   type="button"
                   onClick={handleSave}
                   disabled={saving || accountLocked}
                   title={accountLocked ? 'Locked until the cooldown ends' : undefined}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-surface-950 hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                  className="h-11 w-full rounded-xl bg-accent px-6 text-sm font-bold text-surface-950 transition-colors hover:bg-accent-hover disabled:opacity-50 sm:w-auto"
                 >
                   {saving ? 'Saving…' : rule.hasSavedInstance ? 'Save changes' : 'Save & enable'}
                 </button>
