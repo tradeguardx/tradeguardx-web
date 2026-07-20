@@ -165,14 +165,19 @@ function FullPnlCalendar({ calendarData, trades }) {
   function nextMonth() { setViewDate(new Date(year, month + 1, 1)); setSelectedDate(null); }
   function goToday() { setViewDate(new Date()); setSelectedDate(todayIso); }
 
+  // Biggest absolute day this month — the scale everything else is read against.
+  const heatMax = Math.max(1, Math.abs(monthSummary.bestDay), Math.abs(monthSummary.worstDay));
+
   const pnlGradient = (pnl) => {
     if (pnl === null) return undefined;
-    if (pnl > 0) return isDark
-      ? 'linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0.06) 100%)'
-      : 'linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(34,197,94,0.03) 100%)';
-    return isDark
-      ? 'linear-gradient(135deg, rgba(239,68,68,0.18) 0%, rgba(239,68,68,0.06) 100%)'
-      : 'linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(239,68,68,0.03) 100%)';
+    // Floor of 0.22 so a tiny day is still visibly green/red, then scale with
+    // magnitude. sqrt because raw ratios make one huge day flatten every other.
+    const ratio = Math.min(1, Math.abs(pnl) / heatMax);
+    const t = 0.22 + Math.sqrt(ratio) * 0.78;
+    const rgb = pnl > 0 ? '34,197,94' : '239,68,68';
+    const top = (isDark ? 0.30 : 0.22) * t;
+    const bottom = (isDark ? 0.10 : 0.05) * t;
+    return `linear-gradient(150deg, rgba(${rgb},${top.toFixed(3)}) 0%, rgba(${rgb},${bottom.toFixed(3)}) 100%)`;
   };
 
   const pnlBorder = (pnl) => {
@@ -237,19 +242,39 @@ function FullPnlCalendar({ calendarData, trades }) {
 
       {/* ── Calendar grid ────────────────────────────────────────────────── */}
       <div className="rounded-2xl border overflow-hidden" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
+        {/* Legend — the tiles now encode magnitude, which is only useful if you
+            can tell that's what the depth means. */}
+        <div className="flex items-center justify-end gap-2 px-2 pt-2 pb-0.5">
+          <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: 'var(--dash-text-faint)' }}>Loss</span>
+          <span className="flex items-center gap-0.5">
+            {[0.85, 0.55, 0.3].map((o) => (
+              <span key={`l${o}`} className="h-2 w-3.5 rounded-sm" style={{ backgroundColor: `rgba(239,68,68,${(isDark ? 0.3 : 0.22) * o + 0.04})` }} />
+            ))}
+            <span className="mx-0.5 h-2 w-3.5 rounded-sm" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.035)' : 'rgba(15,23,42,0.04)' }} />
+            {[0.3, 0.55, 0.85].map((o) => (
+              <span key={`g${o}`} className="h-2 w-3.5 rounded-sm" style={{ backgroundColor: `rgba(34,197,94,${(isDark ? 0.3 : 0.22) * o + 0.04})` }} />
+            ))}
+          </span>
+          <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: 'var(--dash-text-faint)' }}>Profit</span>
+        </div>
+
         {/* Weekday headers */}
-        <div className="grid grid-cols-7" style={{ borderBottom: '1px solid var(--dash-border)' }}>
-          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((d) => (
-            <div key={d} className="py-3 text-center text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--dash-text-faint)' }}>
-              <span className="hidden sm:inline">{d}</span>
-              <span className="sm:hidden">{d.slice(0, 3)}</span>
+        <div className="grid grid-cols-7 gap-1 px-1 pb-1.5 pt-1 sm:gap-1.5 sm:px-1.5">
+          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((d, i) => (
+            <div
+              key={d}
+              className="py-1.5 text-center text-[9px] font-bold uppercase tracking-[0.14em] sm:text-[10px] sm:tracking-widest"
+              style={{ color: i >= 5 ? 'var(--dash-text-faint)' : 'var(--dash-text-muted)' }}
+            >
+              <span className="hidden lg:inline">{d}</span>
+              <span className="lg:hidden">{d.slice(0, 3)}</span>
             </div>
           ))}
         </div>
 
         {/* Weeks */}
         {calendarGrid.map((week, wi) => (
-          <div key={wi} className="grid grid-cols-7" style={{ borderBottom: wi < calendarGrid.length - 1 ? '1px solid var(--dash-border)' : 'none' }}>
+          <div key={wi} className="grid grid-cols-7 gap-1 px-1 pb-1 sm:gap-1.5 sm:px-1.5 sm:pb-1.5">
             {week.map((cell, ci) => {
               const isToday = cell.iso === todayIso;
               const isSelected = cell.iso === selectedDate;
@@ -263,11 +288,22 @@ function FullPnlCalendar({ calendarData, trades }) {
                   type="button"
                   disabled={cell.outside}
                   onClick={() => cell.iso && setSelectedDate(isSelected ? null : cell.iso)}
-                  className={`relative min-h-[64px] overflow-hidden p-1 sm:min-h-[100px] sm:p-2 text-left transition-all ${cell.outside ? 'opacity-30 cursor-default' : 'cursor-pointer hover:z-10'} ${!cell.outside && !isSelected ? 'hover:shadow-md hover:-translate-y-px' : ''}`}
+                  className={`relative flex min-h-[62px] flex-col overflow-hidden rounded-lg p-1.5 text-left transition-all duration-200 sm:min-h-[96px] sm:rounded-xl sm:p-2 ${
+                    cell.outside ? 'cursor-default opacity-25' : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg'
+                  }`}
                   style={{
-                    borderRight: ci < 6 ? '1px solid var(--dash-border)' : 'none',
-                    background: isSelected ? 'rgba(0,212,170,0.1)' : hasPnl ? pnlGradient(cell.pnl) : (isWeekend && !cell.outside ? (isDark ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.015)') : 'transparent'),
-                    boxShadow: isSelected ? 'inset 0 0 0 2px rgba(0,212,170,0.5)' : isToday ? 'inset 0 0 0 2px rgba(0,212,170,0.25)' : 'none',
+                    background: hasPnl
+                      ? pnlGradient(cell.pnl)
+                      : cell.outside
+                        ? 'transparent'
+                        : isWeekend
+                          ? (isDark ? 'rgba(255,255,255,0.02)' : 'rgba(15,23,42,0.025)')
+                          : (isDark ? 'rgba(255,255,255,0.035)' : 'rgba(15,23,42,0.04)'),
+                    boxShadow: isSelected
+                      ? '0 0 0 2px rgba(0,212,170,0.85), 0 6px 18px -8px rgba(0,212,170,0.5)'
+                      : isToday
+                        ? 'inset 0 0 0 1.5px rgba(0,212,170,0.45)'
+                        : 'none',
                   }}
                 >
                   {/* Day number */}
@@ -279,25 +315,28 @@ function FullPnlCalendar({ calendarData, trades }) {
                       {cell.day}
                     </span>
                     {cell.tradeCount > 0 && !cell.outside && (
-                      <span className="hidden rounded-md px-1.5 py-0.5 text-[9px] font-bold sm:inline" style={{ backgroundColor: 'var(--dash-bg-card)', color: 'var(--dash-text-faint)' }}>
-                        {cell.tradeCount}
+                      <span className="flex items-center gap-[3px]" title={`${cell.tradeCount} trade${cell.tradeCount === 1 ? '' : 's'}`}>
+                        {Array.from({ length: Math.min(cell.tradeCount, 3) }).map((_, i) => (
+                          <span
+                            key={i}
+                            className="h-1 w-1 rounded-full sm:h-1.5 sm:w-1.5"
+                            style={{ backgroundColor: hasPnl ? (isGreen ? '#22c55e' : '#ef4444') : 'var(--dash-text-faint)', opacity: 0.75 }}
+                          />
+                        ))}
+                        {cell.tradeCount > 3 && (
+                          <span className="text-[8px] font-bold" style={{ color: 'var(--dash-text-faint)' }}>+</span>
+                        )}
                       </span>
                     )}
                   </div>
 
                   {/* P&L value */}
                   {hasPnl && !cell.outside && (
-                    <div className="mt-auto">
+                    <div className="mt-auto pt-1">
                       <p className={`truncate text-[10px] font-black leading-tight sm:text-sm ${isGreen ? 'text-emerald-400' : 'text-red-400'}`}>
                         {fmt$(cell.pnl)}
                       </p>
-                      {/* mini bar indicator */}
-                      <div className="mt-1 h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--dash-bg-card)' }}>
-                        <div className="h-full rounded-full" style={{
-                          width: `${Math.min(100, (Math.abs(cell.pnl) / Math.max(1, Math.abs(monthSummary.bestDay), Math.abs(monthSummary.worstDay))) * 100)}%`,
-                          backgroundColor: isGreen ? '#22c55e' : '#ef4444',
-                        }} />
-                      </div>
+
                     </div>
                   )}
 
