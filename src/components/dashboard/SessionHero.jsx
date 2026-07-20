@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import AnimatedNumber from './AnimatedNumber';
 import { Link } from 'react-router-dom';
 import { fetchTradingAccounts } from '../../api/tradingAccountsApi';
 import { fetchRulesBundle } from '../../api/rulesApi';
@@ -233,6 +234,7 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
   // below — a hook after a conditional return changes the hook count between
   // renders, which is React error #310.
   const winKey = useMemo(() => `tgx_win_celebrated_${new Date().toISOString().slice(0, 10)}`, []);
+  const reduce = useReducedMotion();
 
   if (!bundle) return null;
 
@@ -322,10 +324,19 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
           </span>
         </div>
 
-        <h2 className="mt-5 font-display text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: '#e6edf3' }}>
+        {/* clamp() rather than breakpoints: the headline scales smoothly across
+            every width instead of jumping at 640px, which is what left it looking
+            cramped on tablets sitting between the two sizes. */}
+        <h2
+          className="mt-5 font-display font-bold tracking-tight"
+          style={{ color: '#e6edf3', fontSize: 'clamp(1.45rem, 1.1rem + 1.7vw, 1.95rem)', lineHeight: 1.15 }}
+        >
           {headline.split('·')[0]}
           <span className="font-normal" style={{ color: MUTED }}> · </span>
-          <span style={{ color: pnlColor }}>{headline.split('·')[1]?.trim()}</span>
+          <span style={{ color: pnlColor }}>
+            {pnl >= 0 ? '+' : '−'}
+            <AnimatedNumber value={Math.abs(pnl)} format={(v) => fmt(v)} />
+          </span>
         </h2>
         <p className="mt-2 max-w-xl text-sm leading-relaxed" style={{ color: '#aab6c0' }}>{summary}</p>
 
@@ -340,9 +351,32 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
 
         {/* Slider */}
         <div className="relative mt-6 h-1.5 w-full rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}>
-          <div className="absolute inset-y-0 rounded-full" style={{ left: `${fillFrom}%`, width: `${fillTo - fillFrom}%`, backgroundColor: pnl < 0 ? RED : GREEN, opacity: 0.9 }} />
+          <motion.div
+            className="absolute inset-y-0 rounded-full"
+            initial={false}
+            animate={{ left: `${fillFrom}%`, width: `${fillTo - fillFrom}%` }}
+            transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 120, damping: 22 }}
+            style={{ backgroundColor: pnl < 0 ? RED : GREEN, opacity: 0.9 }}
+          />
           <div className="absolute top-1/2 h-4 w-px -translate-y-1/2" style={{ left: '50%', backgroundColor: 'rgba(255,255,255,0.25)' }} />
-          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-500" style={{ left: `${markerLeft}%`, height: 12, width: 12, backgroundColor: pnl < 0 ? RED : GREEN, boxShadow: `0 0 0 4px ${(pnl < 0 ? RED : GREEN)}33, 0 0 10px ${pnl < 0 ? RED : GREEN}` }} />
+          <motion.div
+            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            initial={false}
+            animate={{ left: `${markerLeft}%` }}
+            transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 120, damping: 20 }}
+            style={{ height: 12, width: 12, backgroundColor: pnl < 0 ? RED : GREEN, boxShadow: `0 0 0 4px ${(pnl < 0 ? RED : GREEN)}33, 0 0 10px ${pnl < 0 ? RED : GREEN}` }}
+          >
+            {/* Breathing halo — only while the session is actually live, so the
+                motion means "we're watching" rather than being decoration. */}
+            {!closed && !reduce && (
+              <motion.span
+                className="absolute inset-0 rounded-full"
+                animate={{ scale: [1, 2.1], opacity: [0.5, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+                style={{ backgroundColor: pnl < 0 ? RED : GREEN }}
+              />
+            )}
+          </motion.div>
         </div>
         <div className="mt-2.5 flex items-center justify-between gap-2 font-mono text-[10px] sm:text-[11px]">
           <span className="whitespace-nowrap" style={{ color: RED }}>
@@ -364,9 +398,10 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
       </div>
 
       {/* METRIC CARDS */}
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {maxTrades != null && (
           <MetricCard
+            index={0}
             label={label('Trades left today')}
             big={closed ? '—' : Math.max(maxTrades - used, 0)}
             unit={`of ${maxTrades}`}
@@ -376,6 +411,7 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
         )}
         {soft != null && (
           <MetricCard
+            index={1}
             label={label('Losses before cooldown')}
             big={closed ? '—' : Math.max(soft - streak, 0)}
             unit={`of ${soft}`}
@@ -385,6 +421,7 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
         )}
         {lossLimit != null && (
           <MetricCard
+            index={2}
             label={label('Loss buffer left')}
             big={closed ? '—' : fmt(buffer ?? 0)}
             unit="until lock"
@@ -404,22 +441,42 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
   );
 }
 
-function MetricCard({ label, big, unit, pips, caption }) {
+function MetricCard({ label, big, unit, pips, caption, index = 0 }) {
+  const reduce = useReducedMotion();
+  // Only roll digits — an em-dash for a closed session must render as-is.
+  const numeric = typeof big === 'number' || (typeof big === 'string' && /^[\d.]+$/.test(big));
+
   return (
-    <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)' }}>
+    <motion.div
+      initial={reduce ? false : { opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: reduce ? 0 : 0.06 * index, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={reduce ? undefined : { y: -3 }}
+      className="group rounded-2xl border p-4 transition-colors"
+      style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)', boxShadow: 'var(--dash-shadow-card)' }}
+    >
       {label}
       <div className="mt-2 flex items-baseline gap-1.5">
-        <span className="font-display text-2xl font-bold tabular-nums" style={{ color: big === '—' ? 'var(--dash-text-muted)' : 'var(--dash-text-primary)' }}>{big}</span>
+        <span className="font-display text-2xl font-bold tabular-nums" style={{ color: big === '—' ? 'var(--dash-text-muted)' : 'var(--dash-text-primary)' }}>
+          {numeric ? <AnimatedNumber value={Number(big)} format={(v) => (Number.isInteger(Number(big)) ? String(Math.round(v)) : v.toFixed(2))} /> : big}
+        </span>
         <span className="font-mono text-xs" style={{ color: 'var(--dash-text-muted)' }}>{unit}</span>
       </div>
       {pips && (
         <div className="mt-2.5 flex items-center gap-1">
           {Array.from({ length: Math.min(pips.total, 8) }).map((_, i) => (
-            <span key={i} className="h-1.5 flex-1 rounded-full" style={{ backgroundColor: i < pips.filled ? pips.color : 'var(--dash-bg-input)' }} />
+            <motion.span
+              key={i}
+              className="h-1.5 flex-1 origin-left rounded-full"
+              initial={reduce ? false : { scaleX: 0.15, opacity: 0.4 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              transition={{ delay: reduce ? 0 : 0.06 * index + 0.05 * i, duration: 0.3, ease: 'easeOut' }}
+              style={{ backgroundColor: i < pips.filled ? pips.color : 'var(--dash-bg-input)' }}
+            />
           ))}
         </div>
       )}
       <p className="mt-2 font-mono text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>{caption}</p>
-    </div>
+    </motion.div>
   );
 }
