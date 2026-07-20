@@ -301,14 +301,14 @@ export default function BillingPage() {
         )}
 
         <div className="space-y-4 text-sm">
-          <div className="flex justify-between gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
+          <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
             <span className="text-[var(--dash-text-muted)]">Current access</span>
             <span className="font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
               {subscriptionLoading ? 'Loading…' : effectivePlanLabel}
             </span>
           </div>
           {!isActive && subscribedPlanLabel !== effectivePlanLabel && (
-            <div className="flex justify-between gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
+            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
               <span className="text-[var(--dash-text-muted)]">Subscribed plan</span>
               <span className="font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
                 {subscribedPlanLabel}
@@ -316,7 +316,7 @@ export default function BillingPage() {
             </div>
           )}
           {sub?.source === 'payment' && sub?.externalSubscriptionId && (
-            <div className="flex justify-between gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
+            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
               <span className="text-[var(--dash-text-muted)]">Billing provider ref.</span>
               <span className="font-mono text-xs text-[var(--dash-text-muted)] truncate max-w-[200px]">
                 {sub.externalSubscriptionId}
@@ -324,7 +324,7 @@ export default function BillingPage() {
             </div>
           )}
           {periodEnd && (
-            <div className="flex justify-between gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
+            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
               <span className="text-[var(--dash-text-muted)]">
                 {isTrial || (isAdminComp && isActive)
                   ? 'Free trial ends'

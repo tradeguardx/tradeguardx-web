@@ -369,7 +369,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                 </span>
               )}
             </div>
-            <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--dash-text-muted)' }}>{rule.description}</p>
+            <p className="mt-0.5 line-clamp-2 text-xs" style={{ color: 'var(--dash-text-muted)' }}>{rule.description}</p>
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -478,7 +478,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
 
             <div className="space-y-3">
               {visibleFields.map((field) => (
-                <div key={field.key} className="flex items-center justify-between gap-4">
+                <div key={field.key} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                   <label className="text-sm font-medium" style={{ color: 'var(--dash-text-secondary)' }}>{field.label}</label>
 
                   {rule.locked ? (

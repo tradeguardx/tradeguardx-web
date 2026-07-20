@@ -80,7 +80,7 @@ function ProtectionStatus({ accounts, accountsLoading, isProtected }) {
               </svg>
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <p className="font-display text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>Unprotected</p>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/12 px-2.5 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-300">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
@@ -129,7 +129,7 @@ function ProtectionStatus({ accounts, accountsLoading, isProtected }) {
             </svg>
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <p className="font-display text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>Protection configured</p>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-2.5 py-0.5 text-[11px] font-bold text-accent">
                 <span className="h-1.5 w-1.5 rounded-full bg-accent" />
@@ -232,7 +232,7 @@ function QuickAction({ to, icon, label, description, iconClass, badge }) {
         {icon}
       </div>
       <div className="relative min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-semibold" style={{ color: 'var(--dash-text-primary)' }}>{label}</p>
           {badge && (
             <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold text-accent">{badge}</span>

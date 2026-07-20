@@ -14,6 +14,7 @@ import { staggerContainer, staggerItem } from './dashboardMotion';
 import { fetchJournalStats, fetchUnifiedTrades, fetchBehaviorTags } from '../../api/tradesApi';
 import { journalPeriodBadgeLabel, journalPeriodSubtitle } from '../../lib/planLimits';
 import { WeeklySummaryCard, MonthlySummaryCard, ShareModal } from '../share/ShareableCards';
+import { tagLabel } from '../../lib/labels';
 
 // ─── helpers ───────────────────────────────────────────────────────────────────
 function fmt$(v, currency = 'USD') {
@@ -192,8 +193,8 @@ function FullPnlCalendar({ calendarData, trades }) {
             <button type="button" onClick={prevMonth} className="flex h-10 w-10 items-center justify-center rounded-xl border transition-all hover:border-accent/30 hover:shadow-sm active:scale-95" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)' }}>
               <svg className="h-4 w-4" style={{ color: 'var(--dash-text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <div className="text-center min-w-[200px]">
-              <h2 className="text-2xl font-display font-black tracking-tight" style={{ color: 'var(--dash-text-primary)' }}>{monthName}</h2>
+            <div className="min-w-0 flex-1 text-center sm:min-w-[200px] sm:flex-none">
+              <h2 className="truncate text-xl font-display font-black tracking-tight sm:text-2xl" style={{ color: 'var(--dash-text-primary)' }}>{monthName}</h2>
               <p className="text-xs font-semibold" style={{ color: 'var(--dash-text-faint)' }}>{yearStr}</p>
             </div>
             <button type="button" onClick={nextMonth} className="flex h-10 w-10 items-center justify-center rounded-xl border transition-all hover:border-accent/30 hover:shadow-sm active:scale-95" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)' }}>
@@ -209,7 +210,7 @@ function FullPnlCalendar({ calendarData, trades }) {
         </div>
 
         {/* Month summary strip */}
-        <div className="relative grid grid-cols-3 gap-3 sm:grid-cols-6">
+        <div className="relative grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
           {[
             { label: 'Month P&L', value: fmt$(monthSummary.totalPnl), color: monthSummary.totalPnl >= 0 ? '#22c55e' : '#ef4444', big: true },
             { label: 'Green Days', value: String(monthSummary.greenDays), color: '#22c55e' },
@@ -226,8 +227,8 @@ function FullPnlCalendar({ calendarData, trades }) {
                   border: `1px solid rgba(${sRgb},${isDark ? '0.16' : '0.25'})`,
                   boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.04)',
                 }}>
-                <p className="text-[8px] font-bold uppercase tracking-widest" style={{ color: `rgba(${sRgb},${isDark ? '0.55' : '0.65'})` }}>{s.label}</p>
-                <p className={`mt-0.5 font-black ${s.big ? 'text-lg' : 'text-base'}`} style={{ color: s.color }}>{s.value}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `rgba(${sRgb},${isDark ? '0.55' : '0.65'})` }}>{s.label}</p>
+                <p className={`mt-0.5 truncate font-black ${s.big ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`} style={{ color: s.color }}>{s.value}</p>
               </div>
             );
           })}
@@ -262,7 +263,7 @@ function FullPnlCalendar({ calendarData, trades }) {
                   type="button"
                   disabled={cell.outside}
                   onClick={() => cell.iso && setSelectedDate(isSelected ? null : cell.iso)}
-                  className={`relative min-h-[80px] sm:min-h-[100px] p-2 text-left transition-all ${cell.outside ? 'opacity-30 cursor-default' : 'cursor-pointer hover:z-10'} ${!cell.outside && !isSelected ? 'hover:shadow-md hover:-translate-y-px' : ''}`}
+                  className={`relative min-h-[64px] overflow-hidden p-1 sm:min-h-[100px] sm:p-2 text-left transition-all ${cell.outside ? 'opacity-30 cursor-default' : 'cursor-pointer hover:z-10'} ${!cell.outside && !isSelected ? 'hover:shadow-md hover:-translate-y-px' : ''}`}
                   style={{
                     borderRight: ci < 6 ? '1px solid var(--dash-border)' : 'none',
                     background: isSelected ? 'rgba(0,212,170,0.1)' : hasPnl ? pnlGradient(cell.pnl) : (isWeekend && !cell.outside ? (isDark ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.015)') : 'transparent'),
@@ -272,13 +273,13 @@ function FullPnlCalendar({ calendarData, trades }) {
                   {/* Day number */}
                   <div className="flex items-center justify-between mb-1">
                     <span
-                      className={`inline-flex h-6 w-6 items-center justify-center rounded-lg text-[12px] font-bold ${isToday ? 'bg-accent text-white' : ''}`}
+                      className={`inline-flex h-5 w-5 items-center justify-center rounded-md text-[11px] font-bold sm:h-6 sm:w-6 sm:text-[12px] ${isToday ? 'bg-accent text-white' : ''}`}
                       style={isToday ? undefined : { color: cell.outside ? 'var(--dash-text-faint)' : 'var(--dash-text-primary)' }}
                     >
                       {cell.day}
                     </span>
                     {cell.tradeCount > 0 && !cell.outside && (
-                      <span className="rounded-md px-1.5 py-0.5 text-[8px] font-bold" style={{ backgroundColor: 'var(--dash-bg-card)', color: 'var(--dash-text-faint)' }}>
+                      <span className="hidden rounded-md px-1.5 py-0.5 text-[9px] font-bold sm:inline" style={{ backgroundColor: 'var(--dash-bg-card)', color: 'var(--dash-text-faint)' }}>
                         {cell.tradeCount}
                       </span>
                     )}
@@ -287,7 +288,7 @@ function FullPnlCalendar({ calendarData, trades }) {
                   {/* P&L value */}
                   {hasPnl && !cell.outside && (
                     <div className="mt-auto">
-                      <p className={`text-[13px] sm:text-sm font-black ${isGreen ? 'text-emerald-400' : 'text-red-400'}`}>
+                      <p className={`truncate text-[10px] font-black leading-tight sm:text-sm ${isGreen ? 'text-emerald-400' : 'text-red-400'}`}>
                         {fmt$(cell.pnl)}
                       </p>
                       {/* mini bar indicator */}
@@ -544,7 +545,7 @@ function BehaviorPatternTab({ effectiveStats, advanced, ov, recentTrades, toolti
           </div>
           <div className="flex gap-[3px] flex-wrap">
             {streakData.last20.map((s, i) => (
-              <div key={i} className="h-7 w-7 rounded-md flex items-center justify-center text-[8px] font-bold transition-transform hover:scale-125"
+              <div key={i} className="h-7 w-7 rounded-md flex items-center justify-center text-[10px] font-bold transition-transform hover:scale-125"
                 style={{ backgroundColor: s.w ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)', color: s.w ? '#4ade80' : '#f87171' }}
                 title={`${s.symbol}: ${fmt$(s.pnl)}`}
               >
@@ -589,7 +590,7 @@ function BehaviorPatternTab({ effectiveStats, advanced, ov, recentTrades, toolti
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
                         <span className="rounded-lg px-2 py-0.5 text-[9px] font-black uppercase tracking-wider" style={{ backgroundColor: tagColor + '18', color: tagColor, border: `1px solid ${tagColor}30` }}>
-                          {bt.tag.replace(/_/g, ' ')}
+                          {tagLabel(bt.tag)}
                         </span>
                         <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: tagColor }}>{bt.severity}</span>
                       </div>
@@ -621,7 +622,7 @@ function BehaviorPatternTab({ effectiveStats, advanced, ov, recentTrades, toolti
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
                       <span className="rounded-lg px-2 py-0.5 text-[9px] font-black uppercase tracking-wider" style={{ backgroundColor: 'rgba(34,197,94,0.18)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.30)' }}>
-                        {bt.tag.replace(/_/g, ' ')}
+                        {tagLabel(bt.tag)}
                       </span>
                     </div>
                     <span className="text-[10px] font-bold" style={{ color: 'var(--dash-text-faint)' }}>
@@ -697,7 +698,7 @@ function BehaviorPatternTab({ effectiveStats, advanced, ov, recentTrades, toolti
             const maxPnl = Math.abs(effectiveStats?.bySymbol?.[0]?.pnl || 1);
             return (
               <div key={s.symbol} className="flex items-center gap-3">
-                <span className="w-20 shrink-0 font-mono text-xs font-bold" style={{ color: 'var(--dash-text-primary)' }}>{s.symbol}</span>
+                <span className="w-14 shrink-0 sm:w-20 font-mono text-xs font-bold" style={{ color: 'var(--dash-text-primary)' }}>{s.symbol}</span>
                 <div className="relative flex-1 h-7 overflow-hidden rounded-lg" style={{ backgroundColor: 'var(--dash-bg-card)' }}>
                   <div className="absolute inset-y-0 left-0 rounded-lg transition-all" style={{ width: `${Math.min(100, (Math.abs(s.pnl) / maxPnl) * 100)}%`, backgroundColor: s.pnl >= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)' }} />
                   <div className="absolute inset-y-0 left-3 flex items-center">
@@ -1128,7 +1129,7 @@ export default function TradeJournal() {
                       return (
                         <div key={day.date} className="flex items-center gap-3 px-5 py-2.5"
                           style={{ borderBottom: idx < Math.min(4, (advanced?.dailyRecap?.length ?? 0) - 1) ? '1px solid var(--dash-border)' : 'none' }}>
-                          <span className="w-16 shrink-0 text-xs font-bold" style={{ color: 'var(--dash-text-primary)' }}>{d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                          <span className="w-12 shrink-0 sm:w-16 text-xs font-bold" style={{ color: 'var(--dash-text-primary)' }}>{d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                           <span className="text-[10px] font-semibold" style={{ color: 'var(--dash-text-faint)' }}>{day.total} trade{day.total !== 1 ? 's' : ''}</span>
                           <span className="text-[10px] font-bold text-emerald-400">{day.wins}W</span>
                           <span className="text-[10px] font-bold text-red-400">{day.total - day.wins}L</span>

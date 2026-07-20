@@ -140,7 +140,7 @@ export default function SetupChecklist({ accounts, accountsLoading, accessToken 
           type="button"
           onClick={dismiss}
           aria-label="Dismiss"
-          className="flex-shrink-0 rounded-lg p-1.5 transition-colors hover:bg-white/5"
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/5"
           style={{ color: 'var(--dash-text-faint)' }}
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

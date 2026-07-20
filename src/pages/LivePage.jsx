@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
@@ -51,10 +52,34 @@ export default function LivePage() {
       </div>
 
       {!tradingAccountId ? (
-        <div className="rounded-2xl border px-5 py-8 text-center" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
-          <p className="text-sm font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
-            {accountsLoading ? 'Loading…' : accounts.length === 0 ? 'Add a trading account to see live activity' : 'Select an account in the header'}
+        <div className="rounded-2xl border px-5 py-10 text-center" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
+          <span
+            className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
+            style={{ backgroundColor: 'rgba(0,212,170,0.10)', color: 'var(--accent, #00d4aa)' }}
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h4l3 8 4-16 3 8h4" />
+            </svg>
+          </span>
+          <p className="text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>
+            {accountsLoading ? 'Loading your session…' : accounts.length === 0 ? 'No trading account yet' : 'Choose an account'}
           </p>
+          <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>
+            {accountsLoading
+              ? 'One moment.'
+              : accounts.length === 0
+                ? 'Add your exchange account to watch limits, positions and the kill switch in real time.'
+                : 'Pick an account in the header to see its live session.'}
+          </p>
+          {!accountsLoading && accounts.length === 0 && (
+            <Link
+              to="/dashboard/account/trading"
+              className="mt-5 inline-flex items-center rounded-xl px-5 py-2.5 text-sm font-bold transition-transform hover:scale-[1.02]"
+              style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c' }}
+            >
+              Add trading account
+            </Link>
+          )}
         </div>
       ) : (
         <AnimatePresence mode="wait" initial={false}>

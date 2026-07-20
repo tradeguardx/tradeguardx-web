@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
+import { brokerLabel } from '../../lib/labels';
 
 const GRADIENTS = [
   'from-accent to-emerald-500',
@@ -70,7 +71,7 @@ export default function AccountSelector() {
   if (accountsLoading) {
     return (
       <div
-        className="flex items-center gap-3 px-3 py-2 rounded-xl border min-w-[200px] sm:min-w-[240px] animate-pulse"
+        className="flex items-center gap-3 px-3 py-2 rounded-xl border min-w-0 sm:min-w-[220px] sm:min-w-[240px] animate-pulse"
         style={{
           backgroundColor: 'var(--dash-bg-card)',
           borderColor: 'var(--dash-border)',
@@ -89,7 +90,7 @@ export default function AccountSelector() {
     return (
       <Link
         to="/dashboard/account/trading"
-        className="flex items-center gap-3 px-3 py-2 rounded-xl border transition-all duration-200 min-w-[200px] sm:min-w-[240px] hover:border-accent/30"
+        className="flex items-center gap-3 px-3 py-2 rounded-xl border transition-all duration-200 min-w-0 sm:min-w-[220px] sm:min-w-[240px] hover:border-accent/30"
         style={{
           backgroundColor: 'var(--dash-bg-card)',
           borderColor: 'var(--dash-border)',
@@ -115,7 +116,7 @@ export default function AccountSelector() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-3 px-3 py-2 rounded-xl border transition-all duration-200 min-w-[200px] sm:min-w-[240px] group"
+        className="flex items-center gap-3 px-3 py-2 rounded-xl border transition-all duration-200 min-w-0 sm:min-w-[220px] sm:min-w-[240px] group"
         style={{
           backgroundColor: 'var(--dash-bg-card)',
           borderColor: 'var(--dash-border)',
@@ -192,7 +193,7 @@ export default function AccountSelector() {
                         style={{ color: 'var(--dash-text-primary)' }}
                       >
                         {account.name}
-                        {account.propFirmSlug ? ` · ${account.propFirmSlug}` : ''}
+                        {account.propFirmSlug ? ` · ${brokerLabel(account.propFirmSlug)}` : ''}
                       </p>
                       <div className="flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-accent" />

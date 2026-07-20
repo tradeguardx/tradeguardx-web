@@ -156,7 +156,7 @@ function MobileNavDrawer({ open, onClose, user, onSignOut }) {
                 type="button"
                 onClick={onClose}
                 aria-label="Close menu"
-                className="rounded-lg p-1.5 transition-colors hover:bg-[var(--dash-bg-card-hover)]"
+                className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-[var(--dash-bg-card-hover)]"
                 style={{ color: 'var(--dash-text-muted)' }}
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

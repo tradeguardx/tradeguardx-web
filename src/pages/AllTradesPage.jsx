@@ -476,7 +476,7 @@ export default function AllTradesPage() {
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--dash-border)' }}>
                   {['Symbol', 'Side', 'Status', 'Opened', 'Closed', 'Hold', 'Entry', 'Exit', 'P&L', 'Rating', 'Setup', 'Flags', ''].map((h) => (
-                    <th key={h} className="px-4 py-3.5 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: 'var(--dash-text-faint)', letterSpacing: '0.08em' }}>{h}</th>
+                    <th key={h} className="px-4 py-3.5 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: 'var(--dash-text-faint)', letterSpacing: '0.08em' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -611,7 +611,7 @@ export default function AllTradesPage() {
               </p>
               {filtered.length !== trades.length && (
                 <button type="button" onClick={clearAllFilters}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors hover:bg-accent/10"
+                  className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-[11px] font-semibold transition-colors hover:bg-accent/10"
                   style={{ color: '#00d4aa' }}>
                   <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                   Clear filters

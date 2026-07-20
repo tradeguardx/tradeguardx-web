@@ -20,6 +20,7 @@ import {
 import ExchangeConnectionPanel from '../components/dashboard/ExchangeConnectionPanel';
 import { DELTA_EGRESS_IP } from '../api/config';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
+import { brokerLabel, equityModeLabel } from '../lib/labels';
 
 function formatCurrency(value, currency = 'USD') {
   if (value == null || value === '') return '—';
@@ -155,7 +156,7 @@ function FundedStatus({ account, accessToken, onUpdated, toast }) {
           <p className="text-xs mb-2" style={{ color: 'var(--dash-text-secondary)' }}>
             Open your prop firm dashboard and enter your actual balance:
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <input
               type="text"
               inputMode="decimal"
@@ -394,7 +395,7 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
                   color: 'var(--dash-text-secondary)',
                 }}
               >
-                {account.propFirmSlug}
+                {brokerLabel(account.propFirmSlug)}
               </span>
             )}
             {accountSizeChip}
@@ -685,7 +686,7 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
                         p.equityMode === 'funded' ? 'rgb(251, 191, 36)' : 'var(--accent, #00d4aa)',
                     }}
                   >
-                    {p.equityMode}
+                    {equityModeLabel(p.equityMode)}
                   </span>
                 </div>
                 {isPlanned ? (

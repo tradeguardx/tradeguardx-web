@@ -380,7 +380,7 @@ function MediaReel({ media }) {
                 <span className="text-[10px] font-medium text-white/50">{fmtDate(current.capturedAt)}</span>
               </div>
               <button type="button" onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-white/70 backdrop-blur-sm transition-colors hover:text-white hover:bg-white/10"
+                className="flex items-center gap-1 rounded-lg px-3 py-2 text-[11px] font-semibold text-white/70 backdrop-blur-sm transition-colors hover:text-white hover:bg-white/10"
                 style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
                 Zoom
@@ -467,7 +467,7 @@ function MediaReel({ media }) {
               <img src={current.storageUrl} alt={meta.label} className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain" />
               <div className="absolute bottom-0 left-0 right-0 rounded-b-xl bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-8">
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: meta.bg, color: meta.color }}>{meta.label}</span>
+                  <span className="rounded-md px-2.5 py-1.5 text-[11px] font-bold" style={{ backgroundColor: meta.bg, color: meta.color }}>{meta.label}</span>
                   <span className="text-[10px] text-white/50">{fmtDate(current.capturedAt)}</span>
                 </div>
               </div>
@@ -623,7 +623,7 @@ function JournalNotesPanel({ tradeUid, trade }) {
             <div className="flex gap-1">
               {[{ label: 'Yes', v: true, c: '#22c55e' }, { label: 'No', v: false, c: '#ef4444' }].map((opt) => (
                 <button key={opt.label} type="button" onClick={() => ann.save({ followedPlan: opt.v })}
-                  className="rounded-md border px-2 py-0.5 text-[10px] font-semibold transition-all"
+                  className="rounded-md border px-2.5 py-1.5 text-[11px] font-semibold transition-all"
                   style={{ borderColor: ann.followedPlan === opt.v ? opt.c + '60' : 'var(--dash-border)', backgroundColor: ann.followedPlan === opt.v ? opt.c + '18' : 'transparent', color: ann.followedPlan === opt.v ? opt.c : 'var(--dash-text-muted)' }}>
                   {opt.label}
                 </button>
@@ -765,10 +765,10 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                   <span className="text-xs" style={{ color: 'var(--dash-text-muted)' }}>violation{vs.total !== 1 ? 's' : ''} detected</span>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  {vs.critical > 0 && <span className="rounded-lg px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: SEVERITY_BG.CRITICAL, color: SEVERITY_COLORS.CRITICAL, border: `1px solid ${SEVERITY_BORDER.CRITICAL}` }}>{vs.critical} Critical</span>}
-                  {vs.high > 0 && <span className="rounded-lg px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: SEVERITY_BG.HIGH, color: SEVERITY_COLORS.HIGH, border: `1px solid ${SEVERITY_BORDER.HIGH}` }}>{vs.high} High</span>}
-                  {vs.medium > 0 && <span className="rounded-lg px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: SEVERITY_BG.MEDIUM, color: SEVERITY_COLORS.MEDIUM, border: `1px solid ${SEVERITY_BORDER.MEDIUM}` }}>{vs.medium} Medium</span>}
-                  {vs.low > 0 && <span className="rounded-lg px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: SEVERITY_BG.LOW, color: SEVERITY_COLORS.LOW, border: `1px solid ${SEVERITY_BORDER.LOW}` }}>{vs.low} Low</span>}
+                  {vs.critical > 0 && <span className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold" style={{ backgroundColor: SEVERITY_BG.CRITICAL, color: SEVERITY_COLORS.CRITICAL, border: `1px solid ${SEVERITY_BORDER.CRITICAL}` }}>{vs.critical} Critical</span>}
+                  {vs.high > 0 && <span className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold" style={{ backgroundColor: SEVERITY_BG.HIGH, color: SEVERITY_COLORS.HIGH, border: `1px solid ${SEVERITY_BORDER.HIGH}` }}>{vs.high} High</span>}
+                  {vs.medium > 0 && <span className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold" style={{ backgroundColor: SEVERITY_BG.MEDIUM, color: SEVERITY_COLORS.MEDIUM, border: `1px solid ${SEVERITY_BORDER.MEDIUM}` }}>{vs.medium} Medium</span>}
+                  {vs.low > 0 && <span className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold" style={{ backgroundColor: SEVERITY_BG.LOW, color: SEVERITY_COLORS.LOW, border: `1px solid ${SEVERITY_BORDER.LOW}` }}>{vs.low} Low</span>}
                 </div>
               </div>
             ) : vs ? (
@@ -850,7 +850,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-1.5">
-                          <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md" style={{ backgroundColor: tagColor + (isDark ? '22' : '18'), color: tagColor }}>
+                          <span className="text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md" style={{ backgroundColor: tagColor + (isDark ? '22' : '18'), color: tagColor }}>
                             {isPositive ? 'Positive' : bt.severity}
                           </span>
                         </div>
@@ -1292,8 +1292,8 @@ export default function TradeDetailPage() {
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full blur-[80px] opacity-20" style={{ backgroundColor: pnlColor }} />
         <div className="pointer-events-none absolute left-1/3 -bottom-12 h-48 w-48 rounded-full blur-[60px] opacity-10" style={{ backgroundColor: isLong ? '#22c55e' : '#ef4444' }} />
 
-        <div className="relative flex items-center justify-between px-6 lg:px-8 pt-5 pb-0">
-          <div className="flex items-center gap-4">
+        <div className="relative flex flex-col gap-3 px-4 pt-5 pb-0 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <div
               className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ring-1 ${isLong ? 'ring-emerald-500/25' : 'ring-red-500/25'}`}
               style={{ background: isLong ? 'linear-gradient(145deg,rgba(34,197,94,0.18),rgba(34,197,94,0.07))' : 'linear-gradient(145deg,rgba(239,68,68,0.18),rgba(239,68,68,0.07))' }}
@@ -1302,16 +1302,18 @@ export default function TradeDetailPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d={isLong ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'} />
               </svg>
             </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-display font-black tracking-tight" style={{ color: 'var(--dash-text-primary)' }}>{trade.symbol || 'Unknown'}</h1>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-display font-black tracking-tight sm:text-2xl" style={{ color: 'var(--dash-text-primary)' }}>{trade.symbol || 'Unknown'}</h1>
                 <span className={`rounded-lg px-2.5 py-1 text-[10px] font-bold ${isLong ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/15' : 'bg-red-500/10 text-red-400 ring-1 ring-red-500/15'}`}>{(trade.side || '—').toUpperCase()}</span>
                 <span className={`rounded-lg px-2.5 py-1 text-[10px] font-bold ${isClosed ? 'bg-slate-500/10 text-slate-400' : 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/15'}`}>{trade.status}</span>
               </div>
-              <p className="mt-1 text-[10px] font-mono" style={{ color: 'var(--dash-text-faint)' }}>{trade.tradeUid}</p>
+              <p className="mt-1 font-mono text-[10px]" style={{ color: 'var(--dash-text-faint)' }} title={trade.tradeUid}>
+                {shortId(trade.tradeUid, 14)}
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {isClosed && (
               <button type="button" onClick={() => setShareOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12px] font-bold transition-all active:scale-95"
@@ -1345,7 +1347,7 @@ export default function TradeDetailPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {[
               { label: 'Entry', value: fmtNum(trade.entryPrice, 4), color: '#22c55e', rgb: '34,197,94' },
               { label: 'Exit', value: fmtNum(trade.exitPrice, 4), color: '#ef4444', rgb: '239,68,68' },
@@ -1355,8 +1357,8 @@ export default function TradeDetailPage() {
               { label: 'Closed', value: trade.closedAt ? new Date(trade.closedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—', color: '#94a3b8', rgb: '148,163,184' },
             ].map((s) => (
               <div key={s.label} className="rounded-xl border px-3 py-3" style={{ borderColor: `rgba(${s.rgb},${isDark ? 0.15 : 0.25})`, backgroundColor: isDark ? `rgba(${s.rgb},0.06)` : '#ffffff', boxShadow: isDark ? 'none' : `0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(${s.rgb},0.08)` }}>
-                <p className="text-[8px] font-bold uppercase tracking-widest" style={{ color: `rgba(${s.rgb},${isDark ? 0.5 : 0.65})` }}>{s.label}</p>
-                <p className="mt-1.5 text-sm font-bold font-mono" style={{ color: 'var(--dash-text-primary)' }}>{s.value}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `rgba(${s.rgb},${isDark ? 0.5 : 0.65})` }}>{s.label}</p>
+                <p className="mt-1.5 break-words font-mono text-[13px] font-bold sm:text-sm" style={{ color: 'var(--dash-text-primary)' }}>{s.value}</p>
               </div>
             ))}
           </div>
@@ -1390,7 +1392,7 @@ export default function TradeDetailPage() {
                 {[
                   { label: 'Events', value: events.length, color: '#60a5fa', rgb: '96,165,250', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
                   { label: 'Screenshots', value: media.length, color: '#00d4aa', rgb: '0,212,170', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
-                  { label: 'Source', value: trade.source || '—', color: '#94a3b8', rgb: '148,163,184', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg> },
+                  { label: 'Source', value: sourceLabel(trade.source), color: '#94a3b8', rgb: '148,163,184', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg> },
                   { label: 'Currency', value: trade.currency || 'USD', color: '#94a3b8', rgb: '148,163,184', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
                 ].map((s) => (
                   <div key={s.label} className="rounded-2xl border p-4 transition-all hover:shadow-sm" style={{ borderColor: `rgba(${s.rgb},${isDark ? 0.15 : 0.22})`, backgroundColor: isDark ? `rgba(${s.rgb},0.06)` : '#ffffff', boxShadow: isDark ? 'none' : `0 1px 3px rgba(0,0,0,0.04)` }}>

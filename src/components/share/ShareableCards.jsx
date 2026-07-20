@@ -656,16 +656,20 @@ export function ShareModal({ isOpen, onClose, children, cardRef, title = 'Share 
         </div>
 
         {/* Card preview */}
-        <div className="flex-1 overflow-y-auto px-5 py-5">
-          <div className="flex justify-center">
-            <div style={{ transformOrigin: 'top center' }}>
+        {/* The card is a fixed 432px so every exported PNG is identical. That's
+            wider than a phone modal, and the container only scrolled vertically —
+            so ~110px was cropped with no way to see it. Allowing horizontal
+            scroll shows the whole card without changing what gets exported. */}
+        <div className="flex-1 overflow-y-auto overflow-x-auto px-4 py-5 sm:px-5">
+          <div className="flex min-w-max justify-center">
+            <div style={{ transformOrigin: 'top center', width: SHARE_CARD_W }}>
               {children}
             </div>
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-2 border-t px-5 py-4" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+        <div className="flex flex-wrap gap-2 border-t px-4 py-4 sm:px-5" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
           <button type="button" onClick={downloadPng} disabled={downloading}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all active:scale-[0.97]"
             style={{ background: 'linear-gradient(135deg, #00d4aa, #00a88a)', color: '#0d1117' }}>
