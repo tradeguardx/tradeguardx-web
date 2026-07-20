@@ -180,14 +180,14 @@ function StatCard({ stat, loading }) {
     <>
       <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br from-current/[0.06] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <div className="relative flex items-start justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--dash-text-muted)' }}>
+        <p className="text-[10px] font-semibold uppercase leading-tight tracking-wider sm:text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
           {stat.label}
         </p>
-        <div className={`${stat.iconClass} flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-110`}>
+        <div className={`${stat.iconClass} flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg shadow-sm transition-transform duration-300 group-hover:scale-110 sm:h-9 sm:w-9 sm:rounded-xl`}>
           {stat.icon}
         </div>
       </div>
-      <p className="relative mt-2.5 font-display text-xl font-bold sm:text-2xl" style={{ color: 'var(--dash-text-primary)' }}>
+      <p className="relative mt-2 break-words font-display text-lg font-bold leading-tight sm:mt-2.5 sm:text-2xl" style={{ color: 'var(--dash-text-primary)' }}>
         {stat.value}
       </p>
       {stat.progress != null && (
@@ -202,11 +202,11 @@ function StatCard({ stat, loading }) {
           </div>
         </div>
       )}
-      <p className="relative mt-1.5 text-xs" style={{ color: 'var(--dash-text-faint)' }}>{stat.sub}</p>
+      <p className="relative mt-1.5 text-[11px] leading-snug sm:text-xs" style={{ color: 'var(--dash-text-faint)' }}>{stat.sub}</p>
     </>
   );
 
-  const cls = 'dash-card-elevated group relative block overflow-hidden rounded-2xl p-4 transition-all duration-300';
+  const cls = 'dash-card-elevated group relative block overflow-hidden rounded-2xl p-3.5 transition-all duration-300 sm:p-4';
   const style = {};
 
   return (
@@ -413,7 +413,7 @@ export default function TradeOverviewPage() {
 
       {/* Stat cards */}
       {loading ? (
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => <StatCardSkeleton key={i} />)}
         </div>
       ) : (
@@ -421,7 +421,7 @@ export default function TradeOverviewPage() {
           variants={staggerContainer}
           initial="hidden"
           animate="show"
-          className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
         >
           {stats.map((stat) => (
             <StatCard key={stat.label} stat={stat} loading={false} />
