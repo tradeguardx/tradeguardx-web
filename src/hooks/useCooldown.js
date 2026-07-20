@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchTradingAccounts } from '../api/tradingAccountsApi';
 import { supabase } from '../lib/supabaseClient';
 
@@ -21,6 +21,11 @@ export function useCooldown({ accessToken, tradingAccountId, account }) {
     reason: account?.cooldownReason ?? null,
   }));
   const [now, setNow] = useState(() => Date.now());
+  // Supabase returns the SAME channel object for a duplicate topic, and calling
+  // .on() on an already-subscribed channel throws. Two components can legitimately
+  // watch the same account (the rules screen renders the banner AND reads `locked`
+  // to disable its inputs), so each hook instance gets its own topic.
+  const topicSuffix = useRef(Math.random().toString(36).slice(2, 10));
 
   useEffect(() => {
     if (!accessToken || !tradingAccountId) return undefined;
@@ -43,7 +48,7 @@ export function useCooldown({ accessToken, tradingAccountId, account }) {
     };
     snapshot();
     const channel = supabase
-      .channel(`acct-cooldown-${tradingAccountId}`)
+      .channel(`acct-cooldown-${tradingAccountId}-${topicSuffix.current}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'trading_accounts', filter: `id=eq.${tradingAccountId}` },
