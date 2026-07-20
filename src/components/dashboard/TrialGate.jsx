@@ -15,11 +15,14 @@ export function TrialBanner() {
 
   return (
     <div
-      className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3"
-      style={{ borderColor: 'rgba(0,212,170,0.3)', backgroundColor: 'rgba(0,212,170,0.07)' }}
+      className="mb-4 flex flex-col gap-3 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      style={{
+        borderColor: 'rgba(0,212,170,0.28)',
+        background: 'linear-gradient(135deg, rgba(0,212,170,0.10), rgba(0,212,170,0.045))',
+      }}
     >
-      <div className="flex items-center gap-2.5">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(0,212,170,0.15)' }}>
+      <div className="flex items-start gap-2.5 sm:items-center">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(0,212,170,0.15)' }}>
           <svg className="h-4 w-4" style={{ color: 'var(--accent, #00d4aa)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
         </span>
         <p className="text-sm" style={{ color: 'var(--dash-text-primary)' }}>
@@ -29,7 +32,7 @@ export function TrialBanner() {
       </div>
       <Link
         to="/pricing"
-        className="shrink-0 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-transform hover:scale-[1.02]"
+        className="block w-full shrink-0 rounded-lg px-3.5 py-2 text-center text-xs font-bold transition-transform hover:scale-[1.02] sm:w-auto sm:py-1.5"
         style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c' }}
       >
         Upgrade

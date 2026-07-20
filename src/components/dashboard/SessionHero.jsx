@@ -115,10 +115,30 @@ const MUTED = '#8b98a5';
 
 // state → visual + status pill
 const STATES = {
-  clear: { pill: 'Session live', dot: GREEN, accent: GREEN, bg: 'radial-gradient(120% 140% at 15% 0%, #0c1a15 0%, #070d0b 60%)' },
-  cooldown: { pill: 'Cooldown', dot: AMBER, accent: AMBER, bg: 'radial-gradient(120% 140% at 15% 0%, #1c1408 0%, #0a0703 60%)' },
-  dayLocked: { pill: 'Day locked', dot: RED, accent: RED, bg: 'radial-gradient(120% 140% at 15% 0%, #1e0f0d 0%, #0a0505 60%)' },
-  targetHit: { pill: 'Target hit · locked in', dot: GREEN, accent: GREEN, bg: 'radial-gradient(120% 140% at 15% 0%, #0c1a15 0%, #070d0b 60%)' },
+  clear: {
+    pill: 'Session live',
+    dot: GREEN,
+    accent: GREEN,
+    bg: 'radial-gradient(90% 120% at 12% -10%, rgba(52,211,153,0.16) 0%, transparent 55%), radial-gradient(80% 100% at 100% 110%, rgba(56,189,248,0.10) 0%, transparent 60%), linear-gradient(160deg, #0b1512 0%, #070b0a 100%)',
+  },
+  cooldown: {
+    pill: 'Cooldown',
+    dot: AMBER,
+    accent: AMBER,
+    bg: 'radial-gradient(90% 120% at 12% -10%, rgba(251,191,36,0.16) 0%, transparent 55%), radial-gradient(80% 100% at 100% 110%, rgba(244,114,64,0.08) 0%, transparent 60%), linear-gradient(160deg, #15100a 0%, #0a0705 100%)',
+  },
+  dayLocked: {
+    pill: 'Day locked',
+    dot: RED,
+    accent: RED,
+    bg: 'radial-gradient(90% 120% at 12% -10%, rgba(248,113,113,0.16) 0%, transparent 55%), radial-gradient(80% 100% at 100% 110%, rgba(190,60,60,0.10) 0%, transparent 60%), linear-gradient(160deg, #150c0c 0%, #090505 100%)',
+  },
+  targetHit: {
+    pill: 'Target hit · locked in',
+    dot: GREEN,
+    accent: GREEN,
+    bg: 'radial-gradient(90% 120% at 12% -10%, rgba(52,211,153,0.22) 0%, transparent 55%), radial-gradient(85% 110% at 100% 110%, rgba(16,185,129,0.14) 0%, transparent 60%), linear-gradient(160deg, #08170f 0%, #050b08 100%)',
+  },
 };
 
 export default function SessionHero({ accessToken, tradingAccountId, account }) {
@@ -298,10 +318,19 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
         className="relative overflow-hidden rounded-2xl p-5 sm:p-7"
         style={{
           background: S.bg,
-          border: state === 'targetHit' ? '1px solid rgba(52,211,153,0.35)' : '1px solid rgba(255,255,255,0.06)',
-          boxShadow: state === 'targetHit' ? '0 0 60px -20px rgba(52,211,153,0.45)' : undefined,
+          border: `1px solid ${state === 'targetHit' ? 'rgba(52,211,153,0.30)' : 'rgba(255,255,255,0.07)'}`,
+          boxShadow:
+            state === 'targetHit'
+              ? '0 0 70px -24px rgba(52,211,153,0.5), inset 0 1px 0 rgba(255,255,255,0.05)'
+              : 'inset 0 1px 0 rgba(255,255,255,0.04)',
         }}
       >
+        {/* Top hairline in the state colour, fading out to both edges. */}
+        <span
+          className="pointer-events-none absolute inset-x-0 top-0 h-px"
+          style={{ background: `linear-gradient(90deg, transparent, ${S.accent}88 25%, ${S.accent}88 75%, transparent)` }}
+          aria-hidden
+        />
         {state === 'targetHit' && <WinBurst storageKey={winKey} />}
         <div className="relative flex flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
           <span className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest sm:text-[11px]" style={{ borderColor: 'rgba(255,255,255,0.14)', color: '#e6edf3' }}>
@@ -342,10 +371,30 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
 
         {/* Live unlock countdown */}
         {locked && (
-          <div className="mt-4 inline-flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border px-3.5 py-2.5 sm:px-4" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}>
-            <span className="font-mono text-[10px] uppercase tracking-[0.15em] whitespace-nowrap" style={{ color: MUTED }}>Unlocks in</span>
-            <span className="font-mono text-base font-bold tabular-nums whitespace-nowrap sm:text-lg" style={{ color: '#e6edf3' }}>{fmtCountdown(unlockMs)}</span>
-            <span className="font-mono text-[11px] whitespace-nowrap" style={{ color: MUTED }}>· at {fmtTime(live.cooldownUntil)}</span>
+          <div
+            className="mt-5 inline-flex items-center gap-3.5 rounded-xl border px-4 py-2.5 backdrop-blur-sm"
+            style={{ borderColor: `${S.accent}33`, background: `linear-gradient(180deg, ${S.accent}14, transparent)` }}
+          >
+            <span className="relative flex h-2 w-2 shrink-0">
+              {!reduce && (
+                <motion.span
+                  className="absolute inset-0 rounded-full"
+                  animate={{ scale: [1, 2.4], opacity: [0.6, 0] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
+                  style={{ backgroundColor: S.accent }}
+                />
+              )}
+              <span className="relative h-2 w-2 rounded-full" style={{ backgroundColor: S.accent }} />
+            </span>
+            <span className="flex flex-col leading-none">
+              <span className="font-mono text-[9px] uppercase tracking-[0.18em]" style={{ color: MUTED }}>Unlocks in</span>
+              <span className="mt-1.5 font-mono text-xl font-bold tabular-nums tracking-tight whitespace-nowrap sm:text-2xl" style={{ color: '#e6edf3' }}>
+                {fmtCountdown(unlockMs)}
+              </span>
+            </span>
+            <span className="ml-1 self-end font-mono text-[11px] whitespace-nowrap" style={{ color: MUTED }}>
+              at {fmtTime(live.cooldownUntil)}
+            </span>
           </div>
         )}
 
@@ -402,6 +451,7 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
         {maxTrades != null && (
           <MetricCard
             index={0}
+            accent={closed ? undefined : GREEN}
             label={label('Trades left today')}
             big={closed ? '—' : Math.max(maxTrades - used, 0)}
             unit={`of ${maxTrades}`}
@@ -412,6 +462,7 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
         {soft != null && (
           <MetricCard
             index={1}
+            accent={closed ? undefined : AMBER}
             label={label('Losses before cooldown')}
             big={closed ? '—' : Math.max(soft - streak, 0)}
             unit={`of ${soft}`}
@@ -422,6 +473,7 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
         {lossLimit != null && (
           <MetricCard
             index={2}
+            accent={closed ? undefined : RED}
             label={label('Loss buffer left')}
             big={closed ? '—' : fmt(buffer ?? 0)}
             unit="until lock"
@@ -441,7 +493,7 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
   );
 }
 
-function MetricCard({ label, big, unit, pips, caption, index = 0 }) {
+function MetricCard({ label, big, unit, pips, caption, index = 0, accent }) {
   const reduce = useReducedMotion();
   // Only roll digits — an em-dash for a closed session must render as-is.
   const numeric = typeof big === 'number' || (typeof big === 'string' && /^[\d.]+$/.test(big));
@@ -452,12 +504,19 @@ function MetricCard({ label, big, unit, pips, caption, index = 0 }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: reduce ? 0 : 0.06 * index, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       whileHover={reduce ? undefined : { y: -3 }}
-      className="group rounded-2xl border p-4 transition-colors"
+      className="group relative overflow-hidden rounded-2xl border p-4 transition-colors"
       style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)', boxShadow: 'var(--dash-shadow-card)' }}
     >
+      {accent && (
+        <span
+          className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-70"
+          style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
+          aria-hidden
+        />
+      )}
       {label}
       <div className="mt-2 flex items-baseline gap-1.5">
-        <span className="font-display text-2xl font-bold tabular-nums" style={{ color: big === '—' ? 'var(--dash-text-muted)' : 'var(--dash-text-primary)' }}>
+        <span className="font-display text-[28px] font-bold leading-none tracking-tight tabular-nums" style={{ color: big === '—' ? 'var(--dash-text-muted)' : 'var(--dash-text-primary)' }}>
           {numeric ? <AnimatedNumber value={Number(big)} format={(v) => (Number.isInteger(Number(big)) ? String(Math.round(v)) : v.toFixed(2))} /> : big}
         </span>
         <span className="font-mono text-xs" style={{ color: 'var(--dash-text-muted)' }}>{unit}</span>
