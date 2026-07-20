@@ -293,7 +293,7 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
     <div className="mb-4">
       {/* HERO */}
       <div
-        className="relative overflow-hidden rounded-2xl p-6 sm:p-7"
+        className="relative overflow-hidden rounded-2xl p-5 sm:p-7"
         style={{
           background: S.bg,
           border: state === 'targetHit' ? '1px solid rgba(52,211,153,0.35)' : '1px solid rgba(255,255,255,0.06)',
@@ -301,18 +301,24 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
         }}
       >
         {state === 'targetHit' && <WinBurst storageKey={winKey} />}
-        <div className="relative flex items-start justify-between gap-3">
-          <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-widest" style={{ borderColor: 'rgba(255,255,255,0.14)', color: '#e6edf3' }}>
+        <div className="relative flex flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+          <span className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest sm:text-[11px]" style={{ borderColor: 'rgba(255,255,255,0.14)', color: '#e6edf3' }}>
             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: S.dot, boxShadow: `0 0 8px ${S.dot}` }} />
             {S.pill}
           </span>
-          <span className="font-mono text-[11px]" style={{ color: MUTED }}>
+          <span className="font-mono text-[10px] leading-none sm:text-[11px]" style={{ color: MUTED }}>
             <span style={{ color: closed ? MUTED : stale ? AMBER : GREEN }}>●</span>{' '}
-            {closed
-              ? 'Session closed · final for today'
-              : stale
-                ? 'Feed delayed · showing last known equity'
-                : `Live · ${exchange} linked`}
+            {/* Short form on phones — the full sentence wrapped to two lines at 390px. */}
+            <span className="sm:hidden">
+              {closed ? 'Session closed' : stale ? 'Feed delayed' : `Live · ${exchange}`}
+            </span>
+            <span className="hidden sm:inline">
+              {closed
+                ? 'Session closed · final for today'
+                : stale
+                  ? 'Feed delayed · showing last known equity'
+                  : `Live · ${exchange} linked`}
+            </span>
           </span>
         </div>
 
@@ -325,10 +331,10 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
 
         {/* Live unlock countdown */}
         {locked && (
-          <div className="mt-4 inline-flex items-center gap-3 rounded-xl border px-4 py-2.5" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}>
-            <span className="font-mono text-[10px] uppercase tracking-[0.15em]" style={{ color: MUTED }}>Unlocks in</span>
-            <span className="font-mono text-lg font-bold tabular-nums" style={{ color: '#e6edf3' }}>{fmtCountdown(unlockMs)}</span>
-            <span className="font-mono text-[11px]" style={{ color: MUTED }}>· at {fmtTime(live.cooldownUntil)}</span>
+          <div className="mt-4 inline-flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border px-3.5 py-2.5 sm:px-4" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}>
+            <span className="font-mono text-[10px] uppercase tracking-[0.15em] whitespace-nowrap" style={{ color: MUTED }}>Unlocks in</span>
+            <span className="font-mono text-base font-bold tabular-nums whitespace-nowrap sm:text-lg" style={{ color: '#e6edf3' }}>{fmtCountdown(unlockMs)}</span>
+            <span className="font-mono text-[11px] whitespace-nowrap" style={{ color: MUTED }}>· at {fmtTime(live.cooldownUntil)}</span>
           </div>
         )}
 
@@ -338,10 +344,22 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
           <div className="absolute top-1/2 h-4 w-px -translate-y-1/2" style={{ left: '50%', backgroundColor: 'rgba(255,255,255,0.25)' }} />
           <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-500" style={{ left: `${markerLeft}%`, height: 12, width: 12, backgroundColor: pnl < 0 ? RED : GREEN, boxShadow: `0 0 0 4px ${(pnl < 0 ? RED : GREEN)}33, 0 0 10px ${pnl < 0 ? RED : GREEN}` }} />
         </div>
-        <div className="mt-2.5 flex items-center justify-between font-mono text-[11px]">
-          <span style={{ color: RED }}>{lossLimit != null ? `−${fmt(lossLimit)} · day locks` : 'no loss limit'}</span>
-          <span style={{ color: MUTED }}>{fmt(0)} start</span>
-          <span style={{ color: GREEN }}>{target != null ? `+${fmt(target)} · day locks in` : 'no target'}</span>
+        <div className="mt-2.5 flex items-center justify-between gap-2 font-mono text-[10px] sm:text-[11px]">
+          <span className="whitespace-nowrap" style={{ color: RED }}>
+            {lossLimit != null ? (
+              <>
+                −{fmt(lossLimit)}<span className="hidden sm:inline"> · day locks</span>
+              </>
+            ) : 'no loss limit'}
+          </span>
+          <span className="whitespace-nowrap" style={{ color: MUTED }}>{fmt(0)}<span className="hidden sm:inline"> start</span></span>
+          <span className="whitespace-nowrap" style={{ color: GREEN }}>
+            {target != null ? (
+              <>
+                +{fmt(target)}<span className="hidden sm:inline"> · day locks in</span>
+              </>
+            ) : 'no target'}
+          </span>
         </div>
       </div>
 
