@@ -665,7 +665,7 @@ export default function RulesTerminal() {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mx-auto max-w-3xl"
+      className="w-full"
     >
       <DashboardPageBanner
         accent="accent"
