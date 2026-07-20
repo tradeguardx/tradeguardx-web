@@ -92,8 +92,9 @@ export default function LivePage() {
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             >
               <ProtectionBanner accessToken={accessToken} account={selectedAccount} />
-              <SessionHero accessToken={accessToken} tradingAccountId={tradingAccountId} account={selectedAccount} />
-              <OpenPositions accessToken={accessToken} tradingAccountId={tradingAccountId} />
+              <SessionHero accessToken={accessToken} tradingAccountId={tradingAccountId} account={selectedAccount}>
+                <OpenPositions accessToken={accessToken} tradingAccountId={tradingAccountId} />
+              </SessionHero>
               <RuleStatusCards accessToken={accessToken} tradingAccountId={tradingAccountId} account={selectedAccount} />
             </motion.div>
           ) : (

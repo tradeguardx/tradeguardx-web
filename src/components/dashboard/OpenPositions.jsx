@@ -72,7 +72,7 @@ export default function OpenPositions({ accessToken, tradingAccountId }) {
   }, [open.length]);
 
   return (
-    <div className="mb-4 rounded-2xl border" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
+    <div className="mt-3 rounded-2xl border" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: open.length ? '1px solid var(--dash-border)' : 'none' }}>
         <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--dash-text-muted)' }}>Now running</p>
         <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: open.length ? 'rgba(56,189,248,0.15)' : 'rgba(148,163,184,0.12)', color: open.length ? '#38bdf8' : 'var(--dash-text-faint)' }}>

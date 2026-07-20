@@ -141,7 +141,7 @@ const STATES = {
   },
 };
 
-export default function SessionHero({ accessToken, tradingAccountId, account }) {
+export default function SessionHero({ accessToken, tradingAccountId, account, children }) {
   const currency = account?.accountCurrency || 'USD';
   const exchange = account?.propFirmSlug?.startsWith('delta') ? 'Delta' : account?.propFirmSlug || 'exchange';
   const [bundle, setBundle] = useState(null);
@@ -309,7 +309,11 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
   const lossUsed = pnl < 0 ? -pnl : 0;
   const buffer = lossLimit != null ? Math.max(lossLimit + pnl, 0) : null;
 
-  const label = (t) => <span className="font-mono text-[10px] uppercase tracking-[0.15em]" style={{ color: MUTED }}>{t}</span>;
+  const label = (t) => (
+    <span className="block font-mono text-[9px] uppercase leading-tight tracking-[0.12em] sm:text-[10px] sm:tracking-[0.15em]" style={{ color: MUTED }}>
+      {t}
+    </span>
+  );
 
   return (
     <div className="mb-4">
@@ -446,8 +450,13 @@ export default function SessionHero({ accessToken, tradingAccountId, account }) 
         </div>
       </div>
 
-      {/* METRIC CARDS */}
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Slot: what you're holding right now outranks the counters below. */}
+      {children}
+
+      {/* METRIC CARDS — 3-up at every width. On phones they're a compact
+          scoreboard: the label and figure carry it, the caption would just
+          repeat "Session closed" three times. */}
+      <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
         {maxTrades != null && (
           <MetricCard
             index={0}
@@ -504,7 +513,7 @@ function MetricCard({ label, big, unit, pips, caption, index = 0, accent }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: reduce ? 0 : 0.06 * index, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       whileHover={reduce ? undefined : { y: -3 }}
-      className="group relative overflow-hidden rounded-2xl border p-4 transition-colors"
+      className="group relative overflow-hidden rounded-2xl border p-3 transition-colors sm:p-4"
       style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)', boxShadow: 'var(--dash-shadow-card)' }}
     >
       {accent && (
@@ -515,11 +524,11 @@ function MetricCard({ label, big, unit, pips, caption, index = 0, accent }) {
         />
       )}
       {label}
-      <div className="mt-2 flex items-baseline gap-1.5">
-        <span className="font-display text-[28px] font-bold leading-none tracking-tight tabular-nums" style={{ color: big === '—' ? 'var(--dash-text-muted)' : 'var(--dash-text-primary)' }}>
+      <div className="mt-2 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-1.5">
+        <span className="font-display text-[22px] font-bold leading-none tracking-tight tabular-nums sm:text-[28px]" style={{ color: big === '—' ? 'var(--dash-text-muted)' : 'var(--dash-text-primary)' }}>
           {numeric ? <AnimatedNumber value={Number(big)} format={(v) => (Number.isInteger(Number(big)) ? String(Math.round(v)) : v.toFixed(2))} /> : big}
         </span>
-        <span className="font-mono text-xs" style={{ color: 'var(--dash-text-muted)' }}>{unit}</span>
+        <span className="font-mono text-[10px] sm:text-xs" style={{ color: 'var(--dash-text-muted)' }}>{unit}</span>
       </div>
       {pips && (
         <div className="mt-2.5 flex items-center gap-1">
@@ -535,7 +544,7 @@ function MetricCard({ label, big, unit, pips, caption, index = 0, accent }) {
           ))}
         </div>
       )}
-      <p className="mt-2 font-mono text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>{caption}</p>
+      <p className="mt-2 hidden font-mono text-[10px] sm:block" style={{ color: 'var(--dash-text-faint)' }}>{caption}</p>
     </motion.div>
   );
 }
