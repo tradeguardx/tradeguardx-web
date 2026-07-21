@@ -337,6 +337,30 @@
     .tgx-home .xbanner-feats{ font-size: 9px; gap: 6px; }
   }
 
+  /* Rules, stated plainly. The old six-card showcase spent a screen and a half
+     illustrating limits whose value is obvious from their name — the hero demo
+     already shows one actually firing, so this only needs to say what's on
+     offer. */
+  .tgx-home .rules-simple{
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1px; background: var(--border); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+  }
+  .tgx-home .rs-item{
+    background: var(--surface); padding: 20px 22px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .tgx-home .rs-item b{ font-size: 15.5px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+  .tgx-home .rs-item span{ font-size: 13.5px; line-height: 1.55; color: var(--text-3); }
+  .tgx-home .rules-note{
+    margin-top: 18px; text-align: center; font-size: 13.5px; color: var(--text-3);
+  }
+  @media (max-width: 640px){
+    .tgx-home .rs-item{ padding: 15px 16px; }
+    .tgx-home .rs-item b{ font-size: 14.5px; }
+    .tgx-home .rs-item span{ font-size: 12.5px; }
+  }
+
   .tgx-home .hero-grid{
     display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 52px; align-items: center;
   }
@@ -1927,7 +1951,31 @@
        CTAs — proof should land before we ask for the click. `display: contents`
        dissolves the copy column so its children and the demo can be ordered
        against each other in one flex flow. */
-    .tgx-home .hero-grid{
+    /* Rules, stated plainly. The old six-card showcase spent a screen and a half
+     illustrating limits whose value is obvious from their name — the hero demo
+     already shows one actually firing, so this only needs to say what's on
+     offer. */
+  .tgx-home .rules-simple{
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1px; background: var(--border); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+  }
+  .tgx-home .rs-item{
+    background: var(--surface); padding: 20px 22px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .tgx-home .rs-item b{ font-size: 15.5px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+  .tgx-home .rs-item span{ font-size: 13.5px; line-height: 1.55; color: var(--text-3); }
+  .tgx-home .rules-note{
+    margin-top: 18px; text-align: center; font-size: 13.5px; color: var(--text-3);
+  }
+  @media (max-width: 640px){
+    .tgx-home .rs-item{ padding: 15px 16px; }
+    .tgx-home .rs-item b{ font-size: 14.5px; }
+    .tgx-home .rs-item span{ font-size: 12.5px; }
+  }
+
+  .tgx-home .hero-grid{
       display: flex; flex-direction: column; gap: 0; align-items: stretch;
     }
     .tgx-home .hero-grid > div:first-child{ display: contents; }

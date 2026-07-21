@@ -290,124 +290,23 @@
 <section class="block" id="rules">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow">Configure your protection</span>
-      <h2 class="display h2">The rails that match your plan.</h2>
-      <p>Pick the rules that match how you actually want to trade. TradeGuardX enforces every one of them server-side, in real time, on every entry.</p>
+      <span class="eyebrow">Your guardrails</span>
+      <h2 class="display h2">Seven rules. Pick yours.</h2>
+      <p>Every one enforced server-side, in real time, on every entry.</p>
     </div>
 
-    <div class="rules-grid">
-      <div class="rule-card">
-        <div class="preview">
-          <div class="preview-bar">
-            <div class="row"><span class="used">$325</span><span class="cap">$500 cap</span></div>
-            <div class="track"><div class="fill" style="width: 65%"></div></div>
-          </div>
-        </div>
-        <h4>Daily loss cap</h4>
-        <div class="meta">Saves you from</div>
-        <p>Bleeding past your daily limit in one session &mdash; the fastest way to blow up an account.</p>
-      </div>
-
-      <div class="rule-card">
-        <div class="preview">
-          <div class="preview-dots">
-            <div class="d on"></div>
-            <div class="d on"></div>
-            <div class="d on"></div>
-            <div class="d warn"></div>
-            <div class="d"></div>
-            <div class="d"></div>
-          </div>
-        </div>
-        <h4>Max trades per session</h4>
-        <div class="meta">Saves you from</div>
-        <p>Overtrading after a losing morning. Cap your entries and the system stops accepting new ones.</p>
-      </div>
-
-      <div class="rule-card">
-        <div class="preview">
-          <div class="preview-bar">
-            <div class="row"><span style="color: var(--text-2)">0.8%</span><span class="cap">1.0% max</span></div>
-            <div class="track"><div class="fill" style="width: 80%; background: linear-gradient(90deg, var(--accent), var(--accent))"></div></div>
-          </div>
-        </div>
-        <h4>Risk per trade</h4>
-        <div class="meta">Saves you from</div>
-        <p>Oversized impulsive entries. A single huge position risking more of the account than your plan allows.</p>
-      </div>
-
-      <div class="rule-card">
-        <div class="preview">
-          <div class="preview-lev">
-            <div class="b" style="height: 30%"></div>
-            <div class="b" style="height: 45%"></div>
-            <div class="b" style="height: 55%"></div>
-            <div class="b warn" style="height: 70%"></div>
-            <div class="b warn" style="height: 80%"></div>
-            <div class="b over" style="height: 95%"></div>
-          </div>
-        </div>
-        <h4>Leverage cap</h4>
-        <div class="meta">Saves you from</div>
-        <p>The 50&times; revenge entry after a loss. Hard cap on leverage per symbol, enforced before the order goes through.</p>
-      </div>
-
-      <div class="rule-card">
-        <div class="preview">
-          <div style="font-family: var(--mono); font-size: 13px; line-height: 1.7;">
-            <div style="color: var(--text-3);">After <span style="color: var(--danger);">3 reds</span> in a row &rarr;</div>
-            <div style="color: var(--accent);">2-hour cooldown</div>
-          </div>
-        </div>
-        <h4>Cooldown after losses</h4>
-        <div class="meta">Saves you from</div>
-        <p>The emotional spiral. Hit your loss streak threshold and the system locks new entries until you've cooled off.</p>
-      </div>
-
-      <div class="rule-card">
-        <div class="preview">
-          <div style="font-family: var(--mono); font-size: 12px; line-height: 1.6;">
-            <div style="color: var(--text-3);">Liquidation @ <span style="color: var(--text);">76,400</span></div>
-            <div style="color: var(--warn);">Distance: <b style="color: var(--danger);">1.4%</b></div>
-            <div style="margin-top: 6px; color: var(--accent); font-size: 11px;">&rarr; Auto-close at 2%</div>
-          </div>
-        </div>
-        <h4>Liquidation distance alert</h4>
-        <div class="meta">Saves you from</div>
-        <p>The slow walk to zero. We close positions before they reach your liquidation buffer &mdash; no more "I'll add margin in a sec".</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- WHAT YOU GET (inside the product, post-signup) -->
-<section class="block" id="inside">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Inside TradeGuardX</span>
-      <h2 class="display h2">What you get<br>the moment you're in.</h2>
-      <p>The rules are the engine. This is the cockpit you actually sit in every day &mdash; live protection status, a journal that explains your losses, and alerts wherever you are.</p>
+    <div class="rules-simple">
+      <div class="rs-item"><b>Daily loss cap</b><span>Bleeding past your limit in one session.</span></div>
+      <div class="rs-item"><b>Daily profit target</b><span>Giving back a good day.</span></div>
+      <div class="rs-item"><b>Max trades per day</b><span>Overtrading after a losing morning.</span></div>
+      <div class="rs-item"><b>Risk per trade</b><span>The oversized, impulsive entry.</span></div>
+      <div class="rs-item"><b>Cooldown after losses</b><span>The emotional spiral.</span></div>
+      <div class="rs-item"><b>Leverage cap</b><span>The 50&times; revenge entry.</span></div>
+      <div class="rs-item"><b>Liquidation distance</b><span>The slow walk to zero.</span></div>
     </div>
 
-    <div class="steps">
-      <div class="step-card">
-        <div class="step-num">01 &middot; DASHBOARD</div>
-        <h4>Live protection status</h4>
-        <p>One glance tells you whether the kill switch is armed, how much of your daily loss cap is spent, and how many trades you have left. Open positions stream in real time from Delta &mdash; no refresh, no spreadsheet.</p>
-        <div class="step-meta">&rarr; Overview &middot; <b>Live positions</b></div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">02 &middot; ALERTS</div>
-        <h4>Told the second it happens</h4>
-        <p>Every breach, auto-close, and cooldown lands on Telegram or email the moment it fires &mdash; with what tripped, what we did, and when the lock lifts. You're never surprised by your own account.</p>
-        <div class="step-meta">&rarr; Telegram &middot; <b>Email</b></div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">03 &middot; JOURNAL</div>
-        <h4>An AI journal that names the pattern</h4>
-        <p>Every trade is logged automatically with entry, exit, P&amp;L, and the rules in play. The journal tags the behaviour behind them &mdash; revenge entries, size creep, trading past your cutoff &mdash; so you can see the habit, not just the loss.</p>
-        <div class="step-meta">&rarr; Auto-logged &middot; <b>Behaviour tags</b></div>
-      </div>
-    </div>
+    <p class="rules-note">
+      Set them once while you&rsquo;re calm. Loosening any limit goes through a cooling-off window &mdash; tightening applies instantly.
+    </p>
   </div>
 </section>

@@ -133,6 +133,36 @@ export default function HeroLiveDemo() {
         transition: 'border-color 400ms ease, box-shadow 400ms ease',
       }}
     >
+      {/* Enforcement stamp — lands once, at the moment the switch fires, and
+          stays for the lock. Deliberately the same visual language as the
+          "REJECTED" card further down the page. */}
+      {fired && (
+        <motion.div
+          key={isLocked ? 'stamp-locked' : 'stamp-fire'}
+          initial={reduce ? { opacity: 1, scale: 1, rotate: -11 } : { opacity: 0, scale: 2.6, rotate: -26 }}
+          animate={{ opacity: 1, scale: 1, rotate: -11 }}
+          transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 220, damping: 16, mass: 0.7 }}
+          style={{
+            position: 'absolute', top: '46%', left: '50%',
+            translateX: '-50%', translateY: '-50%',
+            zIndex: 4, pointerEvents: 'none', textAlign: 'center',
+            padding: '10px 20px', borderRadius: 8,
+            border: `3px solid ${RED}`,
+            background: 'rgba(6,9,10,0.82)',
+            backdropFilter: 'blur(3px)',
+            boxShadow: `0 0 46px ${RED}55`,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span style={{ display: 'block', fontWeight: 900, fontSize: 22, letterSpacing: '0.07em', color: RED }}>
+            {isLocked ? 'DAY LOCKED' : 'KILL SWITCH'}
+          </span>
+          <span style={{ display: 'block', marginTop: 2, fontFamily: 'var(--mono, monospace)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: MUTED }}>
+            {isLocked ? 'No new entries till reset' : 'Daily loss limit exceeded'}
+          </span>
+        </motion.div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9 }}>

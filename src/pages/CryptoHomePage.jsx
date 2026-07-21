@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSEO } from '../hooks/useSEO';
-import StoryAIJournal from '../components/landing/story/StoryAIJournal';
+import AIJournalSection from '../components/landing/AIJournalSection';
 import FloatingSignupCTA from '../components/landing/FloatingSignupCTA';
 import TalkToFounder from '../components/common/TalkToFounder';
 import DemoVideoSection from '../components/landing/DemoVideoSection';
@@ -229,7 +229,7 @@ export default function CryptoHomePage() {
       <DemoVideoSection />
       <LandingDivider />
       <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyARest} />
-      <StoryAIJournal />
+      <AIJournalSection />
       <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyB} />
       <FloatingSignupCTA />
     </>
