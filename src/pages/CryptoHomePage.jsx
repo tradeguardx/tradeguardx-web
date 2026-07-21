@@ -1,9 +1,8 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSEO } from '../hooks/useSEO';
-import AIJournalSection from '../components/landing/AIJournalSection';
+import StoryAIJournal from '../components/landing/story/StoryAIJournal';
 import FloatingSignupCTA from '../components/landing/FloatingSignupCTA';
-import TalkToFounder from '../components/common/TalkToFounder';
 import DemoVideoSection from '../components/landing/DemoVideoSection';
 import HeroLiveDemo from '../components/landing/HeroLiveDemo';
 import '../landing/tgx.scoped.css';
@@ -215,21 +214,12 @@ export default function CryptoHomePage() {
       {/* Right under the hero, above the trust strip. Hairline rules above and
           below separate the founder banner and the demo into their own sections
           instead of letting them run together as one loose stack. */}
-      {rawBodyARest && (
-        <>
-          <LandingDivider />
-          {/* Match the page content width (.wrap = 1240px, 28px gutter). */}
-          <div className="mx-auto w-full max-w-[1240px] px-[18px] py-8 sm:px-7">
-            <TalkToFounder source="landing_hero_telegram" />
-          </div>
-          <LandingDivider />
-        </>
-      )}
-      {/* Demo sits right under the founder banner — plays in a lightbox, not on YouTube. */}
+      {rawBodyARest && <LandingDivider />}
+      {/* Product demo — plays in a lightbox, not on YouTube. */}
       <DemoVideoSection />
       <LandingDivider />
       <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyARest} />
-      <AIJournalSection />
+      <StoryAIJournal />
       <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyB} />
       <FloatingSignupCTA />
     </>

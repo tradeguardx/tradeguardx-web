@@ -62,15 +62,15 @@ export default function StoryAIJournal() {
           </p>
         </motion.div>
 
-        {/* Two-column content */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          {/* === LEFT — Journal entry === */}
+        {/* Journal entry + P&L calendar, side by side. */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch">
+          {/* === Journal entry === */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="gradient-card p-6 md:p-7"
+            className="gradient-card flex h-full flex-col p-6 md:p-7"
           >
             {/* Entry header */}
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
@@ -124,7 +124,7 @@ export default function StoryAIJournal() {
             </div>
 
             {/* AI insight */}
-            <div className="mt-5">
+            <div className="mt-5 lg:mt-auto lg:pt-5">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/[0.10] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-violet-300">
                   <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 24 24">
@@ -147,95 +147,7 @@ export default function StoryAIJournal() {
             </div>
           </motion.div>
 
-          {/* === RIGHT — Behavior pattern === */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="gradient-card gradient-card-cool flex flex-col p-6 md:p-7"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-                  Behavior pattern
-                </p>
-                <p className="mt-1 font-display text-lg font-bold text-white">
-                  Rule violations by hour
-                </p>
-              </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.08] px-2.5 py-1 text-[10px] font-semibold text-emerald-300">
-                <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7-7m0 0l-7 7m7-7v18" />
-                </svg>
-                ↓ 38% w/w
-              </span>
-            </div>
-
-            {/* Bar chart */}
-            <div className="mt-6 grid grid-cols-9 items-end gap-2" style={{ height: 140 }}>
-              {HOURLY_VIOLATIONS.map((b) => {
-                const isPeak = b.n === MAX_N;
-                const h = b.n === 0 ? 4 : (b.n / MAX_N) * 120;
-                return (
-                  <div key={b.hour} className="flex flex-col items-center gap-1.5">
-                    <div className="flex w-full flex-col-reverse items-stretch">
-                      <motion.span
-                        initial={{ height: 0 }}
-                        whileInView={{ height: h }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                        className="rounded-md"
-                        style={{
-                          background: isPeak
-                            ? 'linear-gradient(180deg, rgba(244, 63, 94, 0.85), rgba(244, 63, 94, 0.35))'
-                            : 'linear-gradient(180deg, rgba(56, 189, 248, 0.65), rgba(56, 189, 248, 0.25))',
-                        }}
-                      />
-                    </div>
-                    <span className="font-mono text-[10px] text-slate-500">{b.hour}</span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Pattern callout */}
-            <div className="mt-6 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-                Most common pattern
-              </p>
-              <p className="mt-1.5 text-sm font-semibold text-white">
-                Entries without SL during NY open
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                Detected across 3 weeks of trades. Spikes between 10:00–11:00 ET, again at
-                15:00 ET — the "frustration window" after lunch reversals.
-              </p>
-            </div>
-
-            {/* Stat strip */}
-            <div className="mt-5 grid grid-cols-3 gap-3 border-t border-white/[0.05] pt-5">
-              <div>
-                <p className="font-mono text-lg font-bold text-white tabular-nums">19</p>
-                <p className="text-[10px] uppercase tracking-widest text-slate-500">Caught</p>
-              </div>
-              <div>
-                <p className="font-mono text-lg font-bold text-emerald-300 tabular-nums">$2,140</p>
-                <p className="text-[10px] uppercase tracking-widest text-slate-500">Saved</p>
-              </div>
-              <div>
-                <p className="font-mono text-lg font-bold text-violet-300 tabular-nums">3</p>
-                <p className="text-[10px] uppercase tracking-widest text-slate-500">New rules</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* === Second row: P&L calendar + recent trade replays (equal cols) === */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <PnlCalendar />
-          <TradeReplays />
         </div>
       </div>
     </StorySection>
@@ -299,7 +211,7 @@ function PnlCalendar() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className="gradient-card flex flex-col p-6 md:p-7"
+      className="gradient-card flex h-full flex-col p-6 md:p-7"
     >
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -411,169 +323,3 @@ function PnlCalendar() {
 
 /* ---------- Trade replays ---------- */
 
-const REPLAYS = [
-  {
-    symbol: 'BTCUSD',
-    side: 'BUY',
-    entry: 77620,
-    exit: 77840,
-    pnl: 220,
-    duration: '14m',
-    spark: [10, 12, 11, 14, 16, 15, 18, 22, 20, 24],
-  },
-  {
-    symbol: 'ETHUSD',
-    side: 'SELL',
-    entry: 3120.5,
-    exit: 3108.0,
-    pnl: 150,
-    duration: '8m',
-    spark: [22, 20, 21, 18, 16, 17, 14, 13, 12, 10],
-  },
-  {
-    symbol: 'SOLUSD',
-    side: 'BUY',
-    entry: 182.4,
-    exit: 179.1,
-    pnl: -230,
-    duration: '22m',
-    spark: [14, 16, 15, 17, 14, 11, 12, 9, 10, 8],
-  },
-];
-
-function Sparkline({ data, color }) {
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const w = 100;
-  const h = 28;
-  const step = w / (data.length - 1);
-  const points = data
-    .map((v, i) => `${(i * step).toFixed(1)},${(h - ((v - min) / range) * h).toFixed(1)}`)
-    .join(' ');
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-7 w-full" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={`spark-${color.replace(/[^a-z0-9]/gi, '')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <polygon
-        points={`0,${h} ${points} ${w},${h}`}
-        fill={`url(#spark-${color.replace(/[^a-z0-9]/gi, '')})`}
-      />
-    </svg>
-  );
-}
-
-function TradeReplays() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-      className="gradient-card flex flex-col p-6 md:p-7"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-            Trade replays
-          </p>
-          <p className="mt-1 font-display text-lg font-bold text-white">Recent — relive each one</p>
-        </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-          Sample data
-        </span>
-      </div>
-
-      {/* Replay cards */}
-      <div className="mt-5 flex flex-col gap-3">
-        {REPLAYS.map((r, i) => {
-          const isProfit = r.pnl >= 0;
-          const color = isProfit ? '#34d399' : '#fb7185';
-          return (
-            <motion.div
-              key={r.symbol + i}
-              initial={{ opacity: 0, x: -8 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.15 + i * 0.08, duration: 0.4 }}
-              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 transition hover:border-white/[0.12]"
-            >
-              {/* Symbol + side */}
-              <div className="min-w-[90px]">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-white">{r.symbol}</span>
-                  <span
-                    className="rounded-md px-1.5 py-0.5 text-[9px] font-bold"
-                    style={{
-                      color: r.side === 'BUY' ? '#6ee7b7' : '#fda4af',
-                      background: r.side === 'BUY' ? 'rgba(0,212,170,0.10)' : 'rgba(244,63,94,0.10)',
-                      border: `1px solid ${r.side === 'BUY' ? 'rgba(0,212,170,0.25)' : 'rgba(244,63,94,0.25)'}`,
-                    }}
-                  >
-                    {r.side}
-                  </span>
-                </div>
-                <p className="mt-1 font-mono text-[10px] tabular-nums text-slate-500">
-                  {r.entry} → {r.exit}
-                </p>
-              </div>
-
-              {/* Sparkline */}
-              <div className="min-w-0 flex-1">
-                <Sparkline data={r.spark} color={color} />
-              </div>
-
-              {/* P&L + duration + play button */}
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <p
-                    className="font-mono text-sm font-bold tabular-nums"
-                    style={{ color }}
-                  >
-                    {isProfit ? '+' : '−'}${Math.abs(r.pnl)}
-                  </p>
-                  <p className="font-mono text-[10px] text-slate-500">{r.duration}</p>
-                </div>
-                <button
-                  type="button"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 transition hover:border-accent/40 hover:bg-accent/10 hover:text-accent"
-                  aria-label="Replay trade"
-                >
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </button>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Footer link */}
-      <div className="mt-5 flex items-center justify-between border-t border-white/[0.05] pt-4">
-        <p className="text-[11px] text-slate-500">
-          Every trade auto-recorded — entry, exit, broker context.
-        </p>
-        <a
-          href="#features"
-          className="text-[11px] font-semibold text-accent hover:underline"
-        >
-          See all replays →
-        </a>
-      </div>
-    </motion.div>
-  );
-}
