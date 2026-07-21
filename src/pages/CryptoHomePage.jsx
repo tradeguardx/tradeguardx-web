@@ -16,7 +16,15 @@ import rawBodyB from '../landing/tgx-body-b.html?raw';
 const SPLIT_MARKER = '<!-- POST HERO';
 const _splitIdx = rawBodyA.indexOf(SPLIT_MARKER);
 const rawBodyAHero = _splitIdx >= 0 ? rawBodyA.slice(0, _splitIdx) : rawBodyA;
+// After the hero: "A day in the life" + rules.
 const rawBodyARest = _splitIdx >= 0 ? rawBodyA.slice(_splitIdx) : '';
+
+// Split body-b at pricing so the how-to-setup demo lands as the last proof
+// before we show the price.
+const PRICING_MARKER = '<!-- PRICING SPLIT -->';
+const _bIdx = rawBodyB.indexOf(PRICING_MARKER);
+const rawBodyBHead = _bIdx >= 0 ? rawBodyB.slice(0, _bIdx) : rawBodyB;   // Available on
+const rawBodyBTail = _bIdx >= 0 ? rawBodyB.slice(_bIdx) : '';            // Pricing + FAQ
 
 // Reveal/stagger targets — verbatim from the source <script>.
 const REVEAL_TARGETS = [
@@ -64,6 +72,7 @@ export default function CryptoHomePage() {
   const aRef = useRef(null);
   const a2Ref = useRef(null);
   const bRef = useRef(null);
+  const bTailRef = useRef(null);
   const [heroDemoNode, setHeroDemoNode] = useState(null);
 
   useSEO({
@@ -96,7 +105,7 @@ export default function CryptoHomePage() {
   }, []);
 
   useEffect(() => {
-    const roots = [aRef.current, a2Ref.current, bRef.current].filter(Boolean);
+    const roots = [aRef.current, a2Ref.current, bRef.current, bTailRef.current].filter(Boolean);
     if (!roots.length) return;
     const qAll = (sel) => roots.flatMap((r) => Array.from(r.querySelectorAll(sel)));
 
@@ -211,16 +220,17 @@ export default function CryptoHomePage() {
       </div>
 
       <RawHtml className="tgx-home" innerRef={aRef} html={rawBodyAHero} />
-      {/* Right under the hero, above the trust strip. Hairline rules above and
-          below separate the founder banner and the demo into their own sections
-          instead of letting them run together as one loose stack. */}
-      {rawBodyARest && <LandingDivider />}
-      {/* Product demo — plays in a lightbox, not on YouTube. */}
-      <DemoVideoSection />
-      <LandingDivider />
+      {/* A day in the life + rules — straight after the hero. */}
       <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyARest} />
       <StoryAIJournal />
-      <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyB} />
+      {/* Available on. */}
+      <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyBHead} />
+      <LandingDivider />
+      {/* How to set up — the last proof before the price. Plays in a lightbox. */}
+      <DemoVideoSection />
+      <LandingDivider />
+      {/* Pricing + FAQ. */}
+      <RawHtml className="tgx-home" innerRef={bTailRef} html={rawBodyBTail} />
       <FloatingSignupCTA />
     </>
   );

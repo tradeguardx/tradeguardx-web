@@ -82,14 +82,13 @@ export default function DemoVideoSection() {
             className="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em]"
             style={{ borderColor: 'rgba(0,212,170,0.32)', color: 'var(--accent, #00d4aa)' }}
           >
-            Product demo
+            How to set up
           </span>
           <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-white sm:text-4xl">
-            See the kill switch <span style={{ color: 'var(--accent, #00d4aa)' }}>actually fire</span>
+Set up in <span style={{ color: 'var(--accent, #00d4aa)' }}>two minutes</span>
           </h2>
           <p className="mt-4 text-[15px] leading-relaxed text-slate-400">
-            A real walkthrough — connect your Delta key, set a daily loss limit, and watch TradeGuardX
-            cancel orders and lock you out the moment you cross it.
+            Connect your Delta key, set your limits, done. Watch the whole thing start to finish.
           </p>
 
           <button
