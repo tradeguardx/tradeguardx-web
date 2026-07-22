@@ -372,23 +372,25 @@ function DashboardInner() {
             className="px-4 sm:px-6 lg:px-8 transition-colors duration-300"
             style={{ borderBottom: '1px solid var(--dash-border)' }}
           >
-            <div className="flex items-center justify-between gap-4 h-16">
-              <div className="flex items-center gap-3 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen((o) => !o)}
-                  className="lg:hidden p-2 rounded-xl transition-all hover:bg-[var(--dash-bg-card-hover)]"
-                  style={{ color: 'var(--dash-text-muted)' }}
-                  aria-label="Menu"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {mobileMenuOpen ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    )}
-                  </svg>
-                </button>
+            <div className="relative flex items-center justify-between gap-4 h-16">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((o) => !o)}
+                className="lg:hidden p-2 rounded-xl transition-all hover:bg-[var(--dash-bg-card-hover)]"
+                style={{ color: 'var(--dash-text-muted)' }}
+                aria-label="Menu"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {mobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+              {/* Centered in the header on mobile (between hamburger and bell);
+                  back to normal left-aligned flow from lg up. */}
+              <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 min-w-0 lg:static lg:translate-x-0">
                 <AccountSelector />
                 {pageLabel && (
                   <>
