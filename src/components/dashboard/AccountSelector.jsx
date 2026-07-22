@@ -71,7 +71,7 @@ export default function AccountSelector() {
   if (accountsLoading) {
     return (
       <div
-        className="flex items-center gap-3 px-3 py-2 rounded-xl border min-w-0 sm:min-w-[220px] sm:min-w-[240px] animate-pulse"
+        className="flex items-center gap-3 px-3 py-2 rounded-xl border min-w-0 sm:min-w-[240px] animate-pulse"
         style={{
           backgroundColor: 'var(--dash-bg-card)',
           borderColor: 'var(--dash-border)',
@@ -90,20 +90,20 @@ export default function AccountSelector() {
     return (
       <Link
         to="/dashboard/account/trading"
-        className="flex items-center gap-3 px-3 py-2 rounded-xl border transition-all duration-200 min-w-0 sm:min-w-[220px] sm:min-w-[240px] hover:border-accent/30"
+        className="flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-all duration-200 hover:border-accent/30 sm:min-w-[240px] sm:gap-3 sm:px-3"
         style={{
           backgroundColor: 'var(--dash-bg-card)',
           borderColor: 'var(--dash-border)',
         }}
       >
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-slate-500 to-slate-600 shadow-sm flex-shrink-0">
-          <span className="text-white font-bold text-xs">+</span>
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-slate-500 to-slate-600 shadow-sm sm:h-9 sm:w-9">
+          <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.4} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /></svg>
         </div>
-        <div className="text-left flex-1 min-w-0">
-          <p className="text-sm font-medium truncate" style={{ color: 'var(--dash-text-primary)' }}>
-            Add trading account
+        <div className="min-w-0 text-left">
+          <p className="truncate text-[13px] font-semibold sm:text-sm sm:font-medium" style={{ color: 'var(--dash-text-primary)' }}>
+            Add account
           </p>
-          <p className="text-[11px] font-medium" style={{ color: 'var(--dash-text-muted)' }}>
+          <p className="hidden text-[11px] font-medium sm:block" style={{ color: 'var(--dash-text-muted)' }}>
             Rules &amp; trades need one
           </p>
         </div>
@@ -116,7 +116,7 @@ export default function AccountSelector() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-3 px-3 py-2 rounded-xl border transition-all duration-200 min-w-0 sm:min-w-[220px] sm:min-w-[240px] group"
+        className="flex items-center gap-3 px-3 py-2 rounded-xl border transition-all duration-200 min-w-0 sm:min-w-[240px] group"
         style={{
           backgroundColor: 'var(--dash-bg-card)',
           borderColor: 'var(--dash-border)',
