@@ -31,7 +31,7 @@ const sections = [
   },
   {
     title: '6. Free Trial, Subscription and Payment',
-    content: 'New accounts include a 7-day free trial with full access and no credit card required. No payment is collected during the trial, and because no card is on file you are never automatically charged when it ends — access simply pauses until you choose a paid plan. Paid plans are then billed in accordance with the pricing displayed at the time of purchase and renew for successive periods until cancelled; you can cancel at any time and retain access through the end of the current billing period. Fees are non-refundable except as stated in our Refund Policy. We may change pricing with reasonable notice; continued use after a price change constitutes acceptance.',
+    content: 'New accounts include a 30-day free trial with full access and no credit card required. No payment is collected during the trial, and because no card is on file you are never automatically charged when it ends — access simply pauses until you choose a paid plan. Paid plans are then billed in accordance with the pricing displayed at the time of purchase and renew for successive periods until cancelled; you can cancel at any time and retain access through the end of the current billing period. Fees are non-refundable except as stated in our Refund Policy. We may change pricing with reasonable notice; continued use after a price change constitutes acceptance.',
   },
   {
     title: '7. Disclaimer of Warranties',

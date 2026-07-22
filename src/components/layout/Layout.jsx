@@ -11,7 +11,9 @@ export default function Layout() {
   // on the landing page frames a still-unfamiliar product as "something to buy"
   // and creates price-anxiety before the value lands — so the offer appears at
   // the decision point, not the first thing a new visitor sees.
-  const showPromo = location.pathname === '/pricing';
+  // Founding/launch strip: homepage + pricing. A free offer is upside, so unlike
+  // the discount strip it's fine as the first thing a visitor sees.
+  const showPromo = location.pathname === '/' || location.pathname === '/pricing';
 
   return (
     // bg-surface-950 lives on <body> already (index.css). Repeating it here

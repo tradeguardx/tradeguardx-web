@@ -114,7 +114,7 @@ export default function FloatingSignupCTA() {
                 Start protecting your account
               </p>
               <p className="mt-0.5 text-[11px] font-medium leading-snug text-slate-400 sm:text-xs">
-                7-day free trial &middot; No card &middot; Cancel anytime
+                30-day free trial &middot; No card &middot; Cancel anytime
               </p>
             </div>
 

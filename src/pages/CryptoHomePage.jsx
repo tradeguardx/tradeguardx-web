@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSEO } from '../hooks/useSEO';
 import StoryAIJournal from '../components/landing/story/StoryAIJournal';
-import FloatingSignupCTA from '../components/landing/FloatingSignupCTA';
+import RecentJoinsToast from '../components/landing/RecentJoinsToast';
 import DemoVideoSection from '../components/landing/DemoVideoSection';
 import HeroLiveDemo from '../components/landing/HeroLiveDemo';
 import '../landing/tgx.scoped.css';
@@ -10,7 +10,7 @@ import rawBodyA from '../landing/tgx-body-a.html?raw';
 import rawBodyB from '../landing/tgx-body-b.html?raw';
 
 // Split the landing body right after the hero (before the trust strip) so the
-// Talk-to-founder banner sits between the hero and the "7 rules / 7 days /
+// Talk-to-founder banner sits between the hero and the "7 rules / trial /
 // <120ms" strip. The two halves each get their own ref, both registered with the
 // reveal/animation effect below.
 const SPLIT_MARKER = '<!-- POST HERO';
@@ -231,7 +231,7 @@ export default function CryptoHomePage() {
       <LandingDivider />
       {/* Pricing + FAQ. */}
       <RawHtml className="tgx-home" innerRef={bTailRef} html={rawBodyBTail} />
-      <FloatingSignupCTA />
+      <RecentJoinsToast />
     </>
   );
 }

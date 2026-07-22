@@ -9,9 +9,9 @@
  *   VITE_FOUNDING_MEMBER_MONTHS=3          (display only, e.g. "3")
  *   VITE_FOUNDING_MEMBER_PLAN=Pro          (display label, default "Pro")
  *
- * The actual auto-comp behavior is driven by user-service env vars
- * (AUTO_COMP_*). These vars exist purely to control the marketing UI — keep
- * them in sync with what the backend is actually granting.
+ * These vars control ONLY the marketing UI. The actual grant is the extended
+ * free trial: user-service / subscription-service TRIAL_DAYS (set to 30 for the
+ * launch). Keep the "months" here in sync with what TRIAL_DAYS actually gives.
  */
 function isTruthy(raw) {
   if (raw == null) return false;

@@ -145,7 +145,7 @@ function FoundingMemberContent({ cfg }) {
           </p>
         </div>
         <h2 className="mt-1 font-display text-lg font-bold leading-snug text-white sm:text-xl">
-          First {cfg.limit} signups get {cfg.plan} <span className="text-yellow-200">free for {cfg.months} month{cfg.months === 1 ? '' : 's'}</span>
+          Join the first {cfg.limit} traders. <span className="text-yellow-200">Get {cfg.months === 1 ? '30 days' : `${cfg.months} months`} free.</span>
         </h2>
       </div>
 

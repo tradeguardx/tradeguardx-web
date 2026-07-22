@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * Thin banner shown while the 7-day full-access trial is running.
+ * Thin banner shown while the free full-access trial is running.
  * Renders nothing for paid, free, or expired users.
  */
 export function TrialBanner() {
@@ -53,7 +53,7 @@ export function UpgradeWall() {
       </span>
       <h2 className="mt-5 font-display text-2xl font-bold" style={{ color: 'var(--dash-text-primary)' }}>Your free trial has ended</h2>
       <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-        You had 7 days of full access. To keep your guardrails running and configure your rules, upgrade to a paid plan.
+        You had 30 days of full access. To keep your guardrails running and configure your rules, upgrade to a paid plan.
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <Link
