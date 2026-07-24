@@ -20,6 +20,7 @@ import {
   EMOTIONS,
   MISTAKE_TYPES,
 } from '../hooks/useTradeAnnotations';
+import { shortId, sourceLabel } from '../lib/labels';
 
 // ─── utils ──────────────────────────────────────────────────────────────────
 function fmt$(v, currency = 'USD') {
