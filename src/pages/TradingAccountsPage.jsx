@@ -18,6 +18,9 @@ import {
   getExchangeCredentialsStatus,
 } from '../api/exchangeCredentialsApi';
 import ExchangeConnectionPanel from '../components/dashboard/ExchangeConnectionPanel';
+import DeltaAppGuide from '../components/dashboard/DeltaAppGuide';
+import SecretInput from '../components/common/SecretInput';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { DELTA_EGRESS_IP } from '../api/config';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel, equityModeLabel } from '../lib/labels';
@@ -551,6 +554,8 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
   // Delta-only: optional API key/secret entered inline during account creation.
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
+  const isMobile = useIsMobile();
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const selected = useMemo(
     () => supportedProps.find((p) => p.brokerId === selectedSlug) || null,
@@ -861,49 +866,93 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
                   backgroundColor: 'rgba(0,212,170,0.04)',
                 }}
               >
-                <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--dash-text-primary)' }}>
-                  Create your key on Delta (takes ~2 min):
-                </p>
-                <ol className="space-y-2 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                  <li>
-                    <strong>1.</strong> Open{' '}
-                    <a
-                      href="https://www.delta.exchange/algo/delta-exchange-apis"
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ color: 'var(--accent, #00d4aa)' }}
-                      className="underline"
+                {isMobile ? (
+                  // Mobile: users are in the Delta app. Guide them through Algo Hub
+                  // → APIs with the screenshot walkthrough instead of the web link.
+                  <>
+                    <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--dash-text-primary)' }}>
+                      Create your key in the Delta app (~2 min):
+                    </p>
+                    <ol className="space-y-1.5 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                      <li><strong>1.</strong> Open the Delta app → tap <strong>Algo Hub</strong> → <strong>APIs</strong>.</li>
+                      <li>
+                        <strong>2. Whitelisted IP:</strong> paste our IP
+                        {DELTA_EGRESS_IP ? (
+                          <button
+                            type="button"
+                            onClick={() => { navigator.clipboard?.writeText(DELTA_EGRESS_IP); toast?.success?.('Copied', 'IP copied to clipboard.'); }}
+                            className="ml-1.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[11px]"
+                            style={{ borderColor: 'rgba(0,212,170,0.3)', color: 'var(--accent, #00d4aa)' }}
+                            title="Copy IP"
+                          >
+                            {DELTA_EGRESS_IP} <span>Copy</span>
+                          </button>
+                        ) : (
+                          <span> (shown after you select a live environment)</span>
+                        )}
+                      </li>
+                      <li><strong>3.</strong> Tick <strong>Trading</strong>, create the key, then paste it below.</li>
+                    </ol>
+                    <button
+                      type="button"
+                      onClick={() => setGuideOpen(true)}
+                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold text-surface-950"
+                      style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
                     >
-                      Delta → API Keys
-                    </a>{' '}
-                    and click <strong>Create a new API key</strong>.
-                  </li>
-                  <li>
-                    <strong>2. API Key Name:</strong> type anything you like (e.g. <span className="font-mono">TradeGuardX</span>).
-                  </li>
-                  <li>
-                    <strong>3. Whitelisted IP:</strong> paste our IP
-                    {DELTA_EGRESS_IP ? (
-                      <button
-                        type="button"
-                        onClick={() => { navigator.clipboard?.writeText(DELTA_EGRESS_IP); toast?.success?.('Copied', 'IP copied to clipboard.'); }}
-                        className="ml-1.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[11px]"
-                        style={{ borderColor: 'rgba(0,212,170,0.3)', color: 'var(--accent, #00d4aa)' }}
-                        title="Copy IP"
-                      >
-                        {DELTA_EGRESS_IP} <span>Copy</span>
-                      </button>
-                    ) : (
-                      <span> (shown after you select a live environment)</span>
-                    )}
-                  </li>
-                  <li>
-                    <strong>4. Permissions:</strong> tick <strong>Trading</strong>. (“Read Data” is always on — leave it. A read-only key can’t run the kill switch.)
-                  </li>
-                  <li>
-                    <strong>5.</strong> Click <strong>Create API key</strong>, then paste the <strong>API Key</strong> and <strong>API Secret</strong> below.
-                  </li>
-                </ol>
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden>
+                        <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+                        <path strokeLinecap="round" d="M10.5 18.5h3" />
+                      </svg>
+                      Show me how · 4 steps
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--dash-text-primary)' }}>
+                      Create your key on Delta (takes ~2 min):
+                    </p>
+                    <ol className="space-y-2 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                      <li>
+                        <strong>1.</strong> Open{' '}
+                        <a
+                          href="https://www.delta.exchange/algo/delta-exchange-apis"
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: 'var(--accent, #00d4aa)' }}
+                          className="underline"
+                        >
+                          Delta → API Keys
+                        </a>{' '}
+                        and click <strong>Create a new API key</strong>.
+                      </li>
+                      <li>
+                        <strong>2. API Key Name:</strong> type anything you like (e.g. <span className="font-mono">TradeGuardX</span>).
+                      </li>
+                      <li>
+                        <strong>3. Whitelisted IP:</strong> paste our IP
+                        {DELTA_EGRESS_IP ? (
+                          <button
+                            type="button"
+                            onClick={() => { navigator.clipboard?.writeText(DELTA_EGRESS_IP); toast?.success?.('Copied', 'IP copied to clipboard.'); }}
+                            className="ml-1.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[11px]"
+                            style={{ borderColor: 'rgba(0,212,170,0.3)', color: 'var(--accent, #00d4aa)' }}
+                            title="Copy IP"
+                          >
+                            {DELTA_EGRESS_IP} <span>Copy</span>
+                          </button>
+                        ) : (
+                          <span> (shown after you select a live environment)</span>
+                        )}
+                      </li>
+                      <li>
+                        <strong>4. Permissions:</strong> tick <strong>Trading</strong>. (“Read Data” is always on — leave it. A read-only key can’t run the kill switch.)
+                      </li>
+                      <li>
+                        <strong>5.</strong> Click <strong>Create API key</strong>, then paste the <strong>API Key</strong> and <strong>API Secret</strong> below.
+                      </li>
+                    </ol>
+                  </>
+                )}
                 <p className="mt-2.5 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
                   Delta shows the secret only once — copy it right away. Your secret is encrypted (KMS) before storage and never shown again.
                 </p>
@@ -936,18 +985,13 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
                   <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
                     API Secret
                   </span>
-                  <input
-                    type="password"
+                  <SecretInput
                     name="tgx-delta-secret"
-                    autoComplete="new-password"
-                    data-lpignore="true"
-                    data-1p-ignore="true"
-                    data-form-type="other"
-                    spellCheck={false}
                     value={apiSecret}
                     onChange={(e) => setApiSecret(e.target.value)}
                     placeholder="Paste API Secret"
-                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                    wrapperClassName="mt-1"
+                    className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
                     style={{
                       borderColor: 'var(--dash-border)',
                       backgroundColor: 'var(--dash-bg-input)',
@@ -986,6 +1030,8 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
           </div>
         </motion.div>
       )}
+
+      <DeltaAppGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
     </motion.div>
   );
 }

@@ -6,6 +6,9 @@ import {
   getExchangeCredentialsStatus,
 } from '../../api/exchangeCredentialsApi';
 import { DELTA_EGRESS_IP } from '../../api/config';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import DeltaAppGuide from './DeltaAppGuide';
+import SecretInput from '../common/SecretInput';
 
 function formatDateTime(iso) {
   if (!iso) return '—';
@@ -38,6 +41,8 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   const [submitting, setSubmitting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [ipCopied, setIpCopied] = useState(false);
+  const isMobile = useIsMobile();
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const onCopyEgressIp = async () => {
     if (!DELTA_EGRESS_IP) return;
@@ -237,19 +242,43 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               backgroundColor: 'rgba(0,212,170,0.04)',
             }}
           >
-            <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-              {isConnected ? 'Replace the existing key with a new one.' : (
-                <>
-                  Generate a <strong>Trading</strong> key from{' '}
-                  <a href={apiKeysLink} target="_blank" rel="noreferrer" style={{ color: 'var(--accent, #00d4aa)' }} className="underline">
-                    Delta → API Keys
-                  </a>
-                  {' '}— enable <strong>Trading</strong> but <strong>never Withdrawal</strong>, and whitelist the IP below.
-                  The kill-switch and auto-cooldown need Trade scope to close positions and lock the account.
-                  A read-only key only sends alerts — it cannot stop trading.
-                </>
-              )}
-            </p>
+            {isConnected ? (
+              <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                Replace the existing key with a new one.
+              </p>
+            ) : isMobile ? (
+              // Mobile: users are in the Delta app, not a browser tab. Guide them
+              // through the app's Algo Hub → APIs flow with the screenshot walkthrough.
+              <div>
+                <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                  Create a <strong>Trading</strong> key in the <strong>Delta app</strong> (Algo Hub → APIs).
+                  Enable <strong>Trading</strong>, whitelist the IP below, and paste the key here.
+                  A read-only key only sends alerts — it can&apos;t stop trading.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setGuideOpen(true)}
+                  className="mt-2.5 inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold text-surface-950"
+                  style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden>
+                    <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+                    <path strokeLinecap="round" d="M10.5 18.5h3" />
+                  </svg>
+                  Show me how · 4 steps
+                </button>
+              </div>
+            ) : (
+              <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                Generate a <strong>Trading</strong> key from{' '}
+                <a href={apiKeysLink} target="_blank" rel="noreferrer" style={{ color: 'var(--accent, #00d4aa)' }} className="underline">
+                  Delta → API Keys
+                </a>
+                {' '}— enable <strong>Trading</strong> but <strong>never Withdrawal</strong>, and whitelist the IP below.
+                The kill-switch and auto-cooldown need Trade scope to close positions and lock the account.
+                A read-only key only sends alerts — it cannot stop trading.
+              </p>
+            )}
           </div>
 
           {DELTA_EGRESS_IP && (
@@ -312,18 +341,13 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
             </label>
             <label className="block">
               <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>API Secret</span>
-              <input
-                type="password"
+              <SecretInput
                 name="tgx-delta-secret"
-                autoComplete="new-password"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-form-type="other"
-                spellCheck={false}
                 value={apiSecret}
                 onChange={(e) => setApiSecret(e.target.value)}
                 placeholder="Paste API Secret"
-                className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                wrapperClassName="mt-1"
+                className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
                 style={{
                   borderColor: 'var(--dash-border)',
                   backgroundColor: 'var(--dash-bg-input)',
@@ -358,6 +382,8 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
           </div>
         </div>
       )}
+
+      <DeltaAppGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
     </div>
   );
 }
