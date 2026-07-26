@@ -15,6 +15,18 @@ const SEVERITY_OPTIONS = [
   { value: 'critical', label: 'Critical alerts only' },
 ];
 
+/** The 10 local digits from a stored E.164 number (e.g. "+919876543210" → "9876543210"). */
+function localDigits(e164) {
+  if (!e164) return '';
+  const d = String(e164).replace(/[^\d]/g, '');
+  return d.length > 10 ? d.slice(-10) : d; // drop the country code
+}
+/** Group 10 digits as "98765 43210" for the input display. */
+function formatPhone(digits) {
+  const d = digits.replace(/[^\d]/g, '').slice(0, 10);
+  return d.length > 5 ? `${d.slice(0, 5)} ${d.slice(5)}` : d;
+}
+
 /**
  * Settings panel where users opt into notification channels.
  * Drop this into any dashboard page — it manages its own loading + state.
@@ -29,6 +41,7 @@ export default function NotificationSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [emailInput, setEmailInput] = useState('');
+  const [phoneInput, setPhoneInput] = useState(''); // 10 digits, no +91
   const [linking, setLinking] = useState(false);
   const [confirmState, setConfirmState] = useState(null); // { title, message, confirmLabel, onConfirm }
 
@@ -39,6 +52,8 @@ export default function NotificationSettings() {
       const result = await fetchNotificationSettings({ accessToken });
       setSettings(result);
       setEmailInput(result?.notificationEmail ?? fallbackEmail);
+      // Store 10 local digits for the input; the +91 prefix is shown separately.
+      setPhoneInput(localDigits(result?.phone));
     } catch (e) {
       toast.error('Could not load settings', e?.message);
     } finally {
@@ -235,22 +250,69 @@ export default function NotificationSettings() {
         </ChannelRow>
 
         <ChannelRow
-          icon={<WhatsAppIcon />}
-          title="WhatsApp"
-          description="Coming soon — alerts via WhatsApp messages, ideal for mobile."
-          status="coming_soon"
-          enabled={false}
-          canToggle={false}
-          action={
-            <span
-              className="text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5"
-              style={{ backgroundColor: 'rgba(168, 85, 247, 0.12)', color: 'rgb(168, 85, 247)' }}
-            >
-              Coming soon
-            </span>
-          }
+          icon={<MobileIcon />}
+          title="Mobile"
+          description="Risk alerts on your phone. Add your number — WhatsApp/SMS delivery is rolling out shortly."
+          status={settings.mobileNotificationsEnabled && settings.phone ? 'enabled' : settings.phone ? 'disabled' : 'not_connected'}
+          enabled={settings.mobileNotificationsEnabled}
+          onToggle={(enabled) => save({ mobileNotificationsEnabled: enabled })}
+          canToggle={Boolean(settings.phone)}
           saving={saving}
-        />
+        >
+          <div className="mt-3">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--dash-text-muted)' }}>
+              Mobile number
+            </label>
+            <div className="flex gap-2">
+              <div
+                className="flex flex-1 items-stretch overflow-hidden rounded-xl border focus-within:ring-1 focus-within:ring-accent/40"
+                style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)' }}
+              >
+                <span
+                  className="flex select-none items-center gap-1 border-r px-2.5 text-sm font-semibold"
+                  style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
+                >
+                  <span aria-hidden>🇮🇳</span> +91
+                </span>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  value={formatPhone(phoneInput)}
+                  onChange={(e) => setPhoneInput(e.target.value.replace(/[^\d]/g, '').slice(0, 10))}
+                  placeholder="98765 43210"
+                  className="w-full bg-transparent px-3 py-2 text-sm outline-none"
+                  style={{ color: 'var(--dash-text-primary)' }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (phoneInput && phoneInput.length !== 10) {
+                    toast.error('Enter a 10-digit mobile number');
+                    return;
+                  }
+                  // Empty input clears the number (and mobile alerts along with it).
+                  save(
+                    phoneInput
+                      ? { phone: `+91${phoneInput}` }
+                      : { phone: null, mobileNotificationsEnabled: false },
+                  );
+                }}
+                disabled={saving || phoneInput === localDigits(settings.phone)}
+                className="px-3 py-2 rounded-xl text-sm font-semibold border disabled:opacity-50"
+                style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
+              >
+                Save
+              </button>
+            </div>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--dash-text-muted)' }}>
+              {settings.phone
+                ? 'Saved. Toggle the switch above to turn alerts on this number on or off.'
+                : 'Add a number to enable mobile alerts. We never call you or share it.'}
+            </p>
+          </div>
+        </ChannelRow>
       </motion.div>
 
       <ConfirmModal state={confirmState} onClose={() => setConfirmState(null)} />
@@ -422,13 +484,11 @@ function EmailIcon() {
   );
 }
 
-function WhatsAppIcon() {
+function MobileIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path
-        d="M17.5 14.36c-.27-.13-1.58-.78-1.82-.86s-.42-.13-.6.13c-.17.27-.69.86-.85 1.04-.16.18-.31.2-.58.07-.27-.13-1.14-.42-2.17-1.34-.8-.71-1.34-1.59-1.5-1.86-.16-.27-.02-.41.12-.55.12-.12.27-.31.4-.46.13-.16.18-.27.27-.45.09-.18.04-.34-.02-.47-.07-.13-.6-1.44-.82-1.97-.22-.52-.44-.45-.6-.46-.16-.01-.34-.01-.52-.01-.18 0-.47.07-.71.34-.24.27-.93.91-.93 2.22 0 1.31.95 2.58 1.08 2.76.13.18 1.87 2.86 4.54 4 .63.27 1.13.44 1.52.56.64.2 1.22.17 1.68.1.51-.08 1.58-.65 1.8-1.27.22-.62.22-1.16.16-1.27-.07-.11-.25-.18-.52-.31zM12.05 22h-.01a9.93 9.93 0 0 1-5.06-1.39L2 22l1.43-4.85A9.94 9.94 0 1 1 12.06 22h-.01zm0-18.18a8.24 8.24 0 0 0-7.05 12.52l.2.32-.85 3.1 3.18-.84.31.18a8.22 8.22 0 0 0 4.21 1.15h.01A8.24 8.24 0 1 0 12.05 3.82z"
-        fill="#25D366"
-      />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--dash-text-secondary)" strokeWidth="1.8" aria-hidden="true">
+      <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+      <path strokeLinecap="round" d="M10.5 18.5h3" />
     </svg>
   );
 }

@@ -30,6 +30,9 @@ export async function updateNotificationSettings({
   notificationEmail,
   telegramNotificationsEnabled,
   notificationMinSeverity,
+  phone,
+  mobileNotificationsEnabled,
+  markPhonePrompted,
   signal,
 } = {}) {
   if (!accessToken) throw new Error('Missing access token');
@@ -38,6 +41,9 @@ export async function updateNotificationSettings({
   if (notificationEmail !== undefined) body.notificationEmail = notificationEmail;
   if (telegramNotificationsEnabled !== undefined) body.telegramNotificationsEnabled = telegramNotificationsEnabled;
   if (notificationMinSeverity !== undefined) body.notificationMinSeverity = notificationMinSeverity;
+  if (phone !== undefined) body.phone = phone;
+  if (mobileNotificationsEnabled !== undefined) body.mobileNotificationsEnabled = mobileNotificationsEnabled;
+  if (markPhonePrompted !== undefined) body.markPhonePrompted = markPhonePrompted;
 
   const payload = await apiPatch('/notifications/settings', body, {
     signal,

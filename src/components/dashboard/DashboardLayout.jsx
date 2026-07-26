@@ -9,6 +9,7 @@ import AccountSelector from './AccountSelector';
 import HeaderStatusPill from './HeaderStatusPill';
 import { TrialBanner, UpgradeWall } from './TrialGate';
 import WelcomeCelebration from './WelcomeCelebration';
+import PhonePrompt from './PhonePrompt';
 import BreachBanner from './BreachBanner';
 import VerifyEmailBanner from './VerifyEmailBanner';
 
@@ -462,6 +463,8 @@ function DashboardInner() {
 
       {/* One-shot celebration when ?welcome=1 is in the URL (set by SignupPage). */}
       <WelcomeCelebration />
+      {/* First-time mobile-number ask — shows once, gated server-side. */}
+      <PhonePrompt />
     </div>
   );
 }
