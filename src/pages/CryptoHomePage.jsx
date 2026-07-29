@@ -4,6 +4,7 @@ import { useSEO } from '../hooks/useSEO';
 import StoryAIJournal from '../components/landing/story/StoryAIJournal';
 import RecentJoinsToast from '../components/landing/RecentJoinsToast';
 import DemoVideoSection from '../components/landing/DemoVideoSection';
+import TradingInAction from '../components/landing/TradingInAction';
 import HeroLiveDemo from '../components/landing/HeroLiveDemo';
 import '../landing/tgx.scoped.css';
 import rawBodyA from '../landing/tgx-body-a.html?raw';
@@ -16,8 +17,13 @@ import rawBodyB from '../landing/tgx-body-b.html?raw';
 const SPLIT_MARKER = '<!-- POST HERO';
 const _splitIdx = rawBodyA.indexOf(SPLIT_MARKER);
 const rawBodyAHero = _splitIdx >= 0 ? rawBodyA.slice(0, _splitIdx) : rawBodyA;
-// After the hero: "A day in the life" + rules.
+// After the hero: "A day in the life" + rules — further split so Trading in
+// Action can land between them (right above "Seven rules. Pick yours.").
 const rawBodyARest = _splitIdx >= 0 ? rawBodyA.slice(_splitIdx) : '';
+const ACTION_MARKER = '<!-- TRADING IN ACTION SPLIT -->';
+const _actionIdx = rawBodyARest.indexOf(ACTION_MARKER);
+const rawBodyADayInLife = _actionIdx >= 0 ? rawBodyARest.slice(0, _actionIdx) : rawBodyARest;
+const rawBodyARules = _actionIdx >= 0 ? rawBodyARest.slice(_actionIdx) : '';
 
 // Split body-b at pricing so the how-to-setup demo lands as the last proof
 // before we show the price.
@@ -71,6 +77,7 @@ const FAQ_LD = {
 export default function CryptoHomePage() {
   const aRef = useRef(null);
   const a2Ref = useRef(null);
+  const a3Ref = useRef(null);
   const bRef = useRef(null);
   const bTailRef = useRef(null);
   const [heroDemoNode, setHeroDemoNode] = useState(null);
@@ -105,7 +112,7 @@ export default function CryptoHomePage() {
   }, []);
 
   useEffect(() => {
-    const roots = [aRef.current, a2Ref.current, bRef.current, bTailRef.current].filter(Boolean);
+    const roots = [aRef.current, a2Ref.current, a3Ref.current, bRef.current, bTailRef.current].filter(Boolean);
     if (!roots.length) return;
     const qAll = (sel) => roots.flatMap((r) => Array.from(r.querySelectorAll(sel)));
 
@@ -220,8 +227,12 @@ export default function CryptoHomePage() {
       </div>
 
       <RawHtml className="tgx-home" innerRef={aRef} html={rawBodyAHero} />
-      {/* A day in the life + rules — straight after the hero. */}
-      <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyARest} />
+      {/* A day in the life — straight after the hero. */}
+      <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyADayInLife} />
+      {/* Trading in Action — proof it's real, right above "Seven rules. Pick yours." */}
+      <TradingInAction />
+      {/* Rules. */}
+      <RawHtml className="tgx-home" innerRef={a3Ref} html={rawBodyARules} />
       <StoryAIJournal />
       {/* Available on. */}
       <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyBHead} />
