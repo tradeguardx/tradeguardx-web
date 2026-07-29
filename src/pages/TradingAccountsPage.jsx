@@ -21,7 +21,7 @@ import ExchangeConnectionPanel from '../components/dashboard/ExchangeConnectionP
 import DeltaAppGuide from '../components/dashboard/DeltaAppGuide';
 import SecretInput from '../components/common/SecretInput';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { DELTA_EGRESS_IP } from '../api/config';
+import { DELTA_EGRESS_IP, deltaApiKeysUrl } from '../api/config';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel, equityModeLabel } from '../lib/labels';
 
@@ -542,6 +542,168 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
   );
 }
 
+/** A numbered step in the Delta connect instructions — a small circled digit
+ * plus an optional short label, so the sequence stays scannable even once
+ * each step has real content (a button, a copy row, a checklist item). */
+function StepRow({ n, label, children }) {
+  return (
+    <div className="flex gap-2.5">
+      <span
+        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+        style={{ backgroundColor: 'rgba(0,212,170,0.15)', color: 'var(--accent, #00d4aa)' }}
+      >
+        {n}
+      </span>
+      <div className="min-w-0 flex-1">
+        {label && (
+          <p className="mb-1.5 text-[11.5px] font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
+            {label}
+          </p>
+        )}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const SUGGESTED_KEY_NAME = 'tradeguardx';
+
+/**
+ * Delta shows the API Key and Secret as two separate copyable fields, so there
+ * is no way to make Delta itself hand back one combined value — but if a user
+ * selects both (e.g. drags across both rows) and pastes once, we can still
+ * save them a second paste. Splits on whitespace/newlines; Delta keys/secrets
+ * are long unbroken alphanumeric tokens, so two 20+ char tokens is a safe
+ * signal this is a paste of both values, not a single key.
+ * Returns null if the paste doesn't look like a pair.
+ */
+function trySplitPastedCredentials(text) {
+  const tokens = text
+    .split(/[\s,;]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 20 && /^[A-Za-z0-9+/=_-]+$/.test(t));
+  if (tokens.length === 2) return { key: tokens[0], secret: tokens[1] };
+  return null;
+}
+
+/**
+ * The post-connect result screen. Every row here is derived from a real field
+ * the backend returned (ExchangeConnectionSummary) — nothing is asserted that
+ * wasn't actually verified. Two things are deliberately NOT shown as a
+ * checkmark: a distinct "IP whitelisted" row (the backend doesn't return that
+ * as its own boolean — it's folded into `enforcementCapable`, so a separate
+ * checkmark would imply precision we don't have) and "withdrawal blocked" is
+ * shown as a structural fact, not a live check, since Delta doesn't offer
+ * withdrawal scope on API keys at all — there's nothing to verify.
+ */
+function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, apiKey, apiSecret, onApiKeyChange, onApiSecretChange }) {
+  if (outcome.ok) {
+    const { summary } = outcome;
+    const live = summary?.enforcementCapable === true;
+    return (
+      <div
+        className="rounded-xl border px-4 py-4"
+        style={{ borderColor: 'rgba(0,212,170,0.3)', backgroundColor: 'rgba(0,212,170,0.05)' }}
+      >
+        <p className="mb-3 text-[13px] font-bold" style={{ color: 'var(--accent, #00d4aa)' }}>
+          Delta connected
+        </p>
+        <ul className="space-y-2 text-[13px]" style={{ color: 'var(--dash-text-primary)' }}>
+          <li className="flex items-start gap-2">
+            <span style={{ color: 'var(--accent, #00d4aa)' }}>✓</span>
+            <span>
+              Connected{summary?.exchangeUserEmail ? <> as <span className="font-mono">{summary.exchangeUserEmail}</span></> : ''}
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span style={{ color: live ? 'var(--accent, #00d4aa)' : '#f59e0b' }}>{live ? '✓' : '!'}</span>
+            <span>
+              {live
+                ? 'Kill switch is live — this key can close positions and lock the account.'
+                : (summary?.warnings?.[0] || 'Trade permission not confirmed — this key can only send alerts, not enforce.')}
+            </span>
+          </li>
+          <li className="flex items-start gap-2 text-[12px]" style={{ color: 'var(--dash-text-muted)' }}>
+            <span>·</span>
+            <span>Withdrawal was never requested — Delta doesn&apos;t offer it on API keys, so there&apos;s nothing that can move your funds.</span>
+          </li>
+        </ul>
+        {!live && (
+          <p className="mt-3 text-[12px]" style={{ color: 'var(--dash-text-muted)' }}>
+            You can fix this any time from the account page — replace the key with one that has Trading enabled and the IP whitelisted.
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={onContinue}
+          className="mt-4 w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-surface-950 hover:bg-accent-hover"
+        >
+          Continue
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="rounded-xl border px-4 py-4"
+      style={{ borderColor: 'rgba(239,68,68,0.35)', backgroundColor: 'rgba(239,68,68,0.06)' }}
+    >
+      <p className="mb-2 text-[13px] font-bold" style={{ color: 'rgb(248,113,113)' }}>
+        Could not connect
+      </p>
+      <p className="mb-4 text-[12.5px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+        {outcome.message}
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>API Key</span>
+          <input
+            type="text"
+            autoComplete="off"
+            data-lpignore="true"
+            spellCheck={false}
+            value={apiKey}
+            onChange={onApiKeyChange}
+            placeholder="Paste API Key"
+            className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+            style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)', color: 'var(--dash-text-primary)' }}
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>API Secret</span>
+          <SecretInput
+            value={apiSecret}
+            onChange={onApiSecretChange}
+            placeholder="Paste API Secret"
+            wrapperClassName="mt-1"
+            className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+            style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)', color: 'var(--dash-text-primary)' }}
+          />
+        </label>
+      </div>
+      <div className="mt-4 flex gap-2">
+        <button
+          type="button"
+          onClick={onRetry}
+          disabled={retrying || !apiKey.trim() || !apiSecret.trim()}
+          className="rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-surface-950 hover:bg-accent-hover disabled:opacity-50"
+        >
+          {retrying ? 'Retrying…' : 'Retry connection'}
+        </button>
+        <button
+          type="button"
+          onClick={onContinue}
+          className="rounded-xl border px-4 py-2.5 text-sm font-semibold"
+          style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
+        >
+          I&apos;ll do this later
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toast }) {
   const [selectedSlug, setSelectedSlug] = useState('');
   const [name, setName] = useState('');
@@ -556,6 +718,14 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
   const [apiSecret, setApiSecret] = useState('');
   const isMobile = useIsMobile();
   const [guideOpen, setGuideOpen] = useState(false);
+  // Set once the account is created. Non-null switches the panel from the form
+  // to a result screen — see the comment on `submit` for why this can't just
+  // toast-and-close like before.
+  const [createdAccount, setCreatedAccount] = useState(null);
+  // null while connecting; then { ok:true, summary } | { ok:false, message }.
+  const [connectOutcome, setConnectOutcome] = useState(null);
+  const [retrying, setRetrying] = useState(false);
+  const [nameCopied, setNameCopied] = useState(false);
 
   const selected = useMemo(
     () => supportedProps.find((p) => p.brokerId === selectedSlug) || null,
@@ -593,6 +763,11 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
     (!isFunded || (Number.isFinite(sizeValue) && sizeValue > 0)) &&
     deltaCredsProvided;
 
+  // Non-Delta accounts still close immediately (nothing to confirm). Delta
+  // accounts move to a result screen instead of closing — the account is
+  // created either way (credential failure is never fatal to it), but
+  // whether the KILL SWITCH IS ACTUALLY LIVE is the one thing worth a user's
+  // full attention, and a toast that can be missed isn't enough for that.
   const submit = async () => {
     if (!canCreate || !accessToken) return;
     setCreating(true);
@@ -610,35 +785,50 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
         dashboardUrl: selected.dashboardUrl ?? undefined,
       });
 
-      // For Delta accounts, optionally connect the API key in the same flow.
-      // Account creation already succeeded — credential failure is non-fatal; user can retry from the account page.
-      if (isDelta && account?.id && apiKey.trim() && apiSecret.trim()) {
-        try {
-          await connectExchangeCredentials({
-            accessToken,
-            accountId: account.id,
-            exchange: exchangeSlug,
-            apiKey: apiKey.trim(),
-            apiSecret: apiSecret.trim(),
-          });
-          toast.success(
-            'Account created & connected',
-            'Delta read-only access verified. We will start streaming your positions.',
-          );
-        } catch (credErr) {
-          toast.error(
-            'Account created, but Delta connect failed',
-            credErr?.message || 'You can retry connecting from the account details.',
-          );
-        }
-      } else {
+      if (!isDelta) {
         toast.success('Account created', 'Configure rules and connect the extension next.');
+        onCreated?.();
+        return;
       }
-      onCreated?.();
+
+      setCreatedAccount(account);
+      try {
+        const summary = await connectExchangeCredentials({
+          accessToken,
+          accountId: account.id,
+          exchange: exchangeSlug,
+          apiKey: apiKey.trim(),
+          apiSecret: apiSecret.trim(),
+        });
+        setConnectOutcome({ ok: true, summary });
+      } catch (credErr) {
+        setConnectOutcome({ ok: false, message: credErr?.message || 'Delta rejected the connection. Try again.' });
+      }
     } catch (e) {
       toast.error('Could not create', e?.message || 'Try again.');
     } finally {
       setCreating(false);
+    }
+  };
+
+  // Retry after a failed connect — the account already exists, so this only
+  // re-attempts the credential pairing, not the whole form.
+  const retryConnect = async () => {
+    if (!createdAccount?.id || !apiKey.trim() || !apiSecret.trim()) return;
+    setRetrying(true);
+    try {
+      const summary = await connectExchangeCredentials({
+        accessToken,
+        accountId: createdAccount.id,
+        exchange: exchangeSlug,
+        apiKey: apiKey.trim(),
+        apiSecret: apiSecret.trim(),
+      });
+      setConnectOutcome({ ok: true, summary });
+    } catch (credErr) {
+      setConnectOutcome({ ok: false, message: credErr?.message || 'Delta rejected the connection. Try again.' });
+    } finally {
+      setRetrying(false);
     }
   };
 
@@ -850,7 +1040,28 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
             </div>
           )}
 
-          {isDelta && (
+          {isDelta && createdAccount && connectOutcome && (
+            <div>
+              <p
+                className="text-[11px] font-semibold uppercase tracking-wider mb-3"
+                style={{ color: 'var(--dash-text-muted)' }}
+              >
+                {isFunded ? '5.' : '3.'} Connect Delta API key
+              </p>
+              <ConnectResultPanel
+                outcome={connectOutcome}
+                retrying={retrying}
+                onRetry={retryConnect}
+                onContinue={() => onCreated?.()}
+                apiKey={apiKey}
+                apiSecret={apiSecret}
+                onApiKeyChange={(e) => setApiKey(e.target.value)}
+                onApiSecretChange={(e) => setApiSecret(e.target.value)}
+              />
+            </div>
+          )}
+
+          {isDelta && !createdAccount && (
             <div>
               <p
                 className="text-[11px] font-semibold uppercase tracking-wider mb-3"
@@ -881,8 +1092,8 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
                           <button
                             type="button"
                             onClick={() => { navigator.clipboard?.writeText(DELTA_EGRESS_IP); toast?.success?.('Copied', 'IP copied to clipboard.'); }}
-                            className="ml-1.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[11px]"
-                            style={{ borderColor: 'rgba(0,212,170,0.3)', color: 'var(--accent, #00d4aa)' }}
+                            className="ml-1.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono font-bold text-[11px]"
+                            style={{ backgroundColor: 'rgba(0,212,170,0.14)', borderColor: 'rgba(0,212,170,0.45)', color: 'var(--accent, #00d4aa)' }}
                             title="Copy IP"
                           >
                             {DELTA_EGRESS_IP} <span>Copy</span>
@@ -908,53 +1119,97 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
                   </>
                 ) : (
                   <>
-                    <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--dash-text-primary)' }}>
+                    <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--dash-text-primary)' }}>
                       Create your key on Delta (takes ~2 min):
                     </p>
-                    <ol className="space-y-2 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                      <li>
-                        <strong>1.</strong> Open{' '}
+                    <div className="space-y-3">
+                      <StepRow n={1}>
                         <a
-                          href="https://www.delta.exchange/algo/delta-exchange-apis"
+                          href={deltaApiKeysUrl(exchangeSlug)}
                           target="_blank"
                           rel="noreferrer"
-                          style={{ color: 'var(--accent, #00d4aa)' }}
-                          className="underline"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold text-surface-950"
+                          style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
                         >
-                          Delta → API Keys
-                        </a>{' '}
-                        and click <strong>Create a new API key</strong>.
-                      </li>
-                      <li>
-                        <strong>2. API Key Name:</strong> type anything you like (e.g. <span className="font-mono">TradeGuardX</span>).
-                      </li>
-                      <li>
-                        <strong>3. Whitelisted IP:</strong> paste our IP
-                        {DELTA_EGRESS_IP ? (
-                          <button
-                            type="button"
-                            onClick={() => { navigator.clipboard?.writeText(DELTA_EGRESS_IP); toast?.success?.('Copied', 'IP copied to clipboard.'); }}
-                            className="ml-1.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[11px]"
-                            style={{ borderColor: 'rgba(0,212,170,0.3)', color: 'var(--accent, #00d4aa)' }}
-                            title="Copy IP"
+                          Open Delta &amp; create key
+                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" aria-hidden>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      </StepRow>
+
+                      <StepRow n={2} label="Copy these into Delta's form">
+                        <div className="space-y-2">
+                          <div
+                            className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
+                            style={{ backgroundColor: 'var(--dash-bg-input)' }}
                           >
-                            {DELTA_EGRESS_IP} <span>Copy</span>
-                          </button>
-                        ) : (
-                          <span> (shown after you select a live environment)</span>
-                        )}
-                      </li>
-                      <li>
-                        <strong>4. Permissions:</strong> tick <strong>Trading</strong>. (“Read Data” is always on — leave it. A read-only key can’t run the kill switch.)
-                      </li>
-                      <li>
-                        <strong>5.</strong> Click <strong>Create API key</strong>, then paste the <strong>API Key</strong> and <strong>API Secret</strong> below.
-                      </li>
-                    </ol>
+                            <span className="text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>API Key Name</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard?.writeText(SUGGESTED_KEY_NAME);
+                                setNameCopied(true);
+                                setTimeout(() => setNameCopied(false), 1500);
+                                toast?.success?.('Copied', 'Key name copied to clipboard.');
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono font-bold text-[12px]"
+                              style={{ backgroundColor: 'rgba(0,212,170,0.14)', borderColor: 'rgba(0,212,170,0.45)', color: 'var(--accent, #00d4aa)' }}
+                              title="Copy suggested name"
+                            >
+                              {SUGGESTED_KEY_NAME} {nameCopied ? '✓' : 'Copy'}
+                            </button>
+                          </div>
+                          <div
+                            className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
+                            style={{ backgroundColor: 'var(--dash-bg-input)' }}
+                          >
+                            <span className="text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>Whitelisted IP</span>
+                            {DELTA_EGRESS_IP ? (
+                              <button
+                                type="button"
+                                onClick={() => { navigator.clipboard?.writeText(DELTA_EGRESS_IP); toast?.success?.('Copied', 'IP copied to clipboard.'); }}
+                                className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono font-bold text-[12px]"
+                                style={{ backgroundColor: 'rgba(0,212,170,0.14)', borderColor: 'rgba(0,212,170,0.45)', color: 'var(--accent, #00d4aa)' }}
+                                title="Copy IP"
+                              >
+                                {DELTA_EGRESS_IP} Copy
+                              </button>
+                            ) : (
+                              <span className="text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>shown after you pick a broker</span>
+                            )}
+                          </div>
+                        </div>
+                      </StepRow>
+
+                      {/* Its own step, deliberately — this is the ONE checkbox that
+                          decides whether the kill switch can act at all. Burying it
+                          in a sentence with the other steps is how it gets skipped. */}
+                      <StepRow n={3} label="Tick this permission">
+                        <div
+                          className="flex items-center gap-2.5 rounded-lg px-3 py-2.5"
+                          style={{ backgroundColor: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.3)' }}
+                        >
+                          <svg className="h-4 w-4 shrink-0" fill="none" stroke="var(--accent, #00d4aa)" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden>
+                            <rect x="3" y="3" width="18" height="18" rx="4" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12l3 3 5-6" />
+                          </svg>
+                          <span className="text-[12.5px]" style={{ color: 'var(--dash-text-primary)' }}>
+                            <strong>Trading</strong> — without this the kill switch can only alert, never act.
+                          </span>
+                        </div>
+                      </StepRow>
+
+                      <StepRow n={4} label="Create the key, then paste it below">
+                        <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                          Click <strong>Create API key</strong> — selecting and pasting both values together into the field below works too.
+                        </p>
+                      </StepRow>
+                    </div>
                   </>
                 )}
-                <p className="mt-2.5 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
-                  Delta shows the secret only once — copy it right away. Your secret is encrypted (KMS) before storage and never shown again.
+                <p className="mt-3 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
+                  Secret shown once — copy it now. Stored encrypted (KMS); Delta never offers a withdrawal permission on API keys.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -972,6 +1227,16 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
                     spellCheck={false}
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
+                    onPaste={(e) => {
+                      const text = e.clipboardData?.getData('text') ?? '';
+                      const split = trySplitPastedCredentials(text);
+                      if (split) {
+                        e.preventDefault();
+                        setApiKey(split.key);
+                        setApiSecret(split.secret);
+                        toast?.success?.('Pasted both', 'Key and secret filled in from one paste.');
+                      }
+                    }}
                     placeholder="Paste API Key"
                     className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
                     style={{
@@ -1008,6 +1273,7 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
             </div>
           )}
 
+          {!(isDelta && createdAccount && connectOutcome) && (
           <div className="flex flex-wrap gap-2 pt-2">
             <button
               type="button"
@@ -1028,6 +1294,7 @@ function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toas
               Cancel
             </button>
           </div>
+          )}
         </motion.div>
       )}
 

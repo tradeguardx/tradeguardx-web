@@ -5,7 +5,7 @@ import {
   exchangeFromBrokerSlug,
   getExchangeCredentialsStatus,
 } from '../../api/exchangeCredentialsApi';
-import { DELTA_EGRESS_IP } from '../../api/config';
+import { DELTA_EGRESS_IP, deltaApiKeysUrl } from '../../api/config';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import DeltaAppGuide from './DeltaAppGuide';
 import SecretInput from '../common/SecretInput';
@@ -129,10 +129,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   };
 
   const region = exchangeSlug === 'delta_india' ? 'India' : 'Global';
-  const apiKeysLink =
-    exchangeSlug === 'delta_india'
-      ? 'https://www.india.delta.exchange/app/api-keys'
-      : 'https://www.delta.exchange/app/api-keys';
+  const apiKeysLink = deltaApiKeysUrl(exchangeSlug);
 
   return (
     <div className="pt-4 mt-4 border-t" style={{ borderColor: 'var(--dash-border)' }}>

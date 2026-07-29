@@ -144,6 +144,25 @@ export function resolveDeltaEgressIp() {
 export const DELTA_EGRESS_IP = resolveDeltaEgressIp();
 
 /**
+ * Delta's API-key management page, by region. THE single source of truth for
+ * this URL — verified 2026-07-29 against Delta's own docs
+ * (docs.delta.exchange), because three different places in this codebase had
+ * three different (two of them wrong) URLs: `www.india.delta.exchange`
+ * (dead domain, never resolves) and `/app/api-keys` / `/algo/delta-exchange-apis`
+ * (not the documented path — Delta's SPA 200s on any path, so a broken link
+ * doesn't even fail loudly). Confirmed live:
+ *   India  → https://www.delta.exchange/app/account/manageapikeys
+ *   Global → https://global.delta.exchange/app/account/manageapikeys
+ * Delta does NOT support prefill query params on this page (also confirmed
+ * against their docs) — nothing we pass in the URL will populate their form.
+ */
+export function deltaApiKeysUrl(exchangeSlug) {
+  return exchangeSlug === 'delta_global'
+    ? 'https://global.delta.exchange/app/account/manageapikeys'
+    : 'https://www.delta.exchange/app/account/manageapikeys';
+}
+
+/**
  * Resolved bases + which overrides are active (useful for debugging env mismatches).
  */
 export function getApiConfigSnapshot() {
