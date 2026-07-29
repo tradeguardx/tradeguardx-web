@@ -250,7 +250,7 @@ function QuickAction({ to, icon, label, description, iconClass, badge }) {
 /* ─── Main page ─────────────────────────────────────────────────────── */
 export default function TradeOverviewPage() {
   const { user, session, subscriptionLoading } = useAuth();
-  const { accounts, accountsLoading } = useTradingAccounts();
+  const { accounts, accountsLoading, accountsError } = useTradingAccounts();
 
   const tier = planTierFromSlug(user?.plan);
   // Trial = full Pro+ features (tier) but nothing purchased (billingTier), so the
@@ -433,7 +433,12 @@ export default function TradeOverviewPage() {
           Sits ABOVE quick access — until setup is finished it's the only thing
           on this page that matters. It self-hides once all three are done (and
           carries its own margin, so no gap is left behind when it does). */}
-      <SetupChecklist accounts={accounts} accountsLoading={accountsLoading} accessToken={session?.access_token} />
+      <SetupChecklist
+        accounts={accounts}
+        accountsLoading={accountsLoading}
+        accountsError={accountsError}
+        accessToken={session?.access_token}
+      />
 
       {/* Quick actions */}
       <motion.div

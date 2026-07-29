@@ -49,7 +49,11 @@ export function TradingAccountProvider({ children }) {
       });
     } catch (e) {
       setAccountsError(e?.message || 'Could not load trading accounts');
-      setAccounts([]);
+      // Deliberately KEEP the previously-loaded list. Clearing it on a failed
+      // refresh makes every consumer render its "no accounts yet" empty state,
+      // so a transient API error looks exactly like "your account is gone" and
+      // pushes a configured user back into onboarding. The accounts live in
+      // Postgres — a failed read is not evidence they stopped existing.
     } finally {
       setAccountsLoading(false);
     }

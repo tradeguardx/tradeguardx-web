@@ -16,9 +16,16 @@ const DONE_DISMISS_KEY = 'tgx_setup_complete_dismissed';
  * pending steps are actionable. Once all four are genuinely done it shows a
  * one-time "setup complete" confirmation the user can dismiss.
  */
-export default function SetupChecklist({ accounts, accountsLoading, accessToken }) {
+/** Resolve to {ok,v} so a REJECTED check is distinguishable from a "no" answer. */
+function settle(promise) {
+  return promise.then((v) => ({ ok: true, v }), () => ({ ok: false, v: null }));
+}
+
+export default function SetupChecklist({ accounts, accountsLoading, accountsError, accessToken }) {
   // null = not fetched yet. Held as one object so the state only ever lands from
-  // the async callback — no synchronous setState inside the effect.
+  // the async callback — no synchronous setState inside the effect. Tagged with
+  // the account id it describes (`forId`) so a result computed for a PREVIOUS
+  // target is never rendered as if it applied to the current one.
   const [result, setResult] = useState(null);
   const [doneDismissed, setDoneDismissed] = useState(() => {
     try {
@@ -34,37 +41,45 @@ export default function SetupChecklist({ accounts, accountsLoading, accessToken 
   const targetId = target?.id ?? null;
 
   useEffect(() => {
-    if (!accessToken) return undefined;
+    // Wait for the account list. Running early would check with targetId=null,
+    // land an all-false result, and flash "you haven't set anything up" at a
+    // user who is fully configured.
+    if (!accessToken || accountsLoading) return undefined;
     const ctrl = new AbortController();
 
     (async () => {
       const [conn, rules, notif] = await Promise.all([
         // Account-scoped checks need an account; notifications are per-user.
         targetId
-          ? getExchangeCredentialsStatus({ accessToken, accountId: targetId, signal: ctrl.signal }).catch(() => null)
-          : Promise.resolve(null),
+          ? settle(getExchangeCredentialsStatus({ accessToken, accountId: targetId, signal: ctrl.signal }))
+          : Promise.resolve({ ok: true, v: null }),
         targetId
-          ? fetchRulesBundle({ accessToken, tradingAccountId: targetId, signal: ctrl.signal }).catch(() => null)
-          : Promise.resolve(null),
-        fetchNotificationSettings({ accessToken, signal: ctrl.signal }).catch(() => null),
+          ? settle(fetchRulesBundle({ accessToken, tradingAccountId: targetId, signal: ctrl.signal }))
+          : Promise.resolve({ ok: true, v: null }),
+        settle(fetchNotificationSettings({ accessToken, signal: ctrl.signal })),
       ]);
       if (ctrl.signal.aborted) return;
-      const instances = rules?.instances ?? rules?.rules ?? [];
+      const instances = rules.v?.instances ?? rules.v?.rules ?? [];
       setResult({
-        keyConnected: conn?.status === 'active',
+        forId: targetId,
+        // A check we couldn't complete is UNKNOWN, not "not done" — see below.
+        failed: !conn.ok || !rules.ok || !notif.ok,
+        keyConnected: conn.v?.status === 'active',
         rulesSet: Array.isArray(instances) && instances.some((r) => r?.enabled !== false),
-        notifSet: Boolean(notif?.emailNotificationsEnabled || notif?.telegramNotificationsEnabled),
+        notifSet: Boolean(notif.v?.emailNotificationsEnabled || notif.v?.telegramNotificationsEnabled),
       });
     })();
 
     return () => ctrl.abort();
-  }, [accessToken, targetId]);
+  }, [accessToken, accountsLoading, targetId]);
 
-  const keyConnected = result?.keyConnected ?? false;
-  const rulesSet = result?.rulesSet ?? false;
-  const notifSet = result?.notifSet ?? false;
-  // Only "checking" while the fetch is genuinely in flight.
-  const checking = Boolean(accessToken) && result === null;
+  // Ignore a result that describes a different account than the one in view.
+  const fresh = result && result.forId === targetId ? result : null;
+  const keyConnected = fresh?.keyConnected ?? false;
+  const rulesSet = fresh?.rulesSet ?? false;
+  const notifSet = fresh?.notifSet ?? false;
+  // Only "checking" while the fetch for THIS target is genuinely in flight.
+  const checking = Boolean(accessToken) && fresh === null;
 
   const steps = [
     {
@@ -101,6 +116,14 @@ export default function SetupChecklist({ accounts, accountsLoading, accessToken 
   const allDone = doneCount === steps.length;
 
   if (accountsLoading || checking) return null;
+
+  // Never present an unverified step as "not done". If the account list or any
+  // check failed to load (cold Lambda, dropped network, token refresh), stay
+  // silent — telling a fully-configured user to re-connect their exchange and
+  // re-enter their rules reads as "my data is gone", which is both alarming and
+  // false. Their setup lives in Postgres; a failed read is our problem, not a
+  // reason to send them through onboarding again.
+  if (accountsError || fresh?.failed) return null;
 
   // Everything done → one-time "you're fully protected" confirmation, dismissible.
   if (allDone) {
