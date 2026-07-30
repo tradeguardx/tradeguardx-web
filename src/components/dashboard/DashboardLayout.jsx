@@ -19,7 +19,7 @@ const ROUTE_LABELS = {
   '/dashboard/journal': 'AI Journal',
   '/dashboard/trades': 'All Trades',
   '/dashboard/install-extension': 'Install Extension',
-  '/dashboard/pairing': 'Extension Pairing',
+  '/dashboard/pairing': 'Pairing',
   '/dashboard/account/trading': 'Trading Accounts',
   '/dashboard/account/billing': 'Billing',
   '/dashboard/account': 'Account',

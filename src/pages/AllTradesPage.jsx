@@ -455,11 +455,10 @@ export default function AllTradesPage() {
         trades.length === 0 ? (
           <EmptyState
             title="No trades synced yet"
-            description="Pair the extension with your broker, trade, and records appear here automatically."
+            description="Trades sync automatically once you're connected and trading — nothing else to set up."
             action={(
               <div className="flex flex-wrap gap-2 justify-center">
                 <Link to="/dashboard/account/trading" className="inline-flex items-center px-4 py-2 rounded-xl bg-accent text-surface-950 font-semibold text-sm">Trading accounts</Link>
-                <Link to="/dashboard/install-extension" className="inline-flex items-center px-4 py-2 rounded-xl border text-sm font-semibold" style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}>Extension setup</Link>
               </div>
             )}
           />

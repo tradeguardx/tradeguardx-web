@@ -1007,14 +1007,10 @@ export default function TradeJournal() {
       {!hasData && !error ? (
         <EmptyState
           title="No trades in this window"
-          description="Pair the TradeGuardX extension with your broker and start trading — records appear here automatically."
+          description="Trades sync automatically once you're connected and trading — nothing else to set up."
           action={(
             <div className="flex flex-wrap gap-2 justify-center">
-              <Link to="/dashboard/install-extension" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-surface-950 font-semibold text-sm">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                Install Extension
-              </Link>
-              <Link to="/dashboard/account/trading" className="inline-flex items-center px-4 py-2 rounded-xl border text-sm font-semibold" style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}>Trading Accounts</Link>
+              <Link to="/dashboard/account/trading" className="inline-flex items-center px-4 py-2 rounded-xl bg-accent text-surface-950 font-semibold text-sm">Trading Accounts</Link>
             </div>
           )}
         />
