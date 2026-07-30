@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSEO } from '../hooks/useSEO';
+import { useAuth } from '../context/AuthContext';
 import StoryAIJournal from '../components/landing/story/StoryAIJournal';
 import RecentJoinsToast from '../components/landing/RecentJoinsToast';
 import DemoVideoSection from '../components/landing/DemoVideoSection';
@@ -81,6 +82,7 @@ export default function CryptoHomePage() {
   const bRef = useRef(null);
   const bTailRef = useRef(null);
   const [heroDemoNode, setHeroDemoNode] = useState(null);
+  const { user } = useAuth();
 
   useSEO({
     title: "India's First Crypto Trading Kill Switch",
@@ -110,6 +112,28 @@ export default function CryptoHomePage() {
     mo.observe(root, { childList: true, subtree: true });
     return () => mo.disconnect();
   }, []);
+
+  // Both primary signup CTAs (hero "Create free account", pricing "Start
+  // free") are baked into the raw HTML pointing at /signup — correct for the
+  // prerendered/anonymous default, which is who Google and most visitors are.
+  // Swap each for a returning, already-logged-in visitor so they're never told
+  // to create an account they already have — mirrors what the navbar's own
+  // Dashboard/Sign-in swap already does one level up. Only ever upgrades
+  // anonymous → logged-in copy, never the reverse, so a slow auth check can't
+  // flash "Dashboard" at a visitor who isn't signed in.
+  useEffect(() => {
+    if (!user) return;
+    const swap = (cta) => {
+      if (!cta || cta.dataset.authSwapped) return;
+      cta.dataset.authSwapped = '1';
+      cta.setAttribute('href', '/dashboard');
+      const svg = cta.querySelector('svg');
+      cta.textContent = 'Dashboard ';
+      if (svg) cta.appendChild(svg);
+    };
+    swap(aRef.current?.querySelector('.hero-ctas a.btn-primary'));
+    swap(bTailRef.current?.querySelector('a.btn-primary'));
+  }, [user]);
 
   useEffect(() => {
     const roots = [aRef.current, a2Ref.current, a3Ref.current, bRef.current, bTailRef.current].filter(Boolean);
