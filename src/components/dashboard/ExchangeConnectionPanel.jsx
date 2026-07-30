@@ -9,6 +9,7 @@ import { DELTA_EGRESS_IP, deltaApiKeysUrl } from '../../api/config';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import DeltaAppGuide from './DeltaAppGuide';
 import SecretInput from '../common/SecretInput';
+import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPanel } from './deltaConnectShared';
 
 function formatDateTime(iso) {
   if (!iso) return '—';
@@ -43,6 +44,12 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   const [ipCopied, setIpCopied] = useState(false);
   const isMobile = useIsMobile();
   const [guideOpen, setGuideOpen] = useState(false);
+  const [nameCopied, setNameCopied] = useState(false);
+  // null while no attempt has been made this session; then { ok:true, summary }
+  // | { ok:false, message }. Non-null swaps the form for ConnectResultPanel —
+  // same pattern as first-time account creation, so reconnecting after a
+  // disconnect isn't a stripped-down version of that flow.
+  const [connectOutcome, setConnectOutcome] = useState(null);
 
   const onCopyEgressIp = async () => {
     if (!DELTA_EGRESS_IP) return;
@@ -91,6 +98,9 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   const isConnected = connection?.status === 'active';
   const canSubmit = apiKey.trim().length > 0 && apiSecret.trim().length > 0 && !submitting;
 
+  // Doubles as the retry handler on the result screen — there's no separate
+  // "create account" step here like the first-connect flow, so retrying is
+  // just calling this again with whatever's currently in the fields.
   const onConnect = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
@@ -103,15 +113,26 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
         apiSecret: apiSecret.trim(),
       });
       setConnection(result);
-      setApiKey('');
-      setApiSecret('');
-      setShowForm(false);
-      toast.success('Connected', 'Delta read-only access verified.');
+      setConnectOutcome({ ok: true, summary: result });
     } catch (e) {
-      toast.error('Could not connect', e?.message || 'Try again.');
+      setConnectOutcome({ ok: false, message: e?.message || 'Delta rejected the connection. Try again.' });
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Called from the result screen's "Continue" — clears the form only once
+  // the user has actually seen the outcome, not immediately on success.
+  const finishConnect = () => {
+    setApiKey('');
+    setApiSecret('');
+    setShowForm(false);
+    setConnectOutcome(null);
+  };
+
+  const openForm = () => {
+    setConnectOutcome(null);
+    setShowForm(true);
   };
 
   const onDisconnect = async () => {
@@ -120,6 +141,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
     try {
       await disconnectExchangeCredentials({ accessToken, accountId: account.id });
       setConnection(null);
+      setConnectOutcome(null);
       toast.success('Disconnected', 'Delta connection removed.');
     } catch (e) {
       toast.error('Could not disconnect', e?.message || 'Try again.');
@@ -203,7 +225,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
           <div className="flex flex-wrap gap-2 pt-1">
             <button
               type="button"
-              onClick={() => setShowForm(true)}
+              onClick={openForm}
               disabled={locked}
               title={locked ? 'Locked during an active cooldown' : undefined}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold border disabled:opacity-40 disabled:cursor-not-allowed"
@@ -230,7 +252,20 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
         </div>
       )}
 
-      {!loading && (!isConnected || showForm) && (
+      {!loading && (!isConnected || showForm) && connectOutcome && (
+        <ConnectResultPanel
+          outcome={connectOutcome}
+          retrying={submitting}
+          onRetry={onConnect}
+          onContinue={finishConnect}
+          apiKey={apiKey}
+          apiSecret={apiSecret}
+          onApiKeyChange={(e) => setApiKey(e.target.value)}
+          onApiSecretChange={(e) => setApiSecret(e.target.value)}
+        />
+      )}
+
+      {!loading && (!isConnected || showForm) && !connectOutcome && (
         <div className="space-y-3">
           <div
             className="rounded-xl border px-3 py-3"
@@ -239,13 +274,11 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               backgroundColor: 'rgba(0,212,170,0.04)',
             }}
           >
-            {isConnected ? (
-              <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                Replace the existing key with a new one.
-              </p>
-            ) : isMobile ? (
+            {isMobile ? (
               // Mobile: users are in the Delta app, not a browser tab. Guide them
               // through the app's Algo Hub → APIs flow with the screenshot walkthrough.
+              // Same treatment whether this is a first connect or a reconnect after
+              // disconnect — no stripped-down version for the second case.
               <div>
                 <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
                   Create a <strong>Trading</strong> key in the <strong>Delta app</strong> (Algo Hub → APIs).
@@ -266,54 +299,96 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                 </button>
               </div>
             ) : (
-              <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                Generate a <strong>Trading</strong> key from{' '}
-                <a href={apiKeysLink} target="_blank" rel="noreferrer" style={{ color: 'var(--accent, #00d4aa)' }} className="underline">
-                  Delta → API Keys
-                </a>
-                {' '}— enable <strong>Trading</strong> but <strong>never Withdrawal</strong>, and whitelist the IP below.
-                The kill-switch and auto-cooldown need Trade scope to close positions and lock the account.
-                A read-only key only sends alerts — it cannot stop trading.
-              </p>
+              <div className="space-y-3">
+                <p className="text-[12px] font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
+                  {isConnected ? 'Create a new key on Delta (takes ~2 min):' : 'Create your key on Delta (takes ~2 min):'}
+                </p>
+
+                <StepRow n={1}>
+                  <a
+                    href={apiKeysLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold text-surface-950"
+                    style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
+                  >
+                    Open Delta &amp; create key
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </StepRow>
+
+                <StepRow n={2} label="Copy these into Delta's form">
+                  <div className="space-y-2">
+                    <div
+                      className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
+                      style={{ backgroundColor: 'var(--dash-bg-input)' }}
+                    >
+                      <span className="text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>API Key Name</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(SUGGESTED_KEY_NAME);
+                          setNameCopied(true);
+                          setTimeout(() => setNameCopied(false), 1500);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono font-bold text-[12px]"
+                        style={{ backgroundColor: 'rgba(0,212,170,0.14)', borderColor: 'rgba(0,212,170,0.45)', color: 'var(--accent, #00d4aa)' }}
+                        title="Copy suggested name"
+                      >
+                        {SUGGESTED_KEY_NAME} {nameCopied ? '✓' : 'Copy'}
+                      </button>
+                    </div>
+                    <div
+                      className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
+                      style={{ backgroundColor: 'var(--dash-bg-input)' }}
+                    >
+                      <span className="text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>Whitelisted IP</span>
+                      {DELTA_EGRESS_IP ? (
+                        <button
+                          type="button"
+                          onClick={onCopyEgressIp}
+                          className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono font-bold text-[12px]"
+                          style={{ backgroundColor: 'rgba(0,212,170,0.14)', borderColor: 'rgba(0,212,170,0.45)', color: 'var(--accent, #00d4aa)' }}
+                          title={ipCopied ? 'Copied' : 'Copy to clipboard'}
+                        >
+                          {DELTA_EGRESS_IP} {ipCopied ? '✓' : 'Copy'}
+                        </button>
+                      ) : (
+                        <span className="text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>not available</span>
+                      )}
+                    </div>
+                  </div>
+                </StepRow>
+
+                <StepRow n={3} label="Tick this permission">
+                  <div
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5"
+                    style={{ backgroundColor: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.3)' }}
+                  >
+                    <svg className="h-4 w-4 shrink-0" fill="none" stroke="var(--accent, #00d4aa)" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden>
+                      <rect x="3" y="3" width="18" height="18" rx="4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12l3 3 5-6" />
+                    </svg>
+                    <span className="text-[12.5px]" style={{ color: 'var(--dash-text-primary)' }}>
+                      <strong>Trading</strong> — without this the kill switch can only alert, never act.
+                    </span>
+                  </div>
+                </StepRow>
+
+                <StepRow n={4} label="Create the key, then paste it below">
+                  <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                    Click <strong>Create API key</strong> — selecting and pasting both values together into the field below works too.
+                  </p>
+                </StepRow>
+              </div>
             )}
+            <p className="mt-3 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
+              Secret shown once — copy it now. Stored encrypted (KMS); Delta never offers a withdrawal permission on API keys.
+            </p>
           </div>
 
-          {DELTA_EGRESS_IP && (
-            <div
-              className="rounded-xl border px-3 py-3"
-              style={{
-                borderColor: 'var(--dash-border)',
-                backgroundColor: 'var(--dash-bg-input)',
-              }}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--dash-text-primary)' }}>
-                    Whitelist this IP on your Delta key
-                  </p>
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                    Paste it under <strong>Allowed IPs</strong> when creating the key.
-                    Required for Trading-scope features (kill-switch, auto-cooldown).
-                    Read-only keys can leave it blank.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={onCopyEgressIp}
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-mono"
-                  style={{
-                    borderColor: 'var(--dash-border)',
-                    backgroundColor: 'var(--dash-bg-card)',
-                    color: 'var(--dash-text-primary)',
-                  }}
-                  title={ipCopied ? 'Copied' : 'Copy to clipboard'}
-                >
-                  <span>{DELTA_EGRESS_IP}</span>
-                  <span style={{ color: 'var(--accent, #00d4aa)' }}>{ipCopied ? '✓' : 'Copy'}</span>
-                </button>
-              </div>
-            </div>
-          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>API Key</span>
@@ -327,6 +402,15 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                 spellCheck={false}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
+                onPaste={(e) => {
+                  const text = e.clipboardData?.getData('text') ?? '';
+                  const split = trySplitPastedCredentials(text);
+                  if (split) {
+                    e.preventDefault();
+                    setApiKey(split.key);
+                    setApiSecret(split.secret);
+                  }
+                }}
                 placeholder="Paste API Key"
                 className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
                 style={{
