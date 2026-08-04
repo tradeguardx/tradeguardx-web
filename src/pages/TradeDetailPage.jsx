@@ -26,9 +26,9 @@ import { shortId, sourceLabel } from '../lib/labels';
 function fmt$(v, currency = 'USD') {
   const n = Number(v);
   if (!Number.isFinite(n)) return '—';
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency, signDisplay: 'exceptZero', maximumFractionDigits: 4 }).format(n);
+  return new Intl.NumberFormat(undefined, { style: 'currency', currency, signDisplay: 'exceptZero', maximumFractionDigits: 2 }).format(n);
 }
-function fmtNum(v, dp = 4) {
+function fmtNum(v, dp = 2) {
   const n = Number(v);
   return Number.isFinite(n) ? n.toFixed(dp) : '—';
 }
@@ -1350,8 +1350,8 @@ export default function TradeDetailPage() {
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {[
-              { label: 'Entry', value: fmtNum(trade.entryPrice, 4), color: '#22c55e', rgb: '34,197,94' },
-              { label: 'Exit', value: fmtNum(trade.exitPrice, 4), color: '#ef4444', rgb: '239,68,68' },
+              { label: 'Entry', value: fmtNum(trade.entryPrice, 2), color: '#22c55e', rgb: '34,197,94' },
+              { label: 'Exit', value: fmtNum(trade.exitPrice, 2), color: '#ef4444', rgb: '239,68,68' },
               { label: 'Hold Time', value: fmtDuration(holdSeconds), color: '#f59e0b', rgb: '245,158,11' },
               { label: 'Quantity', value: trade.quantity || '—', color: '#8b5cf6', rgb: '139,92,246' },
               { label: 'Opened', value: trade.openedAt ? new Date(trade.openedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—', color: '#60a5fa', rgb: '96,165,250' },
