@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { TradingAccountProvider } from '../../context/TradingAccountContext';
@@ -15,9 +15,10 @@ import VerifyEmailBanner from './VerifyEmailBanner';
 
 const ROUTE_LABELS = {
   '/dashboard/overview': 'Overview',
+  '/dashboard/live': 'Live guard',
   '/dashboard/rules': 'Rules Terminal',
-  '/dashboard/journal': 'AI Journal',
-  '/dashboard/trades': 'All Trades',
+  '/dashboard/journal': 'Journal',
+  '/dashboard/trades': 'All trades',
   '/dashboard/install-extension': 'Install Extension',
   '/dashboard/pairing': 'Pairing',
   '/dashboard/account/trading': 'Trading Accounts',
@@ -32,24 +33,24 @@ function usePageLabel() {
 }
 
 const mobileNavItems = [
-  { to: '/dashboard/overview', end: true, label: 'Overview', icon: (
+  { to: '/dashboard/overview', end: true, label: 'Overview', groupLabel: 'Protection', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z" /></svg>
   )},
-  { to: '/dashboard/live', end: false, label: 'Live', icon: (
+  { to: '/dashboard/live', end: false, label: 'Live guard', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12h4l3 8 4-16 3 8h4" /></svg>
   )},
   { to: '/dashboard/rules', end: false, label: 'Rules', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
   )},
-  { to: '/dashboard/journal', end: false, label: 'Journal', icon: (
+  { to: '/dashboard/journal', end: false, label: 'Journal', groupLabel: 'Review', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3m4-1v6a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h3.5a1.5 1.5 0 011.5 1.5V11a1 1 0 001 1h2z" /></svg>
   )},
-  { to: '/dashboard/trades', end: false, label: 'Trades', icon: (
+  { to: '/dashboard/trades', end: false, label: 'All trades', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-6a2 2 0 012-2h6M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h6m-6 6h6m0 0v6m0-6h6" /></svg>
   )},
   // Pairing (browser extension) is the prop-firm path — hidden for the crypto
   // launch, which enforces server-side via the exchange API key. See DashboardSidebar.
-  { to: '/dashboard/account/trading', end: false, label: 'Accounts', icon: (
+  { to: '/dashboard/account/trading', end: false, label: 'Accounts', groupLabel: 'Setup', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
   )},
   { to: '/dashboard/account/billing', end: false, label: 'Billing', icon: (
@@ -58,7 +59,7 @@ const mobileNavItems = [
   { to: '/dashboard/account', end: true, label: 'Account', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
   )},
-  { to: '/help', end: false, label: 'Guide', newTab: true, groupLabel: 'Resources', icon: (
+  { to: '/help', end: false, label: 'Guide', newTab: true, icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
   )},
 ];
@@ -414,6 +415,23 @@ function DashboardInner() {
               </div>
 
               <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
+                {/* Shortcut to rule config from anywhere in the dashboard. Hidden
+                    on the rules page itself, where it would be a no-op. */}
+                {!pathname.startsWith('/dashboard/rules') && (
+                  <Link
+                    to="/dashboard/rules"
+                    className="hidden items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors hover:bg-[var(--dash-bg-card-hover)] lg:inline-flex"
+                    style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h10M18 18h2" />
+                      <circle cx="16" cy="6" r="2" strokeWidth={1.8} />
+                      <circle cx="8" cy="12" r="2" strokeWidth={1.8} />
+                      <circle cx="16" cy="18" r="2" strokeWidth={1.8} />
+                    </svg>
+                    Edit rules
+                  </Link>
+                )}
                 <HeaderStatusPill />
                 <span className="hidden lg:inline-flex">
                   <ThemeToggle />

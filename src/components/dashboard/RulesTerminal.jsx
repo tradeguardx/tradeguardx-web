@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import DashboardPageBanner, { DashboardSectionHeading } from './DashboardPageBanner';
-import { staggerContainer, staggerItem } from './dashboardMotion';
 import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { useDashboardTheme } from '../../context/DashboardThemeContext';
@@ -12,25 +11,17 @@ import { fetchRulesBundle, saveRuleInstance } from '../../api/rulesApi';
 import CooldownBanner from './CooldownBanner';
 import { useCooldown } from '../../hooks/useCooldown';
 
-/**
- * Plan slugs are storage keys, not copy. "pro_plus" leaked straight into the
- * stat card, where it also overflowed the box.
- */
-function planDisplayName(slug) {
-  if (!slug) return '—';
-  const key = String(slug).toLowerCase().replace(/[\s-]/g, '_');
-  return (
-    { free: 'Free', pro: 'Pro', pro_plus: 'Pro+', proplus: 'Pro+' }[key]
-    ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-  );
-}
 
-
+// leftBorder is written out literally (not derived from iconColor at runtime)
+// because Tailwind's build-time scanner only generates CSS for class names it
+// can find as complete text in source — a class assembled via string
+// concatenation/replace in the browser never gets generated at all.
 const RULE_VISUALS = {
   _default: {
     gradient: 'from-slate-500 to-slate-400',
     bgGlow: 'bg-slate-500/[0.06]',
     iconColor: 'text-slate-400',
+    leftBorder: 'border-l-slate-400',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -41,6 +32,7 @@ const RULE_VISUALS = {
     gradient: 'from-accent to-emerald-500',
     bgGlow: 'bg-accent/[0.07]',
     iconColor: 'text-accent',
+    leftBorder: 'border-l-accent',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -51,6 +43,7 @@ const RULE_VISUALS = {
     gradient: 'from-rose-500 to-orange-400',
     bgGlow: 'bg-rose-500/[0.06]',
     iconColor: 'text-rose-400',
+    leftBorder: 'border-l-rose-400',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -61,6 +54,7 @@ const RULE_VISUALS = {
     gradient: 'from-blue-500 to-cyan-400',
     bgGlow: 'bg-blue-500/[0.06]',
     iconColor: 'text-blue-400',
+    leftBorder: 'border-l-blue-400',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -71,6 +65,7 @@ const RULE_VISUALS = {
     gradient: 'from-violet-500 to-purple-400',
     bgGlow: 'bg-violet-500/[0.06]',
     iconColor: 'text-violet-400',
+    leftBorder: 'border-l-violet-400',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -81,6 +76,7 @@ const RULE_VISUALS = {
     gradient: 'from-amber-400 to-yellow-300',
     bgGlow: 'bg-amber-500/[0.06]',
     iconColor: 'text-amber-400',
+    leftBorder: 'border-l-amber-400',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -91,6 +87,7 @@ const RULE_VISUALS = {
     gradient: 'from-teal-400 to-emerald-400',
     bgGlow: 'bg-teal-500/[0.06]',
     iconColor: 'text-teal-400',
+    leftBorder: 'border-l-teal-400',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -101,6 +98,7 @@ const RULE_VISUALS = {
     gradient: 'from-pink-500 to-rose-400',
     bgGlow: 'bg-pink-500/[0.06]',
     iconColor: 'text-pink-400',
+    leftBorder: 'border-l-pink-400',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -111,6 +109,7 @@ const RULE_VISUALS = {
     gradient: 'from-orange-500 to-amber-400',
     bgGlow: 'bg-orange-500/[0.06]',
     iconColor: 'text-orange-400',
+    leftBorder: 'border-l-orange-400',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -121,6 +120,7 @@ const RULE_VISUALS = {
     gradient: 'from-cyan-500 to-sky-400',
     bgGlow: 'bg-cyan-500/[0.06]',
     iconColor: 'text-cyan-400',
+    leftBorder: 'border-l-cyan-400',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -131,6 +131,7 @@ const RULE_VISUALS = {
     gradient: 'from-indigo-500 to-violet-400',
     bgGlow: 'bg-indigo-500/[0.06]',
     iconColor: 'text-indigo-300',
+    leftBorder: 'border-l-indigo-300',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4v16" />
@@ -138,6 +139,15 @@ const RULE_VISUALS = {
     ),
   },
 };
+
+/** Uniform shield glyph used on every rule card — color comes from the rule's own accent (RULE_VISUALS), not a per-rule icon shape. */
+function ShieldIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  );
+}
 
 function buildFields(template, instance) {
   const raw = Array.isArray(template.definition?.fields) ? template.definition.fields : [];
@@ -237,27 +247,83 @@ const RULE_DOCS = {
   },
 };
 
-function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked = false }) {
+function ordinal(n) {
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return `${n}th`;
+  switch (n % 10) {
+    case 1: return `${n}st`;
+    case 2: return `${n}nd`;
+    case 3: return `${n}rd`;
+    default: return `${n}th`;
+  }
+}
+
+/**
+ * One-line "what it's actually set to" summary for the collapsed card, built
+ * entirely from field values already loaded (no new data) — replaces the
+ * generic template description there. Action phrases ("flattens and locks",
+ * "rejects oversized orders") describe real, existing rule behavior (matches
+ * RULE_DOCS' own "trigger" text above), not a new claim — only the numbers
+ * are dynamic. Deliberately does NOT invent behavior a rule doesn't have —
+ * e.g. stop-loss-alert only ever alerts, it never auto-closes.
+ */
+const SUMMARY_FORMATTERS = {
+  'daily-loss': (v) =>
+    v.mode === 'amount'
+      ? `$${v.dailyLossAmount} · warns at $${v.warningAmount} · flattens and locks`
+      : `${v.dailyLossPct}% · warns at ${v.warningPct}% · flattens and locks`,
+  'daily-profit-target': (v) =>
+    v.mode === 'amount'
+      ? `$${v.dailyTargetAmount} target · locks in the win`
+      : `${v.dailyTargetPct}% target · locks in the win`,
+  'max-total-loss': (v) => `${v.maxDrawdownPct}% max drawdown`,
+  'risk-per-trade': (v) => `${v.maxRiskPct}% of equity · rejects oversized orders`,
+  'max-trades-day': (v) => {
+    const n = Number(v.maxTrades);
+    return `${v.maxTrades} per session${Number.isFinite(n) ? ` · rejects the ${ordinal(n + 1)} order` : ''}`;
+  },
+  'close-after-losses': (v) =>
+    `${v.consecutiveLosses} in a row → ${v.cooldownHours}h lock · ${v.hardLossCount} in a row → ${v.hardCooldownHours}h`,
+  'stop-loss-alert': (v) => `alerts after ${v.alertDelaySeconds}s unprotected`,
+  hedging: (v) => (v.enabled ? 'blocks opposite-direction trades' : 'off'),
+  stacking: (v) => `max ${v.maxPositions} open positions`,
+  'minimum-hold': (v) => `min ${v.minHoldMinutes} min hold`,
+  'htf-minimum': (v) => `min ${v.minChartMinutes} min chart interval`,
+};
+
+/** Falls back to the template description if a formatter is missing or a value isn't loaded yet. */
+function ruleSummaryLine(templateSlug, values, fallback) {
+  const fmt = SUMMARY_FORMATTERS[templateSlug];
+  if (!fmt) return fallback;
+  try {
+    const line = fmt(values);
+    return line && !/undefined|NaN/.test(line) ? line : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked = false, expanded, onToggleExpand }) {
   const toast = useToast();
   const { isDark } = useDashboardTheme();
   const hasMode = rule.fields.some((f) => f.key === 'mode');
   const [values, setValues] = useState(() => {
     const base = rule.fields.reduce((acc, f) => ({ ...acc, [f.key]: f.value }), {});
     if (hasMode) {
-      // Prop accounts are pinned to percent; retail defaults to a $ amount for new rules.
-      if (!isRetail) base.mode = 'percent';
-      else if (!rule.hasSavedInstance) base.mode = 'amount';
+      // Mode is pinned, never user-selectable: retail states limits in dollars,
+      // prop firms in percent of account size (how their own rules are written).
+      // The %/$ selector this used to render was the only way to switch, so
+      // removing it means the pin below is now the single source of truth.
+      base.mode = isRetail ? 'amount' : 'percent';
     }
     return base;
   });
-  /** Fields shown for the current mode; the mode selector itself is retail-only. */
+  /** Fields for the pinned mode. The `mode` field itself is never rendered. */
   const visibleFields = rule.fields.filter((f) => {
-    if (f.key === 'mode' && !isRetail) return false;
+    if (f.key === 'mode') return false;
     if (f.showWhen && values[f.showWhen.key] !== f.showWhen.equals) return false;
     return true;
   });
-  /** Collapse new rules by default so template defaults are not mistaken for active config. */
-  const [expanded, setExpanded] = useState(() => Boolean(rule.hasSavedInstance && !rule.locked));
   const [saving, setSaving] = useState(false);
   const [showDocs, setShowDocs] = useState(false);
   const docs = RULE_DOCS[rule.id];
@@ -317,9 +383,16 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
       className="group relative"
     >
       <div
-        className="relative overflow-hidden rounded-2xl border transition-all duration-300 hover:border-accent/20 hover:shadow-lg hover:shadow-accent/5"
+        className={`relative overflow-hidden rounded-2xl border transition-all duration-300 hover:border-accent/20 hover:shadow-lg hover:shadow-accent/5 ${
+          rule.locked ? '' : `border-l-[3px] ${rule.leftBorder}`
+        }`}
         style={{
-          borderColor: rule.locked ? 'var(--dash-border)' : 'var(--dash-border-hover)',
+          // Split out of the `borderColor` shorthand so it doesn't win (inline
+          // always beats classes) over the Tailwind border-l-* color above.
+          borderTopColor: rule.locked ? 'var(--dash-border)' : 'var(--dash-border-hover)',
+          borderRightColor: rule.locked ? 'var(--dash-border)' : 'var(--dash-border-hover)',
+          borderBottomColor: rule.locked ? 'var(--dash-border)' : 'var(--dash-border-hover)',
+          borderLeftColor: rule.locked ? 'var(--dash-border)' : undefined,
           backgroundColor: rule.locked ? 'var(--dash-bg-card)' : 'var(--dash-bg-raised)',
           boxShadow: 'var(--dash-shadow-card)',
         }}
@@ -330,33 +403,32 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
 
         <button
           type="button"
-          onClick={() => setExpanded((prev) => !prev)}
-          className="w-full px-5 py-4 flex items-center gap-4 text-left"
+          onClick={onToggleExpand}
+          className="w-full px-4 py-3 flex items-center gap-3 text-left"
         >
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 transition-transform group-hover:scale-105">
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 transition-transform group-hover:scale-105">
             {!rule.locked && (
-              <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${rule.gradient} opacity-20`} />
+              <div className={`absolute inset-0 rounded-lg bg-gradient-to-br ${rule.gradient} opacity-20`} />
             )}
             {rule.locked && (
-              <div className="absolute inset-0 rounded-xl" style={{ backgroundColor: 'var(--dash-bg-input)' }} />
+              <div className="absolute inset-0 rounded-lg" style={{ backgroundColor: 'var(--dash-bg-input)' }} />
             )}
-            <span className={`relative ${rule.iconColor}`}>{rule.icon}</span>
+            <span className={`relative ${rule.iconColor}`}><ShieldIcon className="w-4 h-4" /></span>
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-display font-semibold text-sm truncate" style={{ color: 'var(--dash-text-primary)' }}>{rule.name}</h3>
               {!rule.locked && rule.hasSavedInstance && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 text-accent"
-                  style={{ backgroundColor: isDark ? 'rgba(0,212,170,0.10)' : 'rgba(0,212,170,0.08)', border: `1px solid rgba(0,212,170,${isDark ? '0.15' : '0.30'})` }}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_4px_rgba(0,212,170,0.6)]" />
-                  Saved
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0 text-accent"
+                  style={{ backgroundColor: isDark ? 'rgba(0,212,170,0.14)' : 'rgba(0,212,170,0.10)', border: `1px solid rgba(0,212,170,${isDark ? '0.2' : '0.30'})` }}>
+                  Armed
                 </span>
               )}
               {!rule.locked && !rule.hasSavedInstance && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 text-amber-400"
-                  style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.10)' : 'rgba(245,158,11,0.08)', border: `1px solid rgba(245,158,11,${isDark ? '0.25' : '0.35'})` }}>
-                  Not saved — defaults only
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0 text-rose-400"
+                  style={{ backgroundColor: isDark ? 'rgba(244,63,94,0.12)' : 'rgba(244,63,94,0.08)', border: `1px solid rgba(244,63,94,${isDark ? '0.25' : '0.35'})` }}>
+                  Suggested
                 </span>
               )}
               {!rule.locked && rule.pendingEffectiveAt && (
@@ -369,7 +441,9 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                 </span>
               )}
             </div>
-            <p className="mt-0.5 line-clamp-2 text-xs" style={{ color: 'var(--dash-text-muted)' }}>{rule.description}</p>
+            <p className="mt-0.5 line-clamp-2 font-mono text-xs" style={{ color: 'var(--dash-text-muted)' }}>
+              {rule.locked ? rule.description : ruleSummaryLine(rule.id, values, rule.description)}
+            </p>
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -475,15 +549,22 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
               </div>
             )}
 
-            <div className="space-y-4">
+            {/* Fixed-width fields packed left, not a stretch-to-fit grid — on a wide
+                card, full-width inputs for a 3-digit number read as broken. */}
+            <div className="flex flex-wrap gap-4">
               {visibleFields.map((field) => (
-                <div key={field.key} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                  <label className="text-sm font-semibold sm:font-medium" style={{ color: 'var(--dash-text-secondary)' }}>{field.label}</label>
+                <div key={field.key} className="flex w-full flex-col gap-2 sm:w-[200px]">
+                  <label
+                    className="text-[10px] font-bold uppercase tracking-wider"
+                    style={{ color: 'var(--dash-text-faint)' }}
+                  >
+                    {field.label}
+                  </label>
 
                   {rule.locked ? (
                     <span className="text-sm italic" style={{ color: 'var(--dash-text-faint)' }}>Upgrade to configure</span>
                   ) : field.type === 'select' ? (
-                    <div className="flex w-full rounded-xl p-1 sm:inline-flex sm:w-auto" style={{ backgroundColor: 'var(--dash-bg-input)', border: '1px solid var(--dash-border)' }}>
+                    <div className="flex w-full rounded-xl p-1" style={{ backgroundColor: 'var(--dash-bg-input)', border: '1px solid var(--dash-border)' }}>
                       {(field.options || []).map((opt) => {
                         const active = values[field.key] === opt.value;
                         return (
@@ -491,7 +572,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                             key={opt.value}
                             type="button"
                             onClick={() => setValues((v) => ({ ...v, [field.key]: opt.value }))}
-                            className="flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-colors sm:flex-none"
+                            className="flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-colors"
                             style={{
                               backgroundColor: active ? 'var(--accent)' : 'transparent',
                               color: active ? 'var(--surface-950, #0d0f14)' : 'var(--dash-text-muted)',
@@ -521,7 +602,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                       <span className="sr-only">{values[field.key] ? 'Enabled' : 'Disabled'}</span>
                     </button>
                   ) : (
-                    <div className="relative w-full sm:w-auto">
+                    <div className="relative w-full">
                       {field.prefix && (
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{ color: 'var(--dash-text-muted)' }}>
                           {field.prefix}
@@ -532,7 +613,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                         value={values[field.key]}
                         onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))}
                         disabled={accountLocked}
-                        className={`h-11 w-full rounded-xl text-sm font-semibold tabular-nums transition-all focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 disabled:opacity-60 sm:w-36 ${
+                        className={`h-11 w-full rounded-xl font-mono text-sm font-semibold tabular-nums transition-all focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 disabled:opacity-60 ${
                           field.prefix ? 'pl-8 pr-3' : 'px-3.5'
                         } ${field.suffix ? 'pr-11' : ''}`}
                         style={{
@@ -556,16 +637,24 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
             </div>
 
             {!rule.locked && (
-              <div className="mt-5 flex justify-stretch sm:justify-end">
+              // Left-aligned with the fields above, not floated to the far right —
+              // on a wide card that left a large dead gap between the input and
+              // the button that made them read as unrelated.
+              <div className="mt-4 flex items-center gap-3">
                 <button
                   type="button"
                   onClick={handleSave}
                   disabled={saving || accountLocked}
                   title={accountLocked ? 'Locked until the cooldown ends' : undefined}
-                  className="h-11 w-full rounded-xl bg-accent px-6 text-sm font-bold text-surface-950 transition-colors hover:bg-accent-hover disabled:opacity-50 sm:w-auto"
+                  className="h-9 w-full rounded-lg bg-accent px-4 text-[13px] font-semibold text-surface-950 transition-colors hover:bg-accent-hover disabled:opacity-50 sm:w-auto"
                 >
                   {saving ? 'Saving…' : rule.hasSavedInstance ? 'Save changes' : 'Save & enable'}
                 </button>
+                {rule.hasSavedInstance && !saving && (
+                  <span className="hidden text-xs sm:inline" style={{ color: 'var(--dash-text-faint)' }}>
+                    Saved — edit any value to update.
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -590,6 +679,13 @@ export default function RulesTerminal() {
   const [bundleLoading, setBundleLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [reloadNonce, setReloadNonce] = useState(0);
+  // Accordion: at most one rule card open at a time — opening one closes whichever
+  // else was open. Lifted up here (rather than local state per card) because that's
+  // the only way one card's click can affect another's.
+  const [expandedRuleId, setExpandedRuleId] = useState(null);
+  const toggleExpandedRule = useCallback((ruleId) => {
+    setExpandedRuleId((cur) => (cur === ruleId ? null : ruleId));
+  }, []);
 
   const load = useCallback(async () => {
     const token = session?.access_token;
@@ -694,29 +790,6 @@ export default function RulesTerminal() {
         />
       )}
 
-      {!accountsLoading && accounts.length > 0 && selectedAccount && (
-        <div className="mb-6 rounded-2xl border px-4 py-3" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--dash-text-muted)' }}>
-            Active account
-          </p>
-          <p className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
-            Rules apply to the account selected in the header. Switch there to configure another prop or platform.
-          </p>
-          {(selectedAccount.accountSize != null || selectedAccount.accountCurrency) && (
-            <p className="mt-2 text-xs font-medium" style={{ color: 'var(--dash-text-primary)' }}>
-              {selectedAccount.accountSize != null ? Number(selectedAccount.accountSize).toLocaleString() : '—'}
-              {selectedAccount.accountCurrency ? ` ${selectedAccount.accountCurrency}` : ''}
-            </p>
-          )}
-          <Link
-            to="/dashboard/account/trading"
-            className="mt-2 inline-block text-xs font-medium text-accent hover:underline"
-          >
-            Manage accounts &amp; pairing
-          </Link>
-        </div>
-      )}
-
       {session?.access_token && !accountsLoading && accounts.length === 0 && (
         <p className="mb-6 text-sm rounded-xl border px-4 py-3" style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}>
           Add a trading account to save rules per prop or platform.{' '}
@@ -731,11 +804,6 @@ export default function RulesTerminal() {
           <p className="mb-6 text-sm" style={{ color: 'var(--dash-text-muted)' }}>
             {accountsLoading ? 'Loading trading accounts…' : 'Loading rules…'}
           </p>
-          <div className="mb-8 grid grid-cols-3 gap-3 sm:gap-4">
-            {[1, 2, 3].map((k) => (
-              <ShimmerBlock key={k} className="h-[92px] w-full rounded-2xl sm:h-[100px]" />
-            ))}
-          </div>
           <div className="mb-10 space-y-3">
             <ShimmerBlock className="h-5 w-40" />
             {[...Array(4)].map((_, i) => (
@@ -745,44 +813,6 @@ export default function RulesTerminal() {
         </>
       ) : (
         <>
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="show"
-            className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3"
-          >
-            <motion.div
-              variants={staggerItem}
-              whileHover={{ y: -3 }}
-              className="relative overflow-hidden rounded-2xl border p-4 transition-shadow duration-300 hover:shadow-md hover:shadow-accent/10 sm:p-5"
-              style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)', boxShadow: 'var(--dash-shadow-card)' }}
-            >
-              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-accent/[0.08] blur-2xl" />
-              <p className="relative text-2xl font-display font-bold text-accent sm:text-3xl">{availableRules.length}</p>
-              <p className="relative mt-1 text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--dash-text-muted)' }}>On your plan</p>
-            </motion.div>
-            <motion.div
-              variants={staggerItem}
-              whileHover={{ y: -3 }}
-              className="relative overflow-hidden rounded-2xl border p-4 transition-shadow duration-300 hover:shadow-md sm:p-5"
-              style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)', boxShadow: 'var(--dash-shadow-card)' }}
-            >
-              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-violet-500/[0.06] blur-2xl" />
-              <p className="relative text-2xl font-display font-bold sm:text-3xl" style={{ color: 'var(--dash-text-secondary)' }}>{lockedRules.length}</p>
-              <p className="relative mt-1 text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--dash-text-muted)' }}>Upgrade to unlock</p>
-            </motion.div>
-            <motion.div
-              variants={staggerItem}
-              whileHover={{ y: -3 }}
-              className="relative col-span-2 overflow-hidden rounded-2xl border p-4 transition-shadow duration-300 hover:shadow-md sm:p-5 lg:col-span-1"
-              style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)', boxShadow: 'var(--dash-shadow-card)' }}
-            >
-              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-emerald-500/[0.08] blur-2xl" />
-              <p className="relative truncate text-2xl font-display font-bold text-emerald-400 sm:text-3xl">{planDisplayName(bundle?.planSlug)}</p>
-              <p className="relative mt-1 text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--dash-text-muted)' }}>Current plan</p>
-            </motion.div>
-          </motion.div>
-
           <div className="mb-10">
             <DashboardSectionHeading
               icon={(
@@ -813,6 +843,8 @@ export default function RulesTerminal() {
                         tradingAccountId={selectedTradingAccountId}
                         isRetail={bundle?.isRetail}
                         onSaved={load}
+                        expanded={expandedRuleId === rule.id}
+                        onToggleExpand={() => toggleExpandedRule(rule.id)}
                       />
                     ))}
                   </div>
@@ -854,6 +886,8 @@ export default function RulesTerminal() {
                           tradingAccountId={selectedTradingAccountId}
                           isRetail={bundle?.isRetail}
                           onSaved={load}
+                          expanded={expandedRuleId === rule.id}
+                          onToggleExpand={() => toggleExpandedRule(rule.id)}
                         />
                       ))}
                     </div>

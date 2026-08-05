@@ -64,12 +64,16 @@ const icons = {
 };
 
 /** Primary workflow navigation with section group labels. */
+// Grouped by what the user is trying to do, not by feature type: PROTECTION is
+// everything that actively guards the account, REVIEW is looking back at what
+// happened, SETUP is configuration. Guide sits in SETUP rather than its own
+// one-item "Resources" group.
 const NAV_ITEMS = [
-  { to: '/dashboard/overview', end: true, label: 'Overview', iconKey: 'overview', groupLabel: 'Analytics' },
-  { to: '/dashboard/live', end: false, label: 'Live', iconKey: 'live' },
+  { to: '/dashboard/overview', end: true, label: 'Overview', iconKey: 'overview', groupLabel: 'Protection' },
+  { to: '/dashboard/live', end: false, label: 'Live guard', iconKey: 'live' },
   { to: '/dashboard/rules', end: false, label: 'Rules', iconKey: 'rules' },
-  { to: '/dashboard/journal', end: false, label: 'AI Journal', iconKey: 'journal' },
-  { to: '/dashboard/trades', end: false, label: 'All Trades', iconKey: 'trades' },
+  { to: '/dashboard/journal', end: false, label: 'Journal', iconKey: 'journal', groupLabel: 'Review', dividerBefore: true },
+  { to: '/dashboard/trades', end: false, label: 'All trades', iconKey: 'trades' },
   // "Pairing" (browser-extension pairing) is the PROP-FIRM enforcement path. The
   // crypto launch enforces server-side against the user's exchange API key, so a
   // Delta user never pairs anything — sending them to a page that says "add a
@@ -77,7 +81,7 @@ const NAV_ITEMS = [
   // Hidden from nav; the route still resolves for any prop-firm user with a link.
   { to: '/dashboard/account/trading', end: false, label: 'Accounts', iconKey: 'tradingAccounts', groupLabel: 'Setup', dividerBefore: true },
   { to: '/dashboard/account/billing', end: false, label: 'Billing', iconKey: 'billing' },
-  { to: '/help', end: false, label: 'Guide', iconKey: 'guide', groupLabel: 'Resources', dividerBefore: true, newTab: true },
+  { to: '/help', end: false, label: 'Guide', iconKey: 'guide', newTab: true },
 ];
 
 function itemIsActive(pathname, item) {
