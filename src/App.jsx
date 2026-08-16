@@ -33,6 +33,8 @@ import AccountLayout from './pages/AccountLayout';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import CryptoKillSwitchPage from './pages/CryptoKillSwitchPage';
+import ThirtyDaysPage from './pages/ThirtyDaysPage';
+import AnalyserPage from './pages/AnalyserPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import AccountOverviewPage from './pages/AccountOverviewPage';
@@ -93,6 +95,7 @@ function App() {
                   <Route path="security" element={<SecurityPage />} />
                   {/* Head-term landing page: "crypto kill switch", "killswitch app". */}
                   <Route path="crypto-kill-switch" element={<CryptoKillSwitchPage />} />
+                  <Route path="30-days" element={<ThirtyDaysPage />} />
                   <Route path="roadmap" element={<RoadmapPage />} />
                   {/* Catch-all 404 inside Layout so the page keeps nav + footer.
                       Replaces the previous redirect-to-home that produced soft-404s. */}
@@ -107,6 +110,7 @@ function App() {
                   <Route path="rules" element={<RulesTerminal />} />
                   <Route path="journal" element={<TradeJournal />} />
                   <Route path="trades" element={<AllTradesPage />} />
+                  <Route path="analyser" element={<AnalyserPage />} />
                   <Route path="trades/:tradeUid" element={<TradeDetailPage />} />
                   <Route path="account" element={<AccountLayout />}>
                     <Route index element={<AccountOverviewPage />} />

@@ -1023,6 +1023,10 @@ export default function RealReplayChart({ trade, isDark }) {
         textColor: isDark ? '#9ca3af' : '#6b7280',
         fontFamily: "'Inter', -apple-system, sans-serif",
         fontSize: 11,
+        // TradingView's attribution mark, on by default in
+        // lightweight-charts. Officially toggleable; the Apache-2.0
+        // licence is satisfied by the notices kept in node_modules.
+        attributionLogo: false,
       },
       grid: {
         vertLines: { color: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)' },

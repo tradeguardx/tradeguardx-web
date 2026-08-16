@@ -13,12 +13,16 @@ import PhonePrompt from './PhonePrompt';
 import BreachBanner from './BreachBanner';
 import VerifyEmailBanner from './VerifyEmailBanner';
 
+/** Routes that opt out of the reading-width cap (charts want the full viewport). */
+const WIDE_ROUTES = ['/dashboard/analyser'];
+
 const ROUTE_LABELS = {
   '/dashboard/overview': 'Overview',
   '/dashboard/live': 'Live guard',
   '/dashboard/rules': 'Rules Terminal',
   '/dashboard/journal': 'Journal',
   '/dashboard/trades': 'All trades',
+  '/dashboard/analyser': 'AI Chart Analyser',
   '/dashboard/install-extension': 'Install Extension',
   '/dashboard/pairing': 'Pairing',
   '/dashboard/account/trading': 'Trading Accounts',
@@ -470,7 +474,13 @@ function DashboardInner() {
             className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-[min(28vh,240px)] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(0,212,170,0.04),transparent)]"
             aria-hidden
           />
-          <div className="relative z-[2] mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          {/* Most pages read better in a measured column, but chart pages need
+              every pixel — so the cap is per-route rather than global. */}
+          <div
+            className={`relative z-[2] mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8 ${
+              WIDE_ROUTES.some((r) => pathname.startsWith(r)) ? 'max-w-none' : 'max-w-6xl'
+            }`}
+          >
             <VerifyEmailBanner />
             <BreachBanner />
             <TrialBanner />

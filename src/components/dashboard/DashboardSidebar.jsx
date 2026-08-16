@@ -74,6 +74,7 @@ const NAV_ITEMS = [
   { to: '/dashboard/rules', end: false, label: 'Rules', iconKey: 'rules' },
   { to: '/dashboard/journal', end: false, label: 'Journal', iconKey: 'journal', groupLabel: 'Review', dividerBefore: true },
   { to: '/dashboard/trades', end: false, label: 'All trades', iconKey: 'trades' },
+  { to: '/dashboard/analyser', end: false, label: 'AI Analyser', iconKey: 'journal' },
   // "Pairing" (browser-extension pairing) is the PROP-FIRM enforcement path. The
   // crypto launch enforces server-side against the user's exchange API key, so a
   // Delta user never pairs anything — sending them to a page that says "add a

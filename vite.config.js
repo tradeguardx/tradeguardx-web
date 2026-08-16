@@ -28,6 +28,7 @@ const PRERENDER_ROUTES = [
   '/help/troubleshooting',
   '/security',
   '/crypto-kill-switch',
+  '/30-days',
   '/roadmap',
 ];
 
