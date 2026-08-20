@@ -80,8 +80,29 @@ function candlesToVolumeData(candles) {
   }));
 }
 
-/** Candles visible by default — a readable recent zoom, not the whole ~2-month load. */
-const DEFAULT_VISIBLE_BARS = 120;
+/**
+ * How much history to load, per timeframe — roughly 5 months where the bar
+ * count allows it.
+ *
+ * A flat 1500 gave 5 months on 1d but barely 2 on 1h, which is the timeframe
+ * people actually read structure on. Below 1h, 5 months is tens of thousands of
+ * candles, so those are capped at what the backend can page (4 × 1000) and at
+ * what stays responsive to transfer and render.
+ */
+const CANDLE_LIMIT_BY_INTERVAL = {
+  '1d': 160,   // ~5 months
+  '4h': 900,   // ~5 months
+  '1h': 3600,  // ~5 months
+  '15m': 3500, // ~5 weeks — the cap, not 5 months
+  '5m': 3500,  // ~12 days
+  '1m': 3000,  // ~2 days
+};
+const DEFAULT_CANDLE_LIMIT = 1500;
+
+/** Candles visible by default. Deliberately fewer than we load: the rest stays
+ *  scrollable to the left, so 5 months is available without squashing the
+ *  recent bars into hairlines. */
+const DEFAULT_VISIBLE_BARS = 80;
 
 /** fitContent() would zoom out to show all 1500-candle history at once; this
  *  keeps the full range loaded (scrollable back) but starts zoomed into the
@@ -175,9 +196,25 @@ export default function AnalyserPage() {
         vertLines: { color: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)' },
         horzLines: { color: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)' },
       },
-      crosshair: { mode: CrosshairMode.Normal },
+      crosshair: {
+        mode: CrosshairMode.Normal,
+        // Labelled crosshair on both axes — reading a level off the chart
+        // shouldn't mean eyeballing it against the gridlines.
+        vertLine: { labelVisible: true, width: 1, style: 3, color: isDark ? '#4b5563' : '#9ca3af' },
+        horzLine: { labelVisible: true, width: 1, style: 3, color: isDark ? '#4b5563' : '#9ca3af' },
+      },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.18 } },
-      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
+      timeScale: {
+        borderVisible: false,
+        timeVisible: true,
+        secondsVisible: false,
+        // Breathing room at the right edge so the live candle and its price tag
+        // aren't jammed against the axis.
+        rightOffset: 6,
+        // Stops the 5-month load from collapsing into hairlines if the user
+        // zooms all the way out.
+        minBarSpacing: 2,
+      },
     });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
@@ -238,7 +275,13 @@ export default function AnalyserPage() {
     // 1500 candles gives at least ~2 months of history on the default 1h
     // timeframe (1440 candles = 60 days) and proportionally more on coarser
     // ones — 500 was only ~3 weeks on 1h, which read as "no old data".
-    fetchAnalyserCandles({ accessToken, symbol, interval: timeframe, limit: 1500, signal: ctrl.signal })
+    fetchAnalyserCandles({
+      accessToken,
+      symbol,
+      interval: timeframe,
+      limit: CANDLE_LIMIT_BY_INTERVAL[timeframe] ?? DEFAULT_CANDLE_LIMIT,
+      signal: ctrl.signal,
+    })
       .then((d) => setCandles(d?.candles || []))
       .catch((e) => {
         if (e?.name !== 'AbortError') setLoadErr(e?.message || 'Could not load candles');

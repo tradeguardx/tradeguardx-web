@@ -189,6 +189,9 @@ function drawSwings(ctx, swings) {
 function drawLevels(ctx, levels, mediaWidth) {
   const labelMargin = 8;
   for (const l of levels) {
+    // Lost the right-edge lane to a higher-priority label and had nowhere to
+    // go — drawing it anyway is what produced the unreadable overprint.
+    if (l.labelVisible === false) continue;
     // Reason-tagged labels ("64,400 · Major swing high") vary a lot in
     // length, so the dashed line's stop point is measured, not a fixed guess.
     ctx.font = "700 10px Inter, -apple-system, sans-serif";
@@ -209,7 +212,9 @@ function drawLevels(ctx, levels, mediaWidth) {
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
     ctx.restore();
-    pillLabel(ctx, { x: mediaWidth - labelMargin, y: l.y - 7.5, text: l.label, color: COLORS.LEVEL, align: "right", fontWeight: "700" });
+    // Line sits at the true price (l.y); the pill may have been nudged to
+    // clear a neighbour (l.labelY).
+    pillLabel(ctx, { x: mediaWidth - labelMargin, y: (l.labelY ?? l.y) - 7.5, text: l.label, color: COLORS.LEVEL, align: "right", fontWeight: "700" });
   }
 }
 
@@ -236,14 +241,11 @@ function drawVolumeFindings(ctx, findings) {
  */
 function drawTradeSetup(ctx, setup, mediaWidth) {
   if (!setup || setup.direction === "neutral") return;
-  const lines = [
-    setup.entry != null && { y: setup.entryY, price: setup.entry, label: `Entry ${setup.entry}`, color: TRADE_SETUP_COLORS.ENTRY },
-    setup.stopLoss != null && { y: setup.stopLossY, price: setup.stopLoss, label: `SL ${setup.stopLoss}`, color: TRADE_SETUP_COLORS.STOP_LOSS },
-    ...(setup.takeProfit ?? []).map((tp, i) => ({ y: setup.takeProfitY[i], price: tp, label: `TP${i + 1} ${tp}`, color: TRADE_SETUP_COLORS.TAKE_PROFIT })),
-  ].filter(Boolean);
+  const lines = tradeSetupLines(setup);
 
   for (const line of lines) {
     if (line.y == null) continue;
+    const labelY = setup.labelOffsets?.[line.labelId] ?? line.y;
     ctx.font = "700 10px Inter, -apple-system, sans-serif";
     const pillWidth = ctx.measureText(line.label).width + 14;
     ctx.save();
@@ -258,7 +260,7 @@ function drawTradeSetup(ctx, setup, mediaWidth) {
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
     ctx.restore();
-    pillLabel(ctx, { x: mediaWidth - 8, y: line.y - 7.5, text: line.label, color: line.color, align: "right", fontWeight: "700" });
+    pillLabel(ctx, { x: mediaWidth - 8, y: labelY - 7.5, text: line.label, color: line.color, align: "right", fontWeight: "700" });
   }
 }
 
@@ -469,7 +471,80 @@ function resolvePositioned(adapter, model, activeTimeframe) {
       }
     : null;
 
+  resolveRightEdgeLabels(levels, tradeSetup);
+
   return { levels, orderBlocks, fairValueGaps, liquidityPools, events, swings, volumeFindings, tradeSetup };
+}
+
+/**
+ * Levels and trade-setup lines both pin their pill to the same right-edge
+ * lane, so two of them at similar prices printed straight on top of each
+ * other ("69,500 · major swing" under "SL 69,500"). The point-annotation pass
+ * above already resolves collisions; these two never took part.
+ *
+ * Only the LABEL is nudged — each line still draws at its true price y, so a
+ * moved pill never misrepresents where the level actually sits.
+ */
+function resolveRightEdgeLabels(levels, tradeSetup) {
+  const boxes = [];
+
+  levels.forEach((l, i) => {
+    l.labelId = `level-${i}`;
+    boxes.push({
+      id: l.labelId, x: 0, y: l.y, width: estimateLabelWidth(l.label), height: 16,
+      priority: ANNOTATION_PRIORITY.LEVEL,
+    });
+  });
+
+  // Entry/SL/TP outrank levels: an explicit directional call is the last thing
+  // that should be pushed aside or dropped.
+  const setupLines = tradeSetupLines(tradeSetup);
+  setupLines.forEach((line) => {
+    boxes.push({
+      id: line.labelId, x: 0, y: line.y, width: estimateLabelWidth(line.label), height: 16,
+      priority: ANNOTATION_PRIORITY.CHOCH_MARKER + 10,
+    });
+  });
+
+  if (boxes.length < 2) return;
+
+  // x is identical for every box (same right-aligned lane), so overlap is
+  // decided purely on y — which is what we want here.
+  const resolved = resolveLabelCollisions(boxes);
+  for (const l of levels) {
+    const pos = resolved.get(l.labelId);
+    l.labelY = pos?.y ?? l.y;
+    l.labelVisible = pos?.visible !== false;
+  }
+  if (tradeSetup) {
+    tradeSetup.labelOffsets = {};
+    for (const line of setupLines) {
+      const pos = resolved.get(line.labelId);
+      // Never hide a trade-setup label; worst case it keeps its own y.
+      tradeSetup.labelOffsets[line.labelId] = pos?.y ?? line.y;
+    }
+  }
+}
+
+/** The Entry/SL/TP lines, in one place so draw and collision agree exactly. */
+function tradeSetupLines(setup) {
+  if (!setup || setup.direction === "neutral") return [];
+  return [
+    setup.entry != null && setup.entryY != null && {
+      labelId: "setup-entry", y: setup.entryY, price: setup.entry,
+      label: `Entry ${setup.entry}`, color: TRADE_SETUP_COLORS.ENTRY,
+    },
+    setup.stopLoss != null && setup.stopLossY != null && {
+      labelId: "setup-sl", y: setup.stopLossY, price: setup.stopLoss,
+      label: `SL ${setup.stopLoss}`, color: TRADE_SETUP_COLORS.STOP_LOSS,
+    },
+    ...(setup.takeProfit ?? []).map((tp, i) => (
+      setup.takeProfitY?.[i] != null && {
+        labelId: `setup-tp${i}`, y: setup.takeProfitY[i], price: tp,
+        label: `TP${i + 1} ${tp}`, color: TRADE_SETUP_COLORS.TAKE_PROFIT,
+      }
+    )),
+  ].filter(Boolean);
 }
 
 function drawAnnotations(ctx, mediaSize, adapter, model, activeTimeframe) {

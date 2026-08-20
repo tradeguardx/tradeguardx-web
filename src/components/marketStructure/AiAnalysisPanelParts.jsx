@@ -230,6 +230,52 @@ function StructuralConfluence({ structure }) {
  * conditionally hidden: this is the one place in the app that IS an
  * explicit directional call, unlike every other descriptive annotation.
  */
+/**
+ * Where this timeframe's call sits relative to the timeframes above it.
+ *
+ * The setup itself is derived purely from the active timeframe — a 15m trade
+ * is read off the 15m chart. The higher timeframes never change the direction;
+ * they answer the separate question of whether the trade runs with or against
+ * the larger move, which is precisely what a trader needs before sizing it.
+ *
+ * "counter" gets the loudest treatment: taking a counter-trend trade is fine,
+ * taking one without realising it is the mistake worth preventing.
+ */
+function HigherTimeframeRow({ context, direction, activeTimeframe }) {
+  if (!context || context.total === 0) return null;
+
+  const list = context.timeframes.map((t) => t.timeframe.toUpperCase()).join(' · ');
+  const copy = {
+    aligned: {
+      color: '#34d399',
+      icon: 'M5 13l4 4L19 7',
+      text: `${list} agree — ${direction} on ${activeTimeframe.toUpperCase()} runs with the higher timeframes`,
+    },
+    counter: {
+      color: '#fbbf24',
+      icon: 'M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L14.7 3.9a2 2 0 00-3.4 0z',
+      text: `Counter-trend — ${list} read ${context.bias}, against this ${activeTimeframe.toUpperCase()} ${direction} call`,
+    },
+    mixed: {
+      color: 'var(--dash-text-muted)',
+      icon: 'M4 12h16',
+      text: `${list} disagree with each other — no clear higher-timeframe bias`,
+    },
+  }[context.alignment];
+
+  if (!copy) return null;
+
+  return (
+    <div className="mt-2 flex items-start gap-1.5 rounded-lg px-2 py-1.5"
+      style={{ backgroundColor: `color-mix(in srgb, ${copy.color} 10%, transparent)` }}>
+      <svg className="mt-px h-3 w-3 shrink-0" fill="none" stroke={copy.color} strokeWidth={2.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d={copy.icon} />
+      </svg>
+      <span className="text-[10px] font-semibold leading-snug" style={{ color: copy.color }}>{copy.text}</span>
+    </div>
+  );
+}
+
 function TradeSetupCard({ tradeSetup }) {
   if (!tradeSetup || tradeSetup.direction === 'neutral') return null;
   const { direction, confidence, entry, stopLoss, takeProfit, strategy } = tradeSetup;
@@ -267,6 +313,7 @@ function TradeSetupCard({ tradeSetup }) {
           </div>
         )}
       </div>
+      <HigherTimeframeRow context={tradeSetup.higherTimeframe} direction={direction} activeTimeframe={tradeSetup.timeframe} />
       {chips.length > 0 && (
         <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
           {chips.map((c) => (
