@@ -108,14 +108,19 @@ export default function ManualKillswitchCard() {
       setLockedUntil(data?.lockedUntil ?? null);
       setReasonIsManual(true);
       setConfirming(false);
-      toast?.success?.(`Locked out for ${hours} hours.`);
+      toast.success(
+        `Locked out for ${hours} hours`,
+        'Any position you open before it ends will be closed automatically.',
+      );
     } catch (err) {
       // The server distinguishes "you're mid-trade" from everything else, and
       // that distinction is the one the user needs to act on.
-      const code = err?.code ?? err?.data?.error?.code;
-      const message = err?.message ?? 'Could not start the lockout.';
+      // ApiError exposes .status and .details; the API's error envelope is
+      // { success:false, error:{ code, message } }, so the code lives there.
+      const code = err?.details?.error?.code;
+      const message = err?.details?.error?.message || err?.message || 'Please try again.';
       if (code === 'POSITION_OPEN') setBlockedMessage(message);
-      else toast?.error?.(message);
+      else toast.error('Could not start the lockout', message);
     } finally {
       setBusy(false);
     }

@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 /**
@@ -30,6 +30,14 @@ export default function CollapsibleCard({
   const [open, setOpen] = useState(defaultOpen);
   const [hover, setHover] = useState(false);
   const panelId = useId();
+
+  // defaultOpen is usually false on first render and only becomes true once
+  // async state arrives (an active lockout, a failure). Reading it just as the
+  // initial useState value meant such a card never actually opened itself.
+  // Opens only — never force-closes, so a deliberate collapse isn't undone.
+  useEffect(() => {
+    if (defaultOpen) setOpen(true);
+  }, [defaultOpen]);
 
   return (
     <motion.div
