@@ -436,6 +436,25 @@ function DashboardInner() {
                     Edit rules
                   </Link>
                 )}
+
+                {/* Killswitch shortcut. Deliberately a link to Security rather
+                    than an arm button: this locks trading for hours and cannot
+                    be undone, so it must never be one click away in a toolbar.
+                    Hidden on Security itself, where it would be a no-op. */}
+                {!pathname.startsWith('/dashboard/account/security') && (
+                  <Link
+                    to="/dashboard/account/security"
+                    title="Lock yourself out of trading"
+                    className="hidden items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors hover:bg-[var(--dash-bg-card-hover)] lg:inline-flex"
+                    style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
+                    </svg>
+                    Killswitch
+                  </Link>
+                )}
                 <HeaderStatusPill />
                 <span className="hidden lg:inline-flex">
                   <ThemeToggle />
