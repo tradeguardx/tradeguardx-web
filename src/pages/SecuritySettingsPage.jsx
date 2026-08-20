@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/ToastProvider';
 import PasswordField from '../components/common/PasswordField';
+import ManualKillswitchCard from '../components/dashboard/ManualKillswitchCard';
+import CollapsibleCard from '../components/common/CollapsibleCard';
 import { pwStrength, validatePasswordPair, MIN_PASSWORD_LENGTH } from '../lib/password';
 
 /**
@@ -71,22 +73,14 @@ export default function SecuritySettingsPage() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-      <div
-        className="rounded-2xl border p-6"
-        style={{
-          borderColor: 'var(--dash-border)',
-          backgroundColor: 'var(--dash-bg-raised)',
-          boxShadow: 'var(--dash-shadow-card)',
-        }}
-      >
-        <h2 className="font-display text-lg font-bold" style={{ color: 'var(--dash-text-primary)' }}>
-          Password
-        </h2>
-        <p className="mt-1 text-sm" style={{ color: 'var(--dash-text-muted)' }}>
-          {googleOnly
+      <CollapsibleCard
+        title="Password"
+        subtitle={
+          googleOnly
             ? 'This account signs in with Google.'
-            : 'Change the password you use to sign in.'}
-        </p>
+            : 'Change the password you use to sign in.'
+        }
+      >
 
         {googleOnly ? (
           <div
@@ -151,6 +145,10 @@ export default function SecuritySettingsPage() {
             </button>
           </form>
         )}
+      </CollapsibleCard>
+
+      <div className="mt-4">
+        <ManualKillswitchCard />
       </div>
     </motion.div>
   );
