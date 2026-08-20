@@ -80,7 +80,8 @@ const NAV_ITEMS = [
   // trading account first" to set up an extension they don't need is a dead end.
   // Hidden from nav; the route still resolves for any prop-firm user with a link.
   { to: '/dashboard/account/trading', end: false, label: 'Accounts', iconKey: 'tradingAccounts', groupLabel: 'Setup', dividerBefore: true },
-  { to: '/dashboard/account/billing', end: false, label: 'Billing', iconKey: 'billing' },
+  // Billing lives under Account → Billing; the route still resolves, it is
+  // just not a top-level nav item.
   { to: '/help', end: false, label: 'Guide', iconKey: 'guide', newTab: true },
 ];
 
