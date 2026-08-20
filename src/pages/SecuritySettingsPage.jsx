@@ -75,6 +75,12 @@ export default function SecuritySettingsPage() {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
       <CollapsibleCard
         title="Password"
+        icon={
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <rect x="4" y="11" width="16" height="9" rx="2" />
+            <path strokeLinecap="round" d="M8 11V7a4 4 0 118 0v4" />
+          </svg>
+        }
         subtitle={
           googleOnly
             ? 'This account signs in with Google.'

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { useToast } from '../common/ToastProvider';
@@ -26,13 +27,28 @@ import CollapsibleCard from '../common/CollapsibleCard';
  * true; "you will not be able to trade" would not be.
  */
 
+/**
+ * Hours and minutes while there's a long way to go; mm:ss inside the last
+ * hour, where a minutes-only readout would sit still long enough to look
+ * broken next to a once-a-second tick.
+ */
+/**
+ * The dashboard's accent as a literal. var(--accent) is defined only in the
+ * landing-page stylesheets, so inside the dashboard it silently resolves to
+ * nothing — which is why buttons styled with it rendered with no background
+ * at all.
+ */
+const ACCENT = '#00d4aa';
+const ACCENT_TINT = 'rgba(0, 212, 170, 0.14)';
+
 function formatRemaining(ms) {
   if (ms <= 0) return 'any moment now';
-  const totalMinutes = Math.ceil(ms / 60_000);
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  if (h === 0) return `${m} min`;
-  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+  const total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const sec = total % 60;
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
 export default function ManualKillswitchCard() {
@@ -75,7 +91,7 @@ export default function ManualKillswitchCard() {
   // Only tick while a lock is actually running.
   useEffect(() => {
     if (!lockedUntil) return undefined;
-    tickRef.current = setInterval(() => setNow(Date.now()), 30_000);
+    tickRef.current = setInterval(() => setNow(Date.now()), 1_000);
     return () => clearInterval(tickRef.current);
   }, [lockedUntil]);
 
@@ -109,15 +125,28 @@ export default function ManualKillswitchCard() {
     <CollapsibleCard
       title="Manual killswitch"
       subtitle="Stop yourself trading for a fixed period. Once started it cannot be cancelled — not by you, and not by support."
+      accent={isLocked ? '#f59e0b' : ACCENT}
+      icon={
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
+        </svg>
+      }
       // An active lockout is the one state the user needs to see without
       // hunting for it, so the card opens itself while one is running.
       defaultOpen={isLocked}
       badge={
         isLocked ? (
           <span
-            className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+            className="flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
             style={{ backgroundColor: '#f59e0b22', color: '#f59e0b' }}
           >
+            <motion.span
+              animate={{ opacity: [1, 0.25, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: '#f59e0b' }}
+            />
             Locked
           </span>
         ) : null
@@ -125,21 +154,37 @@ export default function ManualKillswitchCard() {
     >
 
       {isLocked ? (
-        <div
-          className="mt-5 rounded-xl border p-4"
-          style={{ borderColor: '#f59e0b55', backgroundColor: '#f59e0b12' }}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-5 flex items-center gap-4 rounded-xl border p-4"
+          style={{ borderColor: '#f59e0b55', backgroundColor: '#f59e0b10' }}
         >
-          <p className="text-sm font-bold" style={{ color: '#f59e0b' }}>
-            {reasonIsManual ? 'Locked out' : 'Locked out by a rule breach'}
-          </p>
-          <p className="mt-1 text-sm" style={{ color: 'var(--dash-text-secondary)' }}>
-            Trading unlocks in <span className="font-bold">{formatRemaining(remainingMs)}</span> —{' '}
-            {new Date(lockedUntil).toLocaleString()}.
-          </p>
-          <p className="mt-2 text-xs" style={{ color: 'var(--dash-text-faint)' }}>
-            Any position you open before then will be closed automatically.
-          </p>
-        </div>
+          <motion.span
+            animate={{ scale: [1, 1.08, 1], opacity: [0.85, 1, 0.85] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+            style={{ backgroundColor: '#f59e0b1f', color: '#f59e0b' }}
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <rect x="4" y="11" width="16" height="10" rx="2" />
+              <path strokeLinecap="round" d="M8 11V8a4 4 0 018 0v3" />
+            </svg>
+          </motion.span>
+
+          <div className="min-w-0">
+            <p className="text-sm font-bold" style={{ color: '#f59e0b' }}>
+              {reasonIsManual ? 'Locked out' : 'Locked out by a rule breach'}
+            </p>
+            <p className="font-mono text-2xl font-bold leading-tight" style={{ color: 'var(--dash-text-primary)' }}>
+              {formatRemaining(remainingMs)}
+            </p>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--dash-text-faint)' }}>
+              Unlocks {new Date(lockedUntil).toLocaleString()} · any position you open before then
+              will be closed automatically.
+            </p>
+          </div>
+        </motion.div>
       ) : (
         <>
           <div className="mt-5">
@@ -151,47 +196,64 @@ export default function ManualKillswitchCard() {
             </p>
             <div className="mt-2 flex gap-2">
               {LOCKOUT_HOUR_OPTIONS.map((h) => (
-                <button
+                <motion.button
                   key={h}
                   type="button"
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 24 }}
                   onClick={() => {
                     setHours(h);
                     setConfirming(false);
                   }}
-                  className="rounded-xl border px-5 py-2.5 text-sm font-bold transition-colors"
+                  className="relative rounded-xl border px-5 py-2.5 text-sm font-bold"
                   style={{
-                    borderColor: hours === h ? 'var(--accent)' : 'var(--dash-border)',
-                    backgroundColor: hours === h ? 'color-mix(in srgb, var(--accent) 14%, transparent)' : 'transparent',
-                    color: hours === h ? 'var(--accent)' : 'var(--dash-text-secondary)',
+                    borderColor: hours === h ? ACCENT : 'var(--dash-border)',
+                    backgroundColor: hours === h ? ACCENT_TINT : 'transparent',
+                    color: hours === h ? ACCENT : 'var(--dash-text-secondary)',
                   }}
                 >
                   {h} hours
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
 
-          {blockedMessage && (
-            <div
-              className="mt-4 rounded-xl border p-3 text-sm"
-              style={{ borderColor: '#f8717155', backgroundColor: '#f8717112', color: '#f87171' }}
-            >
-              {blockedMessage}
-            </div>
-          )}
+          <AnimatePresence>
+            {blockedMessage && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div
+                  className="mt-4 flex items-start gap-2 rounded-xl border p-3 text-sm"
+                  style={{ borderColor: '#f8717155', backgroundColor: '#f8717112', color: '#f87171' }}
+                >
+                  <svg className="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" />
+                    <path strokeLinecap="round" d="M12 8v5m0 3h.01" />
+                  </svg>
+                  <span>{blockedMessage}</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {!confirming ? (
             <button
               type="button"
               disabled={!tradingAccountId || busy}
               onClick={() => setConfirming(true)}
-              className="mt-5 rounded-xl px-5 py-2.5 text-sm font-bold disabled:opacity-50"
-              style={{ backgroundColor: 'var(--accent)', color: 'var(--surface-950, #0d0f14)' }}
+              className="mt-5 rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-surface-950 transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
               Start lockout
             </button>
           ) : (
-            <div
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
               className="mt-5 rounded-xl border p-4"
               style={{ borderColor: '#f8717155', backgroundColor: '#f8717110' }}
             >
@@ -223,7 +285,7 @@ export default function ManualKillswitchCard() {
                   Cancel
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {!tradingAccountId && (
