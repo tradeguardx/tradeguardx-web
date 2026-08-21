@@ -12,10 +12,15 @@ import CollapsibleCard from '../common/CollapsibleCard';
  *
  * Two product rules drive the whole UI:
  *
- *  1. It cannot be cancelled. There is no "unlock" button here because the
+ *  1. The USER cannot cancel it. There is no "unlock" button here because the
  *     backend exposes no route to clear an armed lock — a killswitch you can
  *     switch off ten minutes into a twelve-hour window is a suggestion. So the
  *     confirm step has to be unmistakable rather than a casual click.
+ *
+ *     Support CAN lift it (the engine honours a cooldown_until cleared in the
+ *     DB), so the copy promises only what is true: you can't call it off
+ *     yourself. Claiming "not even support" would be a promise the system
+ *     does not keep.
  *
  *  2. It cannot be armed mid-trade. Arming while holding a position would
  *     leave the user with something they can neither manage nor close through
@@ -129,7 +134,7 @@ export default function ManualKillswitchCard() {
   return (
     <CollapsibleCard
       title="Manual killswitch"
-      subtitle="Stop yourself trading for a fixed period. Once started it cannot be cancelled — not by you, and not by support."
+      subtitle="Stop yourself trading for a fixed period. Once it starts, you can't call it off yourself."
       accent={isLocked ? '#f59e0b' : ACCENT}
       icon={
         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
