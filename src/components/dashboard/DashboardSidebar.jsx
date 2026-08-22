@@ -46,6 +46,12 @@ const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
     </svg>
   ),
+  tax: (
+    <>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 14h6M9 10h6" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" />
+    </>
+  ),
   billing: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -74,6 +80,7 @@ const NAV_ITEMS = [
   { to: '/dashboard/rules', end: false, label: 'Rules', iconKey: 'rules' },
   { to: '/dashboard/journal', end: false, label: 'Journal', iconKey: 'journal', groupLabel: 'Review', dividerBefore: true },
   { to: '/dashboard/trades', end: false, label: 'All trades', iconKey: 'trades' },
+  { to: '/dashboard/tax', end: false, label: 'Tax', iconKey: 'tax' },
   // "Pairing" (browser-extension pairing) is the PROP-FIRM enforcement path. The
   // crypto launch enforces server-side against the user's exchange API key, so a
   // Delta user never pairs anything — sending them to a page that says "add a

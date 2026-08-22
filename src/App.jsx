@@ -35,6 +35,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import CryptoKillSwitchPage from './pages/CryptoKillSwitchPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
+import TaxPage from './pages/TaxPage';
 import AccountOverviewPage from './pages/AccountOverviewPage';
 import NotificationsPage from './pages/NotificationsPage';
 import RedirectWithSearch from './pages/RedirectWithSearch';
@@ -107,6 +108,7 @@ function App() {
                   <Route path="rules" element={<RulesTerminal />} />
                   <Route path="journal" element={<TradeJournal />} />
                   <Route path="trades" element={<AllTradesPage />} />
+                  <Route path="tax" element={<TaxPage />} />
                   <Route path="trades/:tradeUid" element={<TradeDetailPage />} />
                   <Route path="account" element={<AccountLayout />}>
                     <Route index element={<AccountOverviewPage />} />

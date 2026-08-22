@@ -19,6 +19,7 @@ const ROUTE_LABELS = {
   '/dashboard/rules': 'Rules Terminal',
   '/dashboard/journal': 'Journal',
   '/dashboard/trades': 'All trades',
+  '/dashboard/tax': 'Tax',
   '/dashboard/install-extension': 'Install Extension',
   '/dashboard/pairing': 'Pairing',
   '/dashboard/account/trading': 'Trading Accounts',
