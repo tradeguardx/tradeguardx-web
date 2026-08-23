@@ -67,22 +67,46 @@ const PRIMARY = 'var(--dash-text-primary)';
 const BORDER = 'var(--dash-border)';
 const RAISED = 'var(--dash-bg-raised)';
 
-/** Traceable to a fill or ledger entry — always paise. */
-function inr(n, { sign = false } = {}) {
+/**
+ * CURRENCY IS NOT ASSUMED.
+ *
+ * Delta India settles its perpetuals in USD, so these figures are dollars. They
+ * were once rendered with a rupee sign — an ~84x understatement of an Indian
+ * tax base, on the one page whose purpose is trust. The symbol now comes from
+ * the API's `currency`, and INR is only ever shown once a converted figure is
+ * actually supplied.
+ *
+ * Grouping follows the currency too: 1,25,000 is right for rupees and wrong
+ * for dollars.
+ */
+const SYMBOLS = { INR: '₹', USD: '$', USDT: '$' };
+
+function symbolFor(currency) {
+  return SYMBOLS[currency] ?? `${currency ?? '?'} `;
+}
+
+function localeFor(currency) {
+  return currency === 'INR' ? 'en-IN' : 'en-US';
+}
+
+/** Traceable to a fill or ledger entry — always minor units. */
+function money(n, currency, { sign = false } = {}) {
   if (n == null || Number.isNaN(Number(n))) return '—';
   const v = Number(n);
-  const body = Math.abs(v).toLocaleString('en-IN', {
+  const body = Math.abs(v).toLocaleString(localeFor(currency), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return `${v < 0 ? '−₹' : sign ? '+₹' : '₹'}${body}`;
+  const sym = symbolFor(currency);
+  return `${v < 0 ? `−${sym}` : sign ? `+${sym}` : sym}${body}`;
 }
 
-/** Illustrative or derived — always whole rupees, never paise. */
-function inr0(n) {
+/** Illustrative or derived — whole units, never minor units. */
+function money0(n, currency) {
   if (n == null || Number.isNaN(Number(n))) return '—';
   const v = Number(n);
-  return `${v < 0 ? '−₹' : '₹'}${Math.abs(Math.round(v)).toLocaleString('en-IN')}`;
+  const sym = symbolFor(currency);
+  return `${v < 0 ? `−${sym}` : sym}${Math.abs(Math.round(v)).toLocaleString(localeFor(currency))}`;
 }
 
 function fyLabelFor(year) {
@@ -234,6 +258,9 @@ export default function TaxPage() {
   }, [load]);
 
   const gated = data?.calculationStatus === 'INVALID_PENDING_RECONCILIATION';
+  // The unit the API says these figures are in. Never defaulted to INR — that
+  // assumption is exactly what produced the misstatement.
+  const currency = data?.currency ?? 'UNKNOWN';
 
   const view = useMemo(() => {
     if (!data || gated) return null;
@@ -392,6 +419,28 @@ export default function TaxPage() {
         <div className="mt-6 flex flex-col gap-4">
       {view && tab === 'overview' && (
         <div className="mt-6 flex flex-col gap-4">
+          {/* Currency notice. Delta India settles in USD, so an Indian tax
+              figure still needs converting under Rule 115 — and this page must
+              not imply it has done so. */}
+          {data?.inrConversion?.status === 'NOT_AVAILABLE' && (
+            <div
+              className="flex items-start gap-3 rounded-2xl border p-5"
+              style={{ borderColor: `${AMBER}55`, backgroundColor: `${AMBER}12` }}
+            >
+              <span style={{ color: AMBER, marginTop: 2 }}>
+                <Icon d={P.alert} size={18} />
+              </span>
+              <div>
+                <p className="text-sm font-bold" style={{ color: AMBER }}>
+                  These figures are in {currency}, not rupees
+                </p>
+                <p className="mt-1 text-sm leading-relaxed" style={{ color: SECONDARY }}>
+                  {data.inrConversion.reason}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* 2 ── status strip. The unresolved item is the legal classification,
                  NEVER the accounting — that distinction is the whole point. */}
           <div className="flex flex-wrap items-center gap-2">
@@ -400,6 +449,7 @@ export default function TaxPage() {
               { label: 'WALLET RECONCILED', ok: true },
               { label: 'DATA COMPLETE', ok: data.dataCompleteness === 'complete' },
               { label: 'TAX TREATMENT NEEDS CA REVIEW', ok: false },
+              { label: `FIGURES IN ${currency} · INR CONVERSION PENDING`, ok: false },
             ].map((p) => (
               <span
                 key={p.label}
@@ -477,7 +527,7 @@ export default function TaxPage() {
                     className="font-mono text-[46px] font-bold leading-none tracking-[-0.05em]"
                     style={{ color: view.losing ? RED : GREEN }}
                   >
-                    {inr(view.economic)}
+                    {money(view.economic, currency)}
                   </span>
                   <span style={{ color: '#5c6b81', paddingTop: 6 }}>
                     <Icon d={P.info} size={17} />
@@ -531,7 +581,7 @@ export default function TaxPage() {
                       className="whitespace-nowrap font-mono text-xs font-bold"
                       style={{ color: Number(r.value) < 0 ? RED : GREEN }}
                     >
-                      {inr(r.value)}
+                      {money(r.value, currency)}
                     </span>
                   </div>
                 ))}
@@ -571,7 +621,7 @@ export default function TaxPage() {
                         className="whitespace-nowrap font-mono text-xs font-bold"
                         style={{ color: Number(f.value) < 0 ? RED : GREEN }}
                       >
-                        {inr(f.value)}
+                        {money(f.value, currency)}
                       </span>
                     </div>
                   ))}
@@ -636,7 +686,7 @@ export default function TaxPage() {
                   TRADING &amp; ACCOUNTING COSTS
                 </div>
                 <div className="mt-1 whitespace-nowrap font-mono text-[15px] font-bold" style={{ color: RED }}>
-                  {inr(view.costs)}
+                  {money(view.costs, currency)}
                 </div>
               </div>
             </div>
@@ -712,7 +762,7 @@ export default function TaxPage() {
                         className="min-w-[96px] whitespace-nowrap text-right font-mono font-bold"
                         style={{ color: tone, fontSize: isTotal ? 15 : 12.5 }}
                       >
-                        {inr(r.value)}
+                        {money(r.value, currency)}
                       </div>
                     </div>
                   );
@@ -727,7 +777,7 @@ export default function TaxPage() {
                   <Icon d={P.info} size={15} />
                 </span>
                 <span className="text-xs leading-relaxed" style={{ color: SECONDARY }}>
-                  Commission alone was {inr(Math.abs(Number(view.b.tradingCommission)))} —{' '}
+                  Commission alone was {money(Math.abs(Number(view.b.tradingCommission)), currency)} —{' '}
                   {(
                     Math.abs(Number(view.b.tradingCommission)) /
                     Math.max(1, Math.abs(Number(view.b.grossTradingPnl)))
@@ -778,7 +828,7 @@ export default function TaxPage() {
                     label: 'Wallet commission',
                     value: view.ex.commission,
                     treatment: 'ALREADY REPRESENTED',
-                    why: `Wallet-side entry for the same ${inr(Math.abs(Number(view.b.tradingCommission)))} commission deducted in the bridge above.`,
+                    why: `Wallet-side entry for the same ${money(Math.abs(Number(view.b.tradingCommission)), currency)} commission deducted in the bridge above.`,
                   },
                   {
                     label: 'Capital movements',
@@ -814,7 +864,7 @@ export default function TaxPage() {
                       className="min-w-[96px] whitespace-nowrap text-right font-mono text-[12.5px] font-bold"
                       style={{ color: MUTED }}
                     >
-                      {inr(x.value)}
+                      {money(x.value, currency)}
                     </span>
                   </div>
                 ))}
@@ -862,7 +912,7 @@ export default function TaxPage() {
                   className="mt-1 whitespace-nowrap font-mono text-xl font-bold tracking-tight"
                   style={{ color: VIOLET }}
                 >
-                  {inr0(view.gap)}
+                  {money0(view.gap, currency)}
                 </div>
               </div>
             </div>
@@ -889,7 +939,7 @@ export default function TaxPage() {
                     className="whitespace-nowrap font-mono text-[29px] font-bold tracking-tight"
                     style={{ color: view.losing ? GREEN : PRIMARY }}
                   >
-                    {inr(view.taxableBusinessIncome)}
+                    {money(view.taxableBusinessIncome, currency)}
                   </span>
                   <span className="text-[11.5px]" style={{ color: FAINT }}>
                     potential taxable trading income
@@ -904,7 +954,7 @@ export default function TaxPage() {
                   { label: 'Applicable rate', value: 'your slab · CA review', tone: AMBER, icon: P.alert, iconColor: AMBER },
                   {
                     label: view.losing ? 'Potential business loss' : 'Costs deducted',
-                    value: inr(view.losing ? view.lossAvailable : view.costs),
+                    value: money(view.losing ? view.lossAvailable : view.costs, currency),
                     tone: GREEN,
                     icon: P.check,
                     iconColor: GREEN,
@@ -945,7 +995,7 @@ export default function TaxPage() {
                     className="whitespace-nowrap font-mono text-[29px] font-bold tracking-tight"
                     style={{ color: AMBER }}
                   >
-                    {inr0(view.vdaTax)}
+                    {money0(view.vdaTax, currency)}
                   </span>
                   <span className="text-[11.5px]" style={{ color: FAINT }}>
                     illustrative tax
@@ -957,8 +1007,8 @@ export default function TaxPage() {
                   deductible.
                 </p>
                 {[
-                  { label: 'Illustrative taxable gains', value: inr(view.v.gains), tone: PRIMARY, icon: P.eq, iconColor: FAINT },
-                  { label: 'Losses not offsettable', value: inr(view.v.losses), tone: AMBER, icon: P.x, iconColor: AMBER },
+                  { label: 'Illustrative taxable gains', value: money(view.v.gains, currency), tone: PRIMARY, icon: P.eq, iconColor: FAINT },
+                  { label: 'Losses not offsettable', value: money(view.v.losses, currency), tone: AMBER, icon: P.x, iconColor: AMBER },
                   { label: 'Expense treatment', value: 'not deductible', tone: AMBER, icon: P.x, iconColor: AMBER },
                 ].map((l) => (
                   <div
@@ -1050,8 +1100,8 @@ export default function TaxPage() {
               </span>
               <span className="text-xs leading-relaxed" style={{ color: SECONDARY }}>
                 {view.losing
-                  ? `Under the VDA reading, tax of ${inr0(view.vdaTax)} could arise on a year you lost money, and the ${inr(Math.abs(view.economic))} loss would not carry forward. Your CA should confirm which classification applies before you act on either figure.`
-                  : `Under the VDA reading, ${inr(view.costs)} of fees would stop being deductible — most of the difference between the two figures above.`}
+                  ? `Under the VDA reading, tax of ${money0(view.vdaTax, currency)} could arise on a year you lost money, and the ${money(Math.abs(view.economic), currency)} loss would not carry forward. Your CA should confirm which classification applies before you act on either figure.`
+                  : `Under the VDA reading, ${money(view.costs, currency)} of fees would stop being deductible — most of the difference between the two figures above.`}
               </span>
             </div>
           </Card>
@@ -1085,7 +1135,7 @@ export default function TaxPage() {
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="font-mono text-[29px] font-bold tracking-tight" style={{ color: PRIMARY }}>
-                  {inr(view.v.tds ?? 0)}
+                  {money(view.v.tds ?? 0, currency)}
                 </span>
                 <span className="text-xs" style={{ color: MUTED }}>
                   reserved
@@ -1101,10 +1151,10 @@ export default function TaxPage() {
                 />
               </div>
               <p className="text-xs leading-relaxed" style={{ color: SECONDARY }}>
-                Based on the illustrative VDA treatment of {inr0(view.vdaTax)}. {inr(view.v.tds ?? 0)} of this is
+                Based on the illustrative VDA treatment of {money0(view.vdaTax, currency)}. {money(view.v.tds ?? 0, currency)} of this is
                 TDS the exchange already withheld.{' '}
                 {view.vdaTax - (view.v.tds ?? 0) > 0 && (
-                  <>{inr0(view.vdaTax - (view.v.tds ?? 0))} is not yet reserved.</>
+                  <>{money0(view.vdaTax - (view.v.tds ?? 0), currency)} is not yet reserved.</>
                 )}
               </p>
               <p className="mt-auto text-[11px] leading-relaxed" style={{ color: FAINT }}>
@@ -1150,7 +1200,7 @@ export default function TaxPage() {
                       </div>
                       <div className="text-right">
                         <div className="whitespace-nowrap font-mono text-[12.5px] font-bold" style={{ color: MUTED }}>
-                          {inr0(view.vdaTax * d.f)}
+                          {money0(view.vdaTax * d.f, currency)}
                         </div>
                         <div className="mt-0.5 text-[8.5px] font-extrabold tracking-wider" style={{ color: AMBER }}>
                           ILLUSTRATIVE ONLY

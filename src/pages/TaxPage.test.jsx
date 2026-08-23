@@ -70,6 +70,8 @@ function summary(overrides = {}) {
       excluded: { cashflow: -3112.89, settlement: 109.72, commission: -5702.83, capitalMovement: 8928.08 },
     },
     illustrativeVda: { gains: 14506.64, losses: -23212.63, taxRate: 0.3, tax: 4351.99, tds: 0 },
+    currency: 'USD',
+    inrConversion: { status: 'NOT_AVAILABLE', reason: 'Figures are denominated in USD.' },
     disclaimer: 'test disclaimer',
   };
   return { ...base, ...overrides };
@@ -127,7 +129,9 @@ describe('F&O card — the frontend must never compute a tax amount', () => {
       }),
     );
 
-    expect(text).toContain('1,25,000');
+    // USD fixture, so US grouping. The point of the test is the ABSENCE of a
+    // computed tax, not the separator.
+    expect(text).toContain('125,000');
     expect(text).toMatch(/your slab/i);
     expect(text).toMatch(/CA review/i);
 
@@ -271,5 +275,37 @@ describe('three views, each answering a different question', () => {
     expect(text).toMatch(/hand it to your CA/i);
     // The argument lives on Overview; this view is the handoff.
     expect(text).not.toMatch(/tax treatment scenarios/i);
+  });
+});
+
+describe('currency is never assumed', () => {
+  it('renders USD figures with a dollar sign, never a rupee sign', async () => {
+    // Delta India settles in USD. Rendering those with a rupee sign understated
+    // an Indian tax base ~84x — the worst bug this page has had.
+    const text = await renderWith(summary());
+
+    expect(text).toContain('$8,930.90');
+    expect(text).not.toContain('₹8,930.90');
+    // And says so plainly rather than leaving the reader to notice.
+    expect(text).toMatch(/figures are in USD/i);
+    expect(text).toMatch(/INR CONVERSION PENDING/i);
+  });
+
+  it('uses rupees — and Indian grouping — only when the API says INR', async () => {
+    const text = await renderWith(
+      summary({
+        currency: 'INR',
+        inrConversion: { status: 'CONVERTED', reason: '' },
+        bridge: { ...summary().bridge, completeEconomicPnl: -125000 },
+      }),
+    );
+
+    expect(text).toContain('₹1,25,000'); // en-IN grouping, not 125,000
+    expect(text).not.toMatch(/figures are in USD/i);
+  });
+
+  it('never silently defaults to rupees when the unit is unknown', async () => {
+    const text = await renderWith(summary({ currency: undefined, inrConversion: undefined }));
+    expect(text).not.toContain('₹8,930.90');
   });
 });

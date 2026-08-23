@@ -33,11 +33,21 @@ const PRIMARY = 'var(--dash-text-primary)';
 const BORDER = 'var(--dash-border)';
 const RAISED = 'var(--dash-bg-raised)';
 
-function inr(n) {
+/**
+ * The symbol comes from the API. Delta India settles in USD, and rendering
+ * those figures with a rupee sign understated an Indian tax base ~84x.
+ */
+const SYMBOLS = { INR: '₹', USD: '$', USDT: '$' };
+
+function money(n, currency) {
   if (n == null || Number.isNaN(Number(n))) return '—';
   const v = Number(n);
-  const body = Math.abs(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return `${v < 0 ? '−₹' : '₹'}${body}`;
+  const sym = SYMBOLS[currency] ?? `${currency ?? '?'} `;
+  const body = Math.abs(v).toLocaleString(currency === 'INR' ? 'en-IN' : 'en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${v < 0 ? `−${sym}` : sym}${body}`;
 }
 
 function shortDate(iso) {
@@ -61,7 +71,7 @@ const CATEGORIES = [
   },
 ];
 
-function Totals({ totals, category }) {
+function Totals({ totals, category, currency }) {
   if (!totals) return null;
   const net = Number(totals.realizedPnl ?? 0);
   return (
@@ -73,10 +83,10 @@ function Totals({ totals, category }) {
           value: `${totals.winners ?? 0} / ${totals.losers ?? 0}`,
           color: PRIMARY,
         },
-        { label: 'Fees', value: inr(totals.fees), color: RED },
+        { label: 'Fees', value: money(totals.fees, currency), color: RED },
         {
           label: category === 'FNO' ? 'Net result' : 'Gross gains',
-          value: inr(net),
+          value: money(net, currency),
           color: net < 0 ? RED : GREEN,
         },
       ].map((s) => (
@@ -131,6 +141,7 @@ export default function TaxTransactions({ accessToken, tradingAccountId, fy }) {
   }, [data, category, query]);
 
   const totals = data?.totals?.[category];
+  const currency = data?.currency ?? 'UNKNOWN';
   const unknown = data?.totals?.UNKNOWN;
 
   return (
@@ -172,7 +183,7 @@ export default function TaxTransactions({ accessToken, tradingAccountId, fy }) {
         {CATEGORIES.find((c) => c.key === category)?.note}
       </p>
 
-      <Totals totals={totals} category={category} />
+      <Totals totals={totals} category={category} currency={currency} />
 
       {/* Anything unclassified is surfaced, never folded into a regime. */}
       {unknown?.positions > 0 && (
@@ -261,16 +272,16 @@ export default function TaxTransactions({ accessToken, tradingAccountId, fy }) {
                         {shortDate(p.closedAt)}
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-[12px]" style={{ color: SECONDARY }}>
-                        {inr(p.grossPnl)}
+                        {money(p.grossPnl, currency)}
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-[12px]" style={{ color: RED }}>
-                        {inr(p.fees)}
+                        {money(p.fees, currency)}
                       </td>
                       <td
                         className="px-4 py-3 text-right font-mono text-[12.5px] font-bold"
                         style={{ color: net < 0 ? RED : GREEN }}
                       >
-                        {inr(net)}
+                        {money(net, currency)}
                       </td>
                       {/* One position, many FIFO lot matches — shown so the
                           detail is available without inflating trade count. */}
