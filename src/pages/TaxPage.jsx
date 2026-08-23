@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { fetchTaxSummary } from '../api/tradesApi';
+import TaxTransactions from '../components/tax/TaxTransactions';
 
 /**
  * Tax centre — an Indian FY analysis built from reconciled exchange data.
@@ -195,6 +196,13 @@ export default function TaxPage() {
   const [showSched, setShowSched] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
 
+  /**
+   * Three views, because the page answers three different questions and one
+   * scroll made the reader hunt for whichever they had. Overview is the
+   * argument; Transactions is the evidence; CA report is the handoff.
+   */
+  const [tab, setTab] = useState('overview');
+
   const fyOptions = useMemo(() => {
     const years = [];
     for (let y = thisFy; y >= 2025; y--) years.push(y);
@@ -307,6 +315,39 @@ export default function TaxPage() {
         </div>
       </div>
 
+
+      {/* Tab bar. Rendered outside the loaded-data guard so navigation stays
+          available while a view is still fetching. */}
+      {tradingAccountId && !gated && (
+        <div className="mt-6 flex gap-1 border-b" style={{ borderColor: BORDER }}>
+          {[
+            { key: 'overview', label: 'Overview' },
+            { key: 'transactions', label: 'Tax transactions' },
+            { key: 'report', label: 'CA report' },
+          ].map((t) => {
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className="relative px-4 py-2.5 text-sm font-bold transition-colors"
+                style={{ color: active ? PRIMARY : MUTED }}
+              >
+                {t.label}
+                {active && (
+                  <motion.span
+                    layoutId="tax-tab-underline"
+                    className="absolute inset-x-0 -bottom-px h-0.5 rounded-full"
+                    style={{ backgroundColor: MINT }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {!tradingAccountId && (
         <p className="mt-8 text-sm" style={{ color: MUTED }}>
           Select a trading account to see its tax position.
@@ -348,6 +389,8 @@ export default function TaxPage() {
       )}
 
       {view && (
+        <div className="mt-6 flex flex-col gap-4">
+      {view && tab === 'overview' && (
         <div className="mt-6 flex flex-col gap-4">
           {/* 2 ── status strip. The unresolved item is the legal classification,
                  NEVER the accounting — that distinction is the whole point. */}
@@ -1127,6 +1170,35 @@ export default function TaxPage() {
             </Card>
           </div>
 
+          {/* 10 ── disclaimer */}
+          <div
+            className="flex items-start gap-3 rounded-2xl border p-5"
+            style={{ borderColor: BORDER, backgroundColor: 'rgba(255,255,255,0.02)' }}
+          >
+            <span style={{ color: FAINT, marginTop: 1 }}>
+              <Icon d={P.info} size={15} />
+            </span>
+            <p className="text-xs leading-relaxed" style={{ color: MUTED }}>
+              <span className="font-bold" style={{ color: SECONDARY }}>
+                Important:
+              </span>{' '}
+              this is an estimated trading-tax analysis, not your final personal income-tax liability or tax
+              advice. Salary, other income, deductions, tax regime, cess, surcharge and other personal tax
+              information are not included. Exchange GST data is unavailable. The appropriate tax classification
+              should be confirmed with your CA.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {view && tab === 'transactions' && (
+        <div className="mt-6">
+          <TaxTransactions accessToken={accessToken} tradingAccountId={tradingAccountId} fy={fy} />
+        </div>
+      )}
+
+      {view && tab === 'report' && (
+        <div className="mt-6 flex flex-col gap-4">
           {/* 8 ── Step 3: hand it to a CA */}
           <Card className="overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
@@ -1335,6 +1407,8 @@ export default function TaxPage() {
               should be confirmed with your CA.
             </p>
           </div>
+        </div>
+      )}
         </div>
       )}
     </motion.div>

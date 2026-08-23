@@ -34,8 +34,10 @@ vi.mock('../context/TradingAccountContext', () => ({
 }));
 
 const fetchTaxSummary = vi.fn();
+const fetchTaxPositions = vi.fn();
 vi.mock('../api/tradesApi', () => ({
   fetchTaxSummary: (...args) => fetchTaxSummary(...args),
+  fetchTaxPositions: (...args) => fetchTaxPositions(...args),
 }));
 
 const TaxPage = (await import('./TaxPage')).default;
@@ -82,6 +84,28 @@ async function renderWith(data) {
 
 beforeEach(() => {
   fetchTaxSummary.mockReset();
+  fetchTaxPositions.mockReset();
+  fetchTaxPositions.mockResolvedValue({
+    positions: [
+      {
+        positionKey: 'k1',
+        symbol: 'ETHUSD',
+        side: 'long',
+        instrumentType: 'FNO',
+        quantity: 400,
+        grossPnl: 44.71,
+        fees: 10.01,
+        realizedPnl: 34.7,
+        closedAt: '2026-05-02T10:00:00Z',
+        lotMatches: 4,
+      },
+    ],
+    totals: {
+      FNO: { positions: 1, grossPnl: 44.71, fees: 10.01, realizedPnl: 34.7, winners: 1, losers: 0 },
+      SPOT: { positions: 0, grossPnl: 0, fees: 0, realizedPnl: 0, winners: 0, losers: 0 },
+      UNKNOWN: { positions: 0, grossPnl: 0, fees: 0, realizedPnl: 0, winners: 0, losers: 0 },
+    },
+  });
 });
 
 describe('F&O card — the frontend must never compute a tax amount', () => {
@@ -208,6 +232,44 @@ describe('the reconciliation gate still withholds figures', () => {
 
     const text = document.body.textContent ?? '';
     expect(text).not.toContain('8,930.90');
+    expect(text).not.toMatch(/tax treatment scenarios/i);
+  });
+});
+
+describe('three views, each answering a different question', () => {
+  it('opens on Overview and offers the other two', async () => {
+    await renderWith(summary());
+
+    expect(screen.getByRole('button', { name: 'Overview' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tax transactions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'CA report' })).toBeInTheDocument();
+    // Overview is the default view.
+    expect(document.body.textContent).toMatch(/tax treatment scenarios/i);
+  });
+
+  it('Tax transactions lists positions and keeps the two regimes apart', async () => {
+    await renderWith(summary());
+    screen.getByRole('button', { name: 'Tax transactions' }).click();
+
+    await waitFor(() => expect(document.body.textContent).toContain('ETHUSD'));
+
+    const text = document.body.textContent ?? '';
+    // Both categories are offered as separate tabs, never one merged list.
+    expect(text).toMatch(/F&O \/ Business/);
+    expect(text).toMatch(/VDA \/ 115BBH/);
+    // Position-level, with the FIFO lot count kept visible but distinct.
+    expect(text).toMatch(/lots.*FIFO matches|FIFO matches/i);
+  });
+
+  it('CA report carries the export handoff, not the scenarios', async () => {
+    await renderWith(summary());
+    screen.getByRole('button', { name: 'CA report' }).click();
+
+    await waitFor(() => expect(document.body.textContent).toMatch(/generate ca pack/i));
+
+    const text = document.body.textContent ?? '';
+    expect(text).toMatch(/hand it to your CA/i);
+    // The argument lives on Overview; this view is the handoff.
     expect(text).not.toMatch(/tax treatment scenarios/i);
   });
 });

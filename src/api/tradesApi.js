@@ -320,3 +320,24 @@ export async function fetchTaxSummary({ accessToken, tradingAccountId, fy, signa
   });
   return unwrap(payload);
 }
+
+/**
+ * Position-level detail behind the tax summary — the drill-down a CA works
+ * from. Returns positions (one open-to-flat episode each), not FIFO lot
+ * matches, plus per-category totals that are deliberately never combined.
+ */
+export async function fetchTaxPositions({ accessToken, tradingAccountId, fy, category, signal } = {}) {
+  if (!accessToken) throw new Error('Missing access token');
+  if (!tradingAccountId) throw new Error('Missing trading account');
+
+  const params = new URLSearchParams({ tradingAccountId });
+  if (fy) params.set('fy', String(fy));
+  if (category) params.set('category', category);
+
+  const payload = await apiGet(`/tax/positions?${params.toString()}`, {
+    baseUrl: TRADE_API_BASE_URL,
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal,
+  });
+  return unwrap(payload);
+}
