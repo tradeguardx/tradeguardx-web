@@ -1,0 +1,489 @@
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+
+/**
+ * REGRESSION GUARDS FOR THE TAX CENTRE.
+ *
+ * These exist because the 30% F&O calculation was reintroduced once already,
+ * copied out of a design fixture into `TaxPage.jsx`:
+ *
+ *     const fnoTax = Math.max(0, economic) * 0.3;
+ *
+ * It shipped invisibly. The account was down for the year, so `max(0, loss)`
+ * was zero and the card read 0 — correct by accident. On a profitable year it
+ * would have shown a confident, wrong tax figure to someone about to file.
+ *
+ * So the profitable-year fixture below is the important one: a loss-year test
+ * alone passes against the broken formula and proves nothing.
+ *
+ * The rule these defend: the Tax Centre is a PRESENTATION layer. It renders
+ * what the versioned tax engine returns. It may format currency and choose
+ * what to show; it may never compute a tax amount, a rate, a deduction or a
+ * set-off. The frontend must not be able to invent a tax number.
+ *
+ * They deliberately render the real page rather than an extracted card —
+ * a guard that tests a copy would not catch a regression added to the page.
+ */
+
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({ session: { access_token: 'test-token' } }),
+}));
+
+vi.mock('../context/TradingAccountContext', () => ({
+  useTradingAccounts: () => ({ selectedAccount: { id: 'acct-1' } }),
+}));
+
+const fetchTaxSummary = vi.fn();
+const fetchTaxPositions = vi.fn();
+vi.mock('../api/tradesApi', () => ({
+  fetchTaxSummary: (...args) => fetchTaxSummary(...args),
+  fetchTaxPositions: (...args) => fetchTaxPositions(...args),
+}));
+
+const TaxPage = (await import('./TaxPage')).default;
+
+/**
+ * DESIGN-FIXTURE RULE: every number here is a VISUAL EXAMPLE chosen to make a
+ * guard fail loudly. None of it is authoritative tax logic, and none of its
+ * arithmetic may be lifted into production code — which is exactly how the
+ * original bug got in.
+ */
+function summary(overrides = {}) {
+  const base = {
+    calculationStatus: 'ENABLED',
+    pnlReconciliationStatus: 'PASSED',
+    dataCompleteness: 'complete',
+    fy: 2026,
+    versions: { taxRules: 'IN-2026-27-v1', pnlEngine: '4.2.0', calcEngine: '4.2.0' },
+    counts: { positions: 303, walletTransactions: 2631, expiredOptionsRecovered: 6, needsReview: 0 },
+    bridge: {
+      grossTradingPnl: -3003.16,
+      tradingCommission: -5702.83,
+      netTradingPnl: -8705.99,
+      funding: -18.02,
+      liquidationFees: -206.89,
+      completeEconomicPnl: -8930.9,
+    },
+    taxableBusinessIncome: 0,
+    lossAvailableForSetOff: 8930.9,
+    walletAdjustments: {
+      excluded: { cashflow: -3112.89, settlement: 109.72, commission: -5702.83, capitalMovement: 8928.08 },
+    },
+    illustrativeVda: {
+      basis: 'FNO_RECLASSIFIED',
+      actualVdaPositions: 0,
+      gains: 14506.64,
+      losses: -23212.63,
+      taxRate: 0.3,
+      tax: 4351.99,
+      tds: 0,
+    },
+    currency: 'USD',
+    sourceCurrency: 'USD',
+    conversion: {
+      applied: false,
+      rate: null,
+      from: 'USD',
+      to: 'USD',
+      status: 'NOT_DERIVABLE',
+      confidence: 'LOW',
+      method: 'Derived from deposits and withdrawals.',
+      evidence: { sampleSize: 3, matched: 0, matchRate: 0, expectedByChance: 0.06 },
+      warning: null,
+      caveat: 'Figures are denominated in USD.',
+    },
+    disclaimer: 'test disclaimer',
+  };
+  return { ...base, ...overrides };
+}
+
+async function renderWith(data) {
+  fetchTaxSummary.mockResolvedValue(data);
+  render(<TaxPage />);
+  await waitFor(() => expect(screen.getByText(/tax treatment scenarios/i)).toBeInTheDocument());
+  return document.body.textContent ?? '';
+}
+
+beforeEach(() => {
+  fetchTaxSummary.mockReset();
+  fetchTaxPositions.mockReset();
+  fetchTaxPositions.mockResolvedValue({
+    positions: [
+      {
+        positionKey: 'k1',
+        symbol: 'ETHUSD',
+        side: 'long',
+        instrumentType: 'FNO',
+        quantity: 400,
+        grossPnl: 44.71,
+        fees: 10.01,
+        realizedPnl: 34.7,
+        closedAt: '2026-05-02T10:00:00Z',
+        lotMatches: 4,
+      },
+    ],
+    totals: {
+      FNO: { positions: 1, grossPnl: 44.71, fees: 10.01, realizedPnl: 34.7, winners: 1, losers: 0 },
+      SPOT: { positions: 0, grossPnl: 0, fees: 0, realizedPnl: 0, winners: 0, losers: 0 },
+      UNKNOWN: { positions: 0, grossPnl: 0, fees: 0, realizedPnl: 0, winners: 0, losers: 0 },
+    },
+  });
+});
+
+describe('F&O card — the frontend must never compute a tax amount', () => {
+  it('PROFITABLE YEAR: shows taxable income, and no rupee tax at any rate', async () => {
+    // The case the original bug would have failed. 125,000 taxed at 30% is
+    // 37,500 — that figure must not appear anywhere on the page.
+    const text = await renderWith(
+      summary({
+        bridge: {
+          grossTradingPnl: 150000,
+          tradingCommission: -20000,
+          netTradingPnl: 130000,
+          funding: -2000,
+          liquidationFees: -3000,
+          completeEconomicPnl: 125000,
+        },
+        taxableBusinessIncome: 125000,
+        lossAvailableForSetOff: 0,
+      }),
+    );
+
+    // USD fixture, so US grouping. The point of the test is the ABSENCE of a
+    // computed tax, not the separator.
+    expect(text).toContain('125,000');
+    expect(text).toMatch(/your slab/i);
+    expect(text).toMatch(/CA review/i);
+
+    // 30% of the economic result, in every form it could render.
+    expect(text).not.toContain('37,500');
+    expect(text).not.toContain('37500');
+    expect(text).not.toMatch(/estimated (f&o|fno) tax/i);
+    expect(text).not.toMatch(/f&o tax/i);
+  });
+
+  it('LOSS YEAR: passes on substance, not because max(0, loss) happens to be 0', async () => {
+    const text = await renderWith(summary());
+
+    expect(text).toContain('8,930.90'); // the loss, stated
+    expect(text).toMatch(/your slab/i); // rate deferred to a CA, not asserted
+
+    // The broken formula also produced 0 here, so a zero on screen proves
+    // nothing. What proves it: the page defers the RATE rather than applying
+    // one, which the old code could not do.
+    expect(text).not.toMatch(/estimated (f&o|fno) tax/i);
+  });
+
+  it('SOURCE OF TRUTH: renders the API figure, never one derived from P&L', async () => {
+    // taxableBusinessIncome deliberately disagrees with completeEconomicPnl.
+    // A UI that re-derives income from P&L shows 100,000 and fails.
+    const text = await renderWith(
+      summary({
+        bridge: { ...summary().bridge, completeEconomicPnl: 100000 },
+        taxableBusinessIncome: 42000,
+        lossAvailableForSetOff: 0,
+      }),
+    );
+
+    expect(text).toContain('42,000');
+    expect(text).not.toContain('30,000'); // 100,000 x 30%
+  });
+});
+
+describe('VDA scenario — illustrative, and still not computed here', () => {
+  it('renders the API tax figure rather than gains x 30%', async () => {
+    // Gains and tax are deliberately inconsistent: 50,000 x 30% is 15,000, but
+    // the engine says 9,999. The UI must show what the engine says.
+    const text = await renderWith(
+      summary({
+        illustrativeVda: {
+          basis: 'ACTUAL_VDA',
+          actualVdaPositions: 5,
+          gains: 50000,
+          losses: -1000,
+          taxRate: 0.3,
+          tax: 9999,
+          tds: 0,
+        },
+      }),
+    );
+
+    expect(text).toContain('9,999');
+    expect(text).not.toContain('15,000');
+    expect(text).toMatch(/illustrative/i);
+  });
+});
+
+describe('provenance comes from the API', () => {
+  it('renders the exact versions served, with no fixture fallback', async () => {
+    await renderWith(
+      summary({
+        versions: { taxRules: 'TEST-RULE-999', pnlEngine: 'TEST-PNL-777', calcEngine: 'TEST-CALC-888' },
+      }),
+    );
+
+    // The methodology panel is collapsed; open it via its trigger.
+    screen.getByRole('button', { name: /view methodology/i }).click();
+    await waitFor(() => expect(document.body.textContent).toContain('TEST-RULE-999'));
+
+    const opened = document.body.textContent ?? '';
+    expect(opened).toContain('TEST-RULE-999');
+    expect(opened).toContain('TEST-PNL-777');
+    expect(opened).toContain('TEST-CALC-888');
+    // The values the page used to hardcode.
+    expect(opened).not.toContain('v2026.1');
+  });
+});
+
+describe('counts come from the API', () => {
+  it.each([
+    [0, 6],
+    [3, 2],
+  ])('renders needsReview=%i and recovered=%i as served', async (needsReview, recovered) => {
+    const text = await renderWith(
+      summary({
+        counts: { positions: 10, walletTransactions: 20, expiredOptionsRecovered: recovered, needsReview },
+      }),
+    );
+
+    expect(text).toContain(`${needsReview} positions need review`);
+    expect(text).toContain(`${recovered} expired options recovered`);
+  });
+});
+
+describe('the reconciliation gate still withholds figures', () => {
+  it('shows nothing but the notice while P&L is unreconciled', async () => {
+    fetchTaxSummary.mockResolvedValue(
+      summary({
+        calculationStatus: 'INVALID_PENDING_RECONCILIATION',
+        calculationStatusMessage: 'Tax calculation requires reconciliation.',
+      }),
+    );
+    render(<TaxPage />);
+    await waitFor(() =>
+      expect(screen.getAllByText(/tax calculation requires reconciliation/i).length).toBeGreaterThan(0),
+    );
+
+    const text = document.body.textContent ?? '';
+    expect(text).not.toContain('8,930.90');
+    expect(text).not.toMatch(/tax treatment scenarios/i);
+  });
+});
+
+describe('three views, each answering a different question', () => {
+  it('opens on Overview and offers the other two', async () => {
+    await renderWith(summary());
+
+    expect(screen.getByRole('button', { name: 'Overview' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tax transactions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'CA report' })).toBeInTheDocument();
+    // Overview is the default view.
+    expect(document.body.textContent).toMatch(/tax treatment scenarios/i);
+  });
+
+  it('Tax transactions lists positions and keeps the two regimes apart', async () => {
+    await renderWith(summary());
+    screen.getByRole('button', { name: 'Tax transactions' }).click();
+
+    await waitFor(() => expect(document.body.textContent).toContain('ETHUSD'));
+
+    const text = document.body.textContent ?? '';
+    // Both categories are offered as separate tabs, never one merged list.
+    expect(text).toMatch(/F&O \/ Business/);
+    expect(text).toMatch(/VDA \/ 115BBH/);
+    // Position-level, and it says so: one row is an open-to-flat position, not
+    // a fill. Showing lot matches raw would report 1,464 trades against 303.
+    expect(text).toMatch(/one open-to-flat position/i);
+    expect(text).toMatch(/FIFO lots/i);
+    // Tax treatment is stated per row, so the table explains itself.
+    expect(text).toMatch(/BUSINESS INCOME|BUSINESS LOSS/);
+  });
+
+  it('CA report carries the export handoff, not the scenarios', async () => {
+    await renderWith(summary());
+    screen.getByRole('button', { name: 'CA report' }).click();
+
+    await waitFor(() => expect(document.body.textContent).toMatch(/generate ca pack/i));
+
+    const text = document.body.textContent ?? '';
+    expect(text).toMatch(/hand it to your CA/i);
+    // The argument lives on Overview; this view is the handoff.
+    expect(text).not.toMatch(/tax treatment scenarios/i);
+  });
+});
+
+describe('currency is never assumed', () => {
+  it('renders USD figures with a dollar sign, never a rupee sign', async () => {
+    // Delta India settles in USD. Rendering those with a rupee sign understated
+    // an Indian tax base ~84x — the worst bug this page has had.
+    const text = await renderWith(summary());
+
+    expect(text).toContain('$8,930.90');
+    expect(text).not.toContain('₹8,930.90');
+    // And says so on the status strip rather than leaving the reader to notice.
+    expect(text).toMatch(/FIGURES IN USD · INR CONVERSION PENDING/i);
+  });
+
+  it('uses rupees — and Indian grouping — only when the API says INR', async () => {
+    const text = await renderWith(
+      summary({
+        currency: 'INR',
+        conversion: {
+          applied: true,
+          rate: 85,
+          from: 'USD',
+          to: 'INR',
+          status: 'DERIVED',
+          confidence: 'HIGH',
+          method: 'Derived from deposits and withdrawals.',
+          evidence: { sampleSize: 146, matched: 138, matchRate: 0.945, expectedByChance: 2.92 },
+          warning: null,
+          caveat: 'Not a statutory rate.',
+        },
+        bridge: { ...summary().bridge, completeEconomicPnl: -125000 },
+      }),
+    );
+
+    expect(text).toContain('₹1,25,000'); // en-IN grouping, not 125,000
+    expect(text).not.toMatch(/figures are in USD/i);
+  });
+
+  it('never silently defaults to rupees when the unit is unknown', async () => {
+    const text = await renderWith(summary({ currency: undefined, conversion: undefined }));
+    expect(text).not.toContain('₹8,930.90');
+  });
+});
+
+describe('conversion shows its working', () => {
+  it('states the rate and the evidence behind it, not just a rupee figure', async () => {
+    const text = await renderWith(
+      summary({
+        currency: 'INR',
+        conversion: {
+          applied: true,
+          rate: 85,
+          from: 'USD',
+          to: 'INR',
+          status: 'DERIVED',
+          confidence: 'HIGH',
+          method: 'Derived from deposits and withdrawals.',
+          evidence: { sampleSize: 146, matched: 138, matchRate: 0.945, expectedByChance: 2.92 },
+          warning: null,
+          caveat: 'Not a statutory rate.',
+        },
+      }),
+    );
+
+    // The rate stays visible on the status strip …
+    expect(text).toMatch(/FX ₹85\/USD/);
+    expect(text).toMatch(/DISCLOSED ASSUMPTION/i);
+
+    // … and its evidence in the audit section, where a CA looks for it. A
+    // converted number whose basis cannot be found is not auditable.
+    screen.getByRole('button', { name: /view verification details/i }).click();
+    await waitFor(() => expect(document.body.textContent).toContain('138/146'));
+    const audit = document.body.textContent ?? '';
+    expect(audit).toContain('2.92');
+    expect(audit).toMatch(/not the rate prescribed under Rule 115/i);
+  });
+
+  it('surfaces a mid-period rate change instead of hiding it', async () => {
+    const text = await renderWith(
+      summary({
+        currency: 'USD',
+        conversion: {
+          applied: false,
+          rate: 85,
+          from: 'USD',
+          to: 'USD',
+          status: 'DRIFT_DETECTED',
+          confidence: 'LOW',
+          method: 'Derived from deposits and withdrawals.',
+          evidence: { sampleSize: 40, matched: 30, matchRate: 0.75, expectedByChance: 0.8 },
+          warning: 'The rupee rail implies 85 earlier in the period and 90 later.',
+          caveat: 'Not a statutory rate.',
+        },
+      }),
+    );
+
+    // Drift keeps its own prominence: an unreliable rate is not audit trivia.
+    expect(text).toMatch(/FIGURES IN USD · INR CONVERSION PENDING/i);
+  });
+});
+
+describe('the VDA card must not imply VDA activity that does not exist', () => {
+  it('says plainly there are no VDA transactions when basis is a reclassification', async () => {
+    // A trader with zero spot transactions saw a VDA tax figure and reasonably
+    // asked where it came from. The number is the same F&O activity re-read
+    // under 115BBH — which has to be stated, not inferred.
+    const text = await renderWith(summary());
+
+    // The card stays so the two regimes can be compared — but carries NO
+    // AMOUNT. A large figure beside a real one reads as real, whatever the
+    // badge says, and this one described trades the user never made.
+    expect(text).toMatch(/VDA \/ 115BBH/);
+    expect(text).toMatch(/NOT APPLICABLE THIS YEAR/i);
+    expect(text).toMatch(/not applicable/i);
+    expect(text).not.toContain('4,351');
+    // No "difference" either: there is nothing to difference against.
+    expect(text).not.toMatch(/DIFFERENCE/);
+    // What the regime WOULD do is still explained, without asserting a number.
+    expect(text).toMatch(/no spot \/ VDA transactions this year/i);
+    expect(text).toMatch(/taxed at 30% on its own/i);
+  });
+
+  it('drops the hypothetical framing once real VDA positions exist', async () => {
+    const text = await renderWith(
+      summary({
+        illustrativeVda: {
+          basis: 'ACTUAL_VDA',
+          actualVdaPositions: 12,
+          gains: 20000,
+          losses: -8000,
+          taxRate: 0.3,
+          tax: 6000,
+          tds: 200,
+        },
+      }),
+    );
+
+    // Real VDA activity: the figures are genuine, so they render.
+    expect(text).toMatch(/VDA \/ 115BBH/);
+    expect(text).toMatch(/ILLUSTRATIVE 30% TREATMENT/i);
+    expect(text).toMatch(/DIFFERENCE/);
+    expect(text).not.toMatch(/NOT APPLICABLE THIS YEAR/i);
+  });
+});
+
+describe('nothing is proposed for reserve when no VDA activity exists', () => {
+  it('hides the reserve and advance-tax sections, and says why', async () => {
+    // These were built on the hypothetical VDA figure, so the page advised a
+    // trader who LOST money to set aside tax on trades they never made.
+    const text = await renderWith(summary());
+
+    expect(text).not.toMatch(/Tax reserve/i);
+    expect(text).not.toMatch(/advance-tax schedule/i);
+    expect(text).not.toContain('3,69,919');
+    expect(text).toMatch(/nothing to set aside for this year/i);
+  });
+
+  it('restores them once real VDA positions exist', async () => {
+    const text = await renderWith(
+      summary({
+        illustrativeVda: {
+          basis: 'ACTUAL_VDA',
+          actualVdaPositions: 12,
+          gains: 20000,
+          losses: -8000,
+          taxRate: 0.3,
+          tax: 6000,
+          tds: 200,
+        },
+      }),
+    );
+
+    expect(text).toMatch(/Tax reserve/i);
+    expect(text).toMatch(/advance-tax schedule/i);
+    expect(text).not.toMatch(/nothing to set aside/i);
+  });
+});

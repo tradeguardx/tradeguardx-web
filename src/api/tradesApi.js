@@ -163,7 +163,12 @@ function tradeMergeKey(t) {
  * separate OPEN and CLOSED rows for the same lifecycle while ingesting events.
  */
 export async function fetchUnifiedTrades({ accessToken, tradingAccountId, limit = 100, signal } = {}) {
-  const journalRows = await fetchJournalTrades({ accessToken, tradingAccountId, limit, signal }).catch(() => []);
+  // Deliberately NOT caught here. Swallowing the failure returned an empty
+  // array, which every caller then rendered as "no trades synced yet" — so an
+  // unreachable server and a genuinely empty account looked identical, and a
+  // user whose sync was fine concluded it was broken. Callers that want a
+  // best-effort result still add their own .catch at the call site.
+  const journalRows = await fetchJournalTrades({ accessToken, tradingAccountId, limit, signal });
 
   const byKey = new Map();
   for (const row of journalRows) {
@@ -293,4 +298,51 @@ export async function fetchJournalMedia({ accessToken, tradingAccountId, tradeUi
   });
   const data = unwrap(payload);
   return data?.media ?? [];
+}
+
+/**
+ * Indian FY tax summary — gross winnings, gross losses, net P&L and estimated
+ * tax owed.
+ *
+ * `fy` is the FY START year (2026 = FY2026-27, Apr 2026 → Mar 2027). Omit it
+ * for the current financial year.
+ *
+ * The numbers come from exchange_realized_trades, which sync-service computes
+ * with FIFO from raw exchange fills — Delta exposes no realized-P&L field of
+ * its own, so this is reconstructed, not reported.
+ */
+export async function fetchTaxSummary({ accessToken, tradingAccountId, fy, signal } = {}) {
+  if (!accessToken) throw new Error('Missing access token');
+  if (!tradingAccountId) throw new Error('Missing trading account');
+
+  const params = new URLSearchParams({ tradingAccountId });
+  if (fy) params.set('fy', String(fy));
+
+  const payload = await apiGet(`/tax/summary?${params.toString()}`, {
+    baseUrl: TRADE_API_BASE_URL,
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal,
+  });
+  return unwrap(payload);
+}
+
+/**
+ * Position-level detail behind the tax summary — the drill-down a CA works
+ * from. Returns positions (one open-to-flat episode each), not FIFO lot
+ * matches, plus per-category totals that are deliberately never combined.
+ */
+export async function fetchTaxPositions({ accessToken, tradingAccountId, fy, category, signal } = {}) {
+  if (!accessToken) throw new Error('Missing access token');
+  if (!tradingAccountId) throw new Error('Missing trading account');
+
+  const params = new URLSearchParams({ tradingAccountId });
+  if (fy) params.set('fy', String(fy));
+  if (category) params.set('category', category);
+
+  const payload = await apiGet(`/tax/positions?${params.toString()}`, {
+    baseUrl: TRADE_API_BASE_URL,
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal,
+  });
+  return unwrap(payload);
 }

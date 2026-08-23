@@ -1,4 +1,4 @@
-import { apiGet, apiPut } from './httpClient';
+import { apiDelete, apiGet, apiPut } from './httpClient';
 
 function unwrap(payload) {
   if (payload?.success && payload.data !== undefined) return payload.data;
@@ -41,6 +41,24 @@ export async function saveRuleInstance({
   if (config !== undefined) body.config = config;
   if (enabled !== undefined) body.enabled = enabled;
   const payload = await apiPut(path, body, {
+    signal,
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return unwrap(payload);
+}
+
+/**
+ * DELETE /user/rules/{templateSlug}/pending
+ *
+ * Drops a change staged during a lockout before it takes effect. Without this,
+ * a decision made while locked out and frustrated executes hours later without
+ * asking again — staging would be a delayed trap rather than breathing room.
+ */
+export async function cancelPendingRuleChange({ accessToken, tradingAccountId, templateSlug, signal } = {}) {
+  if (!accessToken) throw new Error('Missing access token for rules');
+  if (!tradingAccountId) throw new Error('Missing tradingAccountId for rules');
+  const q = `?tradingAccountId=${encodeURIComponent(tradingAccountId)}`;
+  const payload = await apiDelete(`/rules/${encodeURIComponent(templateSlug)}/pending${q}`, {
     signal,
     headers: { Authorization: `Bearer ${accessToken}` },
   });

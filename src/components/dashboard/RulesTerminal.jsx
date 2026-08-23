@@ -7,7 +7,7 @@ import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { useDashboardTheme } from '../../context/DashboardThemeContext';
 import { useToast } from '../common/ToastProvider';
 import { ShimmerBlock } from '../common/LoadingSkeleton';
-import { fetchRulesBundle, saveRuleInstance } from '../../api/rulesApi';
+import { fetchRulesBundle, saveRuleInstance, cancelPendingRuleChange } from '../../api/rulesApi';
 import CooldownBanner from './CooldownBanner';
 import { useCooldown } from '../../hooks/useCooldown';
 
@@ -304,6 +304,46 @@ function ruleSummaryLine(templateSlug, values, fallback) {
 }
 
 function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked = false, expanded, onToggleExpand }) {
+  // A change staged during a lockout must be revocable. Otherwise a decision
+  // made while locked out and frustrated executes hours later without asking
+  // again, and staging becomes a delayed trap rather than breathing room.
+  const [cancelling, setCancelling] = useState(false);
+  const [toggling, setToggling] = useState(false);
+
+  /**
+   * Flip a rule on or off.
+   *
+   * Turning OFF is a loosening: the backend defers it past any active lockout
+   * (and past the cooling-off window), so the toast reports when it lands
+   * rather than claiming it is already done. Turning ON is immediate — more
+   * protection never waits.
+   */
+  const toggleEnabled = async () => {
+    const next = !rule.enabled;
+    setToggling(true);
+    try {
+      const res = await saveRuleInstance({
+        accessToken,
+        tradingAccountId,
+        templateSlug: rule.id,
+        enabled: next,
+      });
+      if (res?.deferred?.effectiveAt) {
+        const when = new Date(res.deferred.effectiveAt);
+        toast.success(
+          'Scheduled',
+          `${rule.name} turns off ${when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}. It stays active until then — you can cancel before it lands.`,
+        );
+      } else {
+        toast.success(next ? 'Rule on' : 'Rule off', `${rule.name} is now ${next ? 'active' : 'inactive'}.`);
+      }
+      onSaved?.();
+    } catch (err) {
+      toast.error('Could not update', err?.details?.error?.message || err?.message || 'Please try again.');
+    } finally {
+      setToggling(false);
+    }
+  };
   const toast = useToast();
   const { isDark } = useDashboardTheme();
   const hasMode = rule.fields.some((f) => f.key === 'mode');
@@ -354,7 +394,9 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
         tradingAccountId,
         templateSlug: rule.id,
         config,
-        enabled: true,
+          // Was hardcoded true, which silently re-armed a rule the user had
+          // turned off whenever they edited any value.
+          enabled: rule.enabled !== false,
       });
       if (res?.deferred?.effectiveAt) {
         const when = new Date(res.deferred.effectiveAt);
@@ -419,12 +461,18 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-display font-semibold text-sm truncate" style={{ color: 'var(--dash-text-primary)' }}>{rule.name}</h3>
-              {!rule.locked && rule.hasSavedInstance && (
+              {!rule.locked && rule.hasSavedInstance && rule.enabled && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0 text-accent"
                   style={{ backgroundColor: isDark ? 'rgba(0,212,170,0.14)' : 'rgba(0,212,170,0.10)', border: `1px solid rgba(0,212,170,${isDark ? '0.2' : '0.30'})` }}>
                   Armed
                 </span>
               )}
+                {!rule.locked && rule.hasSavedInstance && !rule.enabled && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0"
+                    style={{ color: 'var(--dash-text-muted)', backgroundColor: 'var(--dash-bg-input)', border: '1px solid var(--dash-border)' }}>
+                    Off
+                  </span>
+                )}
               {!rule.locked && !rule.hasSavedInstance && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0 text-rose-400"
                   style={{ backgroundColor: isDark ? 'rgba(244,63,94,0.12)' : 'rgba(244,63,94,0.08)', border: `1px solid rgba(244,63,94,${isDark ? '0.25' : '0.35'})` }}>
@@ -432,13 +480,38 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                 </span>
               )}
               {!rule.locked && rule.pendingEffectiveAt && (
+                <>
                 <span
                   className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 text-sky-400"
-                  title={`Looser limit takes effect ${new Date(rule.pendingEffectiveAt).toLocaleString()}`}
+                  title={`${rule.pendingEnabled === false ? 'This rule turns off' : 'Looser limit takes effect'} ${new Date(rule.pendingEffectiveAt).toLocaleString()}`}
                   style={{ backgroundColor: isDark ? 'rgba(56,189,248,0.10)' : 'rgba(56,189,248,0.08)', border: `1px solid rgba(56,189,248,${isDark ? '0.25' : '0.35'})` }}>
                   <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  Looser limit pending
+                  {rule.pendingEnabled === false ? 'Turns off when lock lifts' : 'Looser limit pending'}
                 </span>
+                  <button
+                    type="button"
+                    disabled={cancelling}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setCancelling(true);
+                      try {
+                        await cancelPendingRuleChange({
+                          accessToken,
+                          tradingAccountId,
+                          templateSlug: rule.id,
+                        });
+                        onSaved?.();
+                      } finally {
+                        setCancelling(false);
+                      }
+                    }}
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 disabled:opacity-50"
+                    title="Keep the current, stricter setting"
+                    style={{ color: 'var(--dash-text-muted)', border: '1px solid var(--dash-border)' }}
+                  >
+                    {cancelling ? 'Cancelling…' : 'Cancel'}
+                  </button>
+                </>
               )}
             </div>
             <p className="mt-0.5 line-clamp-2 font-mono text-xs" style={{ color: 'var(--dash-text-muted)' }}>
@@ -459,6 +532,41 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                 Upgrade
               </Link>
             )}
+              {/* Toggle lives on the header so a rule can be switched without
+                  opening it — the whole point of scanning a list of guardrails
+                  is seeing, and changing, their state at a glance.
+
+                  stopPropagation because the header is itself the expand
+                  control; without it every toggle would also open the card. */}
+              {!rule.locked && rule.hasSavedInstance && (
+                <span
+                  role="switch"
+                  tabIndex={0}
+                  aria-checked={rule.enabled}
+                  aria-label={`${rule.enabled ? 'Turn off' : 'Turn on'} ${rule.name}`}
+                  title={rule.enabled ? 'Turn this rule off' : 'Turn this rule on'}
+                  onClick={(e) => { e.stopPropagation(); if (!toggling && !saving) void toggleEnabled(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!toggling && !saving) void toggleEnabled();
+                    }
+                  }}
+                  className="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors"
+                  style={{
+                    backgroundColor: rule.enabled ? 'var(--dash-accent, #00d4aa)' : 'var(--dash-toggle-track, rgba(148,163,184,0.35))',
+                    opacity: toggling ? 0.5 : 1,
+                  }}
+                >
+                  <motion.span
+                    layout
+                    transition={{ type: 'spring', stiffness: 500, damping: 34 }}
+                    className="inline-block h-4 w-4 rounded-full bg-white shadow"
+                    style={{ marginLeft: rule.enabled ? 18 : 2 }}
+                  />
+                </span>
+              )}
             <motion.svg
               animate={{ rotate: expanded ? 180 : 0 }}
               transition={{ duration: 0.2 }}
@@ -650,6 +758,50 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                 >
                   {saving ? 'Saving…' : rule.hasSavedInstance ? 'Save changes' : 'Save & enable'}
                 </button>
+                {/* The only way to switch a rule off. Without it `enabled`
+                    existed end-to-end — API, engine, cooling-off — with nothing
+                    able to set it, so a trader who wanted one rule gone had to
+                    delete their API key instead.
+
+                    Turning OFF is a loosening, so the backend defers it by the
+                    cooling-off window (and past any active lockout). Turning ON
+                    is immediate: more protection never waits. */}
+                {rule.hasSavedInstance && (
+                  <button
+                    type="button"
+                    disabled={saving || toggling}
+                    onClick={async () => {
+                      const next = !rule.enabled;
+                      setToggling(true);
+                      try {
+                        const res = await saveRuleInstance({
+                          accessToken,
+                          tradingAccountId,
+                          templateSlug: rule.id,
+                          enabled: next,
+                        });
+                        if (res?.deferred?.effectiveAt) {
+                          const when = new Date(res.deferred.effectiveAt);
+                          toast.success(
+                            'Scheduled',
+                            `${rule.name} turns off ${when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}. It stays active until then — you can cancel any time before.`,
+                          );
+                        } else {
+                          toast.success(next ? 'Rule on' : 'Rule off', `${rule.name} is now ${next ? 'active' : 'inactive'}.`);
+                        }
+                        onSaved?.();
+                      } catch (err) {
+                        toast.error('Could not update', err?.details?.error?.message || err?.message || 'Please try again.');
+                      } finally {
+                        setToggling(false);
+                      }
+                    }}
+                    className="h-9 w-full rounded-lg border px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 sm:w-auto"
+                    style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
+                  >
+                    {toggling ? 'Updating…' : rule.enabled ? 'Turn off' : 'Turn on'}
+                  </button>
+                )}
                 {rule.hasSavedInstance && !saving && (
                   <span className="hidden text-xs sm:inline" style={{ color: 'var(--dash-text-faint)' }}>
                     Saved — edit any value to update.
@@ -734,6 +886,10 @@ export default function RulesTerminal() {
         locked: !t.eligible,
         eligible: t.eligible,
         hasSavedInstance: Boolean(inst),
+          // A saved rule can be switched OFF. Without this the toggle read
+          // "off" for every armed rule, because rule.enabled was undefined.
+          enabled: inst ? inst.enabled !== false : false,
+          pendingEnabled: inst?.pendingEnabled ?? null,
         pendingEffectiveAt: inst?.pendingEffectiveAt ?? null,
         fields: buildFields(t, inst),
         planSlugs: t.planSlugs,
