@@ -27,6 +27,22 @@ import { fetchTaxSummary } from '../api/tradesApi';
  *     paise; anything illustrative or derived shows whole rupees. A CA reading
  *     "Funding -18" above "Funding -18.02" stops trusting both.
  *
+ * THE CONTRACT — read before editing:
+ *
+ *   The Tax UI must never calculate tax amounts. Every tax figure the Tax
+ *   Centre displays must originate from the versioned Tax Engine API. F&O
+ *   business income has NO generic frontend 30% calculation, and must not
+ *   acquire one — the engine deliberately returns taxable income and never a
+ *   rupee tax, because slab, surcharge and cess depend on income this product
+ *   cannot see.
+ *
+ *   This page may format currency, format numbers, and choose what to show. It
+ *   may not compute a tax, a rate, a deduction or a loss set-off. That rule was
+ *   broken once by copying arithmetic out of a design fixture; a design fixture
+ *   is a VISUAL EXAMPLE, never authoritative tax logic.
+ *
+ *   Guards: `scripts/check-no-tax-arithmetic.mjs` (CI) and `TaxPage.test.jsx`.
+ *
  * The copy is legally load-bearing and reviewed — it says "economic result"
  * rather than "taxable income", "Expense treatment: CA review" rather than
  * "deductible: yes", and never states carry-forward as fact. Reword only with
@@ -228,7 +244,11 @@ export default function TaxPage() {
     // the UI. Invisible on a loss year (max(0, loss) is zero) and confidently
     // wrong on a profitable one, which is the dangerous kind of bug.
     const vdaTax = Number(v.tax ?? 0);
-    const taxableBusinessIncome = Math.max(0, economic);
+    // Read from the engine, NOT re-derived from the economic result. The two
+    // can legitimately differ — taxable income is a tax-engine conclusion, and
+    // the moment the UI computes its own it has become a second tax engine.
+    const taxableBusinessIncome = Number(data.taxableBusinessIncome ?? 0);
+    const lossAvailable = Number(data.lossAvailableForSetOff ?? 0);
 
     return {
       economic,
@@ -236,6 +256,7 @@ export default function TaxPage() {
       costs,
       vdaTax,
       taxableBusinessIncome,
+      lossAvailable,
       // What the classification decision is worth. The F&O side asserts no
       // rupee tax, so the whole VDA figure is what the reading would add.
       gap: vdaTax,
@@ -840,7 +861,7 @@ export default function TaxPage() {
                   { label: 'Applicable rate', value: 'your slab · CA review', tone: AMBER, icon: P.alert, iconColor: AMBER },
                   {
                     label: view.losing ? 'Potential business loss' : 'Costs deducted',
-                    value: inr(view.losing ? Math.abs(view.economic) : view.costs),
+                    value: inr(view.losing ? view.lossAvailable : view.costs),
                     tone: GREEN,
                     icon: P.check,
                     iconColor: GREEN,
