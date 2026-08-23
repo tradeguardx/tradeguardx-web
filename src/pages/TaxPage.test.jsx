@@ -71,7 +71,19 @@ function summary(overrides = {}) {
     },
     illustrativeVda: { gains: 14506.64, losses: -23212.63, taxRate: 0.3, tax: 4351.99, tds: 0 },
     currency: 'USD',
-    inrConversion: { status: 'NOT_AVAILABLE', reason: 'Figures are denominated in USD.' },
+    sourceCurrency: 'USD',
+    conversion: {
+      applied: false,
+      rate: null,
+      from: 'USD',
+      to: 'USD',
+      status: 'NOT_DERIVABLE',
+      confidence: 'LOW',
+      method: 'Derived from deposits and withdrawals.',
+      evidence: { sampleSize: 3, matched: 0, matchRate: 0, expectedByChance: 0.06 },
+      warning: null,
+      caveat: 'Figures are denominated in USD.',
+    },
     disclaimer: 'test disclaimer',
   };
   return { ...base, ...overrides };
@@ -295,7 +307,18 @@ describe('currency is never assumed', () => {
     const text = await renderWith(
       summary({
         currency: 'INR',
-        inrConversion: { status: 'CONVERTED', reason: '' },
+        conversion: {
+          applied: true,
+          rate: 85,
+          from: 'USD',
+          to: 'INR',
+          status: 'DERIVED',
+          confidence: 'HIGH',
+          method: 'Derived from deposits and withdrawals.',
+          evidence: { sampleSize: 146, matched: 138, matchRate: 0.945, expectedByChance: 2.92 },
+          warning: null,
+          caveat: 'Not a statutory rate.',
+        },
         bridge: { ...summary().bridge, completeEconomicPnl: -125000 },
       }),
     );
@@ -305,7 +328,58 @@ describe('currency is never assumed', () => {
   });
 
   it('never silently defaults to rupees when the unit is unknown', async () => {
-    const text = await renderWith(summary({ currency: undefined, inrConversion: undefined }));
+    const text = await renderWith(summary({ currency: undefined, conversion: undefined }));
     expect(text).not.toContain('₹8,930.90');
+  });
+});
+
+describe('conversion shows its working', () => {
+  it('states the rate and the evidence behind it, not just a rupee figure', async () => {
+    const text = await renderWith(
+      summary({
+        currency: 'INR',
+        conversion: {
+          applied: true,
+          rate: 85,
+          from: 'USD',
+          to: 'INR',
+          status: 'DERIVED',
+          confidence: 'HIGH',
+          method: 'Derived from deposits and withdrawals.',
+          evidence: { sampleSize: 146, matched: 138, matchRate: 0.945, expectedByChance: 2.92 },
+          warning: null,
+          caveat: 'Not a statutory rate.',
+        },
+      }),
+    );
+
+    // A converted number without its rate is not auditable.
+    expect(text).toMatch(/₹85\/USD/);
+    expect(text).toContain('138/146');
+    expect(text).toContain('2.92');
+    // And must never be presented as the statutory answer.
+    expect(text).toMatch(/disclosed assumption|not a statutory rate/i);
+  });
+
+  it('surfaces a mid-period rate change instead of hiding it', async () => {
+    const text = await renderWith(
+      summary({
+        currency: 'USD',
+        conversion: {
+          applied: false,
+          rate: 85,
+          from: 'USD',
+          to: 'USD',
+          status: 'DRIFT_DETECTED',
+          confidence: 'LOW',
+          method: 'Derived from deposits and withdrawals.',
+          evidence: { sampleSize: 40, matched: 30, matchRate: 0.75, expectedByChance: 0.8 },
+          warning: 'The rupee rail implies 85 earlier in the period and 90 later.',
+          caveat: 'Not a statutory rate.',
+        },
+      }),
+    );
+
+    expect(text).toMatch(/85 earlier in the period and 90 later/i);
   });
 });

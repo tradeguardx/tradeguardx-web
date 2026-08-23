@@ -422,7 +422,10 @@ export default function TaxPage() {
           {/* Currency notice. Delta India settles in USD, so an Indian tax
               figure still needs converting under Rule 115 — and this page must
               not imply it has done so. */}
-          {data?.inrConversion?.status === 'NOT_AVAILABLE' && (
+          {/* Where the rupee figures came from. Shown whether or not the
+              conversion succeeded: a converted number without its rate is not
+              auditable, and an unconverted one needs explaining. */}
+          {data?.conversion && (
             <div
               className="flex items-start gap-3 rounded-2xl border p-5"
               style={{ borderColor: `${AMBER}55`, backgroundColor: `${AMBER}12` }}
@@ -430,13 +433,23 @@ export default function TaxPage() {
               <span style={{ color: AMBER, marginTop: 2 }}>
                 <Icon d={P.alert} size={18} />
               </span>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-bold" style={{ color: AMBER }}>
-                  These figures are in {currency}, not rupees
+                  {data.conversion.applied
+                    ? `Converted from ${data.conversion.from} at ₹${data.conversion.rate}/${data.conversion.from} — a disclosed assumption, not a statutory rate`
+                    : `These figures are in ${currency}, not rupees`}
                 </p>
                 <p className="mt-1 text-sm leading-relaxed" style={{ color: SECONDARY }}>
-                  {data.inrConversion.reason}
+                  {data.conversion.warning || data.conversion.caveat}
                 </p>
+                {data.conversion.applied && (
+                  <p className="mt-2 font-mono text-[11px]" style={{ color: FAINT }}>
+                    {data.conversion.method} Matched{' '}
+                    {data.conversion.evidence.matched}/{data.conversion.evidence.sampleSize} transfers
+                    against {data.conversion.evidence.expectedByChance} expected by chance ·{' '}
+                    {data.conversion.confidence} confidence
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -449,7 +462,12 @@ export default function TaxPage() {
               { label: 'WALLET RECONCILED', ok: true },
               { label: 'DATA COMPLETE', ok: data.dataCompleteness === 'complete' },
               { label: 'TAX TREATMENT NEEDS CA REVIEW', ok: false },
-              { label: `FIGURES IN ${currency} · INR CONVERSION PENDING`, ok: false },
+              {
+                label: data?.conversion?.applied
+                  ? `FX ₹${data.conversion.rate}/${data.conversion.from} · DISCLOSED ASSUMPTION`
+                  : `FIGURES IN ${currency} · INR CONVERSION PENDING`,
+                ok: false,
+              },
             ].map((p) => (
               <span
                 key={p.label}
