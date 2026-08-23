@@ -220,17 +220,25 @@ export default function TaxPage() {
     const economic = Number(b.completeEconomicPnl ?? 0);
     const losing = economic < 0;
     const costs = Math.abs(Number(b.tradingCommission ?? 0)) + Math.abs(Number(b.funding ?? 0)) + Math.abs(Number(b.liquidationFees ?? 0));
-    const fnoTax = Math.max(0, economic) * 0.3;
+    // NO F&O tax is computed here, deliberately. Business income is taxed at
+    // the user's slab after surcharge and cess and depends on income this
+    // service cannot see, so the engine returns taxable income and never a
+    // rupee figure. Applying 30% to F&O is precisely the error that once
+    // billed a trader 4,348 on a losing year — it must not come back through
+    // the UI. Invisible on a loss year (max(0, loss) is zero) and confidently
+    // wrong on a profitable one, which is the dangerous kind of bug.
     const vdaTax = Number(v.tax ?? 0);
+    const taxableBusinessIncome = Math.max(0, economic);
 
     return {
       economic,
       losing,
       costs,
       vdaTax,
-      // The gap between the two readings — the number that tells a CA how much
-      // the classification decision is actually worth.
-      gap: Math.abs(vdaTax - fnoTax),
+      taxableBusinessIncome,
+      // What the classification decision is worth. The F&O side asserts no
+      // rupee tax, so the whole VDA figure is what the reading would add.
+      gap: vdaTax,
       b,
       c,
       ex,
@@ -679,7 +687,10 @@ export default function TaxPage() {
                   Exchange reconciliation details
                 </span>
                 <span className="ml-2 text-[11.5px]" style={{ color: FAINT }}>
-                  4 items shown for audit, none added to P&amp;L
+                  {[view.ex.cashflow, view.ex.settlement, view.ex.commission, view.ex.capitalMovement].filter(
+                    (n) => n != null,
+                  ).length}{' '}
+                  items shown for audit, none added to P&amp;L
                 </span>
               </span>
             </Disclosure>
@@ -812,12 +823,12 @@ export default function TaxPage() {
                 <div className="mb-1.5 flex items-baseline gap-2">
                   <span
                     className="whitespace-nowrap font-mono text-[29px] font-bold tracking-tight"
-                    style={{ color: view.losing ? GREEN : AMBER }}
+                    style={{ color: view.losing ? GREEN : PRIMARY }}
                   >
-                    {inr0(Math.max(0, view.economic) * 0.3)}
+                    {inr(view.taxableBusinessIncome)}
                   </span>
                   <span className="text-[11.5px]" style={{ color: FAINT }}>
-                    illustrative tax
+                    potential taxable trading income
                   </span>
                 </div>
                 <p className="mb-4 text-[12.5px] leading-relaxed" style={{ color: SECONDARY }}>
@@ -826,7 +837,7 @@ export default function TaxPage() {
                     : 'If treated as business income, the profit is taxed at your slab rate with every trading cost deductible against it.'}
                 </p>
                 {[
-                  { label: 'Potential taxable profit', value: inr(Math.max(0, view.economic)), tone: PRIMARY, icon: P.eq, iconColor: FAINT },
+                  { label: 'Applicable rate', value: 'your slab · CA review', tone: AMBER, icon: P.alert, iconColor: AMBER },
                   {
                     label: view.losing ? 'Potential business loss' : 'Costs deducted',
                     value: inr(view.losing ? Math.abs(view.economic) : view.costs),
@@ -938,9 +949,9 @@ export default function TaxPage() {
                   classification for your circumstances.
                 </p>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10.5px]" style={{ color: FAINT }}>
-                  <span>tax rules v2026.1</span>
-                  <span>P&amp;L engine v4.2.0</span>
-                  <span>calc engine v4.2.0</span>
+                  <span>tax rules {data.versions?.taxRules ?? '—'}</span>
+                  <span>P&amp;L engine {data.versions?.pnlEngine ?? '—'}</span>
+                  <span>calc engine {data.versions?.calcEngine ?? '—'}</span>
                 </div>
                 {[
                   { item: 'Trading fees & funding', fno: 'F&O: potentially deductible', vda: 'VDA: not deductible' },
