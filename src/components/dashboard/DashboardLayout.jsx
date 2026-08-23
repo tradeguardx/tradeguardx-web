@@ -15,11 +15,11 @@ import VerifyEmailBanner from './VerifyEmailBanner';
 
 const ROUTE_LABELS = {
   '/dashboard/overview': 'Overview',
-  '/dashboard/live': 'Live guard',
+  '/dashboard/live': 'Live Guard',
   '/dashboard/rules': 'Rules Terminal',
   '/dashboard/journal': 'Journal',
-  '/dashboard/trades': 'All trades',
-  '/dashboard/tax': 'Tax',
+  '/dashboard/trades': 'Trades',
+  '/dashboard/tax': 'Tax Centre',
   '/dashboard/install-extension': 'Install Extension',
   '/dashboard/pairing': 'Pairing',
   '/dashboard/account/trading': 'Trading Accounts',
@@ -37,7 +37,7 @@ const mobileNavItems = [
   { to: '/dashboard/overview', end: true, label: 'Overview', groupLabel: 'Protection', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z" /></svg>
   )},
-  { to: '/dashboard/live', end: false, label: 'Live guard', icon: (
+  { to: '/dashboard/live', end: false, label: 'Live Guard', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12h4l3 8 4-16 3 8h4" /></svg>
   )},
   { to: '/dashboard/rules', end: false, label: 'Rules', icon: (
@@ -46,8 +46,13 @@ const mobileNavItems = [
   { to: '/dashboard/journal', end: false, label: 'Journal', groupLabel: 'Review', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3m4-1v6a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h3.5a1.5 1.5 0 011.5 1.5V11a1 1 0 001 1h2z" /></svg>
   )},
-  { to: '/dashboard/trades', end: false, label: 'All trades', icon: (
+  { to: '/dashboard/trades', end: false, label: 'Trades', icon: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-6a2 2 0 012-2h6M9 17H7a2 2 0 01-2-2V7a2 2 0 012-2h6m-6 6h6m0 0v6m0-6h6" /></svg>
+  )},
+  // Tax Centre was missing here entirely — it exists in the desktop sidebar but
+  // mobile users had no route to it at all.
+  { to: '/dashboard/tax', end: false, label: 'Tax Centre', icon: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 3h12v18l-3-2-3 2-3-2-3 2V3zM9.5 9h5M9.5 13h5" /></svg>
   )},
   // Pairing (browser extension) is the prop-firm path — hidden for the crypto
   // launch, which enforces server-side via the exchange API key. See DashboardSidebar.
@@ -174,7 +179,7 @@ function MobileNavDrawer({ open, onClose, user, onSignOut }) {
                 <div key={item.to}>
                   {item.groupLabel && (
                     <p
-                      className="px-3 pb-1 pt-3 text-[10px] font-bold uppercase tracking-[0.14em]"
+                      className="px-3 pb-2 pt-5 text-[9.5px] font-bold uppercase tracking-[0.18em]"
                       style={{ color: 'var(--dash-text-faint)' }}
                     >
                       {item.groupLabel}
@@ -187,8 +192,10 @@ function MobileNavDrawer({ open, onClose, user, onSignOut }) {
                     rel={item.newTab ? 'noopener noreferrer' : undefined}
                     onClick={onClose}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors ${
-                        isActive ? 'bg-accent/10 text-accent' : 'hover:bg-[var(--dash-bg-card-hover)]'
+                        `relative flex items-center gap-3.5 rounded-xl px-3 py-2.5 text-[15px] transition-colors ${
+                          isActive
+                            ? 'border border-l-2 border-accent/25 border-l-accent bg-accent/[0.07] font-bold text-accent'
+                            : 'font-medium hover:bg-[var(--dash-bg-card-hover)]'
                       }`
                     }
                     style={({ isActive }) => (isActive ? {} : { color: 'var(--dash-text-secondary)' })}
@@ -411,6 +418,13 @@ function DashboardInner() {
                         {pageLabel}
                       </motion.span>
                     </AnimatePresence>
+                    {/* Guard state belongs beside the page you are on, not in
+                        the action group: it is context, not a control, and next
+                        to Kill switch it read as another button. */}
+                    <span className="hidden h-5 w-px lg:block" style={{ backgroundColor: 'var(--dash-border)' }} />
+                    <span className="hidden lg:inline-flex">
+                      <HeaderStatusPill />
+                    </span>
                   </>
                 )}
               </div>
@@ -442,17 +456,23 @@ function DashboardInner() {
                   <Link
                     to="/dashboard/account/security"
                     title="Lock yourself out of trading"
-                    className="hidden items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors hover:bg-[var(--dash-bg-card-hover)] lg:inline-flex"
-                    style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
+                    /* Solid red, unlike every other control in this bar. It reads
+                       as consequential because it is — styled like "Edit rules"
+                       it was indistinguishable from a settings link. Still a LINK
+                       to Security rather than an arm button: the weight is a
+                       warning, not a trigger. */
+                    className="hidden items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-bold text-white transition-colors lg:inline-flex"
+                    style={{ backgroundColor: '#dc2626' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#b91c1c'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#dc2626'; }}
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
                     </svg>
-                    Killswitch
+                    Kill switch
                   </Link>
                 )}
-                <HeaderStatusPill />
                 <span className="hidden lg:inline-flex">
                   <ThemeToggle />
                 </span>

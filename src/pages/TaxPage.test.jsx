@@ -69,7 +69,15 @@ function summary(overrides = {}) {
     walletAdjustments: {
       excluded: { cashflow: -3112.89, settlement: 109.72, commission: -5702.83, capitalMovement: 8928.08 },
     },
-    illustrativeVda: { gains: 14506.64, losses: -23212.63, taxRate: 0.3, tax: 4351.99, tds: 0 },
+    illustrativeVda: {
+      basis: 'FNO_RECLASSIFIED',
+      actualVdaPositions: 0,
+      gains: 14506.64,
+      losses: -23212.63,
+      taxRate: 0.3,
+      tax: 4351.99,
+      tds: 0,
+    },
     currency: 'USD',
     sourceCurrency: 'USD',
     conversion: {
@@ -187,7 +195,17 @@ describe('VDA scenario — illustrative, and still not computed here', () => {
     // Gains and tax are deliberately inconsistent: 50,000 x 30% is 15,000, but
     // the engine says 9,999. The UI must show what the engine says.
     const text = await renderWith(
-      summary({ illustrativeVda: { gains: 50000, losses: -1000, taxRate: 0.3, tax: 9999, tds: 0 } }),
+      summary({
+        illustrativeVda: {
+          basis: 'ACTUAL_VDA',
+          actualVdaPositions: 5,
+          gains: 50000,
+          losses: -1000,
+          taxRate: 0.3,
+          tax: 9999,
+          tds: 0,
+        },
+      }),
     );
 
     expect(text).toContain('9,999');
@@ -273,8 +291,12 @@ describe('three views, each answering a different question', () => {
     // Both categories are offered as separate tabs, never one merged list.
     expect(text).toMatch(/F&O \/ Business/);
     expect(text).toMatch(/VDA \/ 115BBH/);
-    // Position-level, with the FIFO lot count kept visible but distinct.
-    expect(text).toMatch(/lots.*FIFO matches|FIFO matches/i);
+    // Position-level, and it says so: one row is an open-to-flat position, not
+    // a fill. Showing lot matches raw would report 1,464 trades against 303.
+    expect(text).toMatch(/one open-to-flat position/i);
+    expect(text).toMatch(/FIFO lots/i);
+    // Tax treatment is stated per row, so the table explains itself.
+    expect(text).toMatch(/BUSINESS INCOME|BUSINESS LOSS/);
   });
 
   it('CA report carries the export handoff, not the scenarios', async () => {
@@ -298,9 +320,8 @@ describe('currency is never assumed', () => {
 
     expect(text).toContain('$8,930.90');
     expect(text).not.toContain('₹8,930.90');
-    // And says so plainly rather than leaving the reader to notice.
-    expect(text).toMatch(/figures are in USD/i);
-    expect(text).toMatch(/INR CONVERSION PENDING/i);
+    // And says so on the status strip rather than leaving the reader to notice.
+    expect(text).toMatch(/FIGURES IN USD · INR CONVERSION PENDING/i);
   });
 
   it('uses rupees — and Indian grouping — only when the API says INR', async () => {
@@ -353,12 +374,17 @@ describe('conversion shows its working', () => {
       }),
     );
 
-    // A converted number without its rate is not auditable.
-    expect(text).toMatch(/₹85\/USD/);
-    expect(text).toContain('138/146');
-    expect(text).toContain('2.92');
-    // And must never be presented as the statutory answer.
-    expect(text).toMatch(/disclosed assumption|not a statutory rate/i);
+    // The rate stays visible on the status strip …
+    expect(text).toMatch(/FX ₹85\/USD/);
+    expect(text).toMatch(/DISCLOSED ASSUMPTION/i);
+
+    // … and its evidence in the audit section, where a CA looks for it. A
+    // converted number whose basis cannot be found is not auditable.
+    screen.getByRole('button', { name: /view verification details/i }).click();
+    await waitFor(() => expect(document.body.textContent).toContain('138/146'));
+    const audit = document.body.textContent ?? '';
+    expect(audit).toContain('2.92');
+    expect(audit).toMatch(/not the rate prescribed under Rule 115/i);
   });
 
   it('surfaces a mid-period rate change instead of hiding it', async () => {
@@ -380,6 +406,84 @@ describe('conversion shows its working', () => {
       }),
     );
 
-    expect(text).toMatch(/85 earlier in the period and 90 later/i);
+    // Drift keeps its own prominence: an unreliable rate is not audit trivia.
+    expect(text).toMatch(/FIGURES IN USD · INR CONVERSION PENDING/i);
+  });
+});
+
+describe('the VDA card must not imply VDA activity that does not exist', () => {
+  it('says plainly there are no VDA transactions when basis is a reclassification', async () => {
+    // A trader with zero spot transactions saw a VDA tax figure and reasonably
+    // asked where it came from. The number is the same F&O activity re-read
+    // under 115BBH — which has to be stated, not inferred.
+    const text = await renderWith(summary());
+
+    // The card stays so the two regimes can be compared — but carries NO
+    // AMOUNT. A large figure beside a real one reads as real, whatever the
+    // badge says, and this one described trades the user never made.
+    expect(text).toMatch(/VDA \/ 115BBH/);
+    expect(text).toMatch(/NOT APPLICABLE THIS YEAR/i);
+    expect(text).toMatch(/not applicable/i);
+    expect(text).not.toContain('4,351');
+    // No "difference" either: there is nothing to difference against.
+    expect(text).not.toMatch(/DIFFERENCE/);
+    // What the regime WOULD do is still explained, without asserting a number.
+    expect(text).toMatch(/no spot \/ VDA transactions this year/i);
+    expect(text).toMatch(/taxed at 30% on its own/i);
+  });
+
+  it('drops the hypothetical framing once real VDA positions exist', async () => {
+    const text = await renderWith(
+      summary({
+        illustrativeVda: {
+          basis: 'ACTUAL_VDA',
+          actualVdaPositions: 12,
+          gains: 20000,
+          losses: -8000,
+          taxRate: 0.3,
+          tax: 6000,
+          tds: 200,
+        },
+      }),
+    );
+
+    // Real VDA activity: the figures are genuine, so they render.
+    expect(text).toMatch(/VDA \/ 115BBH/);
+    expect(text).toMatch(/ILLUSTRATIVE 30% TREATMENT/i);
+    expect(text).toMatch(/DIFFERENCE/);
+    expect(text).not.toMatch(/NOT APPLICABLE THIS YEAR/i);
+  });
+});
+
+describe('nothing is proposed for reserve when no VDA activity exists', () => {
+  it('hides the reserve and advance-tax sections, and says why', async () => {
+    // These were built on the hypothetical VDA figure, so the page advised a
+    // trader who LOST money to set aside tax on trades they never made.
+    const text = await renderWith(summary());
+
+    expect(text).not.toMatch(/Tax reserve/i);
+    expect(text).not.toMatch(/advance-tax schedule/i);
+    expect(text).not.toContain('3,69,919');
+    expect(text).toMatch(/nothing to set aside for this year/i);
+  });
+
+  it('restores them once real VDA positions exist', async () => {
+    const text = await renderWith(
+      summary({
+        illustrativeVda: {
+          basis: 'ACTUAL_VDA',
+          actualVdaPositions: 12,
+          gains: 20000,
+          losses: -8000,
+          taxRate: 0.3,
+          tax: 6000,
+          tds: 200,
+        },
+      }),
+    );
+
+    expect(text).toMatch(/Tax reserve/i);
+    expect(text).toMatch(/advance-tax schedule/i);
+    expect(text).not.toMatch(/nothing to set aside/i);
   });
 });

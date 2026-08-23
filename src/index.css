@@ -432,6 +432,21 @@
 /* ── Dashboard theme tokens ── */
 [data-dash-theme="dark"] {
   --dash-text: #f8fafc;
+  /* Tax Centre semantics. Defined per theme because the Tax Centre renders on
+     both: the bright on-dark tones wash out to nothing on white, and the deep
+     light-theme tones go muddy on #070a12. Colour carries meaning here —
+     green = reconciled, amber = illustrative / needs review, red = an actual
+     negative — so it has to survive the theme switch. */
+  --tax-pos: #34e2a8;
+  --tax-pos-soft: rgba(52,226,168,0.14);
+  --tax-neg: #f87171;
+  --tax-neg-soft: rgba(248,113,113,0.14);
+  --tax-warn: #fbbf24;
+  --tax-warn-soft: rgba(251,191,36,0.14);
+  --tax-accent: #2dd4bf;
+  --tax-violet: #a78bfa;
+  --tax-violet-soft: rgba(167,139,250,0.14);
+
   --dash-bg: #070a12;
   --dash-bg-raised: #0c1222;
   --dash-bg-card: rgba(255,255,255,0.025);
@@ -457,6 +472,16 @@
 }
 
 [data-dash-theme="light"] {
+  --tax-pos: #059669;
+  --tax-pos-soft: #ecfdf5;
+  --tax-neg: #dc2626;
+  --tax-neg-soft: #fef2f2;
+  --tax-warn: #b45309;
+  --tax-warn-soft: #fffbeb;
+  --tax-accent: #0d9488;
+  --tax-violet: #7c3aed;
+  --tax-violet-soft: #f5f3ff;
+
   --dash-text: #0f172a;
   --dash-bg: #f1f4f9;
   --dash-bg-raised: #ffffff;

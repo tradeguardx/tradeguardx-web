@@ -163,7 +163,12 @@ function tradeMergeKey(t) {
  * separate OPEN and CLOSED rows for the same lifecycle while ingesting events.
  */
 export async function fetchUnifiedTrades({ accessToken, tradingAccountId, limit = 100, signal } = {}) {
-  const journalRows = await fetchJournalTrades({ accessToken, tradingAccountId, limit, signal }).catch(() => []);
+  // Deliberately NOT caught here. Swallowing the failure returned an empty
+  // array, which every caller then rendered as "no trades synced yet" — so an
+  // unreachable server and a genuinely empty account looked identical, and a
+  // user whose sync was fine concluded it was broken. Callers that want a
+  // best-effort result still add their own .catch at the call site.
+  const journalRows = await fetchJournalTrades({ accessToken, tradingAccountId, limit, signal });
 
   const byKey = new Map();
   for (const row of journalRows) {

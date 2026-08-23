@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { planDisplayLabel, planTierFromSlug } from '../../lib/planLimits';
 
 const icons = {
@@ -46,11 +47,14 @@ const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
     </svg>
   ),
+  // Every other entry here is a complete <svg>. This one was a bare <path>
+  // fragment, which renders nothing outside an svg element — the Tax item
+  // showed a blank space where its glyph should be.
   tax: (
-    <>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 14h6M9 10h6" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" />
-    </>
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.5 9h5M9.5 13h5" />
+    </svg>
   ),
   billing: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,11 +80,11 @@ const icons = {
 // one-item "Resources" group.
 const NAV_ITEMS = [
   { to: '/dashboard/overview', end: true, label: 'Overview', iconKey: 'overview', groupLabel: 'Protection' },
-  { to: '/dashboard/live', end: false, label: 'Live guard', iconKey: 'live' },
+  { to: '/dashboard/live', end: false, label: 'Live Guard', iconKey: 'live' },
   { to: '/dashboard/rules', end: false, label: 'Rules', iconKey: 'rules' },
   { to: '/dashboard/journal', end: false, label: 'Journal', iconKey: 'journal', groupLabel: 'Review', dividerBefore: true },
-  { to: '/dashboard/trades', end: false, label: 'All trades', iconKey: 'trades' },
-  { to: '/dashboard/tax', end: false, label: 'Tax', iconKey: 'tax' },
+  { to: '/dashboard/trades', end: false, label: 'Trades', iconKey: 'trades' },
+  { to: '/dashboard/tax', end: false, label: 'Tax Centre', iconKey: 'tax' },
   // "Pairing" (browser-extension pairing) is the PROP-FIRM enforcement path. The
   // crypto launch enforces server-side against the user's exchange API key, so a
   // Delta user never pairs anything — sending them to a page that says "add a
@@ -252,6 +256,7 @@ function SidebarUpgradeCard({ isPro, isTrial, daysLeft }) {
 
 export default function DashboardSidebar() {
   const { user, logout, subscriptionLoading } = useAuth();
+  const { accounts } = useTradingAccounts();
   const location = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -316,16 +321,21 @@ export default function DashboardSidebar() {
 
       <nav className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2.5 pt-1 pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.08)_transparent]">
         <div className="space-y-0.5">
-          {NAV_ITEMS.map((item, i) => {
+          {NAV_ITEMS.map((rawItem, i) => {
+              // Only Accounts has a count available in this component. Rules
+              // would need a fetch this does not do, so it carries no badge
+              // rather than a guessed one — an invented count is worse than
+              // none on a rail whose job is saying what needs attention.
+              const item =
+                rawItem.iconKey === 'tradingAccounts' && accounts?.length
+                  ? { ...rawItem, badge: accounts.length }
+                  : rawItem;
             const active = itemIsActive(location.pathname, item);
             const icon = icons[item.iconKey];
             return (
               <div key={item.to}>
-                {item.dividerBefore && (
-                  <div className="my-3 mx-2 h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />
-                )}
                 {item.groupLabel && (
-                  <p className="mb-1.5 mt-1 px-3 text-[9px] font-bold uppercase tracking-[0.18em] select-none" style={{ color: 'rgba(148,163,184,0.45)' }}>
+                  <p className="mb-2 mt-6 px-3 text-[9.5px] font-bold uppercase tracking-[0.18em] select-none first:mt-1" style={{ color: 'rgba(148,163,184,0.45)' }}>
                     {item.groupLabel}
                   </p>
                 )}
@@ -339,44 +349,55 @@ export default function DashboardSidebar() {
                     end={item.end}
                     target={item.newTab ? '_blank' : undefined}
                     rel={item.newTab ? 'noopener noreferrer' : undefined}
-                    className="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 hover:bg-white/[0.05]"
-                  >
-                    {active && (
-                      <motion.div
-                        layoutId="sidebar-bg"
-                        className="absolute inset-0 rounded-xl bg-gradient-to-r from-accent/[0.18] via-accent/[0.08] to-transparent"
-                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                      />
-                    )}
-                    {active && (
-                      <motion.span
-                        layoutId="sidebar-bar"
-                        className="absolute -left-0.5 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-full bg-gradient-to-b from-accent to-emerald-400"
-                        style={{ boxShadow: '0 0 12px rgba(0,212,170,0.55), 0 0 4px rgba(0,212,170,0.25)' }}
-                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                      />
-                    )}
-                    <span
-                      className={`relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${active
-                          ? 'bg-accent/20 text-accent shadow-sm shadow-accent/25 ring-1 ring-accent/20'
-                          : 'bg-white/[0.05] text-slate-400 group-hover:bg-white/[0.10] group-hover:text-slate-200'
-                        }`}
+                      className="group relative flex items-center gap-3.5 rounded-xl px-3 py-2 transition-all duration-200 hover:bg-white/[0.04]"
                     >
-                      {icon}
-                    </span>
-                    <span
-                      className={`relative z-[1] text-[13px] ${active ? 'font-semibold text-white' : 'font-medium text-slate-300/90 group-hover:text-white'
+                      {/* Quieter active state: a flat panel and a hairline edge
+                          rather than a gradient wash and a glow. The rail is
+                          read past constantly — it should mark where you are,
+                          not compete with the screen it frames. */}
+                      {active && (
+                        <motion.div
+                          layoutId="sidebar-bg"
+                          className="absolute inset-0 rounded-xl border border-l-2 border-accent/30 border-l-accent bg-accent/[0.07]"
+                          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                        />
+                      )}
+                      {/* Bare glyph, no tile. Eight tinted squares down the rail
+                          read as eight buttons, and the active one put a mint
+                          icon on a mint tile — the Tax glyph was invisible. */}
+                      <span
+                        className={`relative z-[1] flex h-5 w-5 shrink-0 items-center justify-center transition-colors duration-200 ${
+                          active ? 'text-accent' : 'text-slate-400 group-hover:text-slate-200'
                         }`}
-                    >
-                      {item.label}
-                    </span>
-                    {active && (
-                      <motion.span
-                        layoutId="sidebar-dot"
-                        className="relative z-[1] ml-auto h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_6px_rgba(0,212,170,0.7)]"
-                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                      />
-                    )}
+                      >
+                        {icon}
+                      </span>
+                      <span
+                        className={`relative z-[1] text-[14px] ${
+                          active ? 'font-bold text-accent' : 'font-medium text-slate-300/90 group-hover:text-white'
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      {/* A count, or the active dot — never both, so the right
+                          edge carries one meaning at a time. */}
+                      {item.badge != null ? (
+                        <span
+                          className={`relative z-[1] ml-auto font-mono text-[11px] ${
+                            active ? 'text-accent' : 'text-slate-500'
+                          }`}
+                        >
+                          {item.badge}
+                        </span>
+                      ) : (
+                        active && (
+                          <motion.span
+                            layoutId="sidebar-dot"
+                            className="relative z-[1] ml-auto h-1.5 w-1.5 rounded-full bg-accent"
+                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                          />
+                        )
+                      )}
                   </NavLink>
                 </motion.div>
               </div>

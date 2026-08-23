@@ -53,13 +53,18 @@ import TaxTransactions from '../components/tax/TaxTransactions';
 /* Semantic palette. The dashboard surface is #070a12, so these are the
    on-dark variants — the light-surface tones from the design reference are
    unreadable here. */
-const GREEN = '#34e2a8';
-const GREEN_DEEP = '#059669';
-const MINT = '#2dd4bf';
-const AMBER = '#fbbf24';
-const AMBER_DEEP = '#f59e0b';
-const RED = '#f87171';
-const VIOLET = '#a78bfa';
+/* Theme-aware. The Tax Centre renders on both the dark and light dashboard
+   themes, and colour carries meaning here — green = reconciled, amber =
+   illustrative or needs review, red = an actual negative. The bright on-dark
+   tones wash out to nothing on white, so the values live in CSS per theme. */
+const GREEN = 'var(--tax-pos)';
+const GREEN_SOFT = 'var(--tax-pos-soft)';
+const MINT = 'var(--tax-accent)';
+const AMBER = 'var(--tax-warn)';
+const AMBER_SOFT = 'var(--tax-warn-soft)';
+const RED = 'var(--tax-neg)';
+const VIOLET = 'var(--tax-violet)';
+const VIOLET_SOFT = 'var(--tax-violet-soft)';
 const FAINT = 'var(--dash-text-faint)';
 const MUTED = 'var(--dash-text-muted)';
 const SECONDARY = 'var(--dash-text-secondary)';
@@ -292,6 +297,17 @@ export default function TaxPage() {
       vdaTax,
       taxableBusinessIncome,
       lossAvailable,
+      /**
+       * True when there are no spot/VDA positions at all and the VDA figure is
+       * merely the F&O activity re-read under s115BBH.
+       *
+       * When it is hypothetical the scenario is collapsed out of sight: a large
+       * amber number beside a real one gets read as a real one no matter what
+       * the badge says, and the reserve and advance-tax sections downstream
+       * were telling a trader who LOST 7.6 lakh to set aside 3.7 lakh against
+       * trades they never made.
+       */
+      vdaIsHypothetical: (v.basis ?? 'FNO_RECLASSIFIED') === 'FNO_RECLASSIFIED',
       // What the classification decision is worth. The F&O side asserts no
       // rupee tax, so the whole VDA figure is what the reading would add.
       gap: vdaTax,
@@ -310,7 +326,7 @@ export default function TaxPage() {
           <div className="flex items-center gap-3">
             <span
               className="flex h-9 w-9 items-center justify-center rounded-xl"
-              style={{ backgroundColor: 'rgba(45,212,191,0.12)', color: MINT }}
+              style={{ backgroundColor: 'var(--tax-pos-soft)', color: MINT }}
             >
               <Icon d="M6 3.5h12v17l-3-1.8-3 1.8-3-1.8-3 1.8zM9.5 9h5M9.5 13h5" size={18} width={1.9} />
             </span>
@@ -332,7 +348,7 @@ export default function TaxPage() {
               onClick={() => setFy(y)}
               className="rounded-lg px-3.5 py-2 text-xs font-bold transition-colors"
               style={{
-                backgroundColor: fy === y ? 'rgba(52,226,168,0.12)' : 'transparent',
+                backgroundColor: fy === y ? GREEN_SOFT : 'transparent',
                 color: fy === y ? GREEN : SECONDARY,
               }}
             >
@@ -343,10 +359,14 @@ export default function TaxPage() {
       </div>
 
 
-      {/* Tab bar. Rendered outside the loaded-data guard so navigation stays
-          available while a view is still fetching. */}
+      {/* Segmented control, per the design. Pills rather than an underline:
+          the FY selector beside it is already a pill group, and two different
+          tab idioms on one header reads as two different controls. */}
       {tradingAccountId && !gated && (
-        <div className="mt-6 flex gap-1 border-b" style={{ borderColor: BORDER }}>
+        <div
+          className="mt-6 inline-flex gap-1 rounded-xl border p-1"
+          style={{ borderColor: BORDER, backgroundColor: RAISED }}
+        >
           {[
             { key: 'overview', label: 'Overview' },
             { key: 'transactions', label: 'Tax transactions' },
@@ -358,17 +378,13 @@ export default function TaxPage() {
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
-                className="relative px-4 py-2.5 text-sm font-bold transition-colors"
-                style={{ color: active ? PRIMARY : MUTED }}
+                className="rounded-lg px-4 py-2 text-sm font-bold transition-colors"
+                style={{
+                  backgroundColor: active ? GREEN_SOFT : 'transparent',
+                  color: active ? GREEN : MUTED,
+                }}
               >
                 {t.label}
-                {active && (
-                  <motion.span
-                    layoutId="tax-tab-underline"
-                    className="absolute inset-x-0 -bottom-px h-0.5 rounded-full"
-                    style={{ backgroundColor: MINT }}
-                  />
-                )}
               </button>
             );
           })}
@@ -384,7 +400,7 @@ export default function TaxPage() {
       {error && (
         <div
           className="mt-6 rounded-xl border p-4 text-sm"
-          style={{ borderColor: `${RED}55`, backgroundColor: `${RED}12`, color: RED }}
+          style={{ borderColor: 'var(--tax-neg)', backgroundColor: 'var(--tax-neg-soft)', color: RED }}
         >
           {error}
         </div>
@@ -399,7 +415,7 @@ export default function TaxPage() {
       {gated && (
         <div
           className="mt-6 flex items-start gap-3 rounded-2xl border p-5"
-          style={{ borderColor: `${AMBER}55`, backgroundColor: `${AMBER}12` }}
+          style={{ borderColor: 'var(--tax-warn)', backgroundColor: AMBER_SOFT }}
         >
           <span style={{ color: AMBER, marginTop: 2 }}>
             <Icon d={P.alert} size={18} />
@@ -422,38 +438,6 @@ export default function TaxPage() {
           {/* Currency notice. Delta India settles in USD, so an Indian tax
               figure still needs converting under Rule 115 — and this page must
               not imply it has done so. */}
-          {/* Where the rupee figures came from. Shown whether or not the
-              conversion succeeded: a converted number without its rate is not
-              auditable, and an unconverted one needs explaining. */}
-          {data?.conversion && (
-            <div
-              className="flex items-start gap-3 rounded-2xl border p-5"
-              style={{ borderColor: `${AMBER}55`, backgroundColor: `${AMBER}12` }}
-            >
-              <span style={{ color: AMBER, marginTop: 2 }}>
-                <Icon d={P.alert} size={18} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-bold" style={{ color: AMBER }}>
-                  {data.conversion.applied
-                    ? `Converted from ${data.conversion.from} at ₹${data.conversion.rate}/${data.conversion.from} — a disclosed assumption, not a statutory rate`
-                    : `These figures are in ${currency}, not rupees`}
-                </p>
-                <p className="mt-1 text-sm leading-relaxed" style={{ color: SECONDARY }}>
-                  {data.conversion.warning || data.conversion.caveat}
-                </p>
-                {data.conversion.applied && (
-                  <p className="mt-2 font-mono text-[11px]" style={{ color: FAINT }}>
-                    {data.conversion.method} Matched{' '}
-                    {data.conversion.evidence.matched}/{data.conversion.evidence.sampleSize} transfers
-                    against {data.conversion.evidence.expectedByChance} expected by chance ·{' '}
-                    {data.conversion.confidence} confidence
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* 2 ── status strip. The unresolved item is the legal classification,
                  NEVER the accounting — that distinction is the whole point. */}
           <div className="flex flex-wrap items-center gap-2">
@@ -473,8 +457,8 @@ export default function TaxPage() {
                 key={p.label}
                 className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
                 style={{
-                  borderColor: p.ok ? `${GREEN}44` : `${AMBER}44`,
-                  backgroundColor: p.ok ? `${GREEN}12` : `${AMBER}12`,
+                  borderColor: p.ok ? 'var(--tax-pos)' : 'var(--tax-warn)',
+                  backgroundColor: p.ok ? GREEN_SOFT : AMBER_SOFT,
                 }}
               >
                 <Icon d={p.ok ? P.check : P.alert} size={13} color={p.ok ? GREEN : AMBER} width={2.4} />
@@ -745,7 +729,7 @@ export default function TaxPage() {
                     >
                       <span
                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-                        style={{ backgroundColor: `${tone}18`, color: tone }}
+                        style={{ backgroundColor: `color-mix(in srgb, ${tone} 14%, transparent)`, color: tone }}
                       >
                         <Icon d={isTotal ? P.eq : isCost ? P.minus : neg ? P.down : P.up} size={13} width={2.2} />
                       </span>
@@ -794,13 +778,30 @@ export default function TaxPage() {
                 <span style={{ color: MINT, marginTop: 1 }}>
                   <Icon d={P.info} size={15} />
                 </span>
+                {/* "1.9x your gross trading result" reads as nonsense when that
+                    result is itself a loss. Say which is bigger, and name both. */}
                 <span className="text-xs leading-relaxed" style={{ color: SECONDARY }}>
-                  Commission alone was {money(Math.abs(Number(view.b.tradingCommission)), currency)} —{' '}
-                  {(
-                    Math.abs(Number(view.b.tradingCommission)) /
-                    Math.max(1, Math.abs(Number(view.b.grossTradingPnl)))
-                  ).toFixed(1)}
-                  × your gross trading result. Under the VDA reading none of it would be deductible.
+                  {(() => {
+                    const commission = Math.abs(Number(view.b.tradingCommission));
+                    const gross = Number(view.b.grossTradingPnl);
+                    const ratio = commission / Math.max(1, Math.abs(gross));
+                    if (gross < 0) {
+                      return (
+                        <>
+                          You paid {money(commission, currency)} in commission — {ratio.toFixed(1)}× the{' '}
+                          {money(Math.abs(gross), currency)} your trading lost before costs. Costs, not market
+                          moves, are the larger part of this year&apos;s result.
+                        </>
+                      );
+                    }
+                    const share = (commission / Math.max(1, gross)) * 100;
+                    return (
+                      <>
+                        You paid {money(commission, currency)} in commission, which absorbed{' '}
+                        {share.toFixed(0)}% of the {money(gross, currency)} your trading made before costs.
+                      </>
+                    );
+                  })()}
                 </span>
               </div>
             </div>
@@ -872,7 +873,7 @@ export default function TaxPage() {
                       className="whitespace-nowrap rounded px-2 py-1 text-[9px] font-extrabold tracking-wider"
                       style={{
                         backgroundColor:
-                          x.treatment === 'EXCLUDED FROM TRADING P&L' ? `${VIOLET}1e` : 'rgba(255,255,255,0.06)',
+                          x.treatment === 'EXCLUDED FROM TRADING P&L' ? VIOLET_SOFT : 'rgba(255,255,255,0.06)',
                         color: x.treatment === 'EXCLUDED FROM TRADING P&L' ? VIOLET : MUTED,
                       }}
                     >
@@ -922,17 +923,21 @@ export default function TaxPage() {
                   outcome depends on how the activity is classified.
                 </div>
               </div>
-              <div className="shrink-0 text-right">
-                <div className="text-[9.5px] font-extrabold tracking-wider" style={{ color: FAINT }}>
-                  DIFFERENCE
+              {/* A "difference" only means something when both readings apply.
+                  With no VDA activity there is one treatment, not two. */}
+              {!view.vdaIsHypothetical && (
+                <div className="shrink-0 text-right">
+                  <div className="text-[9.5px] font-extrabold tracking-wider" style={{ color: FAINT }}>
+                    DIFFERENCE
+                  </div>
+                  <div
+                    className="mt-1 whitespace-nowrap font-mono text-xl font-bold tracking-tight"
+                    style={{ color: VIOLET }}
+                  >
+                    {money0(view.gap, currency)}
+                  </div>
                 </div>
-                <div
-                  className="mt-1 whitespace-nowrap font-mono text-xl font-bold tracking-tight"
-                  style={{ color: VIOLET }}
-                >
-                  {money0(view.gap, currency)}
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2">
@@ -945,7 +950,7 @@ export default function TaxPage() {
                   <span
                     className="whitespace-nowrap rounded px-2 py-1 text-[8.5px] font-extrabold tracking-wider"
                     style={{
-                      backgroundColor: view.losing ? `${GREEN}1e` : `${AMBER}1e`,
+                      backgroundColor: view.losing ? GREEN_SOFT : AMBER_SOFT,
                       color: view.losing ? GREEN : AMBER,
                     }}
                   >
@@ -993,9 +998,24 @@ export default function TaxPage() {
                     </span>
                   </div>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab('transactions');
+                    window.scrollTo(0, 0);
+                  }}
+                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
+                  style={{ color: MINT }}
+                >
+                  See transactions
+                  <Icon d="M5 12h13M13 7l5 5-5 5" size={14} />
+                </button>
               </div>
 
-              {/* VDA reading — amber, never red: illustrative, not owed */}
+              {/* VDA reading. The card always renders so the two treatments can
+                  be compared, but it states NO AMOUNT when there are no spot
+                  positions: a large figure beside a real one gets read as real,
+                  whatever the badge says. */}
               <div className="p-6">
                 <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
                   <span className="text-[14.5px] font-extrabold tracking-tight" style={{ color: PRIMARY }}>
@@ -1003,32 +1023,59 @@ export default function TaxPage() {
                   </span>
                   <span
                     className="whitespace-nowrap rounded px-2 py-1 text-[8.5px] font-extrabold tracking-wider"
-                    style={{ backgroundColor: `${AMBER}1e`, color: AMBER }}
+                    style={{ backgroundColor: AMBER_SOFT, color: AMBER }}
                   >
-                    ILLUSTRATIVE 30% TREATMENT
+                    {view.vdaIsHypothetical ? 'NOT APPLICABLE THIS YEAR' : 'ILLUSTRATIVE 30% TREATMENT'}
                   </span>
                 </div>
                 <div className="mb-1.5 flex items-baseline gap-2">
                   <span
                     className="whitespace-nowrap font-mono text-[29px] font-bold tracking-tight"
-                    style={{ color: AMBER }}
+                    style={{ color: view.vdaIsHypothetical ? FAINT : AMBER }}
                   >
-                    {money0(view.vdaTax, currency)}
+                    {view.vdaIsHypothetical ? '—' : money0(view.vdaTax, currency)}
                   </span>
                   <span className="text-[11.5px]" style={{ color: FAINT }}>
-                    illustrative tax
+                    {view.vdaIsHypothetical ? 'not applicable' : 'illustrative tax'}
                   </span>
                 </div>
+                {/* Without this the card reads as a real VDA bill. The figure
+                    is the SAME F&O activity re-read under s115BBH, and on this
+                    account there are no spot transactions at all. */}
+                {view.v.basis === 'FNO_RECLASSIFIED' && (
+                  <div
+                    className="mb-3 rounded-xl border p-3"
+                    style={{ borderColor: 'var(--tax-warn)', backgroundColor: AMBER_SOFT }}
+                  >
+                    <p className="text-[12px] leading-relaxed" style={{ color: SECONDARY }}>
+                      <span className="font-bold" style={{ color: AMBER }}>
+                        No spot / VDA transactions this year.
+                      </span>{' '}
+                      Section 115BBH applies to transfers of virtual digital assets. Every position you held
+                      was a derivative, so nothing here falls under it — which is why no amount is shown.
+                    </p>
+                  </div>
+                )}
                 <p className="mb-4 text-[12.5px] leading-relaxed" style={{ color: SECONDARY }}>
-                  This is an illustrative scenario, not a confirmed tax liability. If treated as virtual digital
-                  assets, each winning trade is taxed at 30% on its own, with losses, fees and funding not
-                  deductible.
+                  {view.vdaIsHypothetical
+                    ? 'Under this regime each winning trade would be taxed at 30% on its own, with losses, fees and funding not deductible. Shown for comparison so the difference between the two treatments is visible.'
+                    : 'This is an illustrative scenario, not a confirmed tax liability. If treated as virtual digital assets, each winning trade is taxed at 30% on its own, with losses, fees and funding not deductible.'}
                 </p>
-                {[
-                  { label: 'Illustrative taxable gains', value: money(view.v.gains, currency), tone: PRIMARY, icon: P.eq, iconColor: FAINT },
-                  { label: 'Losses not offsettable', value: money(view.v.losses, currency), tone: AMBER, icon: P.x, iconColor: AMBER },
-                  { label: 'Expense treatment', value: 'not deductible', tone: AMBER, icon: P.x, iconColor: AMBER },
-                ].map((l) => (
+                {(view.vdaIsHypothetical
+                  ? [
+                      // No amounts: there is nothing to quantify. What the
+                      // regime WOULD do is still worth stating, because that is
+                      // what makes the classification decision legible.
+                      { label: 'Spot / VDA positions this year', value: '0', tone: PRIMARY, icon: P.eq, iconColor: FAINT },
+                      { label: 'Losses offsettable', value: 'no', tone: AMBER, icon: P.x, iconColor: AMBER },
+                      { label: 'Expense treatment', value: 'not deductible', tone: AMBER, icon: P.x, iconColor: AMBER },
+                    ]
+                  : [
+                      { label: 'Illustrative taxable gains', value: money(view.v.gains, currency), tone: PRIMARY, icon: P.eq, iconColor: FAINT },
+                      { label: 'Losses not offsettable', value: money(view.v.losses, currency), tone: AMBER, icon: P.x, iconColor: AMBER },
+                      { label: 'Expense treatment', value: 'not deductible', tone: AMBER, icon: P.x, iconColor: AMBER },
+                    ]
+                ).map((l) => (
                   <div
                     key={l.label}
                     className="flex items-center gap-2.5 py-2"
@@ -1043,9 +1090,23 @@ export default function TaxPage() {
                     </span>
                   </div>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab('transactions');
+                    window.scrollTo(0, 0);
+                  }}
+                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
+                  style={{ color: MINT }}
+                >
+                  See transactions
+                  <Icon d="M5 12h13M13 7l5 5-5 5" size={14} />
+                </button>
               </div>
             </div>
 
+            {/* Only meaningful when two treatments are actually on screen. */}
+            {!view.vdaIsHypothetical && (
             <div className="flex items-start gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
               <span style={{ color: VIOLET, marginTop: 1 }}>
                 <Icon d={P.info} size={15} />
@@ -1059,18 +1120,25 @@ export default function TaxPage() {
                   as business/F&amp;O income or under VDA rules. Your CA should confirm the appropriate
                   classification.
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowMethod((v) => !v)}
-                  className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold"
-                  style={{ color: VIOLET }}
-                >
-                  {showMethod ? 'Hide methodology' : 'View methodology'}
-                  <motion.span animate={{ rotate: showMethod ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                    <Icon d={P.chevron} size={14} />
-                  </motion.span>
-                </button>
               </div>
+            </div>
+
+            )}
+            {/* Always available: this panel carries the engine and tax-rule
+                versions, which a CA needs whichever treatment applies. It used
+                to sit inside the comparison block and vanished with it. */}
+            <div className="px-6 py-3" style={{ borderTop: `1px solid ${BORDER}` }}>
+  <button
+  type="button"
+  onClick={() => setShowMethod((v) => !v)}
+  className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold"
+  style={{ color: VIOLET }}
+  >
+  {showMethod ? 'Hide methodology' : 'View methodology'}
+  <motion.span animate={{ rotate: showMethod ? 180 : 0 }} transition={{ duration: 0.2 }}>
+  <Icon d={P.chevron} size={14} />
+  </motion.span>
+  </button>
             </div>
 
             <Panel open={showMethod}>
@@ -1111,13 +1179,15 @@ export default function TaxPage() {
 
             <div
               className="flex items-start gap-3 px-6 py-4"
-              style={{ borderTop: `1px solid ${AMBER}33`, backgroundColor: `${AMBER}0e` }}
+              style={{ borderTop: `1px solid ${AMBER}33`, backgroundColor: AMBER_SOFT }}
             >
               <span style={{ color: AMBER, marginTop: 1 }}>
                 <Icon d={P.alert} size={15} />
               </span>
               <span className="text-xs leading-relaxed" style={{ color: SECONDARY }}>
-                {view.losing
+                {view.vdaIsHypothetical
+                  ? `Set-off and carry-forward of the ${money(Math.abs(view.economic), currency)} loss depend on the treatment your CA adopts and on your filing position — neither is automatic.`
+                  : view.losing
                   ? `Under the VDA reading, tax of ${money0(view.vdaTax, currency)} could arise on a year you lost money, and the ${money(Math.abs(view.economic), currency)} loss would not carry forward. Your CA should confirm which classification applies before you act on either figure.`
                   : `Under the VDA reading, ${money(view.costs, currency)} of fees would stop being deductible — most of the difference between the two figures above.`}
               </span>
@@ -1125,6 +1195,14 @@ export default function TaxPage() {
           </Card>
 
           {/* 7 ── optional planning */}
+          {/* OPTIONAL PLANNING — reserve + advance-tax schedule.
+              Both are built on the VDA figure, so with no spot/VDA activity
+              there is nothing to reserve against: under the F&O reading a loss
+              year carries no advance-tax liability. Shown only when real VDA
+              positions exist, because this section was otherwise telling a
+              trader who lost money to set aside tax on trades they never made. */}
+          {!view.vdaIsHypothetical && (
+          <>
           <div className="mt-1 flex items-center gap-3">
             <span className="text-[10.5px] font-extrabold tracking-[0.1em]" style={{ color: FAINT }}>
               OPTIONAL PLANNING
@@ -1146,7 +1224,7 @@ export default function TaxPage() {
                 </span>
                 <span
                   className="ml-auto whitespace-nowrap rounded px-2 py-1 text-[10px] font-extrabold tracking-wider"
-                  style={{ backgroundColor: `${AMBER}1a`, color: AMBER }}
+                  style={{ backgroundColor: AMBER_SOFT, color: AMBER }}
                 >
                   ILLUSTRATIVE BASIS
                 </span>
@@ -1164,7 +1242,7 @@ export default function TaxPage() {
                   style={{
                     height: '100%',
                     width: `${view.vdaTax > 0 ? Math.min(100, ((view.v.tds ?? 0) / view.vdaTax) * 100) : 100}%`,
-                    background: `linear-gradient(90deg,${AMBER_DEEP},${AMBER})`,
+                    background: `linear-gradient(90deg,${AMBER},${AMBER})`,
                   }}
                 />
               </div>
@@ -1237,6 +1315,130 @@ export default function TaxPage() {
               </Panel>
             </Card>
           </div>
+
+          </>
+          )}
+
+          {/* With no VDA activity there is nothing to plan against, so say why
+              rather than leaving a silent gap where a section used to be. */}
+          {view.vdaIsHypothetical && (
+            <div
+              className="flex items-start gap-3 rounded-2xl border p-5"
+              style={{ borderColor: BORDER, backgroundColor: 'rgba(255,255,255,0.02)' }}
+            >
+              <span style={{ color: GREEN, marginTop: 1 }}>
+                <Icon d={P.check} size={15} width={2.2} />
+              </span>
+              <div>
+                <p className="text-sm font-bold" style={{ color: PRIMARY }}>
+                  Nothing to set aside for this year
+                </p>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: MUTED }}>
+                  You hold no spot or VDA positions, so no Section 115BBH liability arises. Under the
+                  F&amp;O treatment the year is a loss, which carries no advance-tax obligation. Your CA
+                  should confirm before you rely on this.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* 9 ── verification details */}
+          <Card className="overflow-hidden">
+            <Disclosure open={showAudit} onToggle={() => setShowAudit((v) => !v)}>
+              <span style={{ color: MUTED }}>
+                <Icon d={P.check} size={16} width={2.2} />
+              </span>
+              <span className="min-w-[220px] flex-1">
+                <span className="block text-[15.5px] font-extrabold tracking-tight" style={{ color: PRIMARY }}>
+                  Verification details
+                </span>
+                <span className="mt-1 block text-xs" style={{ color: MUTED }}>
+                  Every check behind the number at the top — passed, or explained.
+                </span>
+              </span>
+              <span className="text-[11.5px]" style={{ color: FAINT }}>
+                {view.c.positions} positions reconciled
+              </span>
+            </Disclosure>
+
+            <Panel open={showAudit}>
+              <div className="grid grid-cols-1 sm:grid-cols-2" style={{ borderTop: `1px solid ${BORDER}` }}>
+                {[
+                  {
+                    ok: true,
+                    title: 'P&L reconciliation passed',
+                    note: 'Our position-level P&L reconciles to independent raw-fill economics.',
+                  },
+                  {
+                    ok: true,
+                    title: 'Wallet reconciliation passed',
+                    note: 'Exchange wallet transactions were imported and reconciled without unresolved accounting events.',
+                  },
+                  {
+                    ok: true,
+                    title: `${view.c.expiredOptionsRecovered} expired options recovered`,
+                    note: 'Delta drops expired contracts from history. We rebuilt them from your fills.',
+                  },
+                  {
+                    ok: false,
+                    title: 'Delta realised P&L is diagnostic only',
+                    note: "Delta's realised P&L is retained as a diagnostic reference only because its reporting semantics are not fully reproducible.",
+                  },
+                  {
+                    ok: false,
+                    title: 'GST not available from the API',
+                    note: 'GST charged on fees is not exposed by the exchange API.',
+                  },
+                  // Conversion provenance lives here rather than in a banner
+                  // above the result: it is audit material, not a headline.
+                  ...(data?.conversion?.applied
+                    ? [
+                        {
+                          ok: false,
+                          title: `Converted from ${data.conversion.from} at ${data.conversion.rate}`,
+                          note:
+                            `${data.conversion.method} Matched ${data.conversion.evidence.matched}/` +
+                            `${data.conversion.evidence.sampleSize} transfers against ` +
+                            `${data.conversion.evidence.expectedByChance} expected by chance. ` +
+                            'A disclosed assumption, not the rate prescribed under Rule 115.',
+                        },
+                      ]
+                    : []),
+                  {
+                    ok: !view.c.needsReview,
+                    title: `${view.c.needsReview} positions need review`,
+                    note: view.c.needsReview
+                      ? 'Ambiguous fills that could not be matched automatically.'
+                      : 'Nothing ambiguous — every position matched automatically.',
+                  },
+                ].map((a) => (
+                  <div
+                    key={a.title}
+                    className="flex items-start gap-3 px-6 py-4"
+                    style={{ borderTop: `1px solid ${BORDER}`, borderRight: `1px solid ${BORDER}` }}
+                  >
+                    <span
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
+                      style={{
+                        backgroundColor: a.ok ? GREEN_SOFT : AMBER_SOFT,
+                        color: a.ok ? GREEN : AMBER,
+                      }}
+                    >
+                      <Icon d={a.ok ? P.check : P.alert} size={13} width={2.2} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12.5px] font-bold leading-snug" style={{ color: PRIMARY }}>
+                        {a.title}
+                      </div>
+                      <div className="mt-1 text-[11px] leading-relaxed" style={{ color: MUTED }}>
+                        {a.note}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          </Card>
 
           {/* 10 ── disclaimer */}
           <div
@@ -1349,7 +1551,7 @@ export default function TaxPage() {
                 >
                   <span
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                    style={{ backgroundColor: `${e.c}18`, color: e.c }}
+                    style={{ backgroundColor: `color-mix(in srgb, ${e.c} 14%, transparent)`, color: e.c }}
                   >
                     <Icon d={P.doc} size={15} />
                   </span>
@@ -1360,7 +1562,7 @@ export default function TaxPage() {
                       </span>
                       <span
                         className="rounded px-1.5 py-0.5 font-mono text-[9px] font-bold"
-                        style={{ backgroundColor: `${e.c}18`, color: e.c }}
+                        style={{ backgroundColor: `color-mix(in srgb, ${e.c} 14%, transparent)`, color: e.c }}
                       >
                         {e.fmt}
                       </span>
@@ -1372,89 +1574,6 @@ export default function TaxPage() {
                 </div>
               ))}
             </div>
-          </Card>
-
-          {/* 9 ── verification details */}
-          <Card className="overflow-hidden">
-            <Disclosure open={showAudit} onToggle={() => setShowAudit((v) => !v)}>
-              <span style={{ color: MUTED }}>
-                <Icon d={P.check} size={16} width={2.2} />
-              </span>
-              <span className="min-w-[220px] flex-1">
-                <span className="block text-[15.5px] font-extrabold tracking-tight" style={{ color: PRIMARY }}>
-                  Verification details
-                </span>
-                <span className="mt-1 block text-xs" style={{ color: MUTED }}>
-                  Every check behind the number at the top — passed, or explained.
-                </span>
-              </span>
-              <span className="text-[11.5px]" style={{ color: FAINT }}>
-                {view.c.positions} positions reconciled
-              </span>
-            </Disclosure>
-
-            <Panel open={showAudit}>
-              <div className="grid grid-cols-1 sm:grid-cols-2" style={{ borderTop: `1px solid ${BORDER}` }}>
-                {[
-                  {
-                    ok: true,
-                    title: 'P&L reconciliation passed',
-                    note: 'Our position-level P&L reconciles to independent raw-fill economics.',
-                  },
-                  {
-                    ok: true,
-                    title: 'Wallet reconciliation passed',
-                    note: 'Exchange wallet transactions were imported and reconciled without unresolved accounting events.',
-                  },
-                  {
-                    ok: true,
-                    title: `${view.c.expiredOptionsRecovered} expired options recovered`,
-                    note: 'Delta drops expired contracts from history. We rebuilt them from your fills.',
-                  },
-                  {
-                    ok: false,
-                    title: 'Delta realised P&L is diagnostic only',
-                    note: "Delta's realised P&L is retained as a diagnostic reference only because its reporting semantics are not fully reproducible.",
-                  },
-                  {
-                    ok: false,
-                    title: 'GST not available from the API',
-                    note: 'GST charged on fees is not exposed by the exchange API.',
-                  },
-                  {
-                    ok: !view.c.needsReview,
-                    title: `${view.c.needsReview} positions need review`,
-                    note: view.c.needsReview
-                      ? 'Ambiguous fills that could not be matched automatically.'
-                      : 'Nothing ambiguous — every position matched automatically.',
-                  },
-                ].map((a) => (
-                  <div
-                    key={a.title}
-                    className="flex items-start gap-3 px-6 py-4"
-                    style={{ borderTop: `1px solid ${BORDER}`, borderRight: `1px solid ${BORDER}` }}
-                  >
-                    <span
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
-                      style={{
-                        backgroundColor: a.ok ? `${GREEN}18` : `${AMBER}18`,
-                        color: a.ok ? GREEN : AMBER,
-                      }}
-                    >
-                      <Icon d={a.ok ? P.check : P.alert} size={13} width={2.2} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[12.5px] font-bold leading-snug" style={{ color: PRIMARY }}>
-                        {a.title}
-                      </div>
-                      <div className="mt-1 text-[11px] leading-relaxed" style={{ color: MUTED }}>
-                        {a.note}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Panel>
           </Card>
 
           {/* 10 ── disclaimer */}
