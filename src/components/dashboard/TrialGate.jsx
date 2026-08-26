@@ -53,7 +53,7 @@ export function UpgradeWall() {
       </span>
       <h2 className="mt-5 font-display text-2xl font-bold" style={{ color: 'var(--dash-text-primary)' }}>Your free trial has ended</h2>
       <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-        You had 30 days of full access. To keep your guardrails running and configure your rules, upgrade to a paid plan.
+        You had full access to every feature. To keep your guardrails running and configure your rules, upgrade to a paid plan.
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <Link

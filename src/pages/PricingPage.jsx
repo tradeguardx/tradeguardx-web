@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSEO } from '../hooks/useSEO';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
@@ -10,7 +10,25 @@ import { createCheckoutSession } from '../api/paymentsApi';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
 import { trackCheckoutStarted } from '../lib/analytics';
 import { getStoredReferralCode } from '../lib/referralCode';
+import { getActivePromo, discountedPrice, formatInr } from '../lib/activePromo';
 import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
+
+/**
+ * The code to send to checkout.
+ *
+ * An influencer referral WINS over a platform promo: the referral both discounts
+ * the customer and attributes commission, so preferring the promo would silently
+ * cost an influencer their payout.
+ *
+ * The platform promo is applied automatically rather than left for the customer
+ * to paste on Dodo's page. Dodo SILENTLY IGNORES an unrecognised or missing
+ * code — no warning, no error — so a customer who saw "10% off" in the banner
+ * and forgot to type it is simply charged full price and has no idea. Sending
+ * it ourselves is what makes the banner's promise true.
+ */
+function checkoutCouponCode() {
+  return getStoredReferralCode() || getActivePromo()?.code || undefined;
+}
 
 // ─── Per-plan visual theming ─────────────────────────────────────────────────
 const PLAN_THEME = {
@@ -22,7 +40,7 @@ const PLAN_THEME = {
     badgeBg: 'rgba(100,116,139,0.10)',
     badgeBorder: 'rgba(100,116,139,0.22)',
     badgeText: '#94a3b8',
-    tagline: 'Full access, free for 30 days. No card — then pick a plan.',
+    tagline: 'Full access, free for 7 days. No card — then pick a plan.',
     ctaBg: 'rgba(255,255,255,0.06)',
     ctaBorder: 'rgba(255,255,255,0.08)',
     ctaText: '#e2e8f0',
@@ -172,6 +190,20 @@ export default function PricingPage() {
   const [loadError, setLoadError] = useState('');
   const [checkoutKey, setCheckoutKey] = useState(null);
   const [referralCode, setReferralCode] = useState(null);
+  /**
+   * Platform launch promo, read once. `useMemo` because getActivePromo() checks
+   * expiry against Date.now(), and re-reading it every render would let a promo
+   * vanish mid-interaction the instant it lapses — the countdown strip already
+   * handles expiry, and a card silently reverting to full price while someone
+   * is reading it is worse than showing a stale offer for the rest of a visit.
+   *
+   * An influencer `?ref=` code takes precedence at checkout, so this block is
+   * hidden when one is present rather than promising a discount that loses.
+   */
+  const activePromo = useMemo(
+    () => (getStoredReferralCode() ? null : getActivePromo()),
+    [],
+  );
   const { session, user, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -194,7 +226,7 @@ export default function PricingPage() {
       const res = await createCheckoutSession({
         accessToken: session.access_token,
         planSlug: plan.key,
-        couponCode: getStoredReferralCode() || undefined,
+        couponCode: checkoutCouponCode(),
       });
       const url = res?.data?.checkoutUrl;
       if (url) { trackCheckoutStarted(plan.key); window.location.href = url; return; }
@@ -228,7 +260,7 @@ export default function PricingPage() {
         const res = await createCheckoutSession({
           accessToken: session.access_token,
           planSlug: plan.key,
-          couponCode: getStoredReferralCode() || undefined,
+          couponCode: checkoutCouponCode(),
         });
         if (cancelled) return;
         const url = res?.data?.checkoutUrl;
@@ -343,7 +375,7 @@ export default function PricingPage() {
           </h1>
 
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
-            Every account starts with 30 days of full access — free, no card. Keep it going by picking a plan.
+            Every account starts with 7 days of full access — free, no card. Keep it going by picking a plan.
           </p>
 
           <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -395,6 +427,12 @@ export default function PricingPage() {
               const t = PLAN_THEME[plan.key] || PLAN_THEME.free;
               const isPrimary = plan.primary;
               const price = plan.monthlyPrice;
+              // First-month promo price for this card. Free plans and a missing
+              // promo both yield null, so the block below simply doesn't render.
+              const promoPrice =
+                activePromo?.discountPct && price > 0
+                  ? discountedPrice(price, activePromo.discountPct)
+                  : null;
 
               return (
                 <motion.div
@@ -453,24 +491,94 @@ export default function PricingPage() {
                         <h3 className="font-display text-2xl font-bold text-white mb-1.5 tracking-tight">{plan.name}</h3>
                         <p className="text-[12px] leading-relaxed mb-6 min-h-[32px]" style={{ color: '#64748b' }}>{t.tagline}</p>
 
-                        {/* Price */}
-                        <div className="flex items-baseline gap-1.5 mb-1">
-                          <AnimatePresence mode="wait">
-                            <motion.span
-                              key={price}
-                              initial={{ opacity: 0, y: -6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 6 }}
-                              className="font-display text-5xl font-black text-white tracking-tight"
+                        {/* Price.
+                            When a first-month promo is running, the DISCOUNTED
+                            figure is the headline and the list price is struck
+                            through beside it. Showing full price as the hero
+                            with the offer relegated to a footnote buries the
+                            number that decides the sale.
+
+                            The "from month two" framing is gated on cycles === 1
+                            so it cannot describe a coupon that actually recurs —
+                            copy and coupon are read from the same config. */}
+                        {promoPrice != null ? (
+                          <>
+                            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 mb-1.5">
+                              <AnimatePresence mode="wait">
+                                <motion.span
+                                  key={promoPrice}
+                                  initial={{ opacity: 0, y: -6 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: 6 }}
+                                  className="font-display text-5xl font-black text-white tracking-tight"
+                                >
+                                  {formatInr(promoPrice)}
+                                </motion.span>
+                              </AnimatePresence>
+                              {activePromo.cycles === 1 && (
+                                <span className="text-sm font-medium" style={{ color: '#94a3b8' }}>
+                                  first month
+                                </span>
+                              )}
+                              <span className="text-lg font-semibold line-through" style={{ color: '#64748b' }}>
+                                {formatInr(price)}
+                              </span>
+                            </div>
+
+                            {activePromo.cycles === 1 && (
+                              <p className="text-[12px] leading-relaxed mb-1" style={{ color: '#94a3b8' }}>
+                                Then {formatInr(price)}/mo from month two. Cancel before it renews
+                                and you pay nothing more.
+                              </p>
+                            )}
+                            <p className="text-[11px] mb-3 font-medium" style={{ color: '#475569' }}>
+                              Incl. 18% GST · billed monthly
+                            </p>
+
+                            {/* States plainly that nothing is required of the
+                                customer. The code is sent as `discount_code` on
+                                the Dodo checkout session, so it is already on the
+                                page when they arrive. Telling them to "enter
+                                LAUNCH50" would invite them to retype a code that
+                                is applied — and Dodo ignores a bad one in
+                                silence, at full price. */}
+                            <div
+                              className="mb-6 flex items-start gap-2 rounded-xl border px-3 py-2.5"
+                              style={{
+                                borderColor: 'rgba(0,212,170,0.28)',
+                                backgroundColor: 'rgba(0,212,170,0.07)',
+                              }}
                             >
-                              {price === 0 ? '₹0' : `₹${price.toLocaleString('en-IN')}`}
-                            </motion.span>
-                          </AnimatePresence>
-                          {price > 0 && <span className="text-sm font-medium" style={{ color: '#64748b' }}>/mo</span>}
-                        </div>
-                        <p className="text-[11px] mb-6 font-medium" style={{ color: '#475569' }}>
-                          {price === 0 ? 'No credit card required' : 'Billed monthly · incl. 18% GST · cancel anytime'}
-                        </p>
+                              <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="none" stroke="#00d4aa" strokeWidth={2.4} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                              <p className="text-[12px] leading-snug" style={{ color: '#00d4aa' }}>
+                                <span className="font-mono font-bold tracking-wider">{activePromo.code}</span>{' '}
+                                is applied automatically at checkout — nothing to enter.
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-baseline gap-1.5 mb-1">
+                              <AnimatePresence mode="wait">
+                                <motion.span
+                                  key={price}
+                                  initial={{ opacity: 0, y: -6 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: 6 }}
+                                  className="font-display text-5xl font-black text-white tracking-tight"
+                                >
+                                  {price === 0 ? '₹0' : `₹${price.toLocaleString('en-IN')}`}
+                                </motion.span>
+                              </AnimatePresence>
+                              {price > 0 && <span className="text-sm font-medium" style={{ color: '#64748b' }}>/mo</span>}
+                            </div>
+                            <p className="text-[11px] mb-6 font-medium" style={{ color: '#475569' }}>
+                              {price === 0 ? 'No credit card required' : 'Billed monthly · incl. 18% GST · cancel anytime'}
+                            </p>
+                          </>
+                        )}
 
                         {/* CTA — moved above the feature list for stronger conversion focus */}
                         <motion.div whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }} className="mb-7">

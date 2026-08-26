@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getActivePromo, splitRemaining } from '../../lib/activePromo';
 import { getFoundingMemberConfig } from '../../lib/foundingMember';
+import { discountedPrice, formatInr } from '../../lib/activePromo';
+import { getPricingPlans } from '../../api/pricingApi';
 
 const SESSION_KEY = 'tgx_promo_dismissed_for';
 
@@ -62,11 +64,50 @@ function CopyCodeButton({ code }) {
   );
 }
 
+/**
+ * Headline wording for a discount promo.
+ *
+ * At exactly 50% it reads "half price" rather than "50% off". The percentage is
+ * a figure the reader has to convert; "half price" is the conclusion they were
+ * going to reach anyway, and it lands without arithmetic.
+ *
+ * The SCOPE is derived from `cycles`, never written by hand, so the headline
+ * cannot outrun the coupon: "off all paid plans" reads as an ongoing price,
+ * while a cycles=1 coupon gives one discounted month and then bills full price
+ * — a difference the customer would otherwise discover on their second invoice.
+ */
+function promoHeadline(promo) {
+  const pct = promo.discountPct;
+  const cycles = promo.cycles;
+  if (!pct) return 'Limited-time offer';
+
+  if (pct === 50) {
+    if (cycles === 1) return 'Your first month, half price';
+    if (cycles) return `Your first ${cycles} months, half price`;
+    return 'Half price on every plan';
+  }
+
+  if (cycles === 1) return `${pct}% off your first month`;
+  if (cycles) return `${pct}% off your first ${cycles} months`;
+  return `${pct}% off all paid plans`;
+}
+
 function CodePromoContent({ promo, now }) {
   const remainingMs = promo.expiresAt - now;
   const { days, hours, minutes, seconds } = splitRemaining(remainingMs);
   const showDays = days > 0;
-  const headline = promo.discountPct ? `${promo.discountPct}% off all paid plans` : 'Limited-time offer';
+  // Price-led headline ("Go Pro for ₹650 this month") when the pricing API has
+  // answered; the derived wording ("Your first month, half price") otherwise.
+  // A concrete rupee figure outperforms a percentage — it is the number the
+  // reader is actually deciding on — but it must be REAL, so it only appears
+  // once the price is known rather than being guessed or hardcoded.
+  const featured = useFeaturedPlan(null);
+  const promoPrice =
+    featured && promo.discountPct ? discountedPrice(featured.monthly, promo.discountPct) : null;
+  const headline =
+    promoPrice != null
+      ? `Go ${featured.name} for ${formatInr(promoPrice)} this month`
+      : promoHeadline(promo);
 
   return (
     <div className="relative flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between sm:gap-6">
@@ -85,6 +126,15 @@ function CodePromoContent({ promo, now }) {
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 sm:text-[11px] sm:tracking-[0.22em]">{promo.headline}</p>
         </div>
         <h2 className="font-display text-sm font-bold leading-tight text-white sm:mt-1 sm:text-2xl">{headline}</h2>
+        {/* Supporting line: the mechanism behind the headline figure. Shown only
+            when the headline carries a price — otherwise the headline IS the
+            percentage and this would repeat it back verbatim. */}
+        {promoPrice != null && (
+          <p className="mt-0.5 text-[11px] font-semibold text-white/80 sm:text-xs">
+            <span className="text-yellow-200">{promo.discountPct}% OFF</span> your first month
+            <span className="mx-1.5 opacity-50">•</span>Limited time
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-3 sm:gap-6">
@@ -141,11 +191,11 @@ function FoundingMemberContent({ cfg }) {
             </svg>
           </motion.span>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/90">
-            Launch promo · Founding {cfg.limit}
+            Early bird · Founding {cfg.limit}
           </p>
         </div>
         <h2 className="mt-1 font-display text-lg font-bold leading-snug text-white sm:text-xl">
-          Join the first {cfg.limit} traders. <span className="text-yellow-200">Get {cfg.months === 1 ? '30 days' : `${cfg.months} months`} free.</span>
+          Join the first {cfg.limit} traders. <span className="text-yellow-200">Get {cfg.plan} free for {cfg.trialDays} days.</span>
         </h2>
       </div>
 
@@ -163,12 +213,127 @@ function FoundingMemberContent({ cfg }) {
 }
 
 /**
- * Top-of-viewport launch promo strip. Two modes:
- *   1. Founding-member (preferred when launching) — flat message + signup CTA.
- *      No countdown; the program ends when N signups hit, controlled server-side.
- *   2. Discount code — coupon + live countdown for time-bounded promos.
+ * Featured plan — name and monthly price — straight from the pricing API.
  *
- * Founding-member takes priority when both env configs are present.
+ * Deliberately NOT an env var. The banner quotes a real price against a real
+ * strike-through, and a hardcoded figure drifts the moment pricing changes —
+ * leaving the homepage advertising a number checkout no longer honours. The API
+ * reads the same `plans` rows the pricing page does, so the two cannot disagree.
+ *
+ * Returns null while loading OR on failure, and the banner simply omits the
+ * price line in that case. A promo strip is not worth blocking the page for,
+ * and quoting a guessed price would be worse than quoting none.
+ */
+function useFeaturedPlan(planName) {
+  const [plan, setPlan] = useState(null);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    getPricingPlans({ signal: ctrl.signal })
+      .then((plans) => {
+        if (ctrl.signal.aborted) return;
+        const norm = (v) => String(v ?? '').toLowerCase().replace(/[\s_+-]/g, '');
+
+        // A named plan wins (founding mode names one). Otherwise fall back to
+        // whichever plan the pricing page already marks primary, so the banner
+        // features the same tier the pricing page highlights — two surfaces
+        // pushing different plans is worse than either choice alone.
+        const want = planName ? norm(planName) : null;
+        const match = want
+          ? plans.find((x) => norm(x?.slug) === want || norm(x?.name) === want)
+          : (plans.find((x) => x?.features?.primary) ??
+             plans.find((x) => norm(x?.slug) === 'pro'));
+
+        const monthly = Number(match?.priceMonthly ?? match?.monthlyPrice);
+        setPlan(
+          match && Number.isFinite(monthly) && monthly > 0
+            ? { name: match.name || planName || 'Pro', monthly }
+            : null,
+        );
+      })
+      .catch(() => {
+        /* banner renders without the price line */
+      });
+    return () => ctrl.abort();
+  }, [planName]);
+
+  return plan;
+}
+
+/**
+ * Founding-member AND a discount code, in one strip.
+ *
+ * This is the offer as it actually works: the trial is free and needs no card,
+ * and the coupon only bites on the FIRST PAID month afterwards. Showing them
+ * separately (as the two original modes did) split one offer into two
+ * half-offers, and whichever rendered second was never seen at all.
+ *
+ * The order matters — trial first, price second. Leading with a discount asks
+ * someone to think about paying before they have used anything.
+ */
+function LaunchOfferContent({ founding, promo }) {
+  const featured = useFeaturedPlan(founding.plan);
+  const monthly = featured?.monthly ?? null;
+  const after = promo.discountPct ? discountedPrice(monthly, promo.discountPct) : null;
+  const showPrice = monthly != null && after != null;
+
+  return (
+    <div className="relative flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-6">
+      <div className="text-center sm:text-left">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-yellow-300/95 sm:text-[11px] sm:tracking-[0.22em]">
+          {promo.headline} · Founding {founding.limit}
+        </p>
+
+        <h2 className="mt-1 font-display text-lg font-bold leading-snug text-white sm:text-2xl">
+          Get {founding.plan} free for {founding.trialDays} days.
+        </h2>
+
+        {showPrice ? (
+          <div className="mt-1 flex flex-col items-center gap-x-3 gap-y-0.5 sm:flex-row sm:items-baseline">
+            <span className="text-xs text-white/80 sm:text-sm">
+              Then your first month for
+            </span>
+            <span className="font-display text-2xl font-bold text-yellow-200 sm:text-3xl">
+              {formatInr(after)}
+            </span>
+            <span className="text-xs text-white/70 line-through sm:text-sm">
+              {formatInr(monthly)}
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/70 sm:text-[11px]">
+              with code {promo.code}
+            </span>
+          </div>
+        ) : (
+          <p className="mt-1 text-xs text-white/80 sm:text-sm">
+            Then {promoHeadline(promo).toLowerCase()} with code {promo.code}.
+          </p>
+        )}
+      </div>
+
+      <Link
+        to="/signup"
+        className="inline-flex shrink-0 flex-col items-center rounded-xl bg-white px-5 py-2.5 text-center text-[#07090f] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+      >
+        <span className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">
+          Founding {founding.limit}
+        </span>
+        <span className="text-sm font-bold">Claim offer &rarr;</span>
+      </Link>
+    </div>
+  );
+}
+
+/**
+ * Top-of-viewport launch promo strip. Three modes:
+ *   1. Launch — BOTH founding-member and a discount code are configured. One
+ *      strip carries the whole offer: free trial, then a discounted first month.
+ *   2. Founding-member alone — flat message + signup CTA, no countdown.
+ *   3. Discount code alone — coupon + live countdown for time-bounded promos.
+ *
+ * Mode 1 exists because the previous rule (founding wins when both are set)
+ * meant configuring a coupon alongside a founding promo silently hid the
+ * coupon — the banner never mentioned it, so nobody used a code they were
+ * never shown.
  *
  * Coordinates layout via CSS var `--tg-promo-h` (Navbar reads this) and
  * `body.padding-top` (so page content doesn't slide under the strip). Cleans
@@ -177,15 +342,23 @@ function FoundingMemberContent({ cfg }) {
 export default function ActivePromo() {
   const foundingCfg = useMemo(() => getFoundingMemberConfig(), []);
   const codePromo = useMemo(() => getActivePromo(), []);
-  const mode = foundingCfg ? 'founding' : codePromo ? 'code' : null;
+  const mode = foundingCfg && codePromo
+    ? 'launch'
+    : foundingCfg
+      ? 'founding'
+      : codePromo
+        ? 'code'
+        : null;
 
   const [now, setNow] = useState(() => Date.now());
   const [dismissed, setDismissed] = useState(false);
   const ref = useRef(null);
 
   // Per-session dismiss key (so a new launch promo isn't suppressed by an old dismissal).
-  const dismissKey = foundingCfg
-    ? `founding-${foundingCfg.limit}-${foundingCfg.months}-${foundingCfg.plan}`
+  const dismissKey = mode === 'launch'
+    ? `launch-${foundingCfg.limit}-${foundingCfg.trialDays}-${codePromo.code}`
+    : foundingCfg
+    ? `founding-${foundingCfg.limit}-${foundingCfg.trialDays}-${foundingCfg.plan}`
     : codePromo
       ? `code-${codePromo.code}@${codePromo.expiresAt}`
       : null;
@@ -200,12 +373,16 @@ export default function ActivePromo() {
   }, [dismissKey]);
 
   useEffect(() => {
-    if (mode !== 'code') return;
+    if (mode !== 'code') return;  // only the countdown display needs a ticker
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [mode]);
 
-  const codeExpired = mode === 'code' && codePromo.expiresAt - now <= 0;
+  // Applies to 'launch' as well as 'code': in launch mode the strip quotes a
+  // discounted price, so letting it outlive the coupon would advertise a price
+  // checkout no longer gives.
+  const codeExpired =
+    (mode === 'code' || mode === 'launch') && codePromo.expiresAt - now <= 0;
   const visible = Boolean(mode) && !dismissed && !codeExpired;
 
   // Publish height as CSS var so the fixed Navbar can offset its `top`,
@@ -295,6 +472,9 @@ export default function ActivePromo() {
         ))}
 
         <div className="relative mx-auto max-w-7xl px-4 py-2 pr-10 sm:px-6 sm:py-5 sm:pr-16">
+          {mode === 'launch' && (
+            <LaunchOfferContent founding={foundingCfg} promo={codePromo} />
+          )}
           {mode === 'founding' && <FoundingMemberContent cfg={foundingCfg} />}
           {mode === 'code' && <CodePromoContent promo={codePromo} now={now} />}
         </div>

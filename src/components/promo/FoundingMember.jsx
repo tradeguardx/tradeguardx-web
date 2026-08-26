@@ -17,11 +17,11 @@ export function FoundingMemberCallout({ context = 'pricing' }) {
   const cfg = getFoundingMemberConfig();
   if (!cfg) return null;
 
-  const monthLabel = `${cfg.months} month${cfg.months === 1 ? '' : 's'}`;
+  const dayLabel = `${cfg.trialDays} day${cfg.trialDays === 1 ? '' : 's'}`;
   const headline =
     context === 'signup'
-      ? `Sign up now and get ${cfg.plan} free for ${monthLabel}`
-      : `Founding ${cfg.limit}: ${cfg.plan} free for ${monthLabel}`;
+      ? `Sign up now and get ${cfg.plan} free for ${dayLabel}`
+      : `Founding ${cfg.limit}: ${cfg.plan} free for ${dayLabel}`;
 
   const sub =
     context === 'signup'
@@ -66,7 +66,7 @@ export function FoundingMemberCallout({ context = 'pricing' }) {
             </div>
             <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: '#7dffd4' }}>
-                Launch promo · Founding {cfg.limit}
+                Early bird · Founding {cfg.limit}
               </p>
               <p className="mt-1 font-display text-base font-bold leading-snug text-white sm:text-lg">
                 {headline}
@@ -111,7 +111,7 @@ export function FoundingMemberPill() {
         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
       </span>
       <span>
-        First {cfg.limit} signups: {cfg.plan} free for {cfg.months} month{cfg.months === 1 ? '' : 's'}
+        First {cfg.limit} signups: {cfg.plan} free for {cfg.trialDays} day{cfg.trialDays === 1 ? '' : 's'}
       </span>
     </motion.div>
   );
