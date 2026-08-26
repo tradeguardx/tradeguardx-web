@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { discountedPrice, formatInr } from './activePromo';
+import { discountedPrice, formatInr, normalizePlanName } from './activePromo';
 
 /**
  * Guards for the promo price shown on the pricing cards and the launch banner.
@@ -52,5 +52,31 @@ describe('formatInr', () => {
     expect(formatInr(null)).toBeNull();
     expect(formatInr(undefined)).toBeNull();
     expect(formatInr('abc')).toBeNull();
+  });
+});
+
+describe('normalizePlanName', () => {
+  it('keeps Pro and Pro+ distinct', () => {
+    // The whole point. Stripping "+" collapsed these onto each other, so a
+    // lookup for Pro matched the Pro+ row and the live banner rendered
+    // "Get Pro free for 7 days" above "₹1,500 (was ₹2,999)". Pro is ₹1,299.
+    expect(normalizePlanName('Pro')).not.toBe(normalizePlanName('Pro+'));
+  });
+
+  it('collapses every spelling of the top tier onto one string', () => {
+    const canonical = normalizePlanName('pro_plus');
+    for (const variant of ['Pro+', 'pro+', 'PRO PLUS', 'Pro Plus', 'proplus', 'pro-plus']) {
+      expect(normalizePlanName(variant)).toBe(canonical);
+    }
+  });
+
+  it('leaves the lower tiers alone', () => {
+    expect(normalizePlanName('Pro')).toBe('pro');
+    expect(normalizePlanName('Free')).toBe('free');
+  });
+
+  it('is total — no throw on absent input', () => {
+    expect(normalizePlanName(null)).toBe('');
+    expect(normalizePlanName(undefined)).toBe('');
   });
 });

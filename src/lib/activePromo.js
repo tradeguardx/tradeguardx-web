@@ -77,3 +77,26 @@ export function discountedPrice(monthly, pct) {
   if (!Number.isFinite(m) || !Number.isFinite(p) || p <= 0 || p >= 100) return null;
   return Math.round(m * (1 - p / 100));
 }
+
+/**
+ * Normalise a plan slug or display name for matching.
+ *
+ * `+` maps to "plus" rather than being stripped. Deleting it collapses "Pro+"
+ * onto "Pro", so a lookup for Pro matches the Pro+ row — which shipped, and put
+ * "₹1,500 (was ₹2,999)" under a "Get Pro free for 7 days" headline. Pro is
+ * ₹1,299.
+ *
+ * The requirement: every spelling of the top tier — `pro_plus`, `proplus`,
+ * `Pro+`, `Pro Plus` — lands on ONE string, and `Pro` lands on a DIFFERENT one.
+ *
+ * Note this differs deliberately from `normalizePlanSlugForMatch` in
+ * checkoutIntent.js, which does strip `+`. That one only ever sees slugs, where
+ * `pro+` does not occur; this one also sees display NAMES, where `Pro+` is
+ * exactly what the plans table stores.
+ */
+export function normalizePlanName(v) {
+  return String(v ?? '')
+    .toLowerCase()
+    .replace(/\+/g, 'plus')
+    .replace(/[\s_-]/g, '');
+}

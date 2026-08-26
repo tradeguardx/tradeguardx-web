@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getActivePromo, splitRemaining } from '../../lib/activePromo';
 import { getFoundingMemberConfig } from '../../lib/foundingMember';
-import { discountedPrice, formatInr } from '../../lib/activePromo';
+import { discountedPrice, formatInr, normalizePlanName } from '../../lib/activePromo';
 import { getPricingPlans } from '../../api/pricingApi';
 
 const SESSION_KEY = 'tgx_promo_dismissed_for';
@@ -232,7 +232,7 @@ function useFeaturedPlan(planName) {
     getPricingPlans({ signal: ctrl.signal })
       .then((plans) => {
         if (ctrl.signal.aborted) return;
-        const norm = (v) => String(v ?? '').toLowerCase().replace(/[\s_+-]/g, '');
+        const norm = normalizePlanName;
 
         // A named plan wins (founding mode names one). Otherwise fall back to
         // whichever plan the pricing page already marks primary, so the banner
