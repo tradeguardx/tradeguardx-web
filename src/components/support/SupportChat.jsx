@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { sendSupportMessage, SUGGESTED_QUESTIONS } from '../../api/supportApi';
@@ -154,6 +155,51 @@ function Avatar() {
   );
 }
 
+/**
+ * Icons and grouping for the suggested questions. Keyed by text so the
+ * server can reorder or replace the list without the UI losing its icons —
+ * an unknown question just gets the default glyph.
+ */
+const SUGGESTION_META = {
+  'Why was my last trade closed?': { group: 'about', icon: 'M6 18L18 6M6 6l12 12' },
+  'Why is my account locked?': { group: 'about', icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' },
+  'Why does it say Unprotected?': { group: 'about', icon: 'M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z' },
+  'What rules do I have turned on?': { group: 'about', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
+  'How do I connect my Delta API key?': { group: 'howto', icon: 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z' },
+};
+const DEFAULT_ICON = 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+
+function SuggestionRow({ text, onPick, disabled, index }) {
+  const meta = SUGGESTION_META[text] ?? { icon: DEFAULT_ICON };
+  return (
+    <motion.button
+      type="button"
+      onClick={() => onPick(text)}
+      disabled={disabled}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.05 * index, duration: 0.25 }}
+      whileHover={{ x: 2 }}
+      whileTap={{ scale: 0.99 }}
+      className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] transition-colors disabled:opacity-50"
+      style={{ color: 'var(--dash-text-primary)' }}
+      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--dash-bg-card-hover)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+    >
+      <span
+        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+        style={{ backgroundColor: 'rgba(0,212,170,0.10)', color: 'var(--accent, #00d4aa)' }}
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d={meta.icon} />
+        </svg>
+      </span>
+      <span className="flex-1">{text}</span>
+      <span aria-hidden className="opacity-0 transition-opacity group-hover:opacity-100" style={{ color: 'var(--dash-text-faint)' }}>→</span>
+    </motion.button>
+  );
+}
+
 function timeLabel(ts) {
   try {
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -261,8 +307,8 @@ function SupportChatPanel({ session, selectedAccount }) {
         onClick={() => setOpen(!open)}
         aria-label={open ? 'Close support assistant' : 'Open support assistant'}
         aria-expanded={open}
-        className="fixed bottom-5 right-5 z-[60] flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95"
-        style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c', boxShadow: '0 8px 28px rgba(0,212,170,0.35)' }}
+        className="fixed bottom-5 right-5 z-[60] flex h-13 w-13 items-center justify-center rounded-full transition-transform hover:scale-105 active:scale-95"
+        style={{ width: 52, height: 52, background: 'linear-gradient(135deg, #00d4aa, #10b981)', color: '#05221c', boxShadow: '0 10px 30px -6px rgba(0,212,170,0.55), 0 0 0 4px rgba(0,212,170,0.12)' }}
       >
         {open ? (
           <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
@@ -272,22 +318,29 @@ function SupportChatPanel({ session, selectedAccount }) {
       </button>
 
       {/* Panel */}
+      <AnimatePresence>
       {open && (
-        <div
+        <motion.div
           role="dialog"
           aria-label="TradeGuardX assistant"
-          className="fixed bottom-20 right-5 z-[60] flex w-[min(92vw,400px)] flex-col overflow-hidden rounded-2xl border"
+          initial={{ opacity: 0, y: 16, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 12, scale: 0.98 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+          className="fixed bottom-20 right-5 z-[60] flex w-[min(92vw,400px)] origin-bottom-right flex-col overflow-hidden rounded-3xl"
           style={{
-            height: 'min(72vh, 600px)',
+            height: 'min(72vh, 620px)',
             backgroundColor: 'var(--dash-bg-raised)',
-            borderColor: 'var(--dash-border)',
-            boxShadow: '0 24px 64px -16px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04)',
+            boxShadow: '0 30px 80px -20px rgba(0,0,0,0.35), 0 0 0 1px var(--dash-border)',
           }}
         >
           {/* Header */}
           <div
-            className="flex items-center gap-3 px-4 py-3.5"
-            style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.16), rgba(16,185,129,0.06))', borderBottom: '1px solid var(--dash-border)' }}
+            className="flex items-center gap-3 px-4 py-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0,212,170,0.22) 0%, rgba(16,185,129,0.10) 55%, transparent 100%)',
+              borderBottom: '1px solid var(--dash-border)',
+            }}
           >
             <Avatar />
             <div className="min-w-0 flex-1">
@@ -356,40 +409,54 @@ function SupportChatPanel({ session, selectedAccount }) {
           {view === 'chat' && (
           <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-4 text-[13px]" style={{ color: 'var(--dash-text-secondary)' }}>
             {messages.length === 0 && (
-              <div className="space-y-3">
-                <div>
-                  <p className="text-lg font-bold" style={{ color: 'var(--dash-text-primary)' }}>Hi there 👋</p>
-                  <p className="mt-0.5">Ask me why something happened on your account, or how any part of TradeGuardX works.</p>
-                </div>
-                <div className="space-y-2 pt-1">
-                  {suggested.map((q) => (
-                    <button
-                      key={q}
-                      type="button"
-                      onClick={() => ask(q)}
-                      disabled={!accountId}
-                      className="group flex w-full items-center justify-between rounded-xl border px-3.5 py-2.5 text-left text-[13px] transition-all hover:translate-x-0.5 disabled:opacity-50"
-                      style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)', color: 'var(--dash-text-primary)' }}
-                    >
-                      <span>{q}</span>
-                      <span aria-hidden className="transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--dash-text-faint)' }}>→</span>
-                    </button>
-                  ))}
-                </div>
+              <div className="space-y-5">
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+                  <p className="text-xl font-bold tracking-tight" style={{ color: 'var(--dash-text-primary)' }}>Hi there 👋</p>
+                  <p className="mt-1 leading-relaxed">
+                    I can see this account's rules and everything the kill switch has done. Ask me why something happened, or how any part of TradeGuardX works.
+                  </p>
+                </motion.div>
+
+                {[
+                  { key: 'about', label: 'About your account' },
+                  { key: 'howto', label: 'How do I…' },
+                ].map((g) => {
+                  const items = suggested.filter((q) => (SUGGESTION_META[q]?.group ?? 'about') === g.key);
+                  if (!items.length) return null;
+                  return (
+                    <div key={g.key}>
+                      <p className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dash-text-faint)' }}>
+                        {g.label}
+                      </p>
+                      <div
+                        className="rounded-2xl p-1"
+                        style={{ backgroundColor: 'var(--dash-bg-card)', boxShadow: '0 0 0 1px var(--dash-border)' }}
+                      >
+                        {items.map((q, i) => (
+                          <SuggestionRow key={q} text={q} index={i} onPick={ask} disabled={!accountId} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <p className="px-1 text-[11px] leading-relaxed" style={{ color: 'var(--dash-text-faint)' }}>
+                  I explain, I don't change anything — rules, locks and keys are yours to edit in the dashboard.
+                </p>
               </div>
             )}
 
             <div className="space-y-4">
               {messages.map((m, i) =>
                 m.role === 'user' ? (
-                  <div key={i} className="flex flex-col items-end gap-1">
-                    <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-relaxed" style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c' }}>
+                  <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="flex flex-col items-end gap-1">
+                    <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-relaxed" style={{ background: 'linear-gradient(135deg, #00d4aa, #10b981)', color: '#05221c', boxShadow: '0 4px 14px -6px rgba(0,212,170,0.5)' }}>
                       <p className="whitespace-pre-wrap">{m.content}</p>
                     </div>
                     <span className="pr-1 text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>{timeLabel(m.at)}</span>
-                  </div>
+                  </motion.div>
                 ) : (
-                  <div key={i} className="flex items-start gap-2.5">
+                  <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="flex items-start gap-2.5">
                     <Avatar />
                     <div className="flex min-w-0 flex-col gap-1">
                       <div className="max-w-full rounded-2xl rounded-tl-md px-4 py-3 text-[13.5px]" style={bubbleAssistant}>
@@ -397,7 +464,7 @@ function SupportChatPanel({ session, selectedAccount }) {
                       </div>
                       <span className="pl-1 text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>{timeLabel(m.at)}</span>
                     </div>
-                  </div>
+                  </motion.div>
                 ),
               )}
 
@@ -444,32 +511,38 @@ function SupportChatPanel({ session, selectedAccount }) {
           {view === 'chat' && (
           <form
             onSubmit={(e) => { e.preventDefault(); ask(input); }}
-            className="flex items-center gap-2 px-3 py-3"
+            className="px-3 pb-3 pt-2"
             style={{ borderTop: '1px solid var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}
           >
+            <div
+              className="flex items-center gap-1.5 rounded-full py-1 pl-4 pr-1 transition-shadow focus-within:shadow-[0_0_0_2px_rgba(0,212,170,0.35)]"
+              style={{ backgroundColor: 'var(--dash-bg-input)', boxShadow: '0 0 0 1px var(--dash-border)' }}
+            >
             <input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={accountId ? 'Ask about your account…' : 'Select an account first'}
               disabled={busy || !accountId}
-              className="flex-1 rounded-xl border px-3.5 py-2.5 text-[13px] outline-none transition-colors focus:border-[color:var(--accent,#00d4aa)]"
-              style={{ backgroundColor: 'var(--dash-bg-input)', borderColor: 'var(--dash-border)', color: 'var(--dash-text-primary)' }}
+              className="min-w-0 flex-1 bg-transparent py-2 text-[13px] outline-none"
+              style={{ color: 'var(--dash-text-primary)' }}
               maxLength={2000}
             />
             <button
               type="submit"
               disabled={busy || !input.trim() || !accountId}
               aria-label="Send"
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-opacity disabled:opacity-40"
-              style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c' }}
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-all disabled:opacity-30"
+              style={{ background: 'linear-gradient(135deg, #00d4aa, #10b981)', color: '#05221c' }}
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 12l14-7-4 7 4 7-14-7z" /></svg>
             </button>
+            </div>
           </form>
           )}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </>
   );
 }
