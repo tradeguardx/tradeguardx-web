@@ -1,10 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 
-vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ session: null }) }));
-vi.mock('../../context/TradingAccountContext', () => ({ useTradingAccounts: () => ({ selectedAccount: null }) }));
-
-const { renderReply, inline } = await import('./SupportChat');
+const { renderReply, inline } = await import('./supportMarkdown');
 
 /**
  * The assistant writes a small markdown subset. These pin the two rendering
