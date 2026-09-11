@@ -57,7 +57,7 @@ function useSessionFlag(key, initial) {
  * off after "**XRPUSD (" previously rendered the asterisks literally. An
  * unmatched opener is now shown as plain text without the marker.
  */
-function inline(text) {
+export function inline(text) {
   const out = [];
   const re = /(\*\*(.+?)\*\*|`([^`]+)`)/g;
   let last = 0;
@@ -87,44 +87,112 @@ function inline(text) {
   return out;
 }
 
-function renderReply(text) {
-  const blocks = String(text).replace(/\r/g, '').split(/\n{2,}/);
-  return blocks.map((block, bi) => {
-    const lines = block.split('\n').filter((l) => l.trim() !== '');
-    if (lines.length === 0) return null;
+/**
+ * Block renderer. Walks line by line and groups consecutive bullet lines into
+ * a list WHEREVER they occur, rather than requiring a whole blank-line-
+ * delimited block to be bullets.
+ *
+ * That distinction is why lists were rendering inline: the model writes
+ *
+ *     Here is how it works:
+ *     * **Must be flat first**: ...
+ *     * **Blocks new trades**: ...
+ *
+ * with no blank line after the intro. The old renderer treated that as one
+ * block, saw the first line was not a bullet, and joined every line into a
+ * single paragraph — asterisks and all.
+ */
+/**
+ * The model sometimes runs bullets INTO the intro sentence on one line:
+ *
+ *     Here is how it works: * **Source**: ... * **Classification**: ...
+ *
+ * A lone " * " (space, asterisk, space) is never valid emphasis — bold is
+ * "**" — so splitting on it is safe. Same for " - " after a colon or period.
+ * Numbered steps run together ("1. Close. 2. Go to") are split on the number.
+ */
+function splitInlineBullets(text) {
+  return text
+    .replace(/\s+\*\s+(?=\S)/g, '\n* ')
+    .replace(/([:.])\s+-\s+(?=\S)/g, '$1\n- ')
+    .replace(/([:.])\s+(?=\d+[.)]\s+\S)/g, '$1\n');
+}
 
-    const bullet = /^\s*(?:[-*•]|\d+[.)])\s+/;
-    if (lines.every((l) => bullet.test(l))) {
-      const ordered = /^\s*\d+[.)]\s+/.test(lines[0]);
-      const Tag = ordered ? 'ol' : 'ul';
-      return (
-        <Tag key={bi} className={`my-2 space-y-1.5 pl-5 ${ordered ? 'list-decimal' : 'list-disc'}`}>
-          {lines.map((l, li) => (
-            <li key={li} className="leading-relaxed">{inline(l.replace(bullet, ''))}</li>
+export function renderReply(text) {
+  const lines = splitInlineBullets(String(text).replace(/\r/g, '')).split('\n');
+  const bullet = /^\s*(?:[-*•]|\d+[.)])\s+/;
+  const numbered = /^\s*\d+[.)]\s+/;
+  const heading = /^#{1,3}\s+(.*)$/;
+
+  const out = [];
+  let para = [];
+  let list = null; // { ordered, items }
+  let k = 0;
+
+  const flushPara = () => {
+    if (para.length) {
+      out.push(
+        <p key={k++} className="leading-[1.6]">
+          {inline(para.join(' '))}
+        </p>,
+      );
+      para = [];
+    }
+  };
+  const flushList = () => {
+    if (list) {
+      const Tag = list.ordered ? 'ol' : 'ul';
+      out.push(
+        <Tag
+          key={k++}
+          className={`space-y-2 ${list.ordered ? 'list-decimal pl-5' : 'pl-0'}`}
+          style={list.ordered ? { color: 'var(--dash-text-faint)' } : undefined}
+        >
+          {list.items.map((it, i) => (
+            <li key={i} className={list.ordered ? 'pl-1 leading-relaxed' : 'flex gap-2.5 leading-relaxed'} style={{ color: 'var(--dash-text-secondary)' }}>
+              {!list.ordered && (
+                <span aria-hidden className="mt-[7px] h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ backgroundColor: 'var(--accent, #00d4aa)' }} />
+              )}
+              <span className="min-w-0">{inline(it)}</span>
+            </li>
           ))}
-        </Tag>
+        </Tag>,
       );
+      list = null;
+    }
+  };
+
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    if (line.trim() === '') { flushPara(); flushList(); continue; }
+
+    const h = heading.exec(line);
+    if (h) {
+      flushPara(); flushList();
+      out.push(
+        <p key={k++} className="pt-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--dash-text-faint)' }}>
+          {h[1]}
+        </p>,
+      );
+      continue;
     }
 
-    // headings are discouraged in the prompt; render one plainly if it slips through
-    const heading = /^#{1,3}\s+(.*)$/.exec(lines[0]);
-    if (heading) {
-      return (
-        <div key={bi} className="my-2">
-          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--dash-text-faint)' }}>
-            {heading[1]}
-          </p>
-          {lines.length > 1 && <p className="leading-relaxed">{inline(lines.slice(1).join(' '))}</p>}
-        </div>
-      );
+    if (bullet.test(line)) {
+      flushPara();
+      const ordered = numbered.test(line);
+      if (!list || list.ordered !== ordered) { flushList(); list = { ordered, items: [] }; }
+      list.items.push(line.replace(bullet, ''));
+      continue;
     }
 
-    return (
-      <p key={bi} className="my-2 leading-relaxed first:mt-0 last:mb-0">
-        {inline(lines.join(' '))}
-      </p>
-    );
-  });
+    // A non-bullet line directly after a list is a new paragraph, not a
+    // continuation — the model does not wrap bullet text.
+    flushList();
+    para.push(line.trim());
+  }
+  flushPara(); flushList();
+
+  return <div className="space-y-3">{out}</div>;
 }
 
 /* ─── UI ───────────────────────────────────────────────────────────────── */
@@ -237,7 +305,7 @@ function SupportChatPanel({ session, selectedAccount }) {
 
   const bubbleAssistant = {
     backgroundColor: 'var(--dash-bg-card)',
-    border: '1px solid var(--dash-border)',
+    boxShadow: 'var(--dash-shadow-inset-top), 0 1px 0 0 var(--dash-border)',
     color: 'var(--dash-text-secondary)',
   };
 
@@ -337,7 +405,7 @@ function SupportChatPanel({ session, selectedAccount }) {
                   <div key={i} className="flex items-start gap-2.5">
                     <Avatar />
                     <div className="flex min-w-0 flex-col gap-1">
-                      <div className="max-w-full rounded-2xl rounded-tl-md px-3.5 py-2.5" style={bubbleAssistant}>
+                      <div className="max-w-full rounded-2xl rounded-tl-md px-4 py-3 text-[13.5px]" style={bubbleAssistant}>
                         {renderReply(m.content)}
                       </div>
                       <span className="pl-1 text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>{timeLabel(m.at)}</span>
