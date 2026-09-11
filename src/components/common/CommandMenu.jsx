@@ -94,14 +94,9 @@ export default function CommandMenu() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-[70] hidden md:flex items-center gap-2 px-3 py-2 rounded-xl border border-white/[0.1] bg-surface-900/75 backdrop-blur-lg text-slate-300 hover:text-white hover:border-accent/30 transition-all"
-        aria-label="Open command menu"
-      >
-        <span className="text-xs font-medium">Command</span>
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-400">⌘K</span>
-      </button>
+      {/* The floating "Command ⌘K" trigger was removed: it sat at z-70 in the
+          bottom-right corner, directly over the support assistant's launcher.
+          The palette itself is unchanged and still opens on ⌘K / Ctrl+K. */}
 
       <AnimatePresence>
         {open && (
