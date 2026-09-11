@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { TradingAccountProvider } from '../../context/TradingAccountContext';
 import { DashboardThemeProvider, useDashboardTheme } from '../../context/DashboardThemeContext';
+import SupportChat from '../support/SupportChat';
 import DashboardSidebar from './DashboardSidebar';
 import AccountSelector from './AccountSelector';
 import HeaderStatusPill from './HeaderStatusPill';
@@ -513,6 +514,8 @@ function DashboardInner() {
       <WelcomeCelebration />
       {/* First-time mobile-number ask — shows once, gated server-side. */}
       <PhonePrompt />
+      {/* Account-aware support assistant. Read-only: explains, never acts. */}
+      <SupportChat />
     </div>
   );
 }
