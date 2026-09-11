@@ -89,16 +89,16 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
   return (
     <form onSubmit={submit} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4 text-[13px]">
       <div>
-        <p className="text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>Message the founder</p>
+        <p className="text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>Explain the issue</p>
         <p className="mt-0.5" style={{ color: 'var(--dash-text-secondary)' }}>
-          Goes straight to Prashant. Reply lands at <span className="font-medium" style={{ color: 'var(--dash-text-primary)' }}>{email}</span>.
+          Tell us what went wrong. Your query will be resolved within 30 minutes.
         </p>
       </div>
 
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder="What's going on? Include anything the assistant couldn't answer."
+        placeholder="Describe the issue — what you expected, what happened, and when."
         rows={6}
         maxLength={4000}
         autoFocus
@@ -131,7 +131,7 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
           className="flex-1 rounded-xl px-3.5 py-2.5 text-[13px] font-bold disabled:opacity-40"
           style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c' }}
         >
-          {sending ? 'Sending…' : 'Send to founder'}
+          {sending ? 'Sending…' : 'Send'}
         </button>
       </div>
     </form>
@@ -337,9 +337,9 @@ function SupportChatPanel({ session, selectedAccount }) {
               <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(0,212,170,0.14)' }}>
                 <svg className="h-6 w-6" fill="none" stroke="var(--accent, #00d4aa)" strokeWidth={2.4} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
               </div>
-              <p className="text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>Sent</p>
+              <p className="text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>Received</p>
               <p className="text-[13px]" style={{ color: 'var(--dash-text-secondary)' }}>
-                You'll get a reply at {session?.user?.email}. Usually within a day.
+                Your query will be resolved within 30 minutes. We'll reply by email.
               </p>
               <button
                 type="button"
@@ -432,7 +432,7 @@ function SupportChatPanel({ session, selectedAccount }) {
                 <p className="pl-9 text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
                   Not what you needed?{' '}
                   <button type="button" onClick={() => setView('contact')} className="font-semibold underline underline-offset-2" style={{ color: 'var(--dash-text-muted)' }}>
-                    Message the founder
+                    Raise an issue
                   </button>
                 </p>
               )}
