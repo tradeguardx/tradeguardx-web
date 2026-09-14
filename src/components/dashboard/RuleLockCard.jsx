@@ -114,7 +114,20 @@ function RuleLockCardInner({ accountId }) {
       title="Rule lock"
       subtitle="After you save, rules that are on are frozen for the window you choose. You can still turn on rules that are off — they join the lock."
       accent={locked ? AMBER : ACCENT}
-      badge={locked ? 'Locked' : `${current} days`}
+      badge={
+        // A styled pill, not a bare string: the header renders `badge` as-is,
+        // and plain text in the muted heading colour was invisible.
+        <span
+          className="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+          style={
+            locked
+              ? { borderColor: AMBER_LINE, backgroundColor: AMBER_TINT, color: AMBER }
+              : { borderColor: 'var(--dash-border)', backgroundColor: ACCENT_TINT, color: ACCENT }
+          }
+        >
+          {locked ? 'Locked' : `${current} days`}
+        </span>
+      }
       defaultOpen={locked}
       icon={
         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

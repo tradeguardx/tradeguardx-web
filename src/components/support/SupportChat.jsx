@@ -63,7 +63,6 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
   const [message, setMessage] = useState(prefill);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
-  const email = session?.user?.email || '';
   const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '';
 
   async function submit(e) {
@@ -73,11 +72,11 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
     setError('');
     try {
       await submitSupportRequest({
-        email,
-        name,
-        message: message.trim(),
-        accountName: selectedAccount?.name || selectedAccount?.propFirmSlug || '',
+        accessToken: session?.access_token,
         accountId: selectedAccount?.id || '',
+        message: message.trim(),
+        name,
+        accountName: selectedAccount?.name || selectedAccount?.propFirmSlug || '',
         transcript,
       });
       onSent();
