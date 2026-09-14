@@ -330,73 +330,133 @@ function useCountdown(iso) {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [iso]);
-  if (!iso) return '';
-  const ms = Math.max(0, new Date(iso).getTime() - now);
+  const ms = iso ? Math.max(0, new Date(iso).getTime() - now) : 0;
   const s = Math.floor(ms / 1000);
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
-  if (d > 0) return `${d}d ${h}h ${m}m`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}:${String(sec).padStart(2, '0')}`;
+  const label = !iso ? '' : d > 0 ? `${d}d ${h}h ${m}m` : h > 0 ? `${h}h ${m}m` : `${m}:${String(sec).padStart(2, '0')}`;
+  return { label, ms, now };
 }
 
+const SETTLE_MS = 15 * 60_000;
+
+/**
+ * The rule lock, in the same visual language as the rule cards beneath it:
+ * accent edge, icon tile, a state pill, and the countdown drawn as a bar so
+ * time has a shape rather than just a number.
+ *
+ * Two states:
+ *  - settling: saved in the last 15 minutes; more edits allowed. Bar fills as
+ *    the window closes — a visual "finish now".
+ *  - locked: nothing can change until the date. Bar shows how far through.
+ * Support can lift it, and the copy says so with the address.
+ */
 function RuleLockBanner({ lock }) {
+  const target = lock.locked ? lock.lockedUntil : lock.locksAt;
+  const { label, ms } = useCountdown(target);
   const until = fmtLockDate(lock.lockedUntil);
   const locksAt = fmtLockDate(lock.locksAt);
-  const remaining = useCountdown(lock.locked ? lock.lockedUntil : lock.locksAt);
-  const tone = lock.locked
-    ? { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.28)', fg: '#d97706' }
-    : { bg: 'rgba(0,212,170,0.07)', border: 'rgba(0,212,170,0.25)', fg: 'var(--accent, #00d4aa)' };
+
+  // Progress through the current phase, 0..1.
+  const total = lock.locked ? lock.days * 86_400_000 : SETTLE_MS;
+  const progress = Math.min(1, Math.max(0, 1 - ms / total));
+
+  const t = lock.locked
+    ? { edge: '#f59e0b', fg: '#d97706', tint: 'rgba(245,158,11,0.10)', line: 'rgba(245,158,11,0.30)', pill: 'LOCKED' }
+    : { edge: '#00d4aa', fg: '#0d9488', tint: 'rgba(0,212,170,0.08)', line: 'rgba(0,212,170,0.28)', pill: 'CLOSING SOON' };
+
   return (
-    <div className="mb-6 rounded-xl border px-4 py-3" style={{ backgroundColor: tone.bg, borderColor: tone.border }}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[13px] font-semibold" style={{ color: tone.fg }}>
-            {lock.locked ? `Rules locked until ${until}` : `Rules lock at ${locksAt}`}
-          </p>
-          <p className="mt-0.5 text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>
-            {lock.locked
-              ? `You chose a ${lock.days}-day lock. Nothing here can be changed — turned on, off, tightened or loosened — until then. If you set something by mistake or need it released, contact support and we can lift it.`
-              : `You saved recently. Finish any other changes now — they apply immediately. 15 minutes after your last save, every rule locks for ${lock.days} days.`}
-          </p>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="dash-card-elevated relative mb-8 overflow-hidden rounded-2xl"
+      style={{ borderLeft: `4px solid ${t.edge}` }}
+    >
+      {/* soft glow, like the protection hero */}
+      <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl" style={{ backgroundColor: t.tint }} aria-hidden />
+
+      <div className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: t.tint, color: t.fg }}>
+            {lock.locked ? (
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <rect x="4" y="11" width="16" height="9" rx="2" />
+                <path strokeLinecap="round" d="M8 11V7a4 4 0 118 0v4" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-display text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>
+                {lock.locked ? `Rules locked until ${until}` : `Rules lock at ${locksAt}`}
+              </p>
+              <span className="rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider" style={{ borderColor: t.line, color: t.fg, backgroundColor: t.tint }}>
+                {t.pill}
+              </span>
+            </div>
+            <p className="mt-1 max-w-2xl text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+              {lock.locked
+                ? `You chose a ${lock.days}-day lock. Nothing here can be changed — on, off, tighter or looser — until then.`
+                : `You saved recently. Finish any other changes now; they apply immediately. 15 minutes after your last save, every rule locks for ${lock.days} days.`}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {lock.locked && (
+                <button
+                  type="button"
+                  onClick={() => openSupport(`I'd like my rule lock released early. It's locked until ${until}. Reason: `)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold"
+                  style={{ borderColor: t.line, color: t.fg, backgroundColor: t.tint }}
+                >
+                  Request release
+                </button>
+              )}
+              <Link
+                to="/dashboard/account/security"
+                className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold"
+                style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
+                title={lock.locked ? 'The window can be changed once the lock lifts' : 'Change the lock window'}
+              >
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Lock settings
+              </Link>
+              <span className="text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
+                or email <a href="mailto:support@tradeguardx.com" className="underline underline-offset-2">support@tradeguardx.com</a>
+              </span>
+            </div>
+          </div>
         </div>
-        {/* The timer. Ticking seconds inside the last hour, so it visibly moves
-            rather than sitting on "1m" long enough to look stuck. */}
-        <div className="flex-shrink-0 rounded-lg px-3 py-1.5 text-right" style={{ backgroundColor: 'rgba(0,0,0,0.06)' }}>
-          <p className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: 'var(--dash-text-faint)' }}>
-            {lock.locked ? 'Releases in' : 'Locks in'}
-          </p>
-          <p className="font-mono text-[15px] font-bold tabular-nums" style={{ color: tone.fg }}>{remaining}</p>
+
+        {/* The timer: number on top of a bar that fills as the phase runs out. */}
+        <div className="flex-shrink-0 sm:w-44">
+          <div className="rounded-xl border px-4 py-3" style={{ borderColor: t.line, backgroundColor: t.tint }}>
+            <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: t.fg }}>
+              {lock.locked ? 'Releases in' : 'Locks in'}
+            </p>
+            <p className="mt-0.5 font-mono text-2xl font-bold tabular-nums leading-none" style={{ color: 'var(--dash-text-primary)' }}>
+              {label}
+            </p>
+            <div className="mt-2.5 h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.08)' }}>
+              <motion.div
+                className="h-full rounded-full"
+                style={{ backgroundColor: t.edge }}
+                initial={false}
+                animate={{ width: `${progress * 100}%` }}
+                transition={{ duration: 0.6 }}
+              />
+            </div>
+          </div>
         </div>
       </div>
-      <div className="mt-2.5 flex flex-wrap items-center gap-2">
-        {lock.locked && (
-          <button
-            type="button"
-            onClick={() => openSupport(`I'd like my rule lock released early. It's locked until ${until}. Reason: `)}
-            className="rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors"
-            style={{ borderColor: 'rgba(245,158,11,0.35)', color: '#d97706', backgroundColor: 'rgba(245,158,11,0.08)' }}
-          >
-            Made a mistake or need it released? Contact support
-          </button>
-        )}
-        {/* Where the window is changed — reachable now, usable once it lifts. */}
-        <Link
-          to="/dashboard/account/security"
-          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors"
-          style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
-          title={lock.locked ? 'The window can be changed once the lock lifts' : 'Change the lock window'}
-        >
-          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Lock settings{lock.locked ? ' (change once released)' : ''}
-        </Link>
-      </div>
-    </div>
+    </motion.div>
   );
 }
 
