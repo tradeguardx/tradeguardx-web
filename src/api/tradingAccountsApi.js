@@ -202,3 +202,27 @@ export async function createPairingCode({ accessToken, accountId, signal } = {})
   );
   return unwrap(payload);
 }
+
+/** GET /trading-accounts/{id}/rule-lock — { days, locked, settling, lockedUntil, locksAt }. */
+export async function fetchRuleLock({ accessToken, accountId, signal } = {}) {
+  if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
+  const payload = await apiGet(`/trading-accounts/${encodeURIComponent(accountId)}/rule-lock`, {
+    signal,
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return unwrap(payload);
+}
+
+/**
+ * PATCH /trading-accounts/{id}/rule-lock { days } — 0 | 3 | 7 | 30.
+ * Refused with 423 while the account is currently locked: the window can only
+ * be changed once the lock lifts, or 30 → 3 is a two-click escape.
+ */
+export async function setRuleLockDays({ accessToken, accountId, days, signal } = {}) {
+  if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
+  const payload = await apiPatch(`/trading-accounts/${encodeURIComponent(accountId)}/rule-lock`, { days }, {
+    signal,
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return unwrap(payload);
+}

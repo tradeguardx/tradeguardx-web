@@ -303,7 +303,48 @@ function ruleSummaryLine(templateSlug, values, fallback) {
   }
 }
 
-function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked = false, expanded, onToggleExpand }) {
+function fmtLockDate(iso) {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * The rule lock, stated plainly. Two states:
+ *  - settling: saved in the last 15 minutes; the lock has not engaged yet, so
+ *    more edits are allowed — this is what lets someone set up all their
+ *    rules in one sitting.
+ *  - locked: nothing can change until the date shown.
+ * Support can lift it, and the copy says so. A lock with no escape at all
+ * will eventually meet someone with a real reason.
+ */
+function RuleLockBanner({ lock }) {
+  const until = fmtLockDate(lock.lockedUntil);
+  const locksAt = fmtLockDate(lock.locksAt);
+  const tone = lock.locked
+    ? { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.28)', fg: '#d97706' }
+    : { bg: 'rgba(0,212,170,0.07)', border: 'rgba(0,212,170,0.25)', fg: 'var(--accent, #00d4aa)' };
+  return (
+    <div className="mb-6 rounded-xl border px-4 py-3" style={{ backgroundColor: tone.bg, borderColor: tone.border }}>
+      <p className="text-[13px] font-semibold" style={{ color: tone.fg }}>
+        {lock.locked ? `Rules locked until ${until}` : `Rules lock at ${locksAt}`}
+      </p>
+      <p className="mt-0.5 text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>
+        {lock.locked
+          ? `You chose a ${lock.days}-day lock. Nothing here can be changed — turned on, off, tightened or loosened — until then. Support can lift it in an emergency.`
+          : `You saved recently. Finish any other changes now — 15 minutes after your last save, every rule locks for ${lock.days} days.`}
+      </p>
+      <p className="mt-1.5 text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
+        Change the lock window in Account → Security{lock.locked ? ' once it lifts' : ''}.
+      </p>
+    </div>
+  );
+}
+
+function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked = false, lockDays = 0, lockReason = null, expanded, onToggleExpand }) {
   // A change staged during a lockout must be revocable. Otherwise a decision
   // made while locked out and frustrated executes hours later without asking
   // again, and staging becomes a delayed trap rather than breathing room.
@@ -753,11 +794,19 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                   type="button"
                   onClick={handleSave}
                   disabled={saving || accountLocked}
-                  title={accountLocked ? 'Locked until the cooldown ends' : undefined}
+                  title={accountLocked ? (lockReason || 'Locked until the cooldown ends') : undefined}
                   className="h-9 w-full rounded-lg bg-accent px-4 text-[13px] font-semibold text-surface-950 transition-colors hover:bg-accent-hover disabled:opacity-50 sm:w-auto"
                 >
                   {saving ? 'Saving…' : rule.hasSavedInstance ? 'Save changes' : 'Save & enable'}
                 </button>
+                {/* Said on the button, before the click. With a 7-day default,
+                    an existing user's next save locks them for a week; nobody
+                    should learn that from a 423 afterwards. */}
+                {!accountLocked && lockDays > 0 && (
+                  <span className="text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
+                    Saving locks all rules for {lockDays} days
+                  </span>
+                )}
                 {/* The only way to switch a rule off. Without it `enabled`
                     existed end-to-end — API, engine, cooling-off — with nothing
                     able to set it, so a trader who wanted one rule gone had to
@@ -822,12 +871,18 @@ export default function RulesTerminal() {
   const { accounts, accountsLoading, selectedTradingAccountId, selectedAccount } = useTradingAccounts();
   // While the account is locked the API rejects rule edits and deletes, so the
   // UI disables them rather than letting someone type a change that can't save.
-  const { locked: accountLocked } = useCooldown({
+  const { locked: cooldownLocked } = useCooldown({
     accessToken: session?.access_token,
     tradingAccountId: selectedTradingAccountId,
     account: selectedAccount,
   });
   const [bundle, setBundle] = useState(null);
+  // Rule lock: the user's own commitment window. After any save, every edit
+  // is refused until it lifts — the API returns 423, so the cards are disabled
+  // through the same path the cooldown already uses.
+  const ruleLock = bundle?.ruleLock ?? null;
+  const ruleLocked = Boolean(ruleLock?.locked);
+  const accountLocked = cooldownLocked || ruleLocked;
   const [bundleLoading, setBundleLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -969,6 +1024,9 @@ export default function RulesTerminal() {
         </>
       ) : (
         <>
+          {ruleLock && (ruleLock.locked || ruleLock.settling) && (
+            <RuleLockBanner lock={ruleLock} />
+          )}
           <div className="mb-10">
             <DashboardSectionHeading
               icon={(
@@ -992,6 +1050,8 @@ export default function RulesTerminal() {
                     {section.rules.map((rule, i) => (
                       <RuleCard
                         accountLocked={accountLocked}
+                        lockDays={ruleLock?.days ?? 0}
+                        lockReason={ruleLocked ? `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}` : null}
                         key={`${rule.id}-${reloadNonce}`}
                         rule={rule}
                         index={i}
@@ -1035,6 +1095,10 @@ export default function RulesTerminal() {
                       {section.rules.map((rule, i) => (
                         <RuleCard
                           accountLocked={accountLocked}
+                          lockDays={ruleLock?.days ?? 0}
+                          lockReason={ruleLocked ? `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}` : null}
+                        lockDays={ruleLock?.days ?? 0}
+                        lockReason={ruleLocked ? `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}` : null}
                           key={`${rule.id}-${reloadNonce}`}
                           rule={rule}
                           index={i + availableRules.length}

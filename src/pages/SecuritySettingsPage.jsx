@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/ToastProvider';
 import PasswordField from '../components/common/PasswordField';
 import ManualKillswitchCard from '../components/dashboard/ManualKillswitchCard';
+import RuleLockCard from '../components/dashboard/RuleLockCard';
 import CollapsibleCard from '../components/common/CollapsibleCard';
 import { pwStrength, validatePasswordPair, MIN_PASSWORD_LENGTH } from '../lib/password';
 
@@ -155,6 +156,11 @@ export default function SecuritySettingsPage() {
 
       <div className="mt-4">
         <ManualKillswitchCard />
+      </div>
+      {/* Beside the kill switch on purpose: both are the user binding their
+          future self. One locks trading, the other locks the rules. */}
+      <div className="mt-4">
+        <RuleLockCard />
       </div>
     </motion.div>
   );
