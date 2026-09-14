@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { sendSupportMessage, SUGGESTED_QUESTIONS } from '../../api/supportApi';
 import { submitSupportRequest, supportFormConfigured } from '../../api/supportRequestApi';
+import { CHAT_THEMES, useChatTheme } from './chatThemes';
 import { renderReply } from './supportMarkdown';
 import { OPEN_SUPPORT_EVENT } from './supportBus';
 
@@ -59,7 +60,7 @@ function useSessionFlag(key, initial) {
  * leave the conversation to reach the founder, and the recent transcript
  * travels with the request — what they tried and what the bot told them.
  */
-function ContactSupportView({ session, selectedAccount, transcript, onBack, onSent, prefill = '' }) {
+function ContactSupportView({ session, selectedAccount, transcript, onBack, onSent, prefill = '', theme }) {
   const [message, setMessage] = useState(prefill);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
@@ -130,7 +131,7 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
           type="submit"
           disabled={sending || !message.trim()}
           className="flex-1 rounded-xl px-3.5 py-2.5 text-[13px] font-bold disabled:opacity-40"
-          style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c' }}
+          style={{ background: theme.userGradient, color: theme.userText }}
         >
           {sending ? 'Sending…' : 'Send'}
         </button>
@@ -141,11 +142,11 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
 
 /* ─── UI ───────────────────────────────────────────────────────────────── */
 
-function Avatar() {
+function Avatar({ gradient = 'linear-gradient(135deg, #00d4aa, #10b981)', text = '#05221c' }) {
   return (
     <div
       className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full"
-      style={{ background: 'linear-gradient(135deg, #00d4aa, #10b981)' }}
+      style={{ background: gradient, color: text }}
       aria-hidden
     >
       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="#04121a" strokeWidth={2.4}>
@@ -169,7 +170,7 @@ const SUGGESTION_META = {
 };
 const DEFAULT_ICON = 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
 
-function SuggestionRow({ text, onPick, disabled, index }) {
+function SuggestionRow({ text, onPick, disabled, index, theme }) {
   const meta = SUGGESTION_META[text] ?? { icon: DEFAULT_ICON };
   return (
     <motion.button
@@ -182,13 +183,13 @@ function SuggestionRow({ text, onPick, disabled, index }) {
       whileHover={{ x: 2 }}
       whileTap={{ scale: 0.99 }}
       className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] transition-colors disabled:opacity-50"
-      style={{ color: 'var(--dash-text-primary)' }}
-      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--dash-bg-card-hover)'; }}
+      style={{ color: theme.assistantText }}
+      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.accentSoft; }}
       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
     >
       <span
         className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
-        style={{ backgroundColor: 'rgba(0,212,170,0.10)', color: 'var(--accent, #00d4aa)' }}
+        style={{ backgroundColor: theme.accentSoft, color: theme.accent }}
       >
         <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d={meta.icon} />
@@ -197,6 +198,69 @@ function SuggestionRow({ text, onPick, disabled, index }) {
       <span className="flex-1">{text}</span>
       <span aria-hidden className="opacity-0 transition-opacity group-hover:opacity-100" style={{ color: 'var(--dash-text-faint)' }}>→</span>
     </motion.button>
+  );
+}
+
+/**
+ * Wallpaper picker. Swatches, not names — the eye chooses faster than a
+ * label, and the live panel behind the popover is the preview.
+ */
+function ThemePicker({ theme, onPick }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Chat theme"
+        aria-expanded={open}
+        title="Chat theme"
+        className="flex h-7 w-7 items-center justify-center rounded-lg"
+        style={{ color: 'var(--dash-text-muted)' }}
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.9} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3a9 9 0 100 18c1.1 0 1.8-.9 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.8 1.8-1.8H16a5 5 0 005-5c0-4-4-7-9-7z" />
+          <circle cx="7.5" cy="11.5" r="1.1" fill="currentColor" stroke="none" /><circle cx="10.5" cy="7.5" r="1.1" fill="currentColor" stroke="none" /><circle cx="15" cy="7.5" r="1.1" fill="currentColor" stroke="none" />
+        </svg>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-9 z-10 w-44 rounded-2xl p-2"
+            style={{ backgroundColor: 'var(--dash-bg-raised)', boxShadow: '0 16px 40px -12px rgba(0,0,0,0.35), 0 0 0 1px var(--dash-border)' }}
+          >
+            <p className="px-1.5 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dash-text-faint)' }}>Wallpaper</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {CHAT_THEMES.map((t) => {
+                const active = t.id === theme.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => { onPick(t.id); setOpen(false); }}
+                    title={t.name}
+                    aria-label={`${t.name} theme`}
+                    aria-pressed={active}
+                    className="flex flex-col items-center gap-1 rounded-xl p-1.5"
+                    style={{ backgroundColor: active ? 'var(--dash-bg-card)' : 'transparent' }}
+                  >
+                    <span
+                      className="h-8 w-8 rounded-full"
+                      style={{ background: t.swatch, boxShadow: active ? `0 0 0 2px var(--dash-bg-raised), 0 0 0 4px ${t.accent}` : '0 0 0 1px var(--dash-border)' }}
+                    />
+                    <span className="text-[10px] font-semibold" style={{ color: active ? 'var(--dash-text-primary)' : 'var(--dash-text-muted)' }}>{t.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -304,11 +368,14 @@ function SupportChatPanel({ session, selectedAccount }) {
     }
   }
 
+  const [theme, setTheme] = useChatTheme();
+  const [composerFocus, setComposerFocus] = useState(false);
   const bubbleAssistant = {
-    backgroundColor: 'var(--dash-bg-card)',
-    boxShadow: 'var(--dash-shadow-inset-top), 0 1px 0 0 var(--dash-border)',
-    color: 'var(--dash-text-secondary)',
+    backgroundColor: theme.assistantBg,
+    boxShadow: '0 1px 2px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)',
+    color: theme.assistantText,
   };
+  const userGradient = { background: theme.userGradient, color: theme.userText };
 
   return (
     <>
@@ -319,7 +386,7 @@ function SupportChatPanel({ session, selectedAccount }) {
         aria-label={open ? 'Close support assistant' : 'Open support assistant'}
         aria-expanded={open}
         className="fixed bottom-5 right-5 z-[60] flex h-13 w-13 items-center justify-center rounded-full transition-transform hover:scale-105 active:scale-95"
-        style={{ width: 52, height: 52, background: 'linear-gradient(135deg, #00d4aa, #10b981)', color: '#05221c', boxShadow: '0 10px 30px -6px rgba(0,212,170,0.55), 0 0 0 4px rgba(0,212,170,0.12)' }}
+        style={{ width: 52, height: 52, background: theme.userGradient, color: theme.userText, boxShadow: `0 10px 30px -6px ${theme.accent}88, 0 0 0 4px ${theme.accentSoft}` }}
       >
         {open ? (
           <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
@@ -349,19 +416,20 @@ function SupportChatPanel({ session, selectedAccount }) {
           <div
             className="flex items-center gap-3 px-4 py-4"
             style={{
-              background: 'linear-gradient(135deg, rgba(0,212,170,0.22) 0%, rgba(16,185,129,0.10) 55%, transparent 100%)',
+              background: `linear-gradient(135deg, ${theme.accentSoft} 0%, transparent 70%)`,
               borderBottom: '1px solid var(--dash-border)',
             }}
           >
-            <Avatar />
+            <Avatar gradient={theme.userGradient} text={theme.userText} />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold leading-tight" style={{ color: 'var(--dash-text-primary)' }}>TradeGuardX Assistant</p>
               <p className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
-                <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accountId ? '#00d4aa' : 'var(--dash-text-faint)' }} />
+                <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accountId ? theme.accent : 'var(--dash-text-faint)' }} />
                 {accountId ? `Answers from your ${accountName} account` : 'Select an account to begin'}
               </p>
             </div>
             <div className="flex items-center gap-1">
+              {view === 'chat' && <ThemePicker theme={theme} onPick={setTheme} />}
               {messages.length > 0 && view === 'chat' && (
                 <button
                   type="button"
@@ -378,7 +446,7 @@ function SupportChatPanel({ session, selectedAccount }) {
                   type="button"
                   onClick={() => setView('contact')}
                   className="rounded-lg border px-2.5 py-1 text-[11px] font-semibold"
-                  style={{ borderColor: 'rgba(0,212,170,0.35)', color: 'var(--accent, #00d4aa)', backgroundColor: 'rgba(0,212,170,0.08)' }}
+                  style={{ borderColor: `${theme.accent}59`, color: theme.accent, backgroundColor: theme.accentSoft }}
                 >
                   Contact support
                 </button>
@@ -393,6 +461,7 @@ function SupportChatPanel({ session, selectedAccount }) {
               selectedAccount={selectedAccount}
               transcript={messages.map(({ role, content }) => ({ role, content }))}
               prefill={contactPrefill}
+              theme={theme}
               onBack={() => { setContactPrefill(''); setView('chat'); }}
               onSent={() => { setContactPrefill(''); setView('sent'); }}
             />
@@ -400,8 +469,8 @@ function SupportChatPanel({ session, selectedAccount }) {
 
           {view === 'sent' && (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(0,212,170,0.14)' }}>
-                <svg className="h-6 w-6" fill="none" stroke="var(--accent, #00d4aa)" strokeWidth={2.4} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: theme.accentSoft }}>
+                <svg className="h-6 w-6" fill="none" stroke={theme.accent} strokeWidth={2.4} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
               </div>
               <p className="text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>Received</p>
               <p className="text-[13px]" style={{ color: 'var(--dash-text-secondary)' }}>
@@ -420,11 +489,21 @@ function SupportChatPanel({ session, selectedAccount }) {
 
           {/* Messages */}
           {view === 'chat' && (
-          <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-4 text-[13px]" style={{ color: 'var(--dash-text-secondary)' }}>
+          <div
+            ref={listRef}
+            className="flex-1 overflow-y-auto px-4 py-4 text-[13px]"
+            style={{
+              color: theme.assistantText,
+              background: theme.pattern ? `${theme.pattern}, ${theme.wall}` : theme.wall,
+              // Both layers scroll with the content — a fixed wallpaper
+              // inside a transformed (framer) panel renders wrong.
+              backgroundAttachment: 'scroll',
+            }}
+          >
             {messages.length === 0 && (
               <div className="space-y-5">
                 <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-                  <p className="text-xl font-bold tracking-tight" style={{ color: 'var(--dash-text-primary)' }}>Hi there 👋</p>
+                  <p className="text-xl font-bold tracking-tight" style={{ color: theme.heading }}>Hi there 👋</p>
                   <p className="mt-1 leading-relaxed">
                     I can see this account's rules and everything the kill switch has done. Ask me why something happened, or how any part of TradeGuardX works.
                   </p>
@@ -438,22 +517,22 @@ function SupportChatPanel({ session, selectedAccount }) {
                   if (!items.length) return null;
                   return (
                     <div key={g.key}>
-                      <p className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dash-text-faint)' }}>
+                      <p className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: theme.meta }}>
                         {g.label}
                       </p>
                       <div
                         className="rounded-2xl p-1"
-                        style={{ backgroundColor: 'var(--dash-bg-card)', boxShadow: '0 0 0 1px var(--dash-border)' }}
+                        style={{ backgroundColor: theme.assistantBg, boxShadow: '0 0 0 1px rgba(0,0,0,0.06)' }}
                       >
                         {items.map((q, i) => (
-                          <SuggestionRow key={q} text={q} index={i} onPick={ask} disabled={!accountId} />
+                          <SuggestionRow key={q} text={q} index={i} onPick={ask} disabled={!accountId} theme={theme} />
                         ))}
                       </div>
                     </div>
                   );
                 })}
 
-                <p className="px-1 text-[11px] leading-relaxed" style={{ color: 'var(--dash-text-faint)' }}>
+                <p className="px-1 text-[11px] leading-relaxed" style={{ color: theme.meta }}>
                   I explain, I don't change anything — rules, locks and keys are yours to edit in the dashboard.
                 </p>
               </div>
@@ -463,19 +542,19 @@ function SupportChatPanel({ session, selectedAccount }) {
               {messages.map((m, i) =>
                 m.role === 'user' ? (
                   <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="flex flex-col items-end gap-1">
-                    <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-relaxed" style={{ background: 'linear-gradient(135deg, #00d4aa, #10b981)', color: '#05221c', boxShadow: '0 4px 14px -6px rgba(0,212,170,0.5)' }}>
+                    <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-relaxed" style={{ ...userGradient, boxShadow: `0 4px 14px -6px ${theme.accent}80` }}>
                       <p className="whitespace-pre-wrap">{m.content}</p>
                     </div>
-                    <span className="pr-1 text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>{timeLabel(m.at)}</span>
+                    <span className="pr-1 text-[10px]" style={{ color: theme.meta }}>{timeLabel(m.at)}</span>
                   </motion.div>
                 ) : (
                   <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="flex items-start gap-2.5">
-                    <Avatar />
+                    <Avatar gradient={theme.userGradient} text={theme.userText} />
                     <div className="flex min-w-0 flex-col gap-1">
                       <div className="max-w-full rounded-2xl rounded-tl-md px-4 py-3 text-[13.5px]" style={bubbleAssistant}>
                         {renderReply(m.content)}
                       </div>
-                      <span className="pl-1 text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>{timeLabel(m.at)}</span>
+                      <span className="pl-1 text-[10px]" style={{ color: theme.meta }}>{timeLabel(m.at)}</span>
                     </div>
                   </motion.div>
                 ),
@@ -483,12 +562,12 @@ function SupportChatPanel({ session, selectedAccount }) {
 
               {busy && (
                 <div className="flex items-start gap-2.5">
-                  <Avatar />
+                  <Avatar gradient={theme.userGradient} text={theme.userText} />
                   <div className="rounded-2xl rounded-tl-md px-3.5 py-3" style={bubbleAssistant}>
                     <span className="inline-flex gap-1.5">
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full" style={{ backgroundColor: 'var(--dash-text-faint)' }} />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:120ms]" style={{ backgroundColor: 'var(--dash-text-faint)' }} />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:240ms]" style={{ backgroundColor: 'var(--dash-text-faint)' }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full" style={{ backgroundColor: theme.meta }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:120ms]" style={{ backgroundColor: theme.meta }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:240ms]" style={{ backgroundColor: theme.meta }} />
                     </span>
                   </div>
                 </div>
@@ -509,9 +588,9 @@ function SupportChatPanel({ session, selectedAccount }) {
                   link, not a button — so it is available without competing
                   with the answer itself. */}
               {!busy && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && supportFormConfigured() && (
-                <p className="pl-9 text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
+                <p className="pl-9 text-[11px]" style={{ color: theme.meta }}>
                   Not what you needed?{' '}
-                  <button type="button" onClick={() => setView('contact')} className="font-semibold underline underline-offset-2" style={{ color: 'var(--dash-text-muted)' }}>
+                  <button type="button" onClick={() => setView('contact')} className="font-semibold underline underline-offset-2" style={{ color: theme.meta }}>
                     Raise an issue
                   </button>
                 </p>
@@ -528,8 +607,8 @@ function SupportChatPanel({ session, selectedAccount }) {
             style={{ borderTop: '1px solid var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}
           >
             <div
-              className="flex items-center gap-1.5 rounded-full py-1 pl-4 pr-1 transition-shadow focus-within:shadow-[0_0_0_2px_rgba(0,212,170,0.35)]"
-              style={{ backgroundColor: 'var(--dash-bg-input)', boxShadow: '0 0 0 1px var(--dash-border)' }}
+              className="flex items-center gap-1.5 rounded-full py-1 pl-4 pr-1 transition-shadow"
+              style={{ backgroundColor: 'var(--dash-bg-input)', boxShadow: `0 0 0 1px ${composerFocus ? theme.accent : 'var(--dash-border)'}` }}
             >
             <input
               ref={inputRef}
@@ -539,6 +618,8 @@ function SupportChatPanel({ session, selectedAccount }) {
               disabled={busy || !accountId}
               className="min-w-0 flex-1 bg-transparent py-2 text-[13px] outline-none"
               style={{ color: 'var(--dash-text-primary)' }}
+              onFocus={() => setComposerFocus(true)}
+              onBlur={() => setComposerFocus(false)}
               maxLength={2000}
             />
             <button
@@ -546,7 +627,7 @@ function SupportChatPanel({ session, selectedAccount }) {
               disabled={busy || !input.trim() || !accountId}
               aria-label="Send"
               className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-all disabled:opacity-30"
-              style={{ background: 'linear-gradient(135deg, #00d4aa, #10b981)', color: '#05221c' }}
+              style={userGradient}
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 12l14-7-4 7 4 7-14-7z" /></svg>
             </button>
