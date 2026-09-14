@@ -112,7 +112,7 @@ function RuleLockCardInner({ accountId }) {
   return (
     <CollapsibleCard
       title="Rule lock"
-      subtitle="After you save a rule, every rule is frozen for the window you choose. Nothing can be changed until it lifts."
+      subtitle="After you save, rules that are on are frozen for the window you choose. You can still turn on rules that are off — they join the lock."
       accent={locked ? AMBER : ACCENT}
       badge={locked ? 'Locked' : `${current} days`}
       defaultOpen={locked}
@@ -142,9 +142,21 @@ function RuleLockCardInner({ accountId }) {
                     The window can be changed once the lock lifts.
                   </p>
                 </div>
-                <div className="rounded-lg px-3 py-1.5 text-right" style={{ backgroundColor: 'rgba(0,0,0,0.06)' }}>
+                <div className="rounded-lg px-3 py-1.5" style={{ backgroundColor: 'rgba(0,0,0,0.06)' }}>
                   <p className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: AMBER }}>Releases in</p>
-                  <p className="font-mono text-[15px] font-bold tabular-nums" style={{ color: AMBER }}>{remaining}</p>
+                  <p className="flex items-baseline gap-1.5 whitespace-nowrap leading-none" style={{ color: 'var(--dash-text-primary)' }}>
+                    {remaining.split(' ').map((seg, i) => {
+                      const m = /^(\d+)([a-z]+)$/.exec(seg);
+                      return m ? (
+                        <span key={i} className="flex items-baseline gap-0.5">
+                          <span className="text-base font-bold tabular-nums">{m[1]}</span>
+                          <span className="text-[10px] font-semibold" style={{ color: AMBER }}>{m[2]}</span>
+                        </span>
+                      ) : (
+                        <span key={i} className="font-mono text-base font-bold tabular-nums">{seg}</span>
+                      );
+                    })}
+                  </p>
                 </div>
               </motion.div>
             )}

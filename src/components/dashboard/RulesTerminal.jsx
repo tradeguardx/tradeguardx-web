@@ -402,7 +402,7 @@ function RuleLockBanner({ lock }) {
             </div>
             <p className="mt-1 max-w-2xl text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
               {lock.locked
-                ? `You chose a ${lock.days}-day lock. Nothing here can be changed — on, off, tighter or looser — until then.`
+                ? `You chose a ${lock.days}-day lock. Rules that are on can't be changed or turned off until then. You can still turn on a rule that's off — it joins this lock.`
                 : `You saved recently. Finish any other changes now; they apply immediately. 15 minutes after your last save, every rule locks for ${lock.days} days.`}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -436,13 +436,25 @@ function RuleLockBanner({ lock }) {
         </div>
 
         {/* The timer: number on top of a bar that fills as the phase runs out. */}
-        <div className="flex-shrink-0 sm:w-44">
+        <div className="flex-shrink-0 sm:w-52">
           <div className="rounded-xl border px-4 py-3" style={{ borderColor: t.line, backgroundColor: t.tint }}>
             <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: t.fg }}>
               {lock.locked ? 'Releases in' : 'Locks in'}
             </p>
-            <p className="mt-0.5 font-mono text-2xl font-bold tabular-nums leading-none" style={{ color: 'var(--dash-text-primary)' }}>
-              {label}
+            {/* Segmented, so "6d 23h 31m" reads as three units rather than a
+                string of digits, and never wraps. */}
+            <p className="mt-1 flex items-baseline gap-1.5 whitespace-nowrap font-display leading-none" style={{ color: 'var(--dash-text-primary)' }}>
+              {label.split(' ').map((seg, i) => {
+                const m = /^(\d+)([a-z]+)$/.exec(seg);
+                return m ? (
+                  <span key={i} className="flex items-baseline gap-0.5">
+                    <span className="text-xl font-bold tabular-nums">{m[1]}</span>
+                    <span className="text-[11px] font-semibold" style={{ color: t.fg }}>{m[2]}</span>
+                  </span>
+                ) : (
+                  <span key={i} className="font-mono text-xl font-bold tabular-nums">{seg}</span>
+                );
+              })}
             </p>
             <div className="mt-2.5 h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.08)' }}>
               <motion.div
@@ -460,7 +472,11 @@ function RuleLockBanner({ lock }) {
   );
 }
 
-function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked = false, lockDays = 0, lockReason = null, expanded, onToggleExpand }) {
+function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked: cooldownLocked = false, ruleLocked = false, lockDays = 0, lockReason = null, expanded, onToggleExpand }) {
+  // Rule lock applies to this card only while the rule is ON. An off rule can
+  // still be switched on (and saved with its settings) during a lock; it then
+  // joins the lock. Once on, it is frozen like the rest.
+  const accountLocked = cooldownLocked || (ruleLocked && rule.enabled);
   // A change staged during a lockout must be revocable. Otherwise a decision
   // made while locked out and frustrated executes hours later without asking
   // again, and staging becomes a delayed trap rather than breathing room.
@@ -920,7 +936,9 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                     should learn that from a 423 afterwards. */}
                 {!accountLocked && lockDays > 0 && (
                   <span className="text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
-                    Saving locks all rules for {lockDays} days
+                    {ruleLocked
+                      ? 'Turning this on adds it to the current lock'
+                      : `Saving locks all rules for ${lockDays} days`}
                   </span>
                 )}
                 {/* The only way to switch a rule off. Without it `enabled`
@@ -998,7 +1016,10 @@ export default function RulesTerminal() {
   // through the same path the cooldown already uses.
   const ruleLock = bundle?.ruleLock ?? null;
   const ruleLocked = Boolean(ruleLock?.locked);
-  const accountLocked = cooldownLocked || ruleLocked;
+  // The cooldown freezes everything. The rule lock freezes only rules that
+  // are ON — a rule that is off may still be turned on and joins the running
+  // lock. So the rule-lock part is applied per card, not here.
+  const accountLocked = cooldownLocked;
   const [bundleLoading, setBundleLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -1166,6 +1187,7 @@ export default function RulesTerminal() {
                     {section.rules.map((rule, i) => (
                       <RuleCard
                         accountLocked={accountLocked}
+                        ruleLocked={ruleLocked}
                         lockDays={ruleLock?.days ?? 0}
                         lockReason={ruleLocked ? `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}` : null}
                         key={`${rule.id}-${reloadNonce}`}
@@ -1211,6 +1233,7 @@ export default function RulesTerminal() {
                       {section.rules.map((rule, i) => (
                         <RuleCard
                           accountLocked={accountLocked}
+                          ruleLocked={ruleLocked}
                           lockDays={ruleLock?.days ?? 0}
                           lockReason={ruleLocked ? `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}` : null}
                         lockDays={ruleLock?.days ?? 0}
