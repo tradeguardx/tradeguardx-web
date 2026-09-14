@@ -5,6 +5,7 @@ import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { sendSupportMessage, SUGGESTED_QUESTIONS } from '../../api/supportApi';
 import { submitSupportRequest, supportFormConfigured } from '../../api/supportRequestApi';
 import { renderReply } from './supportMarkdown';
+import { OPEN_SUPPORT_EVENT } from './supportBus';
 
 /**
  * Floating support assistant, mounted once in DashboardLayout.
@@ -58,8 +59,8 @@ function useSessionFlag(key, initial) {
  * leave the conversation to reach the founder, and the recent transcript
  * travels with the request — what they tried and what the bot told them.
  */
-function ContactSupportView({ session, selectedAccount, transcript, onBack, onSent }) {
-  const [message, setMessage] = useState('');
+function ContactSupportView({ session, selectedAccount, transcript, onBack, onSent, prefill = '' }) {
+  const [message, setMessage] = useState(prefill);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const email = session?.user?.email || '';
@@ -226,6 +227,17 @@ function SupportChatPanel({ session, selectedAccount }) {
   const [lastFailed, setLastFailed] = useState('');
   const [suggested, setSuggested] = useState(SUGGESTED_QUESTIONS);
   const [view, setView] = useState('chat'); // 'chat' | 'contact' | 'sent'
+  const [contactPrefill, setContactPrefill] = useState('');
+
+  useEffect(() => {
+    const onOpen = (e) => {
+      setContactPrefill(e?.detail?.prefill || '');
+      setView('contact');
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_SUPPORT_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_SUPPORT_EVENT, onOpen);
+  }, [setOpen]);
   const listRef = useRef(null);
   const inputRef = useRef(null);
   const abortRef = useRef(null);
@@ -377,11 +389,13 @@ function SupportChatPanel({ session, selectedAccount }) {
 
           {view === 'contact' && (
             <ContactSupportView
+              key={contactPrefill}
               session={session}
               selectedAccount={selectedAccount}
               transcript={messages.map(({ role, content }) => ({ role, content }))}
-              onBack={() => setView('chat')}
-              onSent={() => setView('sent')}
+              prefill={contactPrefill}
+              onBack={() => { setContactPrefill(''); setView('chat'); }}
+              onSent={() => { setContactPrefill(''); setView('sent'); }}
             />
           )}
 

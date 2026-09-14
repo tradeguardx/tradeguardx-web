@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { fetchRuleLock, setRuleLockDays } from '../../api/tradingAccountsApi';
 import { useToast } from '../common/ToastProvider';
+import { openSupport } from '../support/supportBus';
 
 /**
  * Rule lock — "if I save or change something I cannot change it for the next
@@ -40,6 +41,23 @@ export default function RuleLockCard() {
   // Keyed on the account so a switch remounts with fresh state — no reset
   // effect needed, and no stale lock shown for the wrong account.
   return <RuleLockCardInner key={selectedTradingAccountId ?? 'none'} accountId={selectedTradingAccountId} />;
+}
+
+function useCountdown(iso) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!iso) return undefined;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [iso]);
+  if (!iso) return '';
+  const s = Math.max(0, Math.floor((new Date(iso).getTime() - now) / 1000));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
 }
 
 function RuleLockCardInner({ accountId: selectedTradingAccountId }) {
@@ -82,6 +100,7 @@ function RuleLockCardInner({ accountId: selectedTradingAccountId }) {
 
   const locked = Boolean(state?.locked);
   const current = state?.days ?? 7;
+  const remaining = useCountdown(locked ? state?.lockedUntil : null);
 
   return (
     <div className="dash-card-elevated rounded-2xl p-5">
@@ -94,9 +113,10 @@ function RuleLockCardInner({ accountId: selectedTradingAccountId }) {
           </p>
         </div>
         {locked && (
-          <span className="flex-shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider" style={{ borderColor: 'rgba(245,158,11,0.35)', color: '#d97706', backgroundColor: 'rgba(245,158,11,0.10)' }}>
-            Locked
-          </span>
+          <div className="flex-shrink-0 rounded-lg border px-3 py-1.5 text-right" style={{ borderColor: 'rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.08)' }}>
+            <p className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: '#d97706' }}>Releases in</p>
+            <p className="font-mono text-[15px] font-bold tabular-nums" style={{ color: '#d97706' }}>{remaining}</p>
+          </div>
         )}
       </div>
 
@@ -128,11 +148,22 @@ function RuleLockCardInner({ accountId: selectedTradingAccountId }) {
 
           <p className="mt-3 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>
             {locked
-              ? `Rules are locked until ${fmt(state.lockedUntil)}. The window can be changed once that passes. Support can lift a lock in an emergency.`
+              ? `Rules are locked until ${fmt(state.lockedUntil)}. The window can be changed once that passes.`
               : current
                 ? `Changes apply immediately while unlocked. The lock engages 15 minutes after your last save, so you can set up several rules in one sitting. Support can lift a lock in an emergency.`
                 : 'Off — rules can be changed at any time. Loosening a rule waits 24 hours before it applies.'}
           </p>
+
+          {locked && (
+            <button
+              type="button"
+              onClick={() => openSupport(`I'd like my rule lock released early. It's locked until ${fmt(state.lockedUntil)}. Reason: `)}
+              className="mt-3 rounded-lg border px-3 py-2 text-[12px] font-semibold"
+              style={{ borderColor: 'rgba(245,158,11,0.35)', color: '#d97706', backgroundColor: 'rgba(245,158,11,0.08)' }}
+            >
+              Set this by mistake, or need it released? Contact support
+            </button>
+          )}
 
           {pending !== null && (
             <div className="mt-4 rounded-xl border p-4" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)' }}>
