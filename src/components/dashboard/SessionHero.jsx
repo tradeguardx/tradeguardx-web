@@ -282,6 +282,12 @@ export default function SessionHero({ accessToken, tradingAccountId, account, ch
     const pctGoal = target ? Math.round((pnl / target) * 100) : null;
     headline = `Day locked in · +${fmt(pnl)}`;
     summary = `You cleared the ${target ? fmt(target) : 'daily'} target${pctGoal ? ` — ${pctGoal}% of goal` : ''}. Trading is done for today so the win stays a win. See you tomorrow.`;
+  } else if (state === 'cooldown' && model.reason === 'manual_lock') {
+    // A self-imposed lock, not a rule firing: say so, and say what it does.
+    // The streak copy below read "0 losing trades in a row" here, which made
+    // the user's own kill switch look like a malfunction.
+    headline = `Locked out · ${pnl >= 0 ? '+' : '−'}${fmt(pnl)}`;
+    summary = `You armed the kill switch. Trading resumes at ${fmtTime(live.cooldownUntil)}. Anything opened before then is closed on sight and doesn't count as a trade.`;
   } else if (state === 'cooldown') {
     const resume = fmtTime(live.cooldownUntil);
     headline = `Cooling down · ${pnl >= 0 ? '+' : '−'}${fmt(pnl)}`;
