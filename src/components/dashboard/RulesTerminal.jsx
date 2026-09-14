@@ -335,7 +335,7 @@ function RuleLockBanner({ lock }) {
       <p className="mt-0.5 text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>
         {lock.locked
           ? `You chose a ${lock.days}-day lock. Nothing here can be changed — turned on, off, tightened or loosened — until then. Support can lift it in an emergency.`
-          : `You saved recently. Finish any other changes now — 15 minutes after your last save, every rule locks for ${lock.days} days.`}
+          : `You saved recently. Finish any other changes now — they apply immediately. 15 minutes after your last save, every rule locks for ${lock.days} days.`}
       </p>
       <p className="mt-1.5 text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
         Change the lock window in Account → Security{lock.locked ? ' once it lifts' : ''}.

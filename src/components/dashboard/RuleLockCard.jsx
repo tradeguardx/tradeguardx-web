@@ -130,8 +130,8 @@ function RuleLockCardInner({ accountId: selectedTradingAccountId }) {
             {locked
               ? `Rules are locked until ${fmt(state.lockedUntil)}. The window can be changed once that passes. Support can lift a lock in an emergency.`
               : current
-                ? `The lock engages 15 minutes after your last save, so you can set up several rules in one sitting. Support can lift a lock in an emergency.`
-                : 'Off — rules can be changed at any time. Loosening a rule still waits 24 hours.'}
+                ? `Changes apply immediately while unlocked. The lock engages 15 minutes after your last save, so you can set up several rules in one sitting. Support can lift a lock in an emergency.`
+                : 'Off — rules can be changed at any time. Loosening a rule waits 24 hours before it applies.'}
           </p>
 
           {pending !== null && (
@@ -142,7 +142,7 @@ function RuleLockCardInner({ accountId: selectedTradingAccountId }) {
               <p className="mt-1 text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>
                 {pending
                   ? `From your next save, no rule on this account can be changed for ${pending} days. You will not be able to shorten or switch this off while a lock is running.`
-                  : 'Rules will be editable at any time. The 24-hour delay on loosening a rule still applies.'}
+                  : 'Rules will be editable at any time. Loosening a rule will wait 24 hours before it applies.'}
               </p>
               <div className="mt-3 flex gap-2">
                 <button type="button" onClick={() => setPending(null)} disabled={saving} className="rounded-lg border px-3 py-2 text-[13px] font-semibold" style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}>
