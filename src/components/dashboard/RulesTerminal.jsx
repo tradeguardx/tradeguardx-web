@@ -354,13 +354,15 @@ const SETTLE_MS = 15 * 60_000;
  * Support can lift it, and the copy says so with the address.
  */
 function RuleLockBanner({ lock }) {
+  const day = lock.mode === 'day';
   const target = lock.locked ? lock.lockedUntil : lock.locksAt;
   const { label, ms } = useCountdown(target);
   const until = fmtLockDate(lock.lockedUntil);
   const locksAt = fmtLockDate(lock.locksAt);
 
-  // Progress through the current phase, 0..1.
-  const total = lock.locked ? lock.days * 86_400_000 : SETTLE_MS;
+  // Progress through the current phase, 0..1. A session lock has no fixed
+  // length (it starts at the first trade), so it fills over the day.
+  const total = day ? 86_400_000 : lock.locked ? lock.days * 86_400_000 : SETTLE_MS;
   const progress = Math.min(1, Math.max(0, 1 - ms / total));
 
   const t = lock.locked
@@ -394,16 +396,18 @@ function RuleLockBanner({ lock }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-display text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>
-                {lock.locked ? `Rules locked until ${until}` : `Rules lock at ${locksAt}`}
+                {day ? `Rules set for today's session · resets ${until}` : lock.locked ? `Rules locked until ${until}` : `Rules lock at ${locksAt}`}
               </p>
               <span className="rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider" style={{ borderColor: t.line, color: t.fg, backgroundColor: t.tint }}>
                 {t.pill}
               </span>
             </div>
             <p className="mt-1 max-w-2xl text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-              {lock.locked
-                ? `You chose a ${lock.days}-day lock. Rules that are on can't be changed or turned off until then. You can still turn on a rule that's off — it joins this lock.`
-                : `You saved recently. Finish any other changes now; they apply immediately. 15 minutes after your last save, every rule locks for ${lock.days} days.`}
+              {day
+                ? `You've traded today. Rules that are on can't be changed or turned off until the daily reset. You can still turn on a rule that's off. Tomorrow, set your rules before your first trade.`
+                : lock.locked
+                  ? `You chose a ${lock.days}-day lock. Rules that are on can't be changed or turned off until then. You can still turn on a rule that's off — it joins this lock.`
+                  : `You saved recently. Finish any other changes now; they apply immediately. 15 minutes after your last save, every rule locks for ${lock.days} days.`}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {lock.locked && (
@@ -420,7 +424,7 @@ function RuleLockBanner({ lock }) {
                 to="/dashboard/account/security"
                 className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold"
                 style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
-                title={lock.locked ? 'The window can be changed once the lock lifts' : 'Change the lock window'}
+                title={lock.locked ? 'The lock setting can be changed once the lock lifts' : 'Change the lock setting'}
               >
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
@@ -439,7 +443,7 @@ function RuleLockBanner({ lock }) {
         <div className="flex-shrink-0 sm:w-52">
           <div className="rounded-xl border px-4 py-3" style={{ borderColor: t.line, backgroundColor: t.tint }}>
             <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: t.fg }}>
-              {lock.locked ? 'Releases in' : 'Locks in'}
+              {day ? 'Resets in' : lock.locked ? 'Releases in' : 'Locks in'}
             </p>
             {/* Segmented, so "6d 23h 31m" reads as three units rather than a
                 string of digits, and never wraps. */}
@@ -934,11 +938,13 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                 {/* Said on the button, before the click. With a 7-day default,
                     an existing user's next save locks them for a week; nobody
                     should learn that from a 423 afterwards. */}
-                {!accountLocked && lockDays > 0 && (
+                {!accountLocked && (
                   <span className="text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
                     {ruleLocked
                       ? 'Turning this on adds it to the current lock'
-                      : `Saving locks all rules for ${lockDays} days`}
+                      : lockDays > 0
+                        ? `Saving locks all rules for ${lockDays} days`
+                        : 'Rules are set for the day once you take your first trade'}
                   </span>
                 )}
                 {/* The only way to switch a rule off. Without it `enabled`
@@ -1189,7 +1195,7 @@ export default function RulesTerminal() {
                         accountLocked={accountLocked}
                         ruleLocked={ruleLocked}
                         lockDays={ruleLock?.days ?? 0}
-                        lockReason={ruleLocked ? `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}` : null}
+                        lockReason={ruleLocked ? (ruleLock?.mode === 'day' ? `You've traded today — rules reset ${fmtLockDate(ruleLock?.lockedUntil)}` : `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}`) : null}
                         key={`${rule.id}-${reloadNonce}`}
                         rule={rule}
                         index={i}
@@ -1235,9 +1241,9 @@ export default function RulesTerminal() {
                           accountLocked={accountLocked}
                           ruleLocked={ruleLocked}
                           lockDays={ruleLock?.days ?? 0}
-                          lockReason={ruleLocked ? `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}` : null}
+                          lockReason={ruleLocked ? (ruleLock?.mode === 'day' ? `You've traded today — rules reset ${fmtLockDate(ruleLock?.lockedUntil)}` : `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}`) : null}
                         lockDays={ruleLock?.days ?? 0}
-                        lockReason={ruleLocked ? `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}` : null}
+                        lockReason={ruleLocked ? (ruleLock?.mode === 'day' ? `You've traded today — rules reset ${fmtLockDate(ruleLock?.lockedUntil)}` : `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}`) : null}
                           key={`${rule.id}-${reloadNonce}`}
                           rule={rule}
                           index={i + availableRules.length}

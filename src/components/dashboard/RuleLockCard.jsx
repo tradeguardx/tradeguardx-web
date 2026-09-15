@@ -17,9 +17,9 @@ import { openSupport } from '../support/supportBus';
  * the rules at all; fiddling, even in the safe direction, is the behaviour
  * being prevented.
  *
- * There is no "Off". A commitment device with an off switch is a suggestion.
- * Turning it off, or releasing a lock early, is a conversation with support —
- * the card says so and gives the address.
+ * "Off" is offered, but — like every window change — only while NOT locked.
+ * Off is a calm choice, never an exit from a running lock. Releasing a lock
+ * early is still a conversation with support; the card gives the address.
  *
  * The window can only be changed while the account is NOT locked. Otherwise
  * 30 → 3 is a two-click escape. The server enforces that with a 423; this UI
@@ -35,7 +35,8 @@ const AMBER_TINT = 'rgba(245,158,11,0.10)';
 const AMBER_LINE = 'rgba(245,158,11,0.35)';
 
 const SUPPORT_EMAIL = 'support@tradeguardx.com';
-const OPTIONS = [3, 7, 30];
+const OPTIONS = [0, 3, 7, 30];
+const label = (d) => (d === 0 ? 'Off' : `${d} days`);
 
 function fmt(iso) {
   if (!iso) return '';
@@ -96,7 +97,7 @@ function RuleLockCardInner({ accountId }) {
       await setRuleLockDays({ accessToken, accountId, days });
       setState((s) => ({ ...(s || {}), days }));
       setPending(null);
-      toast.success(`Rule lock set to ${days} days`, 'From your next save, every rule locks for that long.');
+      toast.success(days === 0 ? 'Rule lock off' : `Rule lock set to ${days} days`, days === 0 ? 'Rules are editable until your first trade each day.' : 'From your next save, every rule locks for that long.');
     } catch (e) {
       toast.error('Could not change the lock', e?.message || 'Try again.');
       setPending(null);
@@ -106,13 +107,13 @@ function RuleLockCardInner({ accountId }) {
   }
 
   const locked = Boolean(state?.locked);
-  const current = state?.days || 7;
+  const current = state?.days ?? 7;
   const remaining = useCountdown(locked ? state?.lockedUntil : null);
 
   return (
     <CollapsibleCard
       title="Rule lock"
-      subtitle="After you save, rules that are on are frozen for the window you choose. You can still turn on rules that are off — they join the lock."
+      subtitle="After you save, rules that are on are frozen for the window you choose. Off still holds them for the day once you have traded. Rules that are off can always be turned on."
       accent={locked ? AMBER : ACCENT}
       badge={
         // A styled pill, not a bare string: the header renders `badge` as-is,
@@ -122,10 +123,12 @@ function RuleLockCardInner({ accountId }) {
           style={
             locked
               ? { borderColor: AMBER_LINE, backgroundColor: AMBER_TINT, color: AMBER }
-              : { borderColor: 'var(--dash-border)', backgroundColor: ACCENT_TINT, color: ACCENT }
+              : current === 0
+                ? { borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)', color: 'var(--dash-text-muted)' }
+                : { borderColor: 'var(--dash-border)', backgroundColor: ACCENT_TINT, color: ACCENT }
           }
         >
-          {locked ? 'Locked' : `${current} days`}
+          {locked ? 'Locked' : label(current)}
         </span>
       }
       defaultOpen={locked}
@@ -150,13 +153,15 @@ function RuleLockCardInner({ accountId }) {
                 style={{ borderColor: AMBER_LINE, backgroundColor: AMBER_TINT }}
               >
                 <div>
-                  <p className="text-[13px] font-bold" style={{ color: AMBER }}>Rules locked until {fmt(state.lockedUntil)}</p>
+                  <p className="text-[13px] font-bold" style={{ color: AMBER }}>
+                    {state.mode === 'day' ? `Set for today's session · resets ${fmt(state.lockedUntil)}` : `Rules locked until ${fmt(state.lockedUntil)}`}
+                  </p>
                   <p className="mt-0.5 text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>
-                    The window can be changed once the lock lifts.
+                    {state.mode === 'day' ? 'You have traded today. The lock setting can be changed after the reset.' : 'The window can be changed once the lock lifts.'}
                   </p>
                 </div>
                 <div className="rounded-lg px-3 py-1.5" style={{ backgroundColor: 'rgba(0,0,0,0.06)' }}>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: AMBER }}>Releases in</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: AMBER }}>{state.mode === 'day' ? 'Resets in' : 'Releases in'}</p>
                   <p className="flex items-baseline gap-1.5 whitespace-nowrap leading-none" style={{ color: 'var(--dash-text-primary)' }}>
                     {remaining.split(' ').map((seg, i) => {
                       const m = /^(\d+)([a-z]+)$/.exec(seg);
@@ -199,14 +204,15 @@ function RuleLockCardInner({ accountId }) {
                       color: active ? ACCENT : 'var(--dash-text-secondary)',
                     }}
                   >
-                    {d} days
+                    {label(d)}
                   </motion.button>
                 );
               })}
             </div>
             <p className="mt-2.5 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>
-              Changes apply immediately while unlocked. The lock engages 15 minutes after your last save, so you can
-              set up several rules in one sitting.
+              {current === 0
+                ? 'Off: edit rules freely until your first trade of the day. After that they are set until the daily reset.'
+                : 'Changes apply immediately while unlocked. The lock engages 15 minutes after your last save, so you can set up several rules in one sitting.'}
             </p>
           </div>
 
@@ -221,11 +227,12 @@ function RuleLockCardInner({ accountId }) {
               >
                 <div className="rounded-xl border p-4" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)' }}>
                   <p className="text-[13px] font-bold" style={{ color: 'var(--dash-text-primary)' }}>
-                    Lock rules for {pending} days after each save?
+                    {pending === 0 ? 'Turn the rule lock off?' : `Lock rules for ${pending} days after each save?`}
                   </p>
                   <p className="mt-1 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                    From your next save, no rule on this account can be changed for {pending} days. You won't be able to
-                    shorten this while a lock is running.
+                    {pending === 0
+                      ? 'No multi-day commitment. Rules stay editable until your first trade each day, then they are set until the daily reset. You decide before you trade, not during.'
+                      : `From your next save, no rule on this account can be changed for ${pending} days. You won't be able to shorten this while a lock is running.`}
                   </p>
                   <div className="mt-3 flex gap-2">
                     <button
@@ -245,7 +252,7 @@ function RuleLockCardInner({ accountId }) {
                       className="rounded-xl px-4 py-2 text-[13px] font-bold disabled:opacity-50"
                       style={{ backgroundColor: ACCENT, color: '#05221c' }}
                     >
-                      {saving ? 'Saving…' : `Yes, lock for ${pending} days`}
+                      {saving ? 'Saving…' : pending === 0 ? 'Yes, turn it off' : `Yes, lock for ${pending} days`}
                     </motion.button>
                   </div>
                 </div>
@@ -259,8 +266,8 @@ function RuleLockCardInner({ accountId }) {
             style={{ backgroundColor: 'var(--dash-bg-card)', boxShadow: '0 0 0 1px var(--dash-border)' }}
           >
             <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-              The lock can't be switched off from here. To release it early, turn it off, or fix something set by
-              mistake, contact{' '}
+              A running lock can't be shortened or switched off from here. To release it early or fix something set
+              by mistake, contact{' '}
               <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold underline underline-offset-2" style={{ color: 'var(--dash-text-primary)' }}>
                 {SUPPORT_EMAIL}
               </a>
