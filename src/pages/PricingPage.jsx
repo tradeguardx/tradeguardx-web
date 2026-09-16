@@ -539,7 +539,7 @@ export default function PricingPage() {
                                 customer. The code is sent as `discount_code` on
                                 the Dodo checkout session, so it is already on the
                                 page when they arrive. Telling them to "enter
-                                LAUNCH50" would invite them to retype a code that
+                                LAUNCH10" would invite them to retype a code that
                                 is applied — and Dodo ignores a bad one in
                                 silence, at full price. */}
                             <div
