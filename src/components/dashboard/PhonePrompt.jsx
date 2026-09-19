@@ -239,6 +239,11 @@ export default function PhonePrompt() {
   const { user, session } = useAuth();
   const toast = useToast();
   const token = session?.access_token ?? null;
+  // Depend on the id, not the object. AuthContext replaces `user` more than
+  // once during bootstrap (session, then again once the subscription lands);
+  // keying the effect on the object aborted the settings fetch on each swap
+  // and started it over — a row of cancelled requests for one answer.
+  const userId = user?.id ?? null;
 
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState('');
@@ -249,7 +254,7 @@ export default function PhonePrompt() {
 
   // Decide whether to show it: one settings read once we have a session.
   useEffect(() => {
-    if (!token || !user || decidedRef.current) return undefined;
+    if (!token || !userId || decidedRef.current) return undefined;
     const controller = new AbortController();
 
     (async () => {
@@ -267,7 +272,7 @@ export default function PhonePrompt() {
     })();
 
     return () => controller.abort();
-  }, [token, user]);
+  }, [token, userId]);
 
   // Mark the prompt as shown so it never returns, whichever way it closes.
   const markPrompted = async () => {

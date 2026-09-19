@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
@@ -75,7 +76,12 @@ function RuleLockCardInner({ accountId }) {
   const { session } = useAuth();
   const toast = useToast();
   const [state, setState] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // No account means nothing to fetch, so nothing to wait for. Starting this
+  // `true` left the card on its skeleton forever: the effect below bails out
+  // before the fetch, so the `finally` that clears it never ran. The outer
+  // component keys this one on the account id, so a fresh account remounts
+  // with the right initial value — no reset effect needed.
+  const [loading, setLoading] = useState(() => Boolean(accountId));
   const [pending, setPending] = useState(null); // days awaiting confirm
   const [saving, setSaving] = useState(false);
 
@@ -138,7 +144,20 @@ function RuleLockCardInner({ accountId }) {
         </svg>
       }
     >
-      {loading ? (
+      {!accountId ? (
+        <div className="rounded-xl border px-4 py-3" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)' }}>
+          <p className="text-[13px] font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
+            Add a trading account first
+          </p>
+          <p className="mt-0.5 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+            The rule lock is set per account.{' '}
+            <Link to="/dashboard/account/trading" className="font-semibold underline underline-offset-2" style={{ color: ACCENT }}>
+              Add one
+            </Link>{' '}
+            and it appears here.
+          </p>
+        </div>
+      ) : loading ? (
         <div className="h-24 animate-pulse rounded-xl" style={{ backgroundColor: 'var(--dash-skeleton)' }} />
       ) : (
         <div className="space-y-5">
