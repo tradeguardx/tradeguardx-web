@@ -10,6 +10,7 @@ import { createCheckoutSession } from '../api/paymentsApi';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
 import { trackCheckoutStarted } from '../lib/analytics';
 import { getStoredReferralCode } from '../lib/referralCode';
+import { getLinkPromoCode } from '../lib/promoLink';
 import { getActivePromo, discountedPrice, formatInr } from '../lib/activePromo';
 import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
 
@@ -27,7 +28,8 @@ import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
  * it ourselves is what makes the banner's promise true.
  */
 function checkoutCouponCode() {
-  return getStoredReferralCode() || getActivePromo()?.code || undefined;
+  // Referral > code from a promo link (?promo=) > site-wide promo from env.
+  return getStoredReferralCode() || getLinkPromoCode() || getActivePromo()?.code || undefined;
 }
 
 // ─── Per-plan visual theming ─────────────────────────────────────────────────
@@ -201,7 +203,7 @@ export default function PricingPage() {
    * hidden when one is present rather than promising a discount that loses.
    */
   const activePromo = useMemo(
-    () => (getStoredReferralCode() ? null : getActivePromo()),
+    () => (getStoredReferralCode() || getLinkPromoCode() ? null : getActivePromo()),
     [],
   );
   const { session, user, subscriptionLoading } = useAuth();
@@ -209,7 +211,9 @@ export default function PricingPage() {
   const toast = useToast();
 
   useEffect(() => {
-    setReferralCode(getStoredReferralCode());
+    // The pill under the header names whichever code will actually be sent;
+    // a promo-link code reuses it so the email's promise is visibly kept.
+    setReferralCode(getStoredReferralCode() || getLinkPromoCode());
   }, []);
 
   async function handlePaidPlanCta(plan) {

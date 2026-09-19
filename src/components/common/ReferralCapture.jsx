@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { captureReferralFromUrl } from '../../lib/referralCode';
+import { captureLinkPromoFromUrl } from '../../lib/promoLink';
 import ReferralCelebration from './ReferralCelebration';
 
 /**
@@ -13,6 +14,9 @@ export default function ReferralCapture() {
   const [celebrationCode, setCelebrationCode] = useState(null);
 
   useEffect(() => {
+    // A promo link (?promo=CODE, from the promo email) is stored quietly — no
+    // celebration, the email already did that.
+    captureLinkPromoFromUrl(search);
     const result = captureReferralFromUrl(search);
     if (result?.isNew) {
       setCelebrationCode(result.code);
