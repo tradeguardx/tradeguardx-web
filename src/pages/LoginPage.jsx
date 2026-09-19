@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import AppLoader from '../components/common/AppLoader';
+import AuthSplit from '../components/auth/AuthSplit';
 import { useToast } from '../components/common/ToastProvider';
 
 export default function LoginPage() {
@@ -57,7 +58,7 @@ export default function LoginPage() {
     : 'border-surface-700/60 bg-surface-800/50 hover:border-surface-600/60';
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-16 relative">
+    <AuthSplit>
       {isSubmitting && <AppLoader />}
       {/* bg */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -177,6 +178,6 @@ export default function LoginPage() {
           ))}
         </div>
       </motion.div>
-    </div>
+    </AuthSplit>
   );
 }
