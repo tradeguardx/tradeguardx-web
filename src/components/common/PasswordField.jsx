@@ -37,7 +37,10 @@ export default function PasswordField({
   error = null,
   hint = null,
   labelRight = null,
+  /** 'lg' matches the taller auth-page inputs; default is the dashboard size. */
+  size = 'md',
 }) {
+  const lg = size === 'lg';
   const [show, setShow] = useState(false);
   const [focused, setFocused] = useState(false);
 
@@ -50,9 +53,9 @@ export default function PasswordField({
   return (
     <div>
       {(label || labelRight) && (
-        <div className="mb-1.5 flex items-center justify-between">
+        <div className={`${lg ? 'mb-2' : 'mb-1.5'} flex items-center justify-between`}>
           {label && (
-            <label htmlFor={id} className="text-[13px] font-medium text-slate-400">
+            <label htmlFor={id} className={lg ? 'text-[14px] font-medium text-slate-300' : 'text-[13px] font-medium text-slate-400'}>
               {label}
             </label>
           )}
@@ -71,7 +74,7 @@ export default function PasswordField({
           autoComplete={autoComplete}
           placeholder={placeholder}
           aria-invalid={error ? 'true' : undefined}
-          className={`w-full h-12 px-4 pr-12 rounded-xl border text-white text-[14px] placeholder-slate-600 focus:outline-none transition-all ${ring}`}
+          className={`w-full ${lg ? 'h-[54px] px-5 rounded-2xl' : 'h-12 px-4 rounded-xl'} pr-12 border text-white text-[14px] placeholder-slate-600 focus:outline-none transition-all ${ring}`}
         />
         <button
           type="button"

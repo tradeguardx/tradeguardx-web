@@ -72,19 +72,19 @@ export default function LoginPage() {
         transition={{ duration: 0.45 }}
         className="relative w-full max-w-[440px]"
       >
-        <div className="text-center mb-10">
-          <h1 className="font-display text-[28px] font-bold text-white mb-1.5">Welcome back</h1>
-          <p className="text-slate-500 text-[15px]">Sign in to your account</p>
+        <div className="mb-9">
+          <h1 className="font-display text-[34px] font-bold tracking-[-0.02em] text-white mb-2">Sign in</h1>
+          <p className="text-slate-400 text-[16px]">Free for 7 days, everything unlocked. No card needed.</p>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-surface-700/50 bg-surface-900/70 backdrop-blur-xl p-7 sm:p-8 shadow-xl shadow-black/25">
+        <div>
           {/* Google */}
           <button
             type="button"
             onClick={handleGoogle}
             disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-3 h-12 rounded-xl border border-surface-700/60 bg-surface-800/50 hover:bg-surface-800 hover:border-surface-600/60 transition-all text-[14px] text-slate-200 font-medium"
+            className="w-full flex items-center justify-center gap-3 h-[54px] rounded-2xl border border-surface-700/60 bg-surface-800/50 hover:bg-surface-800 hover:border-surface-600/60 transition-all text-[14px] text-slate-200 font-medium"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -105,7 +105,7 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[13px] font-medium text-slate-400 mb-1.5">Email</label>
+              <label className="block text-[14px] font-medium text-slate-300 mb-2">Email</label>
               <input
                 type="email"
                 value={email}
@@ -114,13 +114,13 @@ export default function LoginPage() {
                 onBlur={() => setFocused(null)}
                 required
                 placeholder="you@example.com"
-                className={`w-full h-12 px-4 rounded-xl border text-white text-[14px] placeholder-slate-600 focus:outline-none transition-all ${ring('email')}`}
+                className={`w-full h-[54px] px-5 rounded-2xl border text-white text-[14px] placeholder-slate-600 focus:outline-none transition-all ${ring('email')}`}
               />
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[13px] font-medium text-slate-400">Password</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[14px] font-medium text-slate-300">Password</label>
                 <Link
                   to="/forgot-password"
                   className="text-[12px] text-slate-600 hover:text-accent transition-colors"
@@ -137,7 +137,7 @@ export default function LoginPage() {
                   onBlur={() => setFocused(null)}
                   required
                   placeholder="Enter your password"
-                  className={`w-full h-12 px-4 pr-12 rounded-xl border text-white text-[14px] placeholder-slate-600 focus:outline-none transition-all ${ring('pw')}`}
+                  className={`w-full h-[54px] px-5 pr-12 rounded-2xl border text-white text-[14px] placeholder-slate-600 focus:outline-none transition-all ${ring('pw')}`}
                 />
                 <button
                   type="button"
@@ -156,7 +156,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-12 rounded-xl bg-accent text-surface-950 font-semibold text-[14px] hover:bg-accent-hover transition-all shadow-lg shadow-accent/20 hover:shadow-accent/30 mt-1"
+              className="w-full h-[54px] rounded-2xl bg-accent text-[15px] text-surface-950 font-semibold text-[14px] hover:bg-accent-hover transition-all shadow-lg shadow-accent/20 hover:shadow-accent/30 mt-1"
             >
               Sign in
             </button>
@@ -164,12 +164,12 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-slate-600 text-[14px] mt-7">
+        <p className="text-slate-500 text-[14px] mt-7">
           Don&apos;t have an account?{' '}
           <Link to="/signup" className="text-accent hover:text-accent-hover font-medium transition-colors">Create one</Link>
         </p>
 
-        <div className="flex items-center justify-center gap-5 mt-8">
+        <div className="flex items-center gap-5 mt-8">
           {['Secure login', '2,500+ traders', 'Free plan available'].map((t) => (
             <span key={t} className="flex items-center gap-1.5 text-[11px] text-slate-600">
               <span className="w-1 h-1 rounded-full bg-accent/50" />

@@ -1,9 +1,8 @@
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 /**
  * Two-column shell for /login and /signup: the pitch on the left, the form
- * on the right. The form itself is untouched — this only wraps it.
+ * on the right. No brand mark here — the navbar above already carries it.
  *
  * The left panel is hidden below `lg` so a phone gets straight to the form;
  * the copy is the landing page's job there.
@@ -50,16 +49,7 @@ export default function AuthSplit({ children }) {
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="relative max-w-[560px]"
         >
-          <Link to="/" className="inline-flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-emerald-500 shadow-lg shadow-accent/25">
-              <svg className="h-6 w-6 text-surface-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </span>
-            <span className="font-display text-[22px] font-bold text-white">TradeGuardX</span>
-          </Link>
-
-          <h1 className="mt-14 font-display text-[44px] font-bold leading-[1.08] tracking-[-0.02em] text-white xl:text-[52px]">
+          <h1 className="font-display text-[44px] font-bold leading-[1.08] tracking-[-0.02em] text-white xl:text-[52px]">
             The rules you set when you were calm.
           </h1>
 
