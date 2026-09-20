@@ -103,7 +103,8 @@ export default function BillingPage() {
   ];
 
   const myRank = planTierRank(user?.billingPlan ?? user?.subscribedPlanSlug);
-  const cards = plans.map((p) => {
+  // Free → Pro → Pro+, whatever order the pricing API returns them in.
+  const cards = [...plans].sort((a, b) => planTierRank(String(a.slug || a.name || '').toLowerCase().replace(/[\s+]/g, '_')) - planTierRank(String(b.slug || b.name || '').toLowerCase().replace(/[\s+]/g, '_'))).map((p) => {
     const slug = String(p.slug || p.name || '').toLowerCase().replace(/[\s+]/g, '_').replace('pro_', 'pro_');
     const rank = planTierRank(slug);
     const price = Number(p.priceMonthly ?? p.price_monthly ?? 0);
