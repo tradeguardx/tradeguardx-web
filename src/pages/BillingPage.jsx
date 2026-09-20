@@ -1,187 +1,67 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTradingAccounts } from '../context/TradingAccountContext';
+import { useGuard } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
 import { clearPendingCheckoutPlan } from '../lib/checkoutIntent';
 import { openBillingPortal, updateSubscriptionPaymentMethod } from '../api/paymentsApi';
-import { isPaidPlan } from '../lib/planLimits';
+import { getPricingPlans } from '../api/pricingApi';
+import { isPaidPlan, planTierRank, maxTradingAccountsForPlan, journalPeriodBadgeLabel } from '../lib/planLimits';
+import { sx } from '../components/dashboard/shell/sx';
+
+/**
+ * Plan & billing — transcribed from the reference (lines 1984–2029).
+ * Usage rows are derived from real counts; plan cards come from the pricing
+ * API. Portal, payment-method update and status handling are unchanged from
+ * the previous page — they route to the same endpoints.
+ */
 
 const STATUS_INFO = {
-  past_due: {
-    tone: 'amber',
-    label: 'Past due',
-    message:
-      'Your latest payment failed or is awaiting retry. Update your payment method to keep your paid features — until then, your account is on Free.',
-    cta: 'Update payment method',
-  },
-  canceled: {
-    tone: 'rose',
-    label: 'Canceled',
-    message:
-      'Your subscription was canceled. You can resubscribe anytime — your account is on Free until then.',
-    cta: 'Resubscribe',
-  },
-  incomplete: {
-    tone: 'amber',
-    label: 'Incomplete',
-    message:
-      'Checkout was started but never completed. Finish the payment to activate your plan — until then, your account is on Free.',
-    cta: 'Complete payment',
-  },
-  expired: {
-    tone: 'amber',
-    label: 'Free trial ended',
-    message:
-      'Your free Pro period has ended. Pick a plan to keep Pro features — your account is on Free until then.',
-    cta: 'Pick a plan',
-  },
+  past_due: { tone: 'amber', label: 'Past due', message: 'Your latest payment failed or is awaiting retry. Update your payment method to keep your paid features — until then, your account is on Free.', cta: 'Update payment method' },
+  canceled: { tone: 'red', label: 'Canceled', message: 'Your subscription was canceled. You can resubscribe anytime — your account is on Free until then.', cta: 'Resubscribe' },
+  incomplete: { tone: 'amber', label: 'Incomplete', message: 'Checkout was started but never completed. Finish the payment to activate your plan — until then, your account is on Free.', cta: 'Complete payment' },
+  expired: { tone: 'amber', label: 'Free trial ended', message: 'Your free Pro period has ended. Pick a plan to keep Pro features — your account is on Free until then.', cta: 'Pick a plan' },
 };
 
-const TONE_STYLES = {
-  amber: {
-    border: 'rgba(251,191,36,0.30)',
-    background: 'rgba(251,191,36,0.07)',
-    color: '#fbbf24',
-    badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-  },
-  rose: {
-    border: 'rgba(244,63,94,0.30)',
-    background: 'rgba(244,63,94,0.07)',
-    color: '#fb7185',
-    badge: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
-  },
-};
-
-function StatusBanner({ status, periodEnd, subscribedPlanLabel, onPortalOpen, portalLoading }) {
-  const info = STATUS_INFO[status];
-  if (!info) return null;
-  const tone = TONE_STYLES[info.tone];
-  const periodLabel = periodEnd
-    ? new Date(periodEnd).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-    : null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-5 rounded-xl border p-4 sm:p-5"
-      style={{ borderColor: tone.border, backgroundColor: tone.background }}
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tone.badge}`}>
-              {info.label}
-            </span>
-            <span className="text-sm font-semibold" style={{ color: tone.color }}>
-              {subscribedPlanLabel} — {info.label.toLowerCase()}
-            </span>
-          </div>
-          <p className="mt-2 text-sm" style={{ color: 'var(--dash-text-secondary)' }}>
-            {info.message}
-            {periodLabel && status === 'past_due' && (
-              <> Last successful payment covered through <span className="font-medium" style={{ color: 'var(--dash-text-primary)' }}>{periodLabel}</span>.</>
-            )}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onPortalOpen}
-          disabled={portalLoading}
-          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-surface-950 transition-colors hover:bg-accent-hover disabled:opacity-60"
-        >
-          {portalLoading ? 'Opening…' : info.cta}
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
-function FoundingMemberInfo({ periodEnd, planLabel }) {
-  const dateLabel = periodEnd
-    ? new Date(periodEnd).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
-    : null;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-5 rounded-xl border p-4 sm:p-5"
-      style={{
-        borderColor: 'rgba(0,212,170,0.30)',
-        backgroundColor: 'rgba(0,212,170,0.05)',
-      }}
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 flex items-start gap-3">
-          <span
-            className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-            style={{ background: 'linear-gradient(135deg, #00d4aa, #10b981)', boxShadow: '0 0 14px rgba(0,212,170,0.40)' }}
-            aria-hidden
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#07090f">
-              <path d="M12 2l2.39 4.84L20 7.7l-3.86 3.76L17.07 17 12 14.27 6.93 17l.93-5.54L4 7.7l5.61-.86L12 2z" />
-            </svg>
-          </span>
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: '#7dffd4' }}>
-              Founding member
-            </p>
-            <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
-              {planLabel} unlocked free{dateLabel ? ` until ${dateLabel}` : ''}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--dash-text-muted)' }}>
-              No card on file. When the trial ends, your account reverts to Free unless you subscribe.
-            </p>
-          </div>
-        </div>
-        <Link
-          to="/pricing"
-          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-surface-950 transition-colors hover:bg-accent-hover"
-        >
-          Subscribe to keep {planLabel}
-        </Link>
-      </div>
-    </motion.div>
-  );
+function fmtDate(iso) {
+  if (!iso) return null;
+  try { return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'long' }); } catch { return null; }
 }
 
 export default function BillingPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { subscription, subscriptionLoading, user, refetchSubscription, session } = useAuth();
+  const { session, user, subscription, refetchSubscription } = useAuth();
+  const { accounts } = useTradingAccounts();
+  const { selected: g } = useGuard();
   const toast = useToast();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const [plans, setPlans] = useState([]);
   const [portalLoading, setPortalLoading] = useState(false);
 
-  // Derived state (computed before the callbacks so they can depend on it
-  // without hitting a temporal-dead-zone ReferenceError).
-  const status = user?.subscriptionStatus ?? 'active';
-  const isActive = status === 'active';
-  const isTrial = Boolean(user?.isTrial);
-  const trialDaysLeft = user?.trialDaysLeft ?? null;
-  const subscribedPlanLabel = user?.subscribedPlanLabel || 'Free';
-  const effectivePlanLabel = user?.planLabel || 'Free';
-  const subscriptionSource = user?.subscriptionSource || 'free';
-  // Founding-member / admin-granted comps have no Dodo customer record, so
-  // "Manage billing" and "Update payment method" both fail. Branch UI on this.
-  const isAdminComp = subscriptionSource === 'admin';
-  // Show "Manage billing" only for users who have a real Dodo subscription —
-  // i.e. paid customers. Founding members (admin) and Free users don't.
-  const hasBillingRecord = isPaidPlan(user?.subscribedPlanSlug) && subscriptionSource === 'payment';
-  const sub = subscription?.subscription;
-  const periodEnd = sub?.currentPeriodEnd
-    ? new Date(sub.currentPeriodEnd).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : null;
+  useEffect(() => {
+    if (params.get('checkout') === 'success') { clearPendingCheckoutPlan(); refetchSubscription?.(); }
+  }, [params, refetchSubscription]);
+  useEffect(() => { getPricingPlans().then(setPlans).catch(() => setPlans([])); }, []);
+
+  const status = user?.subscriptionStatus;
+  const info = user?.isExpired ? STATUS_INFO.expired : STATUS_INFO[status];
+  const subscribedLabel = user?.subscribedPlanLabel || 'Free';
+  const source = user?.subscriptionSource || 'free';
+  const hasBillingRecord = isPaidPlan(user?.subscribedPlanSlug) && source === 'payment';
+  const isAdminComp = source === 'admin';
+  const periodEnd = fmtDate(subscription?.subscription?.currentPeriodEnd ?? user?.currentPeriodEnd);
+
+  const sub = user?.isTrial
+    ? `You are on a free trial with everything unlocked${user?.trialDaysLeft != null ? ` — ${user.trialDaysLeft} day${user.trialDaysLeft === 1 ? '' : 's'} left` : ''}. Pick a plan to keep it after that.`
+    : isAdminComp
+      ? `You are on a complimentary ${subscribedLabel} plan as a founding member. No card needed, nothing to cancel.`
+      : hasBillingRecord
+        ? `You are on ${subscribedLabel}, billed monthly${periodEnd ? `, next charge ${periodEnd}` : ''}. Prices include 18% GST.`
+        : 'You are on Free. Prices include 18% GST.';
 
   const openPortal = useCallback(async () => {
-    if (!session?.access_token) {
-      toast.error('Not signed in', 'Please sign in again.');
-      return;
-    }
+    if (!session?.access_token) { toast.error('Not signed in', 'Please sign in again.'); return; }
     setPortalLoading(true);
     try {
       const res = await openBillingPortal({ accessToken: session.access_token });
@@ -190,25 +70,15 @@ export default function BillingPage() {
       window.location.href = url;
     } catch (err) {
       const code = err?.details?.error?.code;
-      if (code === 'NO_CUSTOMER_RECORD') {
-        toast.info('No billing record yet', 'Pick a plan to start your subscription first.');
-      } else {
-        toast.error('Could not open billing portal', err?.message || 'Please try again.');
-      }
+      if (code === 'NO_CUSTOMER_RECORD') toast.info('No billing record yet', 'Pick a plan to start your subscription first.');
+      else toast.error('Could not open billing portal', err?.message || 'Please try again.');
       setPortalLoading(false);
     }
   }, [session, toast]);
 
   const startPaymentUpdate = useCallback(async () => {
-    // Expired comp users have no Dodo subscription — go straight to pricing.
-    if (status === 'expired') {
-      navigate('/pricing');
-      return;
-    }
-    if (!session?.access_token) {
-      toast.error('Not signed in', 'Please sign in again.');
-      return;
-    }
+    if (user?.isExpired || status === 'canceled') { navigate('/pricing'); return; }
+    if (!session?.access_token) { toast.error('Not signed in', 'Please sign in again.'); return; }
     setPortalLoading(true);
     try {
       const res = await updateSubscriptionPaymentMethod({ accessToken: session.access_token });
@@ -217,155 +87,90 @@ export default function BillingPage() {
       window.location.href = url;
     } catch (err) {
       const code = err?.details?.error?.code;
-      if (
-        code === 'NO_RECOVERABLE_SUBSCRIPTION' ||
-        code === 'NO_SUBSCRIPTION' ||
-        code === 'NO_CUSTOMER_RECORD'
-      ) {
-        // No live subscription on Dodo — user needs a fresh checkout.
-        toast.info('Subscription needs to be renewed', 'Pick a plan to continue.');
-        navigate('/pricing');
-        return;
+      if (code === 'NO_RECOVERABLE_SUBSCRIPTION' || code === 'NO_SUBSCRIPTION' || code === 'NO_CUSTOMER_RECORD') {
+        toast.info('Subscription needs to be renewed', 'Pick a plan to continue.'); navigate('/pricing'); return;
       }
       toast.error('Could not start payment update', err?.message || 'Please try again.');
       setPortalLoading(false);
     }
-  }, [session, toast, navigate, status]);
+  }, [session, status, user?.isExpired, navigate, toast]);
 
-  useEffect(() => {
-    const checkout = searchParams.get('checkout');
-    if (checkout === 'success') {
-      clearPendingCheckoutPlan();
-      void refetchSubscription().then(() => {
-        toast.success('Welcome aboard', 'Your subscription is updating. If the plan badge still shows Free, wait a few seconds and refresh.');
-      });
-      setSearchParams({}, { replace: true });
-      return;
-    }
-    if (checkout === 'cancelled') {
-      toast.info('Checkout cancelled', 'You can upgrade anytime from Pricing.');
-      setSearchParams({}, { replace: true });
-    }
-  }, [searchParams, setSearchParams, refetchSubscription, toast]);
+  const maxAccounts = maxTradingAccountsForPlan(user?.plan);
+  const usage = [
+    { k: 'Rules on', v: `${g.rulesOn} of ${g.rulesTotal || '—'}`, bar: g.rulesTotal ? `${Math.round((g.rulesOn / g.rulesTotal) * 100)}%` : '0%', fg: 'var(--ink)' },
+    { k: 'Trading accounts', v: maxAccounts == null ? `${accounts.length}` : `${accounts.length} of ${maxAccounts}`, bar: maxAccounts == null ? '20%' : `${Math.min(100, (accounts.length / maxAccounts) * 100)}%`, fg: maxAccounts != null && accounts.length >= maxAccounts ? 'var(--amber)' : 'var(--ink)' },
+    { k: 'Journal history', v: journalPeriodBadgeLabel(user?.plan), bar: '100%', fg: 'var(--mint)' },
+  ];
+
+  const myRank = planTierRank(user?.billingPlan ?? user?.subscribedPlanSlug);
+  const cards = plans.map((p) => {
+    const slug = String(p.slug || p.name || '').toLowerCase().replace(/[\s+]/g, '_').replace('pro_', 'pro_');
+    const rank = planTierRank(slug);
+    const price = Number(p.priceMonthly ?? p.price_monthly ?? 0);
+    const feats = p.features?.cardFeatures ?? [];
+    const accLimit = maxTradingAccountsForPlan(slug);
+    const current = rank === myRank && !user?.isTrial;
+    return {
+      key: slug, name: p.name, price: price === 0 ? '₹0' : `₹${price.toLocaleString('en-IN')}`, per: price === 0 ? 'forever' : 'per month',
+      rules: feats[0]?.text ?? 'All rules', accounts: accLimit == null ? 'Unlimited accounts' : `${accLimit} account${accLimit === 1 ? '' : 's'}`, history: journalPeriodBadgeLabel(slug).replace('Last ', '') + (journalPeriodBadgeLabel(slug).startsWith('Last') ? ' of journal' : ''),
+      state: current ? 'Current plan' : '', current, rank,
+      cta: current ? (hasBillingRecord ? 'Manage billing' : '') : rank > myRank ? 'Upgrade' : hasBillingRecord ? 'Downgrade' : '',
+    };
+  });
 
   return (
-    <div className="w-full">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border bg-[var(--dash-bg-card)] p-6 sm:p-8 shadow-xl"
-        style={{ borderColor: 'var(--dash-border)' }}
-      >
-        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--dash-text-muted)] mb-2">
-          Billing
-        </p>
-        <h1 className="font-display text-xl sm:text-2xl font-bold mb-2" style={{ color: 'var(--dash-text-primary)' }}>
-          Plan & subscription
-        </h1>
-        <p className="text-sm text-[var(--dash-text-muted)] mb-8">
-          {isAdminComp
-            ? `You're on a complimentary ${subscribedPlanLabel} plan as a founding member. No card needed, nothing to cancel — when the trial ends, your account reverts to Free unless you subscribe.`
-            : <>Manage your TradeGuardX plan. Payments are processed securely by Dodo Payments. You can update your payment method, view invoices, or <strong>cancel anytime</strong> — your Pro features stay active through the end of your current billing period.</>}
-        </p>
+    <div style={sx('max-width:980px')}>
+      <div style={sx('margin-bottom:16px')}>
+        <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Plan &amp; billing</h1>
+        <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>{sub}</p>
+      </div>
 
-        {!subscriptionLoading && isAdminComp && isActive && (
-          <FoundingMemberInfo periodEnd={sub?.currentPeriodEnd} planLabel={subscribedPlanLabel} />
-        )}
-
-        {/* Trial: not "active" (status is 'trialing'), so StatusBanner won't fire —
-            and without this the page gives a trialist zero context on the clock. */}
-        {!subscriptionLoading && isTrial && (
-          <div
-            className="mb-6 rounded-xl border p-4"
-            style={{ borderColor: 'rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.08)' }}
-          >
-            <p className="text-sm font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
-              You’re on the free trial
-              {trialDaysLeft != null ? ` — ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left` : ''}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--dash-text-muted)' }}>
-              Everything is unlocked and no card is on file. When the trial ends your rules stop being
-              enforced until you pick a plan.
-            </p>
+      {info && !isAdminComp && (
+        <div style={sx('display:flex;align-items:flex-start;gap:12px;padding:15px 18px;margin-bottom:16px;border-radius:13px', { border: `1px solid var(--${info.tone}-line)`, background: `var(--${info.tone}-tint)` })}>
+          <div style={sx('flex:1;min-width:0')}>
+            <div style={sx('font-size:13.5px;font-weight:700', { color: `var(--${info.tone})` })}>{subscribedLabel} — {info.label.toLowerCase()}</div>
+            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:92ch')}>{info.message}</p>
           </div>
-        )}
-
-        {!subscriptionLoading && !isActive && !isTrial && (
-          <StatusBanner
-            status={status}
-            periodEnd={sub?.currentPeriodEnd}
-            subscribedPlanLabel={subscribedPlanLabel}
-            onPortalOpen={startPaymentUpdate}
-            portalLoading={portalLoading}
-          />
-        )}
-
-        <div className="space-y-4 text-sm">
-          <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
-            <span className="text-[var(--dash-text-muted)]">Current access</span>
-            <span className="font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
-              {subscriptionLoading ? 'Loading…' : effectivePlanLabel}
-            </span>
-          </div>
-          {!isActive && subscribedPlanLabel !== effectivePlanLabel && (
-            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
-              <span className="text-[var(--dash-text-muted)]">Subscribed plan</span>
-              <span className="font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
-                {subscribedPlanLabel}
-              </span>
-            </div>
-          )}
-          {sub?.source === 'payment' && sub?.externalSubscriptionId && (
-            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
-              <span className="text-[var(--dash-text-muted)]">Billing provider ref.</span>
-              <span className="font-mono text-xs text-[var(--dash-text-muted)] truncate max-w-[200px]">
-                {sub.externalSubscriptionId}
-              </span>
-            </div>
-          )}
-          {periodEnd && (
-            <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4 py-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
-              <span className="text-[var(--dash-text-muted)]">
-                {isTrial || (isAdminComp && isActive)
-                  ? 'Free trial ends'
-                  : isActive
-                    ? 'Next renewal'
-                    : status === 'past_due'
-                      ? 'Last successful period ended'
-                      : 'Period ends'}
-              </span>
-              <span style={{ color: 'var(--dash-text-primary)' }}>{periodEnd}</span>
-            </div>
-          )}
+          <button type="button" disabled={portalLoading} onClick={startPaymentUpdate} style={sx('flex:none;padding:8px 13px;border-radius:8px;background:var(--surface);font-size:12.5px;font-weight:700', { border: `1px solid var(--${info.tone}-line)`, color: `var(--${info.tone})` })}>{portalLoading ? 'Opening…' : info.cta}</button>
         </div>
+      )}
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            to="/pricing"
-            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-accent text-surface-950 font-semibold text-sm hover:bg-accent-hover transition-colors"
-          >
-            {isAdminComp ? `Subscribe to keep ${subscribedPlanLabel}` : isActive ? 'Change plan' : 'View plans'}
-          </Link>
-          {hasBillingRecord && (
-            <button
-              type="button"
-              onClick={openPortal}
-              disabled={portalLoading}
-              className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border text-sm transition-colors hover:bg-[var(--dash-bg-card-hover)] disabled:opacity-60"
-              style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-primary)' }}
-            >
-              {portalLoading ? 'Opening…' : 'Manage or cancel subscription'}
-            </button>
-          )}
-          <Link
-            to="/dashboard/account"
-            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border text-sm transition-colors hover:bg-[var(--dash-bg-card-hover)]"
-            style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-primary)' }}
-          >
-            Account home
-          </Link>
+      <section style={sx('margin-bottom:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+        <div style={sx('padding:16px 19px;border-bottom:1px solid var(--line)')}>
+          <h3 style={sx("margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em")}>What you are using</h3>
         </div>
-      </motion.div>
+        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))')}>
+          {usage.map((u) => (
+            <div key={u.k} style={sx('padding:17px 19px;border-right:1px solid var(--line)')}>
+              <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{u.k}</div>
+              <div style={sx("margin-top:8px;font:600 19px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums", { color: u.fg })}>{u.v}</div>
+              <div style={sx('margin-top:11px;height:4px;border-radius:999px;background:var(--surface-3);overflow:hidden')}><div style={sx('height:100%;border-radius:999px', { background: u.fg, width: u.bar })} /></div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:14px')}>
+        {cards.map((p) => (
+          <section key={p.key} style={sx('padding:19px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card)', p.current ? { borderColor: 'var(--mint-line)' } : {})}>
+            <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:12px')}>
+              <span style={sx("font:600 16px/1 'Space Grotesk',sans-serif")}>{p.name}</span>
+              {p.state && <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mint)')}>{p.state}</span>}
+            </div>
+            <div style={sx("font:700 28px/1 'Space Grotesk',sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums")}>{p.price}</div>
+            <div style={sx('font-size:12px;color:var(--ink-3);margin-top:5px')}>{p.per}</div>
+            <div style={sx('margin:15px 0;height:1px;background:var(--line)')} />
+            <div style={sx('font-size:13px;color:var(--ink-2);line-height:2')}>
+              <div>{p.rules}</div>
+              <div>{p.accounts}</div>
+              <div>{p.history}</div>
+            </div>
+            {p.cta && (
+              <button type="button" disabled={portalLoading} onClick={() => (p.cta === 'Upgrade' ? navigate(`/pricing?plan=${p.key}`) : openPortal())} style={sx('width:100%;margin-top:15px;padding:10px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700')}>{p.cta}</button>
+            )}
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
