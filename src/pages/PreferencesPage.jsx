@@ -93,7 +93,7 @@ export default function PreferencesPage() {
           </div>
           <div>
             <div style={sx(MONO)}>Accent</div>
-            <Options k="accent" value={prefs.accent} onPick={setPref} options={[{ v: 'mint', label: 'Mint', note: 'Default' }, { v: 'signal', label: 'Signal', note: 'Amber accent' }, { v: 'ion', label: 'Ion', note: 'Blue accent' }]} />
+            <Options k="accent" value={prefs.accent} onPick={setPref} options={[{ v: 'mint', label: 'Mint', note: 'Green accent' }, { v: 'signal', label: 'Signal', note: 'Default' }, { v: 'ion', label: 'Ion', note: 'Blue accent' }]} />
           </div>
           <div>
             <div style={sx(MONO)}>Chrome</div>

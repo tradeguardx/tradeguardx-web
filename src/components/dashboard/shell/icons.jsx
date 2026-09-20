@@ -37,6 +37,8 @@ export const ICON = {
   journal: ['M5 4h11l3 3v13H5z', 'M8 9h8M8 13h8M8 17h5'],
   calendar: ['M12 21a9 9 0 100-18 9 9 0 000 18z', 'M3.6 9.2h16.8M3.6 14.8h16.8M12 3.1c-2.6 2.5-2.6 15.3 0 17.8M12 3.1c2.6 2.5 2.6 15.3 0 17.8'],
   trades: ['M4 6h16M4 12h16M4 18h16', ''],
+  // receipt: a docket with a torn bottom edge and two amount lines
+  tax: ['M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21z', 'M9 8h6M9 12h6M9 16h3'],
   accounts: ['M3 9l9-5 9 5v11H3z', 'M9 20v-6h6v6'],
   connect: ['M9.5 14.5l5-5', 'M7 12l-2 2a3.5 3.5 0 005 5l2-2M17 12l2-2a3.5 3.5 0 00-5-5l-2 2'],
   bell: ['M12 4a5.2 5.2 0 00-5.2 5.2c0 5-2 6.3-2 6.3h14.4s-2-1.3-2-6.3A5.2 5.2 0 0012 4z', 'M10.2 18.4a2 2 0 003.6 0'],

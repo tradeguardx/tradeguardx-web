@@ -14,7 +14,7 @@ export const DEFAULT_PREFS = {
   confirmBeforeClose: true,
   soundOnRuleFire: false,
   // §6 tweak props — root attributes with token overrides
-  accent: 'mint', // 'mint' | 'signal' | 'ion'
+  accent: 'signal', // 'mint' | 'signal' | 'ion' — amber is the house default
   chrome: 'depth', // 'depth' | 'flat' | 'print'
   voice: 'coach', // 'coach' | 'clinical'
 };
