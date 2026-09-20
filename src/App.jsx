@@ -24,7 +24,7 @@ import InfluencerCommissions from './pages/influencer/InfluencerCommissions';
 import InfluencerPayouts from './pages/influencer/InfluencerPayouts';
 import OverviewPage from './pages/OverviewPage';
 import RulesTerminal from './components/dashboard/RulesTerminal';
-import TradeJournal from './components/dashboard/TradeJournal';
+import JournalPage from './pages/JournalPage';
 import AllTradesPage from './pages/AllTradesPage';
 import LiveGuardPage from './pages/LiveGuardPage';
 import TradeDetailPage from './pages/TradeDetailPage';
@@ -106,7 +106,7 @@ function App() {
                   <Route path="overview" element={<OverviewPage />} />
                   <Route path="live" element={<LiveGuardPage />} />
                   <Route path="rules" element={<RulesTerminal />} />
-                  <Route path="journal" element={<TradeJournal />} />
+                  <Route path="journal" element={<JournalPage />} />
                   <Route path="trades" element={<AllTradesPage />} />
                   <Route path="tax" element={<TaxPage />} />
                   <Route path="trades/:tradeUid" element={<TradeDetailPage />} />
