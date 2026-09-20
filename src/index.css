@@ -1261,3 +1261,5 @@
 @media (max-width:820px){[data-tgx] .ov-two{grid-template-columns:1fr!important}}
 [data-tgx] .rl-arm:hover:not(:disabled){background:var(--mint-solid)!important;color:#04241d!important;border-color:var(--mint-solid)!important}
 [data-tgx] .rl-arm:disabled{opacity:.55;cursor:not-allowed}
+[data-tgx] .rx-row:hover{background:var(--surface-2)!important}
+[data-tgx] .rx-group > .group > div:last-child{border-bottom:0}

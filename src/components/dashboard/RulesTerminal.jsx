@@ -12,8 +12,8 @@ import { openSupport } from '../support/supportBus';
 import CooldownBanner from './CooldownBanner';
 import { useCooldown } from '../../hooks/useCooldown';
 import { useGuard } from '../../context/GuardContext';
-import { ruleGlyph } from './shell/icons';
-import PageHead from './shell/PageHead';
+import { ruleGlyph, ruleAccent } from './shell/icons';
+import { sx } from './shell/sx';
 
 
 // leftBorder is written out literally (not derived from iconColor at runtime)
@@ -597,50 +597,21 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
-      whileHover={{ y: -2 }}
-      className="group relative"
-    >
-      <div
-        className={`relative overflow-hidden rounded-2xl border transition-all duration-300 hover:border-accent/20 hover:shadow-lg hover:shadow-accent/5 ${
-          rule.locked ? '' : `border-l-[3px] ${rule.leftBorder}`
-        }`}
-        style={{
-          // Split out of the `borderColor` shorthand so it doesn't win (inline
-          // always beats classes) over the Tailwind border-l-* color above.
-          borderTopColor: rule.locked ? 'var(--dash-border)' : 'var(--dash-border-hover)',
-          borderRightColor: rule.locked ? 'var(--dash-border)' : 'var(--dash-border-hover)',
-          borderBottomColor: rule.locked ? 'var(--dash-border)' : 'var(--dash-border-hover)',
-          borderLeftColor: rule.locked ? 'var(--dash-border)' : undefined,
-          backgroundColor: rule.locked ? 'var(--dash-bg-card)' : 'var(--dash-bg-raised)',
-          boxShadow: 'var(--dash-shadow-card)',
-        }}
-      >
-        {!rule.locked && (
-          <div className={`pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full ${rule.bgGlow} blur-3xl`} />
-        )}
-
+    <div className="group relative" data-rule-index={index}>
+      <div style={sx('border-bottom:1px solid var(--line)')}>
         <button
           type="button"
           onClick={onToggleExpand}
-          className="w-full px-4 py-3 flex items-center gap-3 text-left"
+          className="rx-row"
+          style={sx('width:100%;display:flex;align-items:center;gap:13px;padding:15px 18px;border:0;background:transparent;text-align:left;color:var(--ink)')}
         >
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 transition-transform group-hover:scale-105">
-            {!rule.locked && (
-              <div className={`absolute inset-0 rounded-lg bg-gradient-to-br ${rule.gradient} opacity-20`} />
-            )}
-            {rule.locked && (
-              <div className="absolute inset-0 rounded-lg" style={{ backgroundColor: 'var(--dash-bg-input)' }} />
-            )}
-            <span className={`relative ${rule.iconColor}`}>{(() => { const G = ruleGlyph(rule.templateSlug ?? rule.slug); return <G size={16} />; })()}</span>
-          </div>
+          <span style={sx('flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center', rule.locked ? { background: 'var(--surface-3)', color: 'var(--ink-3)' } : { background: ruleAccent(rule.templateSlug ?? rule.slug).tint, color: ruleAccent(rule.templateSlug ?? rule.slug).color })}>
+            {(() => { const G = ruleGlyph(rule.templateSlug ?? rule.slug); return <G size={17} />; })()}
+          </span>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-display font-semibold text-sm truncate" style={{ color: 'var(--dash-text-primary)' }}>{rule.name}</h3>
+              <h3 style={sx("margin:0;font-size:14px;font-weight:600;letter-spacing:-.005em;font-family:Manrope,system-ui,sans-serif")}>{rule.name}</h3>
               {!rule.locked && rule.hasSavedInstance && rule.enabled && (
                 <span className={`dsh-chip dsh-chip--${enforcement === 'armed' ? 'mint' : enforcement === 'watching' ? 'amber' : 'red'}`}>
                   {enforcement === 'armed' ? 'Armed' : enforcement === 'watching' ? 'Alert only' : 'Not enforcing'}
@@ -732,31 +703,22 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                       if (!toggling && !saving) void toggleEnabled();
                     }
                   }}
-                  className="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors"
-                  style={{
-                    backgroundColor: rule.enabled ? 'var(--dash-accent, #00d4aa)' : 'var(--dash-toggle-track, rgba(148,163,184,0.35))',
-                    opacity: toggling ? 0.5 : 1,
-                  }}
+                  style={sx('flex:none;position:relative;display:block;width:38px;height:22px;border-radius:999px', rule.enabled
+                    ? (ruleLocked ? { background: 'var(--mint-tint)', border: '1px solid var(--mint-line)', cursor: 'not-allowed' } : { background: 'var(--mint-solid)', cursor: 'pointer' })
+                    : { background: 'var(--surface-3)', border: '1px solid var(--line)', cursor: 'pointer' }, { opacity: toggling ? 0.5 : 1 })}
                 >
-                  <motion.span
-                    layout
-                    transition={{ type: 'spring', stiffness: 500, damping: 34 }}
-                    className="inline-block h-4 w-4 rounded-full bg-white shadow"
-                    style={{ marginLeft: rule.enabled ? 18 : 2 }}
-                  />
+                  {rule.enabled && ruleLocked ? (
+                    <span style={sx('position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background:var(--mint);display:grid;place-items:center')}>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--surface)" strokeWidth="3" strokeLinecap="round"><path d="M8 10V7.5a4 4 0 018 0V10" /><path d="M6 10h12v9H6z" /></svg>
+                    </span>
+                  ) : rule.enabled ? (
+                    <span style={sx('position:absolute;top:3px;left:19px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35)')} />
+                  ) : (
+                    <span style={sx('position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-faint)')} />
+                  )}
                 </span>
               )}
-            <motion.svg
-              animate={{ rotate: expanded ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-              className="w-4 h-4"
-              style={{ color: 'var(--dash-text-faint)' }}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </motion.svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flex: 'none', color: expanded ? 'var(--ink)' : 'var(--ink-3)' }}><path d={expanded ? 'M7 14l5-5 5 5' : 'M7 10l5 5 5-5'} /></svg>
           </div>
         </button>
 
@@ -766,7 +728,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
           transition={{ duration: 0.25, ease: 'easeInOut' }}
           className="overflow-hidden"
         >
-          <div className="px-5 pb-5 pt-1" style={{ borderTop: '1px solid var(--dash-border)' }}>
+          <div style={sx('padding:2px 18px 19px 63px')}>
 
             {docs && (
               <div className="mb-4">
@@ -1003,7 +965,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
           </div>
         </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -1119,30 +1081,32 @@ export default function RulesTerminal() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full"
     >
-      <PageHead
-        title="Rules"
-        sub={bundle ? `${savedEnabledCount} of ${(bundle?.templates ?? []).length || savedEnabledCount} rules on · rule lock ${ruleLock?.locked ? `on until ${fmtLockDate(ruleLock?.lockedUntil)}` : ruleLock?.days ? `${ruleLock.days} days after your next save` : 'off'}` : 'Loading…'}
-      />
+      <div style={sx('margin-bottom:18px;max-width:78ch')}>
+        <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Rules</h1>
+        <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>Switch on what you want enforced. Every rule is on every plan — set them while calm, because they only matter when you are not.</p>
+      </div>
 
-      {/* The three layers — load-bearing for comprehension. Copy verbatim (§4). */}
-      <section className="dsh-card drx-explain">
-        <div className="dsh-card__head"><h3 className="dsh-h2">How your protection fits together</h3></div>
-        <div className="dsh-card__body dsh-grid-3">
-          <div className="drx-explain__item">
-            <span className="drx-explain__n">1</span>
-            <p className="drx-explain__t">Switch on the rules you want</p>
-            <p className="dsh-meta">Every rule is off until you turn it on. Off rules do nothing at all — no alerts, no closing.</p>
-          </div>
-          <div className="drx-explain__item">
-            <span className="drx-explain__n">2</span>
-            <p className="drx-explain__t">Rule lock holds them there</p>
-            <p className="dsh-meta">Rules that are <strong>on</strong> freeze for the window you pick — 7 days by default. Rules that are <strong>off</strong> can always be turned on.</p>
-          </div>
-          <div className="drx-explain__item">
-            <span className="drx-explain__n">3</span>
-            <p className="drx-explain__t">Kill switch is the manual one</p>
-            <p className="dsh-meta">Separate from rules. It stops you trading this account for a few hours, whatever your rules say. <Link to="/dashboard/live" style={{ color: 'var(--mint)', fontWeight: 700 }}>On Live guard</Link></p>
-          </div>
+      <section style={sx('margin-bottom:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+        <div style={sx('display:flex;align-items:center;gap:12px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap')}>
+          <h2 style={sx("margin:0;font:600 15px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.015em")}>How your protection fits together</h2>
+          <span style={{ flex: 1 }} />
+          <span style={sx('font-size:12px;color:var(--ink-3)')}><strong style={sx('color:var(--mint);font-weight:700;font-variant-numeric:tabular-nums')}>{savedEnabledCount}</strong> of {(bundle?.templates ?? []).length || savedEnabledCount} rules on</span>
+          <span style={sx('font-size:12px;color:var(--ink-3)')}>rule lock <strong style={sx('font-weight:700', { color: ruleLock?.locked ? 'var(--mint)' : 'var(--ink-2)' })}>{ruleLock?.locked ? `on · ${fmtLockDate(ruleLock?.lockedUntil)}` : ruleLock?.days ? `${ruleLock.days} days` : 'off'}</strong></span>
+        </div>
+        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))')}>
+          {[
+            ['1', 'Switch on the rules you want', <>Every rule is off until you turn it on. Off rules do nothing at all — no alerts, no closing. Start with two.</>],
+            ['2', 'Rule lock holds them there', <>Rules that are <strong style={sx('color:var(--ink);font-weight:700')}>on</strong> freeze for the window you pick — 7 days by default. Rules that are <strong style={sx('color:var(--ink);font-weight:700')}>off</strong> can always be turned on.</>],
+            ['3', 'Killswitch is the manual one', <>Separate from rules. It stops you trading this account for a few hours, whatever your rules say. Set it on <Link to="/dashboard/live" style={sx('padding:0;border:0;background:none;color:var(--mint);font:inherit;font-weight:700;text-decoration:underline')}>Live guard</Link>.</>],
+          ].map(([n, title, body], idx) => (
+            <div key={n} style={sx('padding:17px 21px', idx < 2 ? { borderRight: '1px solid var(--line)' } : {})}>
+              <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:8px')}>
+                <span style={sx("width:22px;height:22px;flex:none;border-radius:7px;background:var(--surface-3);display:grid;place-items:center;font:600 11px/1 'Space Grotesk',sans-serif;color:var(--ink-2)")}>{n}</span>
+                <span style={sx('font-size:13.5px;font-weight:600')}>{title}</span>
+              </div>
+              <p style={sx('margin:0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{body}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -1204,7 +1168,7 @@ export default function RulesTerminal() {
                       {section.title}
                     </p>
                   )}
-                  <div className="space-y-3">
+                  <div className="rx-group" style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
                     {section.rules.map((rule, i) => (
                       <RuleCard
                         accountLocked={accountLocked}
@@ -1251,7 +1215,7 @@ export default function RulesTerminal() {
                         {section.title}
                       </p>
                     )}
-                    <div className="space-y-3">
+                    <div className="rx-group" style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
                       {section.rules.map((rule, i) => (
                         <RuleCard
                           accountLocked={accountLocked}
