@@ -48,9 +48,6 @@ function Shell() {
 
   const billingArea = pathname.includes('/account') || pathname.includes('/billing');
   const locked = Boolean(user?.isExpired) && !billingArea;
-  // §3.5 per-screen max-widths: Overview/Accounts/Plan 980 · Alerts/Security/Preferences 760–780
-  const narrow = /\/dashboard\/(overview|account\/trading|account\/billing)$/.test(pathname);
-  const tight = /\/dashboard\/(alerts|account\/security|preferences|account\/notifications)$/.test(pathname);
 
   useEffect(() => {
     if (!drawer) return undefined;
@@ -123,7 +120,7 @@ function Shell() {
 
         <BreachToast />
 
-        <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;animation:tgxSlide .22s ease-out', { maxWidth: narrow ? 980 : tight ? 780 : 1240 })}>
+        <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;animation:tgxSlide .22s ease-out')}>
           <VerifyEmailBanner />
           <TrialBanner />
           {locked ? <UpgradeWall /> : <Outlet />}
