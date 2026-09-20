@@ -53,7 +53,8 @@ export default function Sidebar({ onNavigate }) {
   // Global count of upcoming high-impact releases — not scoped to the range being browsed.
   const upcoming = useUpcomingCalendar();
   const upcomingHigh = (upcoming.data?.days ?? []).reduce((n, d) => n + d.events.filter((e) => e.impact === 3 && e.time_status === 'exact' && new Date(e.event_time_utc).getTime() > guard.now).length, 0);
-  const planLine = `${user?.planLabel || 'Free'} · ${accounts.length} account${accounts.length === 1 ? '' : 's'}`;
+  // "Pro plan" with one account; the count only earns its place once there are several.
+  const planLine = accounts.length > 1 ? `${user?.planLabel || 'Free'} · ${accounts.length} accounts` : `${user?.planLabel || 'Free'} plan`;
 
   const protect = [
     { id: 'overview', to: '/dashboard/overview', label: 'Overview', end: true },

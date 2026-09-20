@@ -43,10 +43,10 @@ export default function AccountSwitcher() {
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        style={sx('flex:none;display:flex;align-items:center;gap:10px;padding:7px 11px 7px 9px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);text-align:left;white-space:nowrap')}
+        style={sx('flex:none;display:flex;align-items:center;gap:10px;min-width:min(240px,100%);padding:7px 11px 7px 9px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);text-align:left;white-space:nowrap')}
       >
         <span style={sx("flex:none;width:25px;height:25px;border-radius:7px;background:var(--surface-3);border:1px solid var(--line);display:grid;place-items:center;font:600 10px/1 'JetBrains Mono',monospace;color:var(--ink-2)")}>{tagOf(selectedAccount)}</span>
-        <span>
+        <span style={sx('flex:1;min-width:0')}>
           <span style={sx('display:block;font-size:13px;font-weight:600;letter-spacing:-.005em;white-space:nowrap')}>{draft ? 'New account' : selectedAccount?.name ?? 'No account'}</span>
           <span style={sx('display:block;font-size:11px;color:var(--ink-3);margin-top:2px;white-space:nowrap')}>{draft ? 'Not created yet' : selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'Add one to begin'}</span>
         </span>
@@ -54,7 +54,7 @@ export default function AccountSwitcher() {
       </button>
 
       {open && (
-        <div role="listbox" aria-label="Accounts" style={sx('position:absolute;top:calc(100% + 7px);left:0;width:320px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow-pop);z-index:40;animation:tgxSlide .16s ease-out')}>
+        <div role="listbox" aria-label="Accounts" style={sx('position:absolute;top:calc(100% + 7px);left:0;width:340px;max-width:calc(100vw - 30px);padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow-pop);z-index:40;animation:tgxSlide .16s ease-out')}>
           <div style={sx('padding:8px 10px 6px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>Switch account — everything rescopes</div>
           {accounts.map((a) => {
             const s = guard.stateFor(a.id);
