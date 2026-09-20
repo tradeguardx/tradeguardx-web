@@ -2,249 +2,249 @@
  * Help-center article content. Each article renders inside a single /help
  * page with sidebar navigation. Edit copy here; layout is in HelpPage.jsx.
  *
+ * The support assistant (trade-service, supportKnowledge.ts) is generated
+ * from this file — run `node scripts/gen-help-md.mjs` there after editing.
+ *
  * Article shape:
  *   { slug, title, intro, sections: [{ heading, body, list?, note? }] }
  */
 export const HELP_ARTICLES = [
   {
     slug: 'getting-started',
-    title: 'Getting Started',
+    title: 'Getting started',
     intro:
-      "Get TradeGuardX running on your trading account in under 5 minutes. The setup has three steps: create an account, install the Chrome extension, and pair it to your broker.",
+      'TradeGuardX protects a Delta Exchange account in four steps, all on the dashboard: create the account, connect an enforcement key, switch on rules, turn on alerts. Until all four are done your rules are written down but nothing enforces them.',
     sections: [
       {
-        heading: '1. Create your account',
+        heading: '1. Create your TradeGuardX account',
         body:
-          "Sign up at tradeguardx.com/signup. We support email + password and Google sign-in. No credit card needed for the Free plan, which gives you core protection on one trading account.",
+          'Sign up at tradeguardx.com/signup with email + password or Google. Every new account starts a 7-day free trial with everything unlocked — no card, and nothing is charged when it ends.',
       },
       {
-        heading: '2. Install the Chrome extension',
+        heading: '2. Add a trading account',
         body:
-          "TradeGuardX runs as a Chrome / Brave / Edge extension that watches your broker tab and enforces your rules at the click. Install it from the Chrome Web Store — there's a direct link on your dashboard's Install Extension page.",
-        note:
-          "The extension only activates on broker domains you've explicitly paired. On other websites it stays dormant.",
+          'On the dashboard go to Accounts → Add another account → Choose a venue. Delta Exchange is the venue we support today. Give it a name; that name is what the account switcher in the top bar shows.',
       },
       {
-        heading: '3. Add a trading account',
+        heading: '3. Connect the enforcement key',
         body:
-          "From your dashboard, go to Trading Accounts → Add Account. Pick your prop firm or broker, name the account, and set your starting balance. This is the account TradeGuardX will protect.",
+          'Go to Connect key. Create an API key on Delta with Trading scope (withdrawals NOT permitted), whitelist the TradeGuardX IP shown on the page, paste the key and secret, and verify. This is the step that lets us cancel orders and close positions for you. A read-only key is accepted but leaves the account in WATCHING — we can see fills but cannot act.',
       },
       {
-        heading: '4. Pair the extension',
+        heading: '4. Switch on your rules',
         body:
-          "On the same page, click 'Pair Extension'. We give you a short code. Open the extension popup on your broker tab, enter the code, and pairing is complete. See the Pairing article for detail.",
+          'Go to Rules. Every rule is off until you turn it on; two are enough to start — Daily loss protection and Max trades per day. Toggle a rule on, or expand it and Edit rule to change the limits first.',
       },
       {
-        heading: '5. Set your first rule',
+        heading: '5. Turn on alerts',
         body:
-          "Go to Rules Terminal in the dashboard. Pick a template (we recommend Daily Loss Limit as your first rule), set the threshold, save. The extension picks it up immediately. See Setting Your First Rule for a walkthrough.",
+          'Go to Alerts and connect Telegram (fastest) or email. The guard acts whether or not you are watching; alerts are how you find out it did.',
       },
       {
-        heading: 'What happens when a rule fires?',
+        heading: 'Read the pill',
         body:
-          "When you try to place a trade that would breach a rule, the extension blocks the broker's Buy/Sell button at the click. Not a popup, not a warning — the trade simply does not go through. The block persists until you reset for the next session (typically next trading day).",
+          'The pill next to the account switcher is the one answer to "am I protected?".',
+        list: [
+          { bold: 'ARMED:', text: 'trading-scope key verified, at least one rule on, setup complete. The engine can close positions.' },
+          { bold: 'WATCHING:', text: 'the key is read-only. We see fills but cannot act — replace the key.' },
+          { bold: 'NOT PROTECTED:', text: 'no key, no rule on, or setup unfinished. The band under the top bar says which and where to go.' },
+          { bold: 'LOCKED:', text: 'a rule cooldown or your killswitch is running. Anything opened is closed on sight.' },
+        ],
       },
     ],
   },
   {
-    slug: 'pairing',
-    title: 'Pairing your extension',
+    slug: 'connecting-your-key',
+    title: 'Connecting your Delta key',
     intro:
-      "Pairing connects the Chrome extension to a specific trading account so it knows which broker to monitor and which rules to enforce. You'll do this once per trading account.",
+      'TradeGuardX enforces server-side: our risk engine holds a live connection to Delta and acts on your account 24/7, dashboard open or not. That needs an API key with trading scope.',
     sections: [
       {
-        heading: 'Why pairing exists',
+        heading: 'Create the key on Delta',
         body:
-          "The extension never has your broker login. Instead, you tell it which trading account it's protecting via a short-lived pairing code. After pairing, the extension stores a session token and uses it to authenticate API calls — no broker password required.",
+          'Delta → Account → API keys → Create. Tick Trading. Do NOT tick withdrawals — TradeGuardX never needs them and refuses keys that have them. Add the IP address shown on the Connect key page to the key\'s whitelist; without it Delta rejects every request we make.',
       },
       {
-        heading: 'How to pair',
+        heading: 'Paste and verify',
+        body:
+          'Back on Connect key, paste the key and secret (pasting both in one box works — we split them) and press Connect. We verify against Delta immediately and show the Delta user, account id and time verified on the Accounts card.',
+      },
+      {
+        heading: 'Trading scope vs read-only',
         list: [
-          { bold: 'Step 1:', text: "In the web dashboard, go to Trading Accounts → click your account → 'Pair Extension'." },
-          { bold: 'Step 2:', text: "We generate a 6-character pairing code valid for 5 minutes." },
-          { bold: 'Step 3:', text: "Open your broker's tab in the same browser." },
-          { bold: 'Step 4:', text: "Click the TradeGuardX extension icon in your toolbar to open the popup." },
-          { bold: 'Step 5:', text: "Enter the pairing code. The popup will show 'Paired' with the broker hostname." },
+          { bold: 'Trading scope:', text: 'the pill reads ARMED. Rules that close positions actually close them.' },
+          { bold: 'Read-only:', text: 'the pill reads WATCHING. Alerts still fire, nothing is closed. Replace the key from Accounts → Replace key.' },
         ],
       },
       {
-        heading: 'Pairing code expired?',
+        heading: 'Key failed / Unprotected',
         body:
-          "Codes expire after 5 minutes for security. Just generate a new one from the dashboard and try again. Old codes can't be reused.",
+          'Delta rejected the key — it was deleted, rotated, or the IP whitelist is missing. The engine retries a failed key every 15 minutes, so a transient rejection usually recovers on its own; otherwise reconnect from Accounts.',
       },
       {
-        heading: 'Re-pairing',
+        heading: 'Keys cannot be changed during a lock',
         body:
-          "If you cleared your browser data or moved to a new computer, you'll need to re-pair. Generate a fresh code from the dashboard. The old session token is automatically invalidated when you pair again — only one active session per trading account.",
-      },
-      {
-        heading: 'Pairing multiple accounts',
-        body:
-          "On Pro and Pro+ plans, you can pair multiple trading accounts (one per broker tab). Each tab needs its own pairing because the extension knows which rules apply only when paired to that specific account.",
-      },
-      {
-        heading: 'Common pairing problems',
-        list: [
-          { bold: "Extension popup says 'Not on a supported broker':", text: "You're on a tab the extension doesn't know about. Switch to your broker's trading page." },
-          { bold: "Pairing code 'Invalid or expired':", text: "Generate a new code (most likely cause). If the new code also fails, sign out and back in." },
-          { bold: "Pairs but rules don't fire:", text: "Open the extension popup — does it show your account name? If not, re-pair. If yes, check the Rules Terminal — your rules may not be saved/enabled." },
-        ],
+          'While a killswitch lockout runs, keys cannot be disconnected or replaced — otherwise removing the key would be a way around the lock.',
       },
     ],
   },
   {
     slug: 'setting-your-first-rule',
-    title: 'Setting your first rule',
+    title: 'Rules and the rule lock',
     intro:
-      "Rules are how TradeGuardX actually protects you. Without rules, the extension just watches — it doesn't block anything. We recommend Daily Loss Limit as your first rule because it stops the most common account-killer: revenge trading after a bad morning.",
+      'Rules are what you ask us to enforce. The rule lock is what holds you to them. The killswitch is the manual one. All three are on the Rules and Live guard screens.',
     sections: [
       {
-        heading: 'Open the Rules Terminal',
-        body:
-          "From your dashboard sidebar, click Rules. You'll see a list of rule templates available on your plan. Free has core templates; Pro adds advanced rules like risk-per-trade and max drawdown.",
-      },
-      {
-        heading: "Pick the Daily Loss Limit template",
-        body:
-          "Click 'Daily Loss Limit'. The form expands. Set:",
+        heading: 'The seven rules',
+        body: 'Every rule is on every plan, and every rule is off until you switch it on.',
         list: [
-          { bold: 'Account size:', text: "Auto-filled from the trading account you selected. This anchors the percentage calculations." },
-          { bold: 'Max daily loss:', text: "The dollar amount or percentage you'll never lose in a single day. A common starting point is 2% of your account size — small enough to come back from, large enough not to trigger on normal volatility." },
-          { bold: 'Reset time:', text: "When does 'a new day' start for the rule? Default is broker midnight. Set it to your local trading session start if different." },
+          { bold: 'Daily loss protection:', text: 'warns near the limit; at the limit we cancel orders, close positions and lock the account until the daily reset.' },
+          { bold: 'Daily profit target:', text: 'once you are up by the target and flat, the day locks and the gain is kept. Never force-closes an open winner.' },
+          { bold: 'Risk per trade:', text: 'with a stop attached, if the loss at the stop is over your cap that position is closed.' },
+          { bold: 'Max drawdown lock:', text: 'peak-to-trough across the whole account. Alert-only today — the rule says so.' },
+          { bold: 'Max trades per day:', text: 'hitting the cap locks the account for the rest of the session.' },
+          { bold: 'Close after N losses:', text: 'N losses in a row buys a forced break; a larger N ends the day.' },
+          { bold: 'Stop loss protection:', text: 'alerts when a position sits without a stop. Alert-only.' },
         ],
       },
       {
-        heading: 'Save the rule',
+        heading: 'Turning a rule on, editing, turning off',
         body:
-          "Click Save. Your rule is immediately active — the extension sees it within seconds and starts enforcing on every Buy/Sell click in the paired broker tab.",
+          'On Rules, each row has a toggle. Expand a row to see the values as tiles; Edit rule turns them into inputs, Save applies. A rule you have never saved is created with the values shown when you turn it on. Before you click, the row tells you what the click does to the lock ("Saving starts a 15-minute window, then locks all rules for 7 days").',
       },
       {
-        heading: 'Test it (recommended)',
+        heading: 'The rule lock',
         body:
-          "On a paper/demo broker account, simulate a loss until you cross the threshold. Try to enter a new trade — the extension should block the click with a brief overlay explaining why. If it doesn't, your pairing or rule config has an issue. Better to find this on a demo than during a live session.",
+          'Pick the window on Live guard → Rule lock: Off, 3d, 7d (default) or 30d. Fifteen minutes after your last save the lock engages and rules that are ON freeze — no edits, no turning off, no tightening — until it lifts. Rules that are OFF can always be turned on; they join the running lock. Off is a session lock, not a free-for-all: rules are editable until your first trade of the day, then hold until the reset.',
+        note:
+          'The window can only be changed while nothing is locked. Only support can release a running lock early — press "Need it lifted? Ask support" on the Rules banner and say why.',
       },
       {
-        heading: 'Add more rules',
-        body:
-          "Once Daily Loss is in place, common next rules are:",
+        heading: 'What the status chip means',
         list: [
-          { bold: 'Risk Per Trade:', text: "Limits the maximum risk per single trade (e.g., 0.5% of account). Stops oversized revenge bets." },
-          { bold: 'Max Drawdown:', text: "Hard stop if your equity falls X% below peak. Saves accounts during losing streaks." },
-          { bold: 'Hedging Prevention:', text: "Blocks opening opposite positions on the same instrument — most prop firms ban this and you can fail the challenge instantly." },
-          { bold: 'Max Trades Per Day:', text: "Caps your trade count. Reduces overtrading after a winning open." },
+          { bold: 'OFF:', text: 'the rule does nothing.' },
+          { bold: 'ARMED:', text: 'on, and the engine can act on it.' },
+          { bold: 'ALERT ONLY:', text: 'on, but the key is read-only — you will be told, not protected.' },
+          { bold: 'NOT ENFORCING:', text: 'on, but setup is unfinished — nothing can act yet.' },
         ],
       },
+    ],
+  },
+  {
+    slug: 'live-guard-and-killswitch',
+    title: 'Live guard, the killswitch and the calendar',
+    intro:
+      'Live guard is the screen to keep open while you trade. It shows the session as the guard sees it and holds the two commitment controls — the manual killswitch and the rule lock.',
+    sections: [
       {
-        heading: 'Pausing or removing a rule',
+        heading: 'The session',
         body:
-          "You can disable any rule from the Rules Terminal without deleting it (toggle off). To remove permanently, delete the rule. Caution: rules are how TradeGuardX protects you — disabling one removes that protection until you re-enable.",
+          "Today's P&L on a scale from your loss limit to your target, loss budget left, trades today, open positions, and the Rule panel: each rule that is on with its live status, recomputed on every fill.",
+      },
+      {
+        heading: 'Manual killswitch',
+        body:
+          'Lock yourself out for 3, 6 or 12 hours. Read the confirmation, arm it. There is no off button, only the clock — support can lift it if something real happens. It cannot be armed with a position open (flatten on Delta first). While armed, anything you open is closed on sight, and rule edits and key changes are blocked so the lock cannot be worked around. The red Kill switch button in the top bar opens the same dialog from any screen.',
+      },
+      {
+        heading: 'What we can and cannot do',
+        body:
+          'We cannot stop you placing an order inside Delta\'s own app — no exchange gives us that switch. What we do is close the position immediately after it opens, then check you are actually flat. A forced close can register a small loss from fees, and that loss counts toward Close after N losses — one rule\'s action can trigger another.',
+      },
+      {
+        heading: 'Economic calendar',
+        body:
+          'Under MARKET, the Economic calendar lists upcoming macro releases (CPI, FOMC, NFP, rate decisions) in your timezone, with impact and currency filters and a countdown to the next high-impact print. Events marked TENTATIVE, ALL DAY or DAY 1 have no clock time on purpose.',
+        note:
+          'The "Auto-lock ±15 min" button is not live on the engine yet; pressing it says so and arms nothing.',
       },
     ],
   },
   {
     slug: 'common-issues',
     title: 'Common issues',
-    intro:
-      "Most issues come from one of three places: the extension isn't running, the pairing has lapsed, or the broker page didn't load the way the extension expected. Here's how to diagnose each.",
+    intro: 'Most questions come down to the pill: what it says, and why.',
     sections: [
       {
-        heading: 'Extension icon is grey or missing',
+        heading: 'The pill says NOT PROTECTED but my key is connected',
         body:
-          "The extension is installed but not active on the current tab. This is normal on non-broker tabs — the extension only loads on supported broker domains. If you're ON your broker and it's still grey:",
-        list: [
-          { text: "Refresh the broker tab. Extensions sometimes need a fresh page load to attach." },
-          { text: "Check the Chrome extensions page (chrome://extensions) — is TradeGuardX enabled?" },
-          { text: "Check that you're on the broker domain we support. The full list is in the Install Extension page." },
-        ],
+          'One of the other two checks is failing: no rule is switched on, or the account has no venue. The band under the top bar names the missing step and links to it.',
       },
       {
-        heading: 'Rules are not blocking trades',
+        heading: 'The pill says WATCHING',
         body:
-          "Three things to check, in order:",
-        list: [
-          { bold: 'Is the extension paired?', text: "Click the extension icon. The popup should show 'Paired with [account name]'. If not, re-pair from the dashboard." },
-          { bold: 'Is the rule saved AND enabled?', text: "In Rules Terminal, the rule should show as enabled (toggle on). A saved-but-disabled rule does nothing." },
-          { bold: 'Does the rule actually apply?', text: "Some rules have conditions (e.g., 'only after 9:30 AM' or 'only when daily P&L is below -X%'). Re-read your rule config to make sure the condition is met." },
-        ],
+          'Your key is read-only. Create a new key on Delta with Trading scope and use Accounts → Replace key.',
       },
       {
-        heading: 'Broker not recognized',
+        heading: 'I cannot edit a rule',
         body:
-          "We support a fixed list of brokers and prop firms. If yours isn't in the dropdown when adding an account, it's not supported yet. Email support@tradeguardx.com with the broker name and trading platform — popular requests get added.",
+          'Either the rule lock is running (mint banner on Rules with the countdown; rules that are on are frozen until it lifts) or your killswitch lockout is (red band at the top; edits are blocked until trading resumes). Rules that are off can still be turned on in both cases.',
+      },
+      {
+        heading: 'A trade I opened was closed within seconds',
+        body:
+          'The account was locked — by a rule cooldown or your killswitch — and anything opened during a lock is closed on sight. Live guard\'s activity feed and the alert you received name the rule. Blocked trades do not count toward your daily trade limit.',
+      },
+      {
+        heading: 'The rule lock says 4 days but I picked 3',
+        body:
+          'You changed the window during the 15-minute setup period. The lock is anchored on your original save; the countdown shows the remaining time from there.',
+      },
+      {
+        heading: 'Trade missing from the journal',
+        body:
+          'Trades arrive from Delta over the live connection. If one is missing after a minute, check the key is still ARMED on Accounts — a failed key stops the feed until it recovers (we retry every 15 minutes).',
       },
       {
         heading: 'Subscription past due',
         body:
-          "If your card declined, your subscription becomes past_due in our system and your features auto-revert to Free. Open Account → Billing → 'Update payment method' and Dodo will guide you through entering a new card. Once payment retries, your Pro features come back.",
-      },
-      {
-        heading: "Trade didn't appear in journal",
-        body:
-          "The extension syncs trades when you open and close them in the broker. If a trade is missing:",
-        list: [
-          { text: "Make sure the trade actually closed in the broker (still open trades show in your positions, not journal)." },
-          { text: "Refresh the broker tab — sometimes the extension needs to re-attach to detect the close event." },
-          { text: "Wait 30-60 seconds after the close — sync isn't always instant." },
-          { text: "If still missing after a minute, contact support with the trade timestamp." },
-        ],
-      },
-      {
-        heading: 'Browser slowdowns',
-        body:
-          "TradeGuardX is designed to be lightweight — DOM observation runs only on the active broker tab. If you notice slowdown, check chrome://extensions and disable other heavy extensions to isolate. If TradeGuardX itself is the cause (we've never seen this in testing), email support and we'll investigate.",
-      },
-      {
-        heading: 'Reset everything',
-        body:
-          "If nothing else works, fully reset by signing out, removing the extension, removing the trading account from your dashboard, and starting from scratch. Your trade history stays in our database — only the local extension state and pairing get cleared.",
+          'If your card declined, features revert to Free. Plan & billing → Update payment method takes you to Dodo to enter a new card; once payment retries, your plan comes back.',
       },
     ],
   },
   {
     slug: 'account-questions',
     title: 'Account questions',
-    intro:
-      "How to manage your TradeGuardX account: changing email, password, plan, or canceling.",
+    intro: 'Email, password, plan, cancelling and deleting.',
     sections: [
       {
         heading: 'Changing your email',
         body:
-          "Email changes go through Supabase (our auth provider). Email support@tradeguardx.com from your current account email with the new email you want, and we'll initiate the change. You'll need to verify the new email before it activates.",
+          'Email changes go through support: use Contact support in the dashboard chat, or email support@tradeguardx.com from your current address with the new one. You verify the new address before it activates.',
       },
       {
         heading: 'Resetting your password',
         body:
-          "Go to /login and click 'Forgot password'. We send a magic link to your registered email — click it, set a new password, and you're back in. The link expires in 1 hour.",
+          'Signed out: Forgot password on the login page sends a link (valid one hour). Signed in: Security → Change password; we ask for your current password even though the auth provider does not, so an unlocked laptop cannot lock the real owner out.',
       },
       {
-        heading: 'Switching plans',
-        body:
-          "Open Account → Billing → Change Plan. You'll be taken back to Pricing. Pick your new plan, complete checkout via Dodo, and your account upgrades immediately. You're charged the new plan's price prorated for the rest of the current billing period.",
+        heading: 'Plans',
+        list: [
+          { bold: 'Free:', text: '1 trading account, 7 days of journal history.' },
+          { bold: 'Pro (₹1,299/mo):', text: 'up to 5 accounts, 90 days of history.' },
+          { bold: 'Pro+ (₹2,999/mo):', text: 'unlimited accounts, all history, priority support.' },
+        ],
+        note: 'Prices include 18% GST, billed monthly, cancel anytime. Every rule is on every plan.',
       },
       {
-        heading: 'Canceling your subscription',
+        heading: 'Switching or cancelling',
         body:
-          "Open Account → Billing → Manage or Cancel Subscription. You'll be taken to Dodo's customer portal where you can cancel with one click. Your Pro features stay active until the end of your current billing period — no refund for the unused portion, but no early cutoff either.",
+          'Plan & billing → Upgrade takes you to Pricing; Manage billing opens the Dodo customer portal where you can change card or cancel. Paid features stay until the end of the period.',
       },
       {
         heading: 'Refund policy',
         body:
-          "We offer a 7-day money-back guarantee on the first paid month of any subscription. After that, all sales are final but you can cancel anytime to stop future charges. See our Refund Policy page for full details.",
+          '7-day money-back on the first paid month. After that, cancel anytime to stop future charges. See the Refund Policy page.',
       },
       {
         heading: 'Deleting your account',
         body:
-          "Email support@tradeguardx.com from your account email and request account deletion. We'll permanently remove your profile, trading accounts, rules, trade history, and authentication record within 30 days. This is irreversible. You can also export your trade history first if you want to keep a copy.",
+          'Use Contact support or email support@tradeguardx.com from your account email. Keys are deleted immediately and enforcement stops; trade history and tax records stay for 30 days so you can export them, then go too.',
       },
       {
-        heading: 'Multiple trading accounts',
+        heading: 'Verification email not arriving',
         body:
-          "Pro supports up to 5 trading accounts. Pro+ is unlimited. Free is limited to 1. Each trading account has its own rules and pairing — they're independent so you can run different rule sets on different brokers or strategies.",
-      },
-      {
-        heading: "I haven't received a verification email",
-        body:
-          "Check your spam folder first. If still missing after 5 minutes, request a new verification email from the login page. Some email providers (corporate Outlook especially) aggressively filter unfamiliar senders — adding noreply@tradeguardx.com to your contacts helps.",
+          'Check spam, then request a new one from the login page. Adding noreply@tradeguardx.com to your contacts helps with strict corporate filters.',
       },
     ],
   },
