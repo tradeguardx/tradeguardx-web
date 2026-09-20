@@ -50,9 +50,9 @@ export default function BreachToast() {
 
   useEffect(() => {
     if (!breach) return undefined;
-    const t = setTimeout(() => dismiss(), AUTO_MS);
+    // Time running out is not the user reading it: hide, but leave it unread for the bell.
+    const t = setTimeout(() => { setSeen((s) => new Set(s).add(breach.id)); setBreach(null); }, AUTO_MS);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [breach]);
 
   if (!breach) return null;
