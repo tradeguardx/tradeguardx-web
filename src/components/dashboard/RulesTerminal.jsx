@@ -1229,7 +1229,6 @@ export default function RulesTerminal() {
                           tradingAccountId={selectedTradingAccountId}
                           isRetail={bundle?.isRetail}
                           enforcement={guardSel.enforcement}
-                        enforcement={guardSel.enforcement}
                           onSaved={load}
                           expanded={expandedRuleId === rule.id}
                           onToggleExpand={() => toggleExpandedRule(rule.id)}
