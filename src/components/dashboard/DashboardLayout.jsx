@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { TradingAccountProvider } from '../../context/TradingAccountContext';
 import { DashboardThemeProvider, useDashboardTheme } from '../../context/DashboardThemeContext';
-import { GuardProvider, useGuard } from '../../context/GuardContext';
+import { GuardProvider } from '../../context/GuardContext';
 import { PrefsProvider, usePrefs } from '../../context/PrefsContext';
 import SupportChat from '../support/SupportChat';
 import { TrialBanner, UpgradeWall } from './TrialGate';
@@ -16,6 +16,7 @@ import AccountSwitcher from './shell/AccountSwitcher';
 import GuardPill from './shell/GuardPill';
 import GuardBand from './shell/GuardBand';
 import AvatarMenu from './shell/AvatarMenu';
+import NotificationPanel from './shell/NotificationPanel';
 import { KillSwitchButton, KillSwitchModal } from './shell/KillSwitch';
 import { sx } from './shell/sx';
 
@@ -37,7 +38,6 @@ function Shell() {
   const { user } = useAuth();
   const { theme } = useDashboardTheme();
   const { prefs } = usePrefs();
-  const { unreadBreaches } = useGuard();
   const { pathname } = useLocation();
   const mainRef = useRef(null);
   const [drawer, setDrawer] = useState(false);
@@ -104,10 +104,7 @@ function Shell() {
             <span ref={killBtnRef} style={{ display: 'contents' }}>
               <KillSwitchButton onOpen={() => { setKillNonce((n) => n + 1); setKillOpen(true); }} />
             </span>
-            <Link to="/dashboard/alerts" className="hdr-bell" aria-label={unreadBreaches ? `${unreadBreaches} unread alerts` : 'Alerts'} style={sx('position:relative;display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink-3)')}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4a5.2 5.2 0 00-5.2 5.2c0 5-2 6.3-2 6.3h14.4s-2-1.3-2-6.3A5.2 5.2 0 0012 4z" /><path d="M10.2 18.4a2 2 0 003.6 0" /></svg>
-              {unreadBreaches > 0 && <span style={sx('position:absolute;top:6px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--red-solid)')} />}
-            </Link>
+            <NotificationPanel />
             <AvatarMenu />
           </div>
           <GuardBand />

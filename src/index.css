@@ -1186,6 +1186,8 @@
 }
 /* Economic calendar: the content column, not the viewport, is the constraint (924 − 252 − 48 − 2 = 622px). */
 [data-tgx] .ecal-opt:hover{background:var(--surface-2)!important}
+[data-tgx] .ntf-row:hover{filter:brightness(.97)}
+@media (max-width:560px){[data-tgx-notifpanel]{position:fixed!important;top:64px!important;left:15px!important;right:15px!important;width:auto!important;max-width:none!important}}
 @media (max-width:1080px){
   [data-tgx-ecohead]{display:none!important}
   [data-tgx-ecorow]{display:block!important;padding:13px 16px!important}

@@ -30,7 +30,8 @@ export function sessionOf(live, bundle) {
 
 export function fmtMoney(v, currency = 'USD', { sign = false, decimals = 2 } = {}) {
   if (v == null || !Number.isFinite(Number(v))) return '—';
-  const num = Number(v);
+  // Anything that rounds to zero is zero — never a signed "−$0.00".
+  const num = Math.abs(Number(v)) < 0.5 * 10 ** -decimals ? 0 : Number(v);
   const abs = Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   const sym = currency === 'INR' ? '₹' : '$';
   const s = num < 0 ? '−' : sign && num > 0 ? '+' : '';
