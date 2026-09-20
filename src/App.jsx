@@ -39,9 +39,9 @@ import TaxPage from './pages/TaxPage';
 import AccountOverviewPage from './pages/AccountOverviewPage';
 import NotificationsPage from './pages/NotificationsPage';
 import RedirectWithSearch from './pages/RedirectWithSearch';
-import InstallExtensionPage from './pages/InstallExtensionPage';
 import BillingPage from './pages/BillingPage';
-import PairingPage from './pages/PairingPage';
+import ConnectKeyPage from './pages/ConnectKeyPage';
+import PreferencesPage from './pages/PreferencesPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ScrollToTop from './components/common/ScrollToTop';
 import ReferralCapture from './components/common/ReferralCapture';
@@ -119,8 +119,12 @@ function App() {
                   </Route>
                   <Route path="trading-accounts" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
                   <Route path="billing" element={<RedirectWithSearch to="/dashboard/account/billing" />} />
-                  <Route path="install-extension" element={<InstallExtensionPage />} />
-                  <Route path="pairing" element={<PairingPage />} />
+                  <Route path="connect" element={<ConnectKeyPage />} />
+                  <Route path="alerts" element={<NotificationsPage />} />
+                  <Route path="preferences" element={<PreferencesPage />} />
+                  {/* Extension-era routes: the product is server-side only now. */}
+                  <Route path="install-extension" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
+                  <Route path="pairing" element={<RedirectWithSearch to="/dashboard/connect" />} />
                 </Route>
                 <Route path="influencer" element={<ProtectedRoute><InfluencerLayout /></ProtectedRoute>}>
                   <Route index element={<Navigate to="/influencer/overview" replace />} />

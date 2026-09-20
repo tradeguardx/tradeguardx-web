@@ -1242,8 +1242,6 @@ export default function RulesTerminal() {
                           ruleLocked={ruleLocked}
                           lockDays={ruleLock?.days ?? 0}
                           lockReason={ruleLocked ? (ruleLock?.mode === 'day' ? `You've traded today — rules reset ${fmtLockDate(ruleLock?.lockedUntil)}` : `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}`) : null}
-                        lockDays={ruleLock?.days ?? 0}
-                        lockReason={ruleLocked ? (ruleLock?.mode === 'day' ? `You've traded today — rules reset ${fmtLockDate(ruleLock?.lockedUntil)}` : `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}`) : null}
                           key={`${rule.id}-${reloadNonce}`}
                           rule={rule}
                           index={i + availableRules.length}

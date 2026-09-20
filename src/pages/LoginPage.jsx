@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import AppLoader from '../components/common/AppLoader';
 import AuthSplit from '../components/auth/AuthSplit';
+import { landingPath, readPrefs } from '../lib/prefs';
 import { useToast } from '../components/common/ToastProvider';
 
 export default function LoginPage() {
@@ -18,7 +19,8 @@ export default function LoginPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/dashboard';
+  // Sign-in lands on the user's chosen screen unless they were bounced here from somewhere specific.
+  const from = location.state?.from?.pathname || landingPath(readPrefs());
 
   useEffect(() => {
     if (session?.access_token) {
