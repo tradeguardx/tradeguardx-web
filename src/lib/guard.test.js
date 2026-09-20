@@ -41,7 +41,8 @@ describe('gapsOf — first unmet wins, in the brief order', () => {
   it('setup → key → readonly → rules → alerts', () => {
     expect(gapsOf({ account: { ...account, propFirmSlug: null }, connection: null, rules: noRules, notifications: null }).map((g) => g.key))
       .toEqual(['setup', 'key', 'rules', 'alerts']);
-    expect(gapsOf({ account, connection: readOnly, rules, notifications: alerts }).map((g) => g.key)).toEqual(['readonly']);
+    // read-only is the 'watching' state, not a gap
+    expect(gapsOf({ account, connection: readOnly, rules, notifications: alerts })).toEqual([]);
     expect(gapsOf({ account, connection: key, rules, notifications: null }).map((g) => g.key)).toEqual(['alerts']);
     expect(gapsOf({ account, connection: key, rules, notifications: alerts })).toEqual([]);
   });
@@ -54,7 +55,7 @@ describe('gapsOf — first unmet wins, in the brief order', () => {
 describe('describeGuard', () => {
   it('names the count and never over-promises', () => {
     expect(describeGuard('armed', { on: 1, total: 2 }).title).toBe('Armed. 1 of your 2 rules is watching every fill.');
-    expect(describeGuard('watching').title).toMatch(/cannot close/);
-    expect(describeGuard('unprotected', { gap: { title: 'No key with trading scope' } }).title).toBe('Not protected. No key with trading scope.');
+    expect(describeGuard('watching').title).toMatch(/cannot stop it/);
+    expect(describeGuard('unprotected', { gap: { title: 'No key with trading scope' } }).title).toBe('Not protected. No key with trading scope');
   });
 });

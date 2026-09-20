@@ -1,210 +1,472 @@
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useGuard } from '../context/GuardContext';
+import { useToast } from '../components/common/ToastProvider';
 import { useLiveAccount } from '../hooks/useLiveAccount';
 import { sessionOf, fmtMoney, splitDecimal, ruleConfig } from '../lib/session';
 import { computeRule } from '../components/dashboard/RuleStatusCards';
-import OpenPositions from '../components/dashboard/OpenPositions';
-import ManualKillswitchCard from '../components/dashboard/ManualKillswitchCard';
-import RuleLockCard from '../components/dashboard/RuleLockCard';
-import PageHead from '../components/dashboard/shell/PageHead';
-import { ruleGlyph, ruleAccent, IcArrow, IcClock } from '../components/dashboard/shell/icons';
-import { formatRemaining, formatResumes, lockReasonLabel } from '../components/dashboard/shell/format';
+import { fetchJournalTrades } from '../api/tradesApi';
+import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../api/userApi';
+import { setRuleLockDays } from '../api/tradingAccountsApi';
+import { RULE_GLYPH, ruleAccent } from '../components/dashboard/shell/icons';
+import { sx } from '../components/dashboard/shell/sx';
+import { formatRemaining } from '../components/dashboard/shell/format';
 
 /**
- * Live guard — the screen a trader keeps open.
- *
- *   session P&L (62px, split decimals) + summary sentence
- *   limit scale: loss limit ← breakeven → target, enforcement-accurate labels
- *   open positions
- *   live rule list
- *   cooldown panel (rule-triggered) — its own section, outside commitment controls
- *   commitment controls: kill switch + rule lock — switches you throw while calm
- *
- * Before setup completes every threshold reads "No limits yet" rather than
- * an em-dash interpolated into a sentence.
+ * Live guard — transcribed from the reference (lines 686–1009).
+ * Session hero · cooldown (rule-triggered, its own section) · Commitment
+ * controls (manual killswitch + rule lock, inline) · Open positions · Rule panel.
+ * The demo-only "Simulate three losses" / "Clear (demo only)" affordances are
+ * not built: the app runs on real state.
  */
 
-const TONE_MAP = { ok: 'mint', warn: 'amber', danger: 'red', target: 'mint', muted: null };
-const TONE_WORD = { ok: 'Armed', warn: 'Close', danger: 'Triggered', target: 'Target hit', muted: 'Configured' };
+const POLL_MS = 15_000;
+const MONO_LABEL = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)";
+const H3 = "margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em";
+const HOUR_ON = "flex:1;padding:11px;border-radius:11px;font:600 14px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
+const HOUR_OFF = "flex:1;padding:11px;border-radius:11px;font:600 14px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
+const DAY_ON = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
+const DAY_OFF = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
+
+function clockAt(t, tz) {
+  if (!t) return '—';
+  return `${new Date(t).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz })} IST`;
+}
+function dayAt(t, tz) {
+  if (!t) return '';
+  const d = new Date(t).toLocaleDateString('en-IN', { timeZone: tz });
+  const n = new Date().toLocaleDateString('en-IN', { timeZone: tz });
+  return d === n ? 'today' : 'tomorrow';
+}
+function pick(o, ...keys) { for (const k of keys) if (o && o[k] != null) return o[k]; return null; }
 
 export default function LiveGuardPage() {
   const { session } = useAuth();
   const { selectedAccount, selectedTradingAccountId, accountsLoading } = useTradingAccounts();
-  const g = useGuard().selected;
+  const { selected: g, refresh, now } = useGuard();
+  const toast = useToast();
+  const navigate = useNavigate();
   const accessToken = session?.access_token;
+  const tz = selectedAccount?.timezone || 'Asia/Kolkata';
   const live = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount });
   const s = useMemo(() => sessionOf(live, g.rules), [live, g.rules]);
   const cur = s.currency;
-  const tz = selectedAccount?.timezone || 'Asia/Kolkata';
+  const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });
+
+  // ── positions ───────────────────────────────────────────────────────
+  const [positions, setPositions] = useState(null);
+  const loadPositions = useCallback(async (signal) => {
+    if (!accessToken || !selectedTradingAccountId) return;
+    try {
+      const t = await fetchJournalTrades({ accessToken, tradingAccountId: selectedTradingAccountId, limit: 50, signal });
+      const open = (Array.isArray(t) ? t : []).filter((x) => String(pick(x, 'status') || '').toUpperCase() === 'OPEN');
+      setPositions(open);
+    } catch { /* keep last */ }
+  }, [accessToken, selectedTradingAccountId]);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    loadPositions(ctrl.signal);
+    const id = setInterval(() => loadPositions(ctrl.signal), POLL_MS);
+    return () => { ctrl.abort(); clearInterval(id); };
+  }, [loadPositions]);
+  const posOpen = (positions?.length ?? 0) > 0;
+
+  // ── kill switch (inline) ────────────────────────────────────────────
+  const [hours, setHours] = useState(3);
+  const [stage, setStage] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const armed = g.guard === 'locked';
+  const noEnforce = !armed && g.enforcement !== 'armed';
+  const ksGap = g.gap && g.gap.key !== 'alerts' ? g.gap : null;
+  const armable = !armed && !noEnforce && !blocked && !posOpen;
+  const arm = async () => {
+    setBusy(true);
+    try {
+      await armLockout({ accessToken, tradingAccountId: selectedTradingAccountId, hours });
+      await refresh();
+      toast.success(`Locked out for ${hours} hours`, 'Orders placed anywhere in the meantime get closed on sight.');
+      setStage(0);
+    } catch (err) {
+      const code = err?.details?.error?.code;
+      if (code === 'POSITION_OPEN') { setBlocked(true); setStage(0); }
+      else toast.error('Could not start the lockout', err?.details?.error?.message || err?.message || 'Please try again.');
+    } finally { setBusy(false); }
+  };
+  const noEnforceBody = g.readOnly ? 'The key on this account is read-only, so we could not close anything the lockout was meant to stop.' : ksGap ? ksGap.body : '';
+  const noEnforceCta = g.readOnly ? 'Replace the key' : ksGap ? ksGap.cta : 'Finish setup';
+  const noEnforceTo = g.readOnly ? '/dashboard/connect' : ksGap ? ksGap.to : '/dashboard/account/trading';
+  const armedBody = g.readOnly
+    ? 'Clears on its own, then the account trades again. Rule and key changes are blocked so you cannot undo it — but the key here is read-only, so we cannot close anything you open in the meantime. This one holds because you decided it does.'
+    : 'Clears on its own, then the account trades again. Support can lift it early if something real happens — you cannot.';
+  const manual = g.lockReason === 'manual';
+  // TODO(api): the lockout carries no armed-at; elapsed is estimated from the longest window.
+  const lockPct = g.lockUntil ? `${Math.max(0, Math.min(100, (1 - g.lockRemainingMs / (12 * 3600_000)) * 100)).toFixed(1)}%` : '0%';
+
+  // ── cooldown (rule-triggered) ───────────────────────────────────────
+  const cdRule = ruleConfig(g.rules, 'close-after-losses');
+  const cdActive = g.guard === 'locked' && g.lockReason === 'consecutive_losses' && !!cdRule;
+  const cdHours = Number(cdRule?.cooldownHours) || 3;
+  const cdPct = cdActive ? `${Math.max(0, Math.min(100, (1 - g.lockRemainingMs / (cdHours * 3600_000)) * 100)).toFixed(1)}%` : '0%';
+
+  // ── rule lock ───────────────────────────────────────────────────────
+  const rl = g.rules?.ruleLock ?? null;
+  const [pick_, setPick] = useState(null);
+  const rlPick = pick_ ?? rl?.days ?? 7;
+  const rlLocked = Boolean(rl?.locked);
+  const [rlBusy, setRlBusy] = useState(false);
+  const applyLock = async () => {
+    setRlBusy(true);
+    try {
+      await setRuleLockDays({ accessToken, accountId: selectedTradingAccountId, days: rlPick });
+      await refresh();
+      toast.success(rlPick === 0 ? 'Rule lock off' : `Rule lock set to ${rlPick} days`, rlPick === 0 ? 'Rules are editable until your first trade each day.' : 'From your next save, every rule locks for that long.');
+    } catch (e) { toast.error('Could not change the lock', e?.message || 'Try again.'); }
+    finally { setRlBusy(false); }
+  };
+
+  // ── session ─────────────────────────────────────────────────────────
+  const pnlSign = s.pnl == null ? 0 : Math.sign(s.pnl);
+  const fg = pnlSign < 0 ? 'var(--red)' : pnlSign > 0 ? 'var(--mint)' : 'var(--ink)';
+  const glow = pnlSign < 0 ? 'var(--red-tint)' : pnlSign > 0 ? 'var(--mint-tint)' : 'transparent';
+  const pnlStr = fmtMoney(s.pnl ?? 0, cur, { sign: true });
+  const [pnlMain, pnlDec] = splitDecimal(pnlStr);
+  const usedPct = s.budgetPct ?? 0;
+  const towardTarget = s.target && s.pnl > 0 ? Math.min(100, (s.pnl / s.target) * 100) : 0;
+  const hasLimits = g.setupDone && !!(s.lossLimit || s.target);
+  const budgetLeft = s.lossLimit ? fmt0(Math.max(0, s.lossLimit - s.budgetUsed)) : '—';
+  const lossLimit = s.lossLimit ? fmt0(-s.lossLimit) : '—';
+  const target = s.target ? fmt0(s.target) : '—';
+  const summary = !hasLimits
+    ? 'No trades yet, and no limits to show. Your loss limit and daily target appear here once setup is finished.'
+    : g.readOnly
+      ? `You are ${Math.round(usedPct)}% into today's loss budget. The key on this account is read-only, so at 100% we alert you and log it — we cannot close anything. Replace the key to make these limits enforceable.`
+      : pnlSign < 0
+        ? `You are ${Math.round(usedPct)}% into today's loss budget. At 100% the guard closes everything and locks the day.`
+        : pnlSign === 0
+          ? `Flat so far. The guard closes the day at ${lossLimit} down, or locks it in at ${target} up.`
+          : `Banked so far today. The day locks itself at ${target} so the gain survives the afternoon.`;
+  const pips = [0, 1, 2, 3].map((i) => {
+    const on = usedPct > i * 25;
+    const c = usedPct > 70 ? 'var(--red-solid)' : 'var(--amber-solid)';
+    return { bg: on ? c : 'var(--surface-3)', glow: on ? `0 0 12px -2px ${c}` : 'none' };
+  });
+  const fillLeft = pnlSign < 0 ? `${50 - usedPct / 2}%` : '50%';
+  const fillWidth = pnlSign < 0 ? `${usedPct / 2}%` : `${towardTarget / 2}%`;
+  const fillBg = pnlSign < 0 ? 'var(--red-solid)' : 'var(--mint-solid)';
+  const markerLeft = pnlSign < 0 ? `${50 - usedPct / 2}%` : `${50 + towardTarget / 2}%`;
+  // TODO(api): no intraday equity series; the sparkline is a flat breakeven line until one exists.
+  const spark = 'M0 48 L320 48';
+
+  // ── live rules ──────────────────────────────────────────────────────
+  const templates = new Map((g.rules?.templates ?? []).map((t) => [t.slug, t]));
+  const onRules = (g.rules?.instances ?? []).filter((r) => r.enabled !== false);
+  const liveRules = onRules.map((r) => {
+    const t = templates.get(r.templateSlug);
+    const gl = RULE_GLYPH[r.templateSlug] ?? ['M12 3l7 3v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6l7-3z', ''];
+    const acc = ruleAccent(r.templateSlug);
+    let st;
+    if (g.guard === 'unprotected') st = { label: 'Not enforcing', bg: 'var(--surface-3)', fg: 'var(--ink-3)', live: 'Nothing is watching this rule yet', bar: '0%' };
+    else if (g.guard === 'watching') st = { label: 'Alert only', bg: 'var(--amber-tint)', fg: 'var(--amber)', live: 'Evaluated, but the key cannot act', bar: '0%' };
+    else {
+      const c = live ? computeRule(r.templateSlug, r.config, live, live.accountSize, fmt0) : null;
+      const label = c?.tone === 'danger' ? 'Triggered' : c?.tone === 'warn' ? 'Close' : c?.tone === 'target' ? 'Target hit' : 'Armed';
+      const bar = c?.bar ? `${Math.max(2, c.bar.pct)}%` : c?.pips ? `${Math.max(2, (c.pips.filled / c.pips.total) * 100)}%` : '2%';
+      const tone = label === 'Triggered' ? { bg: 'var(--red-tint)', fg: 'var(--red)' } : label === 'Close' ? { bg: 'var(--amber-tint)', fg: 'var(--amber)' } : { bg: 'var(--mint-tint)', fg: 'var(--mint)' };
+      st = { label, live: c?.status || c?.trigger || t?.description || '', bar, ...tone };
+    }
+    return { slug: r.templateSlug, name: t?.name ?? r.templateSlug, d1: gl[0], d2: gl[1], accent: acc.color, tint: acc.tint, ...st };
+  });
 
   if (!accountsLoading && !selectedAccount) {
     return (
-      <>
-        <PageHead title="Live guard" sub="Nothing to watch yet." />
-        <div className="dsh-card" style={{ padding: 22 }}>
-          <p className="dsh-body">Add a trading account and this page becomes the live view of your session.</p>
-          <Link to="/dashboard/account/trading" className="dsh-btn dsh-btn--primary" style={{ marginTop: 14 }}>Add an account</Link>
+      <div>
+        <div style={sx('margin-bottom:18px')}>
+          <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Live guard</h1>
+          <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>The screen to keep open while you trade. Everything here updates as fills land.</p>
         </div>
-      </>
+        <section style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);padding:21px')}>
+          <p style={sx('margin:0 0 14px;font-size:13.5px;line-height:1.55;color:var(--ink-2)')}>Add a trading account and this page becomes the live view of your session.</p>
+          <button type="button" onClick={() => navigate('/dashboard/account/trading')} style={sx('padding:10px 14px;border:1px solid var(--ink);border-radius:9px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700')}>Add an account</button>
+        </section>
+      </div>
     );
   }
 
-  const enforcing = g.enforcement === 'armed';
-  const armedRules = (g.rules?.instances ?? g.rules?.rules ?? []).filter((r) => r.enabled !== false);
-  const templates = new Map((g.rules?.templates ?? []).map((t) => [t.slug, t]));
-  const fmt = (v) => fmtMoney(v, cur, { decimals: 0 });
-
-  // ── P&L hero ────────────────────────────────────────────────────────
-  const pnlStr = s.pnl == null ? null : fmtMoney(s.pnl, cur, { sign: true });
-  const [pnlInt, pnlDec] = pnlStr ? splitDecimal(pnlStr) : ['—', null];
-  const pnlTone = s.pnl == null ? '' : s.pnl < 0 ? 'red' : s.pnl > 0 ? 'mint' : '';
-
-  let summary;
-  if (!g.setupDone) summary = 'No limits yet — every threshold is a percentage of your balance, and setup is not finished.';
-  else if (s.pnl == null) summary = 'No fills yet today. Limits are armed and waiting.';
-  else if (s.lossLimit && s.budgetPct >= 100) summary = enforcing ? 'Loss limit hit. The day is closed and locked.' : 'Loss limit hit. We alerted you — this key cannot close anything.';
-  else if (s.lossLimit) summary = `${fmtMoney(s.lossLimit - s.budgetUsed, cur)} of today's loss budget left${s.target ? `, ${fmtMoney(Math.max(0, s.target - Math.max(0, s.pnl)), cur)} to target` : ''}.`;
-  else summary = 'No daily loss rule is on. Nothing bounds today.';
-
-  // Limit scale: 0% = loss limit, 50% = breakeven, 100% = target.
-  let marker = 50;
-  if (s.pnl != null) {
-    if (s.pnl < 0 && s.lossLimit) marker = Math.max(0, 50 - (Math.min(-s.pnl, s.lossLimit) / s.lossLimit) * 50);
-    else if (s.pnl > 0 && s.target) marker = Math.min(100, 50 + (Math.min(s.pnl, s.target) / s.target) * 50);
-  }
-
-  // ── Cooldown (rule-triggered) ───────────────────────────────────────
-  const manualLock = g.guard === 'locked' && g.lockReason === 'manual';
-  const cooldownRule = ruleConfig(g.rules, 'close-after-losses');
-  const showCooldown = g.guard === 'locked' && g.lockReason === 'consecutive_losses' && cooldownRule && !manualLock;
-
   return (
-    <div className="dlg">
-      <PageHead
-        title="Live guard"
-        sub={`${selectedAccount?.name ?? ''} · ${g.describe.title}`}
-        right={<Link to="/dashboard/rules" className="dsh-btn">Edit rules</Link>}
-      />
+    <div>
+      <div style={sx('margin-bottom:18px')}>
+        <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Live guard</h1>
+        <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>The screen to keep open while you trade. Everything here updates as fills land.</p>
+      </div>
 
-      {/* ── Session ────────────────────────────────────────────────── */}
-      <section className="dsh-card">
-        <div className="dlg-session__top">
-          <div>
-            <div className="dsh-mono">Session P&amp;L</div>
-            <div className={`dsh-hero-figure dlg-pnl${pnlTone ? ` dlg-pnl--${pnlTone}` : ''}`}>
-              {pnlInt}{pnlDec != null && <span className="dec">.{pnlDec}</span>}
+      {/* ── Session ─────────────────────────────────────────────────── */}
+      <section style={sx('position:relative;margin-bottom:18px;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:var(--shadow-lift);overflow:hidden')}>
+        <div style={sx('position:absolute;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:38px 38px;mask-image:radial-gradient(90% 120% at 20% 0%,#000,transparent 70%);-webkit-mask-image:radial-gradient(90% 120% at 20% 0%,#000,transparent 70%);pointer-events:none')} />
+        <div style={sx('position:relative;padding:26px 28px 30px')}>
+          <div style={sx('display:flex;align-items:flex-start;justify-content:space-between;gap:26px;flex-wrap:wrap')}>
+            <div style={sx('min-width:280px')}>
+              <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>Today · session P&amp;L</div>
+              <div style={sx("margin-top:12px;font:700 62px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.05em", { color: fg, textShadow: `0 0 48px ${glow}` })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
+              <div style={sx('margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink-2);max-width:52ch;text-wrap:pretty')}>{summary}</div>
             </div>
-            <p className="dsh-body dlg-summary">{summary}</p>
-          </div>
-          <span className={`dsh-pill dsh-pill--${g.describe.tone}`}><span className={`dot${g.guard === 'armed' ? ' dot--pulse' : ''}`} />{g.describe.pill}</span>
-        </div>
-
-        {g.setupDone && (s.lossLimit || s.target) ? (
-          <div className="dlg-scale">
-            <div className="dlg-scale__track" aria-hidden>
-              <span className="dlg-scale__zero" />
-              <span className="dlg-scale__marker" style={{ left: `${marker}%` }} />
-            </div>
-            <div className="dlg-scale__labels">
-              <span className="dlg-scale__l">
-                <strong className="tnum">{s.lossLimit ? fmt(-s.lossLimit) : '—'}</strong>
-                <span className="dsh-meta">{s.lossLimit ? g.copy.lossLimit : 'no loss limit'}</span>
-              </span>
-              <span className="dlg-scale__c dsh-meta">breakeven</span>
-              <span className="dlg-scale__r">
-                <strong className="tnum">{s.target ? fmt(s.target) : '—'}</strong>
-                <span className="dsh-meta">{s.target ? 'target — day locks in profit' : 'no target'}</span>
-              </span>
+            <div style={sx('flex:1;min-width:260px;max-width:420px')}>
+              <svg viewBox="0 0 320 96" preserveAspectRatio="none" style={sx('width:100%;height:96px;display:block')}>
+                <path d={spark} fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 7px ${glow})` }} />
+              </svg>
+              <div style={sx("display:flex;justify-content:space-between;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--ink-faint);margin-top:6px")}>
+                <span>09:15</span><span>{pnlSign === 0 ? 'no trades today' : 'equity · 5 min'}</span><span>now</span>
+              </div>
             </div>
           </div>
-        ) : (
-          <p className="dsh-meta dlg-nolimits">
-            {g.setupDone ? 'No loss limit or target is on. ' : 'No limits yet — every threshold is a percentage of your balance. '}
-            <Link to={g.setupDone ? '/dashboard/rules' : '/dashboard/account/trading'} style={{ color: 'var(--mint)', fontWeight: 700 }}>{g.setupDone ? 'Switch one on' : 'Finish setup'}</Link>
-          </p>
-        )}
-      </section>
 
-      {/* ── Positions ──────────────────────────────────────────────── */}
-      <section className="dsh-card">
-        <div className="dsh-card__head"><h3 className="dsh-h2">Open positions</h3></div>
-        <div className="dsh-card__body"><OpenPositions accessToken={accessToken} tradingAccountId={selectedTradingAccountId} /></div>
-      </section>
-
-      {/* ── Live rules ─────────────────────────────────────────────── */}
-      <section className="dsh-card">
-        <div className="dsh-card__head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-          <h3 className="dsh-h2">Rules watching this account</h3>
-          <span className="dsh-meta tnum">{g.rulesOn} of {g.rulesTotal} on</span>
-        </div>
-        <div className="dsh-card__body">
-        {armedRules.length === 0 ? (
-          <p className="dsh-body">No rules are on. Off rules do nothing at all — no alerts, no closing. <Link to="/dashboard/rules" style={{ color: 'var(--mint)', fontWeight: 700 }}>Choose rules</Link></p>
-        ) : (
-          <ul className="dlg-rules">
-            {armedRules.map((r) => {
-              const t = templates.get(r.templateSlug);
-              const c = live ? computeRule(r.templateSlug, r.config, live, live.accountSize, fmt) : null;
-              const Glyph = ruleGlyph(r.templateSlug);
-              const tone = c ? TONE_MAP[c.tone] : null;
-              const chipTone = !enforcing && tone === 'mint' ? 'amber' : tone;
-              const chipWord = !enforcing && c?.tone === 'ok' ? (g.enforcement === 'watching' ? 'Alert only' : 'Not enforcing') : c ? TONE_WORD[c.tone] : 'Configured';
-              return (
-                <li key={r.templateSlug} className="dlg-rule">
-                  <span className="dlg-rule__glyph" style={{ color: ruleAccent(r.templateSlug).color, background: ruleAccent(r.templateSlug).tint }}><Glyph size={16} /></span>
-                  <div className="dlg-rule__text">
-                    <p className="dlg-rule__name">{t?.name ?? r.templateSlug}</p>
-                    <p className="dsh-meta">{c?.trigger ?? t?.description}</p>
-                    {c?.status && <p className="dsh-meta dlg-rule__status">{c.status}</p>}
-                    {c?.bar && <div className="dsh-progress" style={{ marginTop: 8 }} aria-hidden><span style={{ width: `${c.bar.pct}%` }} className={tone === 'amber' ? 'is-amber' : tone === 'red' ? 'is-red' : ''} /></div>}
-                  </div>
-                  <span className={`dsh-chip${chipTone ? ` dsh-chip--${chipTone}` : ''}`}>{chipWord}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        </div>
-      </section>
-
-      {/* ── Cooldown — rule-triggered, its own section ─────────────── */}
-      {showCooldown && (
-        <section className="dsh-card dlg-cool">
-          <div className="dsh-card__body">
-          <div className="dlg-cool__head">
-            <span className="dlg-cool__icon"><IcClock size={18} /></span>
+          <div style={sx('display:flex;gap:30px;flex-wrap:wrap;margin-top:26px;padding-top:22px;border-top:1px solid var(--line)')}>
             <div>
-              <h3 className="dsh-h2">Cooldown running — a rule stopped you, not you</h3>
-              <p className="dsh-meta">Fired by <strong>{lockReasonLabel(g.lockReason)}</strong> · New orders allowed from {formatResumes(g.lockUntil, tz)}</p>
+              <div style={sx(MONO_LABEL)}>Loss budget left</div>
+              <div style={sx("margin-top:8px;font:600 22px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.025em")}>{budgetLeft}</div>
             </div>
-            <span className="dsh-countdown dlg-cool__count">{formatRemaining(g.lockRemainingMs)}</span>
+            <div>
+              <div style={sx(MONO_LABEL)}>Trades</div>
+              <div style={sx("margin-top:8px;font:600 22px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.025em")}>{live?.tradeCountToday ?? 0}{(() => { const cap = Number(ruleConfig(g.rules, 'max-trades-day')?.maxTrades); return cap > 0 ? ` / ${cap}` : ''; })()}</div>
+            </div>
+            <div>
+              <div style={sx(MONO_LABEL)}>Budget used</div>
+              <div style={sx('display:flex;gap:5px;margin-top:12px')}>
+                {pips.map((p, i) => <span key={i} style={sx('width:26px;height:8px;border-radius:3px', { background: p.bg, boxShadow: p.glow })} />)}
+              </div>
+            </div>
           </div>
-          <p className="dsh-body" style={{ marginTop: 12 }}>
-            Existing positions are untouched — you can still manage or close what is open. Only new entries are blocked, because the third loss in a row is where revenge trading starts. The clock runs down on its own; there is nothing to cancel.
-          </p>
+
+          {!hasLimits ? (
+            <div style={sx('display:flex;align-items:center;gap:11px;margin-top:24px;padding:14px 16px;border:1px dashed var(--line-strong);border-radius:13px;background:var(--surface-2)')}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="1.8" strokeLinecap="round" style={{ flex: 'none' }}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
+              <span style={sx('flex:1;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>No limits yet. Every threshold is a percentage of your account balance, so the loss and target scale appears once setup is finished.</span>
+              <button type="button" onClick={() => navigate(g.setupDone ? '/dashboard/rules' : '/dashboard/account/trading')} style={sx('flex:none;padding:8px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700')}>{g.setupDone ? 'Choose rules' : 'Finish setup'}</button>
+            </div>
+          ) : (
+            <div style={sx('margin-top:28px')}>
+              <div style={sx('position:relative;height:14px;border-radius:999px;background:var(--surface-3);box-shadow:inset 0 1px 3px rgba(0,0,0,.4);overflow:hidden')}>
+                <div style={sx('position:absolute;top:0;bottom:0;left:0;width:50%;background:var(--red-tint)')} />
+                <div style={sx('position:absolute;top:0;bottom:0;right:0;width:50%;background:var(--mint-tint)')} />
+                <div style={sx('position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--line-strong)')} />
+                <div style={sx('position:absolute;top:0;bottom:0;border-radius:999px', { background: fillBg, left: fillLeft, width: fillWidth, boxShadow: `0 0 18px -2px ${fillBg}` })} />
+              </div>
+              <div style={sx('position:relative;height:20px')}>
+                <div style={sx('position:absolute;top:-7px;transform:translateX(-50%);width:3px;height:22px;border-radius:2px', { left: markerLeft, background: fg, boxShadow: `0 0 0 3px var(--surface),0 0 16px ${glow}` })} />
+              </div>
+              <div style={sx('display:flex;justify-content:space-between;gap:14px;font-size:11.5px;color:var(--ink-3)')}>
+                <span><strong style={sx('color:var(--red);font-weight:700;font-variant-numeric:tabular-nums')}>{lossLimit}</strong> {g.readOnly ? 'loss limit — we alert you, we cannot close' : 'loss limit — guard closes everything'}</span>
+                <span style={sx("font:500 10px/1.6 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)")}>breakeven</span>
+                <span style={sx('text-align:right')}><strong style={sx('color:var(--mint);font-weight:700;font-variant-numeric:tabular-nums')}>{target}</strong> {g.readOnly ? 'target — we alert you, nothing locks' : 'target — day locks, gains kept'}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Cooldown — rule-triggered ─────────────────────────────────── */}
+      {cdActive && (
+        <section style={sx('margin-bottom:18px;padding:18px 20px;border:1px solid var(--amber-line);border-radius:16px;background:var(--amber-tint);box-shadow:var(--shadow-card)')}>
+          <div style={sx('display:flex;align-items:center;gap:8px')}>
+            <span style={sx('width:7px;height:7px;border-radius:50%;background:var(--amber-solid);animation:tgxPulse 2s ease-in-out infinite')} />
+            <span style={sx('font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:700')}>Cooldown running — a rule stopped you, not you</span>
           </div>
+          <div style={sx('display:flex;align-items:baseline;gap:12px;margin-top:11px;flex-wrap:wrap')}>
+            <span style={sx("font:700 38px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.035em;color:var(--ink)")}>{formatRemaining(g.lockRemainingMs)}</span>
+            <span style={sx('font-size:12.5px;color:var(--ink-2)')}>until you can open again</span>
+          </div>
+          <div style={sx('margin-top:13px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}><div style={sx('height:100%;border-radius:999px;background:var(--amber-solid)', { width: cdPct })} /></div>
+          <div style={sx('display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap')}>
+            <span>Triggered by your Close-after-N-losses rule</span>
+            <span style={sx('text-align:right;white-space:nowrap')}>New orders allowed from <strong style={sx('color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums')}>{clockAt(g.lockUntil, tz)}</strong></span>
+          </div>
+          <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--amber-line);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:92ch')}>Existing positions are untouched — you can still manage or close what is open. Only new entries are blocked, because the third loss in a row is where revenge trading starts. The clock runs down on its own; there is nothing to cancel.</p>
         </section>
       )}
 
-      {/* ── Commitment controls ────────────────────────────────────── */}
-      <section className="dlg-commit">
-        <div className="dlg-commit__head">
-          <h3 className="dsh-h2">Commitment controls</h3>
-          <p className="dsh-meta">Switches you throw while calm. Neither has an undo.</p>
+      {/* ── Commitment controls ───────────────────────────────────────── */}
+      <section style={sx('margin-bottom:18px;border:1px solid var(--line-strong);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+        <div style={sx('padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px;flex-wrap:wrap')}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round"><path d="M12 3v7" /><path d="M6.4 6.8a8 8 0 1011.2 0" /></svg>
+          <h3 style={sx("margin:0;font:600 16px/1.2 'Space Grotesk',sans-serif")}>Commitment controls</h3>
+          <span style={sx('font-size:11.5px;color:var(--ink-3)')}>Separate from your rules. Both are switches you throw while calm, and neither has an undo.</span>
         </div>
-        <div className="dsh-grid-2">
-          <ManualKillswitchCard />
-          <RuleLockCard />
+        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))')}>
+
+          <div style={sx('padding:19px 20px;border-right:1px solid var(--line)')}>
+            <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:5px')}>
+              <span style={sx('width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--red-tint);color:var(--red)')}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
+              </span>
+              <h4 style={sx("margin:0;font:600 14.5px/1.2 'Space Grotesk',sans-serif")}>Manual killswitch</h4>
+            </div>
+            {!armed && (
+              <p style={sx('margin:0 0 13px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>Lock yourself out of this account for a window you choose. <strong style={sx('color:var(--ink);font-weight:700')}>You can&rsquo;t call it off yourself</strong> — there is no off button, only the clock. Support can lift it if something real happens.</p>
+            )}
+
+            {noEnforce && (
+              <div style={sx('padding:13px 14px;border:1px solid var(--amber-line);border-radius:11px;background:var(--amber-tint)')}>
+                <div style={sx('font-size:12.5px;font-weight:700;color:var(--amber)')}>Nothing could enforce a lockout yet</div>
+                <p style={sx('margin:5px 0 10px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{noEnforceBody} A lockout you can walk around is not a commitment, so we would rather not offer it here.</p>
+                <button type="button" onClick={() => navigate(noEnforceTo)} style={sx('padding:7px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700')}>{noEnforceCta}</button>
+              </div>
+            )}
+
+            {!armed && !noEnforce && (blocked || posOpen) && (
+              <div style={sx('padding:13px 14px;border:1px solid var(--amber-line);border-radius:11px;background:var(--amber-tint)')}>
+                <div style={sx('font-size:12.5px;font-weight:700;color:var(--amber)')}>Can&rsquo;t arm while a position is open</div>
+                <p style={sx('margin:5px 0 10px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>Locking you out now would leave you holding {positions?.length === 1 ? 'a position' : `${positions?.length ?? ''} positions`} you could neither manage nor close through us. Flatten first, then arm.</p>
+                <a href="#positions" style={sx('display:inline-block;padding:7px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none')}>View open positions</a>
+              </div>
+            )}
+
+            {armable && (
+              <div>
+                <div style={sx('font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:8px')}>Lock duration</div>
+                <div style={sx('display:flex;gap:8px;margin-bottom:13px')} role="radiogroup" aria-label="Lock duration">
+                  {LOCKOUT_HOUR_OPTIONS.map((h) => <button key={h} type="button" role="radio" aria-checked={hours === h} onClick={() => setHours(h)} style={sx(hours === h ? HOUR_ON : HOUR_OFF)}>{h}h</button>)}
+                </div>
+                {stage === 0 && <button type="button" className="ks-arm" onClick={() => setStage(1)} style={sx('width:100%;padding:11px;border:1px solid var(--red-line);border-radius:10px;background:var(--red-tint);color:var(--red);font-size:13px;font-weight:700')}>Arm the lockout</button>}
+                {stage === 1 && (
+                  <div style={sx('padding:13px 14px;border:1px solid var(--red-line);border-radius:11px;background:var(--red-tint)')}>
+                    <div style={sx('font-size:12.5px;font-weight:700;color:var(--red)')}>Read this before you confirm</div>
+                    <p style={sx('margin:5px 0 11px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>You will not be able to trade this account for {hours} hours. There is no cancel. Orders placed anywhere in the meantime get closed on sight.</p>
+                    <div style={sx('display:flex;gap:8px')}>
+                      <button type="button" disabled={busy} onClick={arm} style={sx('flex:1;padding:10px;border:1px solid var(--red-solid);border-radius:9px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${hours} hours`}</button>
+                      <button type="button" disabled={busy} onClick={() => setStage(0)} style={sx('padding:10px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Back</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {armed && (
+              <div style={sx('padding:16px 17px;border:1px solid var(--red-line);border-radius:12px;background:var(--red-tint)')}>
+                <div style={sx('display:flex;align-items:center;gap:8px')}>
+                  <span style={sx('width:7px;height:7px;border-radius:50%;background:var(--red-solid);animation:tgxPulse 2s ease-in-out infinite')} />
+                  <span style={sx('font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--red);font-weight:700')}>{manual ? 'Manual lockout — armed by you' : 'Lockout — armed by a rule'}</span>
+                </div>
+                <div style={sx('display:flex;align-items:baseline;gap:12px;margin-top:11px;flex-wrap:wrap')}>
+                  <span style={sx("font:700 38px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.035em;color:var(--ink)")}>{formatRemaining(g.lockRemainingMs)}</span>
+                  <span style={sx('font-size:12.5px;color:var(--ink-2)')}>until release</span>
+                </div>
+                <div style={sx('margin-top:13px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}><div style={sx('height:100%;border-radius:999px;background:var(--red-solid)', { width: lockPct })} /></div>
+                <div style={sx('display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap')}>
+                  <span>{manual ? 'Armed by you' : 'Armed by a rule'}</span>
+                  <span style={sx('text-align:right;white-space:nowrap')}>Trading resumes {dayAt(g.lockUntil, tz)} at <strong style={sx('color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums')}>{clockAt(g.lockUntil, tz)}</strong></span>
+                </div>
+                <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--red-line);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{armedBody}</p>
+              </div>
+            )}
+          </div>
+
+          <div style={sx('padding:19px 20px')}>
+            <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:5px')}>
+              <span style={sx('width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--mint-tint);color:var(--mint)')}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M6 11V8.4a6 6 0 1112 0V11" /><path d="M5 11h14v9H5z" /></svg>
+              </span>
+              <h4 style={sx("margin:0;font:600 14.5px/1.2 'Space Grotesk',sans-serif")}>Rule lock</h4>
+            </div>
+            <p style={sx('margin:0 0 13px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>How long your active rules hold before you can edit them. <strong style={sx('color:var(--ink);font-weight:700')}>Tightening is frozen too</strong> — the fiddling is the behaviour we&rsquo;re stopping, not the direction. Defaults to 7 days.</p>
+
+            {rlLocked && (
+              <div style={sx('padding:15px 16px;border:1px solid var(--mint-line);border-radius:11px;background:var(--mint-tint)')}>
+                <div style={sx('font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mint);font-weight:700')}>Rules frozen</div>
+                <div style={sx("margin-top:8px;font:700 26px/1 'Space Grotesk',sans-serif;letter-spacing:-.02em;color:var(--ink)")}>{rl?.lockedUntil ? formatRemaining(new Date(rl.lockedUntil).getTime() - now) : `${rl?.days} days`}</div>
+                <p style={sx('margin:9px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>{rl?.mode === 'day' ? 'Set for today’s session' : `Armed for ${rl?.days} days`}. You can&rsquo;t shorten the window while it runs — that would make 30 days a two-click escape. Releasing early is a conversation with <a href="mailto:support@tradeguardx.com">support</a>.</p>
+              </div>
+            )}
+
+            {!rlLocked && noEnforce && (
+              <div style={sx('padding:13px 14px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2)')}>
+                <div style={sx('font-size:12.5px;font-weight:700')}>No rules to lock yet</div>
+                <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>A freeze window only means something once rules are switched on and something can enforce them. Finish setup and this becomes your commitment.</p>
+              </div>
+            )}
+
+            {!rlLocked && !noEnforce && (
+              <div>
+                <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px")}>Choose your commitment</div>
+                <div style={sx('display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px')} role="radiogroup" aria-label="Rule lock window">
+                  {[0, 3, 7, 30].map((d) => <button key={d} type="button" role="radio" aria-checked={rlPick === d} onClick={() => setPick(d)} style={sx(rlPick === d ? DAY_ON : DAY_OFF)}>{d === 0 ? 'Off' : `${d}d`}</button>)}
+                </div>
+                <div style={sx('display:grid;gap:7px;margin-bottom:13px')}>
+                  {[['Off', 'Editable until your first trade of the day. After that they hold until the daily reset.'], ['3 days', 'Active rules lock for three days.'], ['7 days', 'Active rules lock for a week. This is the default.'], ['30 days', 'Active rules lock for a month.']].map(([k, v]) => (
+                    <div key={k} style={sx('display:flex;gap:9px;font-size:12px;line-height:1.5;color:var(--ink-3)')}><span style={sx('flex:none;width:42px;font-weight:700;color:var(--ink-2)')}>{k}</span><span>{v}</span></div>
+                  ))}
+                </div>
+                <p style={sx('margin:0 0 12px;padding:10px 12px;border-radius:9px;background:var(--surface-2);font-size:12px;color:var(--ink-2);line-height:1.5')}>{rlPick === 0 ? 'Off does not mean always editable. Rules stay editable until your first trade of the day — after that they hold until the next daily reset.' : `Active rules lock for ${rlPick} days. You cannot shorten the window once it is running, and you cannot edit a rule until it expires.`}</p>
+                <button type="button" className="rl-arm" disabled={rlBusy || rlPick === (rl?.days ?? 7)} onClick={applyLock} style={sx('width:100%;padding:11px;border:1px solid var(--mint-line);border-radius:10px;background:var(--mint-tint);color:var(--mint);font-size:13px;font-weight:700')}>{rlBusy ? 'Saving…' : rlPick === 0 ? 'Use the daily setting' : `Lock active rules for ${rlPick} days`}</button>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
-      <p className="dov-plain">
-        We cannot stop you placing an order inside Delta&rsquo;s own app; what we do is close it immediately after it opens, then check you are actually flat — in about 120 milliseconds, from our servers, not your browser.
-        {' '}<Link to="/dashboard/rules" style={{ color: 'var(--mint)', fontWeight: 700 }}>Rules <IcArrow size={11} /></Link>
-      </p>
+      {/* ── Open positions ────────────────────────────────────────────── */}
+      <section id="positions" style={sx('margin-bottom:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+        <div style={sx('padding:15px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px')}>
+          <h3 style={sx(H3)}>Open positions</h3>
+          <span style={sx('font-size:11.5px;color:var(--ink-3)')}>{posOpen ? `${positions.length} open · unrealised counts toward the loss budget` : 'flat'}</span>
+        </div>
+        {posOpen ? (
+          <div>
+            <div style={sx('display:grid;grid-template-columns:1.1fr .7fr .8fr .8fr .9fr .9fr;gap:12px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>
+              <span>Symbol</span><span>Side</span><span>Size</span><span>Entry</span><span>Stop</span><span style={{ textAlign: 'right' }}>Unrealised</span>
+            </div>
+            {positions.map((p) => {
+              const side = String(pick(p, 'side') || '').toUpperCase();
+              const long = side === 'BUY' || side === 'LONG';
+              const stop = pick(p, 'stopLoss', 'stop_loss', 'stopPrice');
+              const upnl = Number(pick(p, 'unrealizedPnl', 'unrealisedPnl', 'pnl'));
+              return (
+                <div key={pick(p, 'tradeUid', 'trade_uid') || p.id} style={sx('display:grid;grid-template-columns:1.1fr .7fr .8fr .8fr .9fr .9fr;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);font-size:13px;align-items:center;font-variant-numeric:tabular-nums')}>
+                  <span style={sx('font-weight:600')}>{pick(p, 'symbol') || '—'}</span>
+                  <span style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: long ? 'var(--mint)' : 'var(--red)' })}>{long ? 'Long' : 'Short'}</span>
+                  <span>{pick(p, 'quantity', 'volume') ?? '—'}</span>
+                  <span>{pick(p, 'entryPrice', 'entry_price') ?? '—'}</span>
+                  <span style={{ color: stop ? 'var(--ink-2)' : 'var(--amber)' }}>{stop ?? 'none set'}</span>
+                  <span style={sx('text-align:right;font-weight:600', { color: Number.isFinite(upnl) ? (upnl < 0 ? 'var(--red)' : 'var(--mint)') : 'var(--ink-3)' })}>{Number.isFinite(upnl) ? fmtMoney(upnl, cur, { sign: true }) : '—'}</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={sx('padding:30px 18px;text-align:center;color:var(--ink-3);font-size:13px')}>{positions === null ? 'Loading…' : 'Flat. Nothing open on this account right now.'}</div>
+        )}
+      </section>
+
+      {/* ── Rule panel ────────────────────────────────────────────────── */}
+      <section style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+        <div style={sx('padding:15px 18px;border-bottom:1px solid var(--line)')}>
+          <h3 style={sx(H3)}>Rule panel</h3>
+          <p style={sx('margin:5px 0 0;font-size:12.5px;color:var(--ink-3)')}>Only the rules you switched on. Each one&rsquo;s live status against this account, recomputed on every fill.</p>
+        </div>
+        {liveRules.length === 0 && (
+          <div style={sx('padding:34px 20px;text-align:center')}>
+            <div style={sx('font-size:13.5px;font-weight:600')}>No rules switched on</div>
+            <p style={sx('margin:6px auto 13px;font-size:12.5px;line-height:1.55;color:var(--ink-3);max-width:44ch')}>Nothing is being enforced on this account. Switch on a rule and its live status appears here.</p>
+            <button type="button" onClick={() => navigate('/dashboard/rules')} style={sx('padding:8px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700')}>Choose rules</button>
+          </div>
+        )}
+        <div style={sx('display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr))')}>
+          {liveRules.map((r) => (
+            <div key={r.slug} style={sx('padding:15px 17px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)')}>
+              <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:10px')}>
+                <span style={sx('width:26px;height:26px;border-radius:8px;display:grid;place-items:center', { background: r.tint, color: r.accent })}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={r.d1} /><path d={r.d2} /></svg>
+                </span>
+                <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:999px', { background: r.bg, color: r.fg })}>{r.label}</span>
+              </div>
+              <div style={sx('font-size:13.5px;font-weight:600')}>{r.name}</div>
+              <div style={sx('margin-top:5px;font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums')}>{r.live}</div>
+              <div style={sx('margin-top:10px;height:4px;border-radius:999px;background:var(--surface-3);overflow:hidden')}><div style={sx('height:100%;border-radius:999px', { background: r.fg, width: r.bar })} /></div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

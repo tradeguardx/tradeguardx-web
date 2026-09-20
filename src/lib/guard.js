@@ -59,12 +59,15 @@ export function hasAlertChannel(settings) {
  * route the CTA navigates to. Returns [] when nothing is missing.
  */
 export function gapsOf({ account, connection, rules, notifications }) {
+  // Copy verbatim from the reference's gapOf(). Read-only is not a gap here —
+  // it is the 'watching' state, with its own band copy (see describeGuard).
   const gaps = [];
   if (!setupCompleteOf(account)) {
     gaps.push({
       key: 'setup',
-      title: 'Finish setting up this account',
-      body: 'Pick the venue and tell us the balance to size limits against.',
+      short: 'account unfinished',
+      title: 'This account is not set up yet',
+      body: 'Pick the venue and tell us the balance to size limits against — every limit is a percentage of it, so nothing can be computed until it is set.',
       cta: 'Finish setup',
       to: '/dashboard/account/trading',
     });
@@ -73,25 +76,19 @@ export function gapsOf({ account, connection, rules, notifications }) {
   if (!hasKey) {
     gaps.push({
       key: 'key',
+      short: 'no trading key',
       title: 'No key with trading scope',
-      body: 'Without a trading-scope key, nothing can close a position for you.',
+      body: 'Connect a key with trading scope and the engine can cancel orders and close positions for you. Until then nothing acts on your rules.',
       cta: 'Connect the key',
-      to: '/dashboard/connect',
-    });
-  } else if (connection.enforcementCapable === false) {
-    gaps.push({
-      key: 'readonly',
-      title: 'The key is read-only',
-      body: 'We can see every fill, but the key cannot close anything.',
-      cta: 'Replace the key',
       to: '/dashboard/connect',
     });
   }
   if (enabledRuleCount(rules) === 0) {
     gaps.push({
       key: 'rules',
+      short: 'no rules on',
       title: 'No rules are switched on',
-      body: 'Every rule is off until you turn it on. Off rules do nothing at all.',
+      body: 'Your key is connected and verified — there is simply nothing for the engine to enforce. Switch on a rule and the guard arms itself.',
       cta: 'Choose rules',
       to: '/dashboard/rules',
     });
@@ -99,9 +96,10 @@ export function gapsOf({ account, connection, rules, notifications }) {
   if (!hasAlertChannel(notifications)) {
     gaps.push({
       key: 'alerts',
-      title: 'A breach would be silent',
-      body: 'Add a channel so you hear about it the moment a rule fires.',
-      cta: 'Add a channel',
+      short: 'no alert channel',
+      title: 'No alert channel connected',
+      body: 'The guard would act without telling you. Connect Telegram or email so a breach is never silent.',
+      cta: 'Set up alerts',
       to: '/dashboard/alerts',
     });
   }
@@ -120,28 +118,53 @@ export function guardOf(input, now = Date.now()) {
   return lockUntilOf(input.account, now) ? GUARD.LOCKED : enforcementOf(input);
 }
 
-/** Pill word + tone + band title, per the brief. */
-export function describeGuard(guard, { on = 0, total = 0, gap = null } = {}) {
+/**
+ * Pill, band and hero copy per guard state — transcribed from the reference's
+ * guardFor(). `label` is the account-row word (stateOf), `pill` the header word.
+ */
+export function describeGuard(guard, { on = 0, total = 0, gap = null, label = '', readOnly = false } = {}) {
   switch (guard) {
+    case GUARD.LOCKED:
+      return {
+        pill: 'Locked', label: 'Locked', tone: 'red', pillNote: 'no trading on this account',
+        title: 'Locked. You asked us to keep you out.',
+        sub: 'You armed the manual killswitch yourself. It clears on its own when the clock runs out — there is no button here that ends it early.',
+        showBand: true,
+        bandTitle: 'This account cannot trade until the lockout expires',
+        bandBody: readOnly
+          ? 'Rule edits and key changes are blocked while the lock runs, so you cannot undo it. But the key on this account is read-only — we cannot close anything you open in the meantime. Treat this as a promise to yourself, not a barrier.'
+          : 'Anything opened while the lock runs is force-closed on sight. Rule edits and key changes are blocked too, so the lock cannot be worked around.',
+        cta: 'See the countdown', to: '/dashboard/live', action: 'See countdown',
+      };
     case GUARD.ARMED:
       return {
-        pill: 'ARMED',
-        tone: 'mint',
-        title: `Armed. ${on} of your ${total} rules ${on === 1 ? 'is' : 'are'} watching every fill.`,
+        pill: 'Armed', label: 'Armed', tone: 'mint', pillNote: `${on} rules enforcing`,
+        title: on === 1 ? `Armed. 1 of your ${total} rules is watching every fill.` : `Armed. ${on} of your ${total} rules are watching every fill.`,
+        sub: `A trading-scope key is connected and the engine holds a live socket to ${label}. Break a rule and we cancel your orders, close your positions, then verify you are flat before we stop.`,
+        showBand: false, bandTitle: '', bandBody: '', cta: '', to: '/dashboard/live', action: 'Manage',
       };
     case GUARD.WATCHING:
       return {
-        pill: 'ALERT ONLY',
-        tone: 'amber',
-        title: 'Watching, not enforcing. The key cannot close anything.',
+        pill: 'Watching only', label: 'Watching only', tone: 'amber', pillNote: 'cannot close positions',
+        title: 'Watching only. We can see a breach — we cannot stop it.',
+        sub: 'The key on this account is read-only. Your rules are evaluated and you will get alerts, but the engine has no permission to cancel an order or close a position. Nothing is being enforced.',
+        showBand: true,
+        bandTitle: 'Read-only key — the killswitch is not live on this account',
+        bandBody: 'This is the failure mode worth knowing about: everything looks normal, alerts still arrive, and nothing actually intervenes. Replace the key with one that has trading scope.',
+        cta: 'Replace the key', to: '/dashboard/connect', action: 'Replace key',
       };
-    case GUARD.LOCKED:
-      return { pill: 'LOCKED', tone: 'red', title: 'Locked. You asked us to keep you out.' };
     default:
       return {
-        pill: 'NOT PROTECTED',
-        tone: 'red',
-        title: gap ? `Not protected. ${gap.title}.` : 'Not protected.',
+        pill: 'Not protected', label: 'Not protected', tone: 'red', pillNote: 'setup unfinished',
+        title: gap
+          ? `Not protected. ${gap.title.replace(/^The |^This /, '')}`
+          : on > 0 ? `Not protected. Your ${on} rules exist, nothing enforces them.` : 'Not protected. No rules are switched on yet.',
+        sub: 'Finish setup and the engine starts watching every fill. Until then your rules are written down but nothing acts on them.',
+        showBand: true,
+        bandTitle: gap ? gap.title : 'Nothing is enforcing this account yet',
+        bandBody: gap ? gap.body : 'Connect a key with trading scope and the engine can cancel orders and close positions for you. Until then nothing acts on your rules.',
+        cta: gap ? gap.cta : 'Finish setup', to: gap ? gap.to : '/dashboard/account/trading',
+        action: gap && gap.key === 'key' ? 'Connect key' : 'Finish setup',
       };
   }
 }

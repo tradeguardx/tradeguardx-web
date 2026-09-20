@@ -9,7 +9,7 @@ import SupportChat from '../support/SupportChat';
 import { TrialBanner, UpgradeWall } from './TrialGate';
 import WelcomeCelebration from './WelcomeCelebration';
 import PhonePrompt from './PhonePrompt';
-import BreachBanner from './BreachBanner';
+import BreachToast from './shell/BreachToast';
 import VerifyEmailBanner from './VerifyEmailBanner';
 import Sidebar from './shell/Sidebar';
 import AccountSwitcher from './shell/AccountSwitcher';
@@ -17,7 +17,7 @@ import GuardPill from './shell/GuardPill';
 import GuardBand from './shell/GuardBand';
 import AvatarMenu from './shell/AvatarMenu';
 import { KillSwitchButton, KillSwitchModal } from './shell/KillSwitch';
-import { IcMenu, IcBell, IcSliders, IcSearch } from './shell/icons';
+import { sx } from './shell/sx';
 
 /**
  * Dashboard shell.
@@ -77,52 +77,56 @@ function Shell() {
 
   return (
     <div
-      data-tgx
+      data-tgx="1"
       data-dash-theme={theme}
       data-theme={theme}
       data-accent={prefs.accent}
       data-chrome={prefs.chrome}
       data-density={prefs.density}
-      className="dsh-root"
-      style={{ backgroundColor: 'var(--bg)' }}
+      style={sx('display:flex;min-height:100vh;font-size:14px;line-height:1.45;background:var(--bg);color:var(--ink)')}
     >
-      <aside className="dsh-side" data-tgx-aside data-open={drawer ? '1' : '0'}>
+      {drawer && <div data-tgx-scrim="1" onClick={() => setDrawer(false)} style={sx('position:fixed;inset:0;z-index:85;background:rgba(3,5,10,.6);backdrop-filter:blur(3px)')} />}
+      <aside data-tgx-aside="1" data-open={drawer ? '1' : '0'} style={sx('flex:none;width:252px;border-right:1px solid var(--line);background:var(--bg-deep);display:flex;flex-direction:column;position:sticky;top:0;height:100vh')}>
         <Sidebar onNavigate={() => setDrawer(false)} />
       </aside>
-      <div className="ddr-scrim" data-tgx-scrim style={{ position: 'fixed', inset: 0, zIndex: 85, opacity: drawer ? 1 : 0, pointerEvents: drawer ? 'auto' : 'none' }} onClick={() => setDrawer(false)} />
-      <div className="dsh-main">
-        <header className="dsh-header">
-          <div className="dsh-headbar" data-tgx-headbar>
-            <button type="button" className="dsh-burger" data-tgx-burger onClick={() => setDrawer(true)} aria-label="Open menu"><IcMenu size={17} /></button>
+
+      <div style={sx('flex:1;min-width:0;display:flex;flex-direction:column')}>
+        <header style={sx('position:sticky;top:0;z-index:20;background:var(--bg-header);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--line)')}>
+          <div data-tgx-headbar="1" style={sx('display:flex;align-items:center;gap:14px;padding:11px 24px')}>
+            <button type="button" data-tgx-burger="1" onClick={() => setDrawer(true)} aria-label="Menu" style={sx('flex:none;place-items:center;width:36px;height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink-2)')}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+            </button>
             <AccountSwitcher />
-            <GuardPill mdhide />
-            <div className="dsh-spacer" />
+            <GuardPill />
+            <div style={{ flex: 1 }} />
             {!pathname.startsWith('/dashboard/rules') && (
-              <Link to="/dashboard/rules" className="dsh-edit" data-tgx-mdhide><IcSliders size={15} stroke={1.8} />Edit rules</Link>
+              <Link to="/dashboard/rules" data-tgx-mdhide="1" className="hdr-edit" style={sx('flex:none;display:flex;align-items:center;gap:8px;padding:8px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:600;white-space:nowrap;text-decoration:none')}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ flex: 'none' }}><path d="M4 7h8M18 7h2M4 17h4M14 17h6" /><circle cx="15" cy="7" r="2.2" /><circle cx="10" cy="17" r="2.2" /></svg>
+                Edit rules
+              </Link>
             )}
-            <span ref={killBtnRef}>
+            <span ref={killBtnRef} style={{ display: 'contents' }}>
               <KillSwitchButton onOpen={() => { setKillNonce((n) => n + 1); setKillOpen(true); }} />
             </span>
-            <button type="button" className="dsh-search" data-tgx-mdhide aria-label="Search" onClick={() => navigate('/dashboard/trades')}>
-              <IcSearch size={15} />Search<span className="dsh-search__k">⌘K</span>
+            <button type="button" data-tgx-mdhide="1" className="hdr-search" aria-label="Search" onClick={() => navigate('/dashboard/trades')} style={sx('flex:none;display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink-3);font-size:12.5px;white-space:nowrap')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" style={{ flex: 'none' }}><circle cx="11" cy="11" r="7" /><path d="M16.5 16.5L21 21" /></svg>
+              <span style={sx("font:500 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--ink-faint)")}>⌘K</span>
             </button>
-            <Link to="/dashboard/alerts" className="dsh-bell" aria-label={unreadBreaches ? `${unreadBreaches} unread alerts` : 'Alerts'}>
-              <IcBell size={16} />
-              {unreadBreaches > 0 && <span className="dsh-bell__dot" />}
+            <Link to="/dashboard/alerts" className="hdr-bell" aria-label={unreadBreaches ? `${unreadBreaches} unread alerts` : 'Alerts'} style={sx('position:relative;display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink-3)')}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4a5.2 5.2 0 00-5.2 5.2c0 5-2 6.3-2 6.3h14.4s-2-1.3-2-6.3A5.2 5.2 0 0012 4z" /><path d="M10.2 18.4a2 2 0 003.6 0" /></svg>
+              {unreadBreaches > 0 && <span style={sx('position:absolute;top:6px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--red-solid)')} />}
             </Link>
             <AvatarMenu />
           </div>
+          <GuardBand />
         </header>
 
-        <GuardBand />
+        <BreachToast />
 
-        <main ref={mainRef} className="dsh-page">
-          <div className={`dsh-page__inner${narrow ? ' dsh-page__inner--narrow' : ''}${tight ? ' dsh-page__inner--tight' : ''}`} data-tgx-main key={pathname}>
-            <VerifyEmailBanner />
-            <BreachBanner />
-            <TrialBanner />
-            {locked ? <UpgradeWall /> : <Outlet />}
-          </div>
+        <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;animation:tgxSlide .22s ease-out', { maxWidth: narrow ? 980 : tight ? 780 : 1240 })}>
+          <VerifyEmailBanner />
+          <TrialBanner />
+          {locked ? <UpgradeWall /> : <Outlet />}
         </main>
       </div>
 

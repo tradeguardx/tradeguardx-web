@@ -125,9 +125,10 @@ export function GuardProvider({ children }) {
         lockUntil,
         lockReason: account?.cooldownReason ?? null,
         lockRemainingMs: lockUntil ? Math.max(0, lockUntil - now) : 0,
-        describe: describeGuard(guard, { on, total, gap: gaps[0] ?? null }),
+        describe: describeGuard(guard, { on, total, gap: gaps[0] ?? null, label: account?.name ?? '', readOnly: slice.connection?.enforcementCapable === false }),
         copy: enforcementCopy(enforcement),
         setupDone: gaps.filter((g) => g.key !== 'alerts').length === 0,
+        readOnly: slice.connection?.enforcementCapable === false,
       };
     },
     [accounts, perAccount, notifications, now, loaded],
