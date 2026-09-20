@@ -545,7 +545,8 @@ export default function RulesTerminal() {
           : '';
   const firstLock = (bundle?.instances ?? []).length <= 1;
   const graceSec = Math.floor(lockMs / 1000);
-  const graceClock = `${String(Math.floor(graceSec / 60)).padStart(2, '0')}:${String(graceSec % 60).padStart(2, '0')}`;
+  // MM:SS inside the hour; d/h/m beyond it (never a five-digit minute count).
+  const graceClock = graceSec >= 3600 ? lockLeft : `${String(Math.floor(graceSec / 60)).padStart(2, '0')}:${String(graceSec % 60).padStart(2, '0')}`;
   const gracePct = `${Math.min(100, Math.max(0, (1 - lockMs / SETTLE_MS) * 100))}%`;
 
   const showSkeleton = Boolean(session?.access_token) && !loadError && (accountsLoading || (Boolean(selectedTradingAccountId) && bundleLoading));
