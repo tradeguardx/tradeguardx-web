@@ -75,6 +75,7 @@ export default function LiveGuardPage() {
 
   // ── kill switch (inline) ────────────────────────────────────────────
   const [hours, setHours] = useState(3);
+  const [rlHelp, setRlHelp] = useState(false);
   const [stage, setStage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [blocked, setBlocked] = useState(false);
@@ -388,15 +389,23 @@ export default function LiveGuardPage() {
 
             {!rlLocked && !noEnforce && (
               <div>
-                <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px")}>Choose your commitment</div>
+                <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px')}>
+                  <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)")}>Choose your commitment</span>
+                  <button type="button" onClick={() => setRlHelp((v) => !v)} aria-expanded={rlHelp} aria-controls="rl-help" style={sx('display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;font-size:11.5px;font-weight:600;color:var(--ink-3)')}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" /><circle cx="12" cy="12" r="2.6" /></svg>
+                    {rlHelp ? 'Hide' : 'What each option means'}
+                  </button>
+                </div>
                 <div style={sx('display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px')} role="radiogroup" aria-label="Rule lock window">
                   {[0, 3, 7, 30].map((d) => <button key={d} type="button" role="radio" aria-checked={rlPick === d} onClick={() => setPick(d)} style={sx(rlPick === d ? DAY_ON : DAY_OFF)}>{d === 0 ? 'Off' : `${d}d`}</button>)}
                 </div>
-                <div style={sx('display:grid;gap:7px;margin-bottom:13px')}>
-                  {[['Off', 'Editable until your first trade of the day. After that they hold until the daily reset.'], ['3 days', 'Active rules lock for three days.'], ['7 days', 'Active rules lock for a week. This is the default.'], ['30 days', 'Active rules lock for a month.']].map(([k, v]) => (
-                    <div key={k} style={sx('display:flex;gap:9px;font-size:12px;line-height:1.5;color:var(--ink-3)')}><span style={sx('flex:none;width:42px;font-weight:700;color:var(--ink-2)')}>{k}</span><span>{v}</span></div>
-                  ))}
-                </div>
+                {rlHelp && (
+                  <div id="rl-help" style={sx('display:grid;gap:7px;margin-bottom:13px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);animation:tgxDrawer .16s ease-out')}>
+                    {[['Off', 'Editable until your first trade of the day. After that they hold until the daily reset.'], ['3 days', 'Active rules lock for three days.'], ['7 days', 'Active rules lock for a week. This is the default.'], ['30 days', 'Active rules lock for a month.']].map(([k, v]) => (
+                      <div key={k} style={sx('display:flex;gap:9px;font-size:12px;line-height:1.5;color:var(--ink-3)')}><span style={sx('flex:none;width:48px;font-weight:700;color:var(--ink-2)')}>{k}</span><span>{v}</span></div>
+                    ))}
+                  </div>
+                )}
                 <p style={sx('margin:0 0 12px;padding:10px 12px;border-radius:9px;background:var(--surface-2);font-size:12px;color:var(--ink-2);line-height:1.5')}>{rlPick === 0 ? 'Off does not mean always editable. Rules stay editable until your first trade of the day — after that they hold until the next daily reset.' : `Active rules lock for ${rlPick} days. You cannot shorten the window once it is running, and you cannot edit a rule until it expires.`}</p>
                 <button type="button" className="rl-arm" disabled={rlBusy || rlPick === (rl?.days ?? 7)} onClick={applyLock} style={sx('width:100%;padding:11px;border:1px solid var(--mint-line);border-radius:10px;background:var(--mint-tint);color:var(--mint);font-size:13px;font-weight:700')}>{rlBusy ? 'Saving…' : rlPick === 0 ? 'Use the daily setting' : `Lock active rules for ${rlPick} days`}</button>
               </div>
