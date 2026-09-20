@@ -20,12 +20,20 @@
 export const ENFORCEMENT = { ARMED: 'armed', WATCHING: 'watching', UNPROTECTED: 'unprotected' };
 export const GUARD = { ...ENFORCEMENT, LOCKED: 'locked' };
 
-/** Is the account's setup complete enough to size limits and connect? */
+/**
+ * Is the account's setup complete enough to size limits and connect?
+ * A venue is always required. A sizing balance is only required for
+ * *funded* (prop-firm) accounts — that is the only kind the add-account
+ * form collects one for; live exchange accounts (Delta) take their balance
+ * from the exchange itself.
+ */
 export function setupCompleteOf(account) {
   if (!account) return false;
   const venue = typeof account.propFirmSlug === 'string' && account.propFirmSlug.trim().length > 0;
+  if (!venue) return false;
+  if (account.equityMode !== 'funded') return true;
   const size = Number(account.accountSize);
-  return venue && Number.isFinite(size) && size > 0;
+  return Number.isFinite(size) && size > 0;
 }
 
 /** Active kill-switch / cooldown lock end, or null. */

@@ -18,7 +18,9 @@ describe('enforcementOf', () => {
   it('is unprotected with no key, no rules on, or incomplete setup', () => {
     expect(enforcementOf({ account, connection: null, rules })).toBe('unprotected');
     expect(enforcementOf({ account, connection: key, rules: noRules })).toBe('unprotected');
-    expect(enforcementOf({ account: { ...account, accountSize: null }, connection: key, rules })).toBe('unprotected');
+    // a live exchange account needs no sizing balance; a funded one does
+    expect(enforcementOf({ account: { ...account, accountSize: null }, connection: key, rules })).toBe('armed');
+    expect(enforcementOf({ account: { ...account, equityMode: 'funded', accountSize: null }, connection: key, rules })).toBe('unprotected');
     expect(enforcementOf({ account: { ...account, propFirmSlug: null }, connection: key, rules })).toBe('unprotected');
   });
 });
