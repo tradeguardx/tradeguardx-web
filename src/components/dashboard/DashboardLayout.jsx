@@ -90,7 +90,7 @@ function Shell() {
   useEffect(() => {
     let inner;
     const outer = requestAnimationFrame(() => {
-      inner = requestAnimationFrame(() => { mainRef.current?.scrollTo({ top: 0, left: 0 }); window.scrollTo(0, 0); });
+      inner = requestAnimationFrame(() => { mainRef.current?.scrollTo?.({ top: 0, left: 0 }); window.scrollTo?.(0, 0); });
     });
     return () => { cancelAnimationFrame(outer); if (inner) cancelAnimationFrame(inner); };
   }, [pathname]);
