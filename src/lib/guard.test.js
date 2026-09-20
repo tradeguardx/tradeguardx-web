@@ -61,3 +61,14 @@ describe('describeGuard', () => {
     expect(describeGuard('unprotected', { gap: { title: 'No key with trading scope' } }).title).toBe('Not protected. No key with trading scope');
   });
 });
+
+describe('ruleLockNow', () => {
+  const t0 = Date.parse('2026-09-20T10:00:00Z');
+  const rl = { days: 7, mode: 'window', locksAt: '2026-09-20T10:15:00Z', lockedUntil: '2026-09-27T10:00:00Z', locked: false, settling: true };
+  it('is settling before locksAt, locked after it, off after lockedUntil — whatever the payload said', async () => {
+    const { ruleLockNow } = await import('./guard');
+    expect(ruleLockNow(rl, t0)).toMatchObject({ settling: true, locked: false });
+    expect(ruleLockNow(rl, t0 + 16 * 60000)).toMatchObject({ settling: false, locked: true });
+    expect(ruleLockNow(rl, Date.parse('2026-09-28T00:00:00Z'))).toMatchObject({ settling: false, locked: false });
+  });
+});

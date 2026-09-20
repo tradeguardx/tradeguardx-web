@@ -190,3 +190,18 @@ export function enforcementCopy(enforcement) {
     lossLimit: 'loss limit — we alert you, we cannot close',
   };
 }
+
+/**
+ * Rule-lock state re-derived against the live clock. The API's `locked` /
+ * `settling` flags are true at fetch time only; a lock that engages between
+ * polls would otherwise still show the picker, and the change would be
+ * refused with a 423 the user could not have predicted.
+ */
+export function ruleLockNow(rl, now = Date.now()) {
+  if (!rl) return null;
+  if (rl.mode === 'day') return { ...rl, settling: false, locked: Boolean(rl.locked && (!rl.lockedUntil || Date.parse(rl.lockedUntil) > now)) };
+  const until = rl.lockedUntil ? Date.parse(rl.lockedUntil) : NaN;
+  const at = rl.locksAt ? Date.parse(rl.locksAt) : NaN;
+  const active = Number.isFinite(until) && now < until;
+  return { ...rl, locked: Boolean(active && Number.isFinite(at) && now >= at), settling: Boolean(active && Number.isFinite(at) && now < at) };
+}

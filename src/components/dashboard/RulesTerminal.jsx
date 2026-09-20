@@ -7,6 +7,7 @@ import { fetchRulesBundle, saveRuleInstance, cancelPendingRuleChange } from '../
 import { openSupport } from '../support/supportBus';
 import { useCooldown } from '../../hooks/useCooldown';
 import { useGuard } from '../../context/GuardContext';
+import { ruleLockNow } from '../../lib/guard';
 import { Icon, RULE_GLYPH, ICON, ruleAccent } from './shell/icons';
 import { sx } from './shell/sx';
 
@@ -476,11 +477,13 @@ export default function RulesTerminal() {
   // While the account is locked the API rejects rule edits, so the UI blocks
   // them rather than letting someone type a change that cannot save.
   const { locked: cooldownLocked } = useCooldown({ accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId, account: selectedAccount });
-  const guardSel = useGuard().selected;
+  const { selected: guardSel, now: guardNow, subscribeTick } = useGuard();
   const cooled = cooldownLocked || guardSel.guard === 'locked';
   const [bundle, setBundle] = useState(null);
-  const ruleLock = bundle?.ruleLock ?? null;
+  const ruleLock = ruleLockNow(bundle?.ruleLock ?? null, guardNow);
   const ruleLocked = Boolean(ruleLock?.locked);
+  // Tick every second while a lock or its setup window runs.
+  useEffect(() => (ruleLock?.locked || ruleLock?.settling ? subscribeTick() : undefined), [ruleLock?.locked, ruleLock?.settling, subscribeTick]);
   const [bundleLoading, setBundleLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [reloadNonce, setReloadNonce] = useState(0);

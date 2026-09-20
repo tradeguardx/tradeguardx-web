@@ -13,6 +13,7 @@ import { setRuleLockDays } from '../api/tradingAccountsApi';
 import { RULE_GLYPH, ruleAccent } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
 import { formatRemaining } from '../components/dashboard/shell/format';
+import { ruleLockNow } from '../lib/guard';
 
 /**
  * Live guard — transcribed from the reference (lines 686–1009).
@@ -45,7 +46,7 @@ function pick(o, ...keys) { for (const k of keys) if (o && o[k] != null) return 
 export default function LiveGuardPage() {
   const { session } = useAuth();
   const { selectedAccount, selectedTradingAccountId, accountsLoading } = useTradingAccounts();
-  const { selected: g, refresh, now } = useGuard();
+  const { selected: g, refresh, now, subscribeTick } = useGuard();
   const toast = useToast();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
@@ -113,7 +114,10 @@ export default function LiveGuardPage() {
   const cdPct = cdActive ? `${Math.max(0, Math.min(100, (1 - g.lockRemainingMs / (cdHours * 3600_000)) * 100)).toFixed(1)}%` : '0%';
 
   // ── rule lock ───────────────────────────────────────────────────────
-  const rl = g.rules?.ruleLock ?? null;
+  const rl = ruleLockNow(g.rules?.ruleLock ?? null, now);
+  const rlSettling = Boolean(rl?.settling);
+  // Tick every second while the rule lock or its setup window runs, so the timer moves.
+  useEffect(() => (rl?.locked || rl?.settling ? subscribeTick() : undefined), [rl?.locked, rl?.settling, subscribeTick]);
   const [pick_, setPick] = useState(null);
   const rlPick = pick_ ?? rl?.days ?? 7;
   const rlLocked = Boolean(rl?.locked);
@@ -124,7 +128,11 @@ export default function LiveGuardPage() {
       await setRuleLockDays({ accessToken, accountId: selectedTradingAccountId, days: rlPick });
       await refresh();
       toast.success(rlPick === 0 ? 'Rule lock off' : `Rule lock set to ${rlPick} days`, rlPick === 0 ? 'Rules are editable until your first trade each day.' : 'From your next save, every rule locks for that long.');
-    } catch (e) { toast.error('Could not change the lock', e?.message || 'Try again.'); }
+    } catch (e) {
+      const code = e?.details?.error?.code ?? e?.code;
+      if (code === 'RULES_LOCKED' || e?.status === 423) { await refresh(); toast.error('The lock is already running', 'The window cannot be changed until it lifts — the countdown is above.'); }
+      else toast.error('Could not change the lock', e?.message || 'Try again.');
+    }
     finally { setRlBusy(false); }
   };
 
@@ -389,6 +397,12 @@ export default function LiveGuardPage() {
 
             {!rlLocked && !noEnforce && (
               <div>
+                {rlSettling && (
+                  <div style={sx('display:flex;align-items:center;gap:12px;padding:11px 13px;margin-bottom:12px;border:1px solid var(--amber-line);border-radius:10px;background:var(--amber-tint)')}>
+                    <span style={sx("flex:none;font:700 20px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--amber)")}>{formatRemaining(Date.parse(rl.locksAt) - now)}</span>
+                    <span style={sx('font-size:12px;line-height:1.5;color:var(--ink-2)')}><strong style={sx('color:var(--amber);font-weight:700')}>Setup window running.</strong> You can still change the length now; when it closes your active rules freeze for {rl.days} days.</span>
+                  </div>
+                )}
                 <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px')}>
                   <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)")}>Choose your commitment</span>
                   <button type="button" onClick={() => setRlHelp((v) => !v)} aria-expanded={rlHelp} aria-controls="rl-help" style={sx('display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;font-size:11.5px;font-weight:600;color:var(--ink-3)')}>
