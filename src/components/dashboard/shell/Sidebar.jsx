@@ -4,6 +4,7 @@ import { useTradingAccounts } from '../../../context/TradingAccountContext';
 import { useDashboardTheme } from '../../../context/DashboardThemeContext';
 import { useAuth } from '../../../context/AuthContext';
 import { ICON } from './icons';
+import { useUpcomingCalendar } from '../../../hooks/useUpcomingCalendar';
 import { sx } from './sx';
 
 /**
@@ -49,6 +50,9 @@ export default function Sidebar({ onNavigate }) {
   const { isDark, toggleTheme } = useDashboardTheme();
   const { user } = useAuth();
   const g = guard.selected;
+  // Global count of upcoming high-impact releases — not scoped to the range being browsed.
+  const upcoming = useUpcomingCalendar();
+  const upcomingHigh = (upcoming.data?.days ?? []).reduce((n, d) => n + d.events.filter((e) => e.impact === 3 && e.time_status === 'exact' && new Date(e.event_time_utc).getTime() > guard.now).length, 0);
   const planLine = `${user?.planLabel || 'Free'} · ${accounts.length} account${accounts.length === 1 ? '' : 's'}`;
 
   const protect = [
@@ -62,7 +66,7 @@ export default function Sidebar({ onNavigate }) {
     { id: 'tax', to: '/dashboard/tax', label: 'Tax centre' },
   ];
   const market = [
-    { id: 'calendar', to: '/dashboard/calendar', label: 'Economic calendar' },
+    { id: 'calendar', to: '/dashboard/calendar', label: 'Economic calendar', badge: upcomingHigh ? String(upcomingHigh) : '' },
   ];
   const setup = [
     { id: 'accounts', to: '/dashboard/account/trading', label: 'Accounts', badge: accounts.length ? String(accounts.length) : '' },
@@ -87,10 +91,10 @@ export default function Sidebar({ onNavigate }) {
       <nav style={sx('flex:1;overflow-y:auto;padding:6px 10px 10px')} aria-label="Dashboard">
         <div style={sx(GROUP_LABEL, { padding: '14px 9px 8px' })}>Protect</div>
         {protect.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
-        <div style={sx(GROUP_LABEL)}>Review</div>
-        {review.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
         <div style={sx(GROUP_LABEL)}>Market</div>
         {market.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
+        <div style={sx(GROUP_LABEL)}>Review</div>
+        {review.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
         <div style={sx(GROUP_LABEL)}>Setup</div>
         {setup.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
       </nav>

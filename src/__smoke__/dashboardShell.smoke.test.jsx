@@ -148,19 +148,33 @@ describe('dashboard shell', () => {
     expect(screen.getByText('Enforced by: Risk engine · server-side')).toBeTruthy();
   });
 
-  it('renders the Economic calendar with the next-event strip, status cells and no fabricated times', async () => {
+  it('renders the Economic calendar: Market nav, hero, all time variants, five ACTUAL states, empty day', async () => {
     mount('/dashboard/calendar');
     await waitFor(() => expect(screen.getByText('Next high impact')).toBeTruthy());
-    expect(screen.getAllByText('Core CPI m/m').length).toBeGreaterThan(0);
-    expect(screen.getByText('TENTATIVE')).toBeTruthy();
+    expect(screen.getByText('Market')).toBeTruthy();
+    expect(screen.getByText('Economic calendar', { selector: 'span' })).toBeTruthy();
+    // time_status variants, no fabricated clock times
+    await waitFor(() => expect(screen.getByText('TENTATIVE')).toBeTruthy());
     expect(screen.getByText('ALL DAY')).toBeTruthy();
     expect(screen.getByText('DAY 1')).toBeTruthy();
-    expect(screen.getByText('TODAY')).toBeTruthy();
-    expect(screen.getAllByText('IN 3H 07M').length).toBe(2); // the two CPI prints at the same minute
-    expect(screen.getByText('No events')).toBeTruthy();
+    expect(screen.getByText('DAY 2')).toBeTruthy();
+    // ACTUAL: beat / miss / inline / IN xH / em dash
+    const released = (v) => screen.getAllByText(v).find((el) => el.style.fontWeight === '600');
+    expect(released('0.6%').style.color).toBe('var(--mint)');   // beat
+    expect(released('0.1%').style.color).toBe('var(--red)');    // miss
+    expect(released('3.1%').style.color).toBe('var(--ink)');    // inline
+    expect(screen.getAllByText('IN 3H 07M').length).toBe(2);
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+    expect(screen.getByText('Today')).toBeTruthy();
+    expect(screen.getAllByText('No events').length).toBeGreaterThan(0);
     expect(screen.queryByText(/null/)).toBeNull();
+    // holiday row: no bars, no value cells
+    const holiday = screen.getByText(/Bank Holiday/).closest('[data-tgx-ecorow]');
+    expect(holiday.querySelector('[data-tgx-ecovals]')).toBeNull();
+    expect(holiday.querySelector('[aria-label$="impact"]')).toBeNull();
+    // the lock modal opens from the hero
     screen.getByText(/Auto-lock ±15 min/).click();
     await waitFor(() => expect(screen.getByRole('dialog')).toBeTruthy());
-    expect(screen.getByText(/Lock trading around Core CPI m\/m/)).toBeTruthy();
+    expect(screen.getByText(/Lock new orders around Core CPI m\/m/)).toBeTruthy();
   });
 });

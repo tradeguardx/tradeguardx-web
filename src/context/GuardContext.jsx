@@ -46,6 +46,10 @@ export function GuardProvider({ children }) {
   const [unreadBreaches, setUnreadBreaches] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  // Screens with their own countdowns (economic calendar) subscribe to the
+  // same clock instead of starting a second interval.
+  const [tickSubscribers, setTickSubscribers] = useState(0);
+  const subscribeTick = useCallback(() => { setTickSubscribers((n) => n + 1); return () => setTickSubscribers((n) => Math.max(0, n - 1)); }, []);
   const inflight = useRef(0);
 
   const load = useCallback(
@@ -89,10 +93,10 @@ export function GuardProvider({ children }) {
   // One clock for every countdown on screen.
   useEffect(() => {
     const anyLock = accounts.some((a) => lockUntilOf(a));
-    if (!anyLock) return undefined;
+    if (!anyLock && tickSubscribers === 0) return undefined;
     const id = setInterval(() => setNow(Date.now()), TICK_MS);
     return () => clearInterval(id);
-  }, [accounts]);
+  }, [accounts, tickSubscribers]);
 
   const refresh = useCallback(async () => {
     await refreshTradingAccounts?.();
@@ -148,8 +152,9 @@ export function GuardProvider({ children }) {
       all: accounts.map((a) => stateFor(a.id)),
       refresh,
       user,
+      subscribeTick,
     }),
-    [loaded, now, notifications, unreadBreaches, stateFor, selectedTradingAccountId, accounts, refresh, user],
+    [loaded, now, notifications, unreadBreaches, stateFor, selectedTradingAccountId, accounts, refresh, user, subscribeTick],
   );
 
   return <GuardContext.Provider value={value}>{children}</GuardContext.Provider>;
@@ -164,4 +169,11 @@ export function useGuard() {
 export function useGuardFor(accountId) {
   const { stateFor } = useGuard();
   return stateFor(accountId);
+}
+
+/** The app's one 1-second clock. Mount this in any screen that shows a live countdown. */
+export function useSecondTick() {
+  const { now, subscribeTick } = useGuard();
+  useEffect(() => subscribeTick(), [subscribeTick]);
+  return now;
 }

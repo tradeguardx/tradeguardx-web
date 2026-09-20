@@ -1,421 +1,402 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
+import { useSecondTick } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
-import { useIsMobile } from '../hooks/useIsMobile';
 import { fetchCalendar, scheduleCalendarLock } from '../api/calendarApi';
 import { calendarSample } from '../fixtures/calendarSample';
+import { useUpcomingCalendar } from '../hooks/useUpcomingCalendar';
+import { sx } from '../components/dashboard/shell/sx';
 import {
   rangeFor, timezoneLabel, msUntil, isPast, countdown, inLabel, timeCell,
   nextHighImpact, impactCounts, currenciesOf, filterDays, lockWindow,
 } from '../lib/calendar';
 
 /**
- * Economic calendar — upcoming macro releases (CPI, FOMC, NFP, rate
- * decisions) with the one thing Forex Factory does not have: a lock around
- * the release. Matches the Tax centre's light palette.
+ * Economic calendar — the exact-build spec for /calendar. A list that ends
+ * in a commitment: the next high-impact release is the hero and the only
+ * primary action is arming a lock around it.
  *
- * Every countdown ticks from event_time_utc on a single client clock; the
- * server's relative times are never displayed. Non-exact times are shown as
- * their status (TENTATIVE / ALL DAY / DAY n) — a clock time is never
- * invented for them.
+ * Every countdown ticks from event_time_utc on the app's one shared
+ * 1-second clock (useSecondTick). A clock time is never invented for a
+ * tentative / all-day / day-n event. Filters live in the URL.
  */
 
-// ── palette (Tax centre) ───────────────────────────────────────────────
-const C = {
-  page: '#eef2f4', card: '#ffffff', line: '#e2e8ea', ink: '#0f1e1b', ink2: '#5a6b70', ink3: '#8b9a9e',
-  mint: '#10b981', mintBg: '#ecfdf5', mintLine: '#a7f3d0', high: '#e5484d', med: '#f59e0b', low: '#94a3b8',
-  highBg: '#fef2f2', dark: '#0f1e1b', darkLine: '#1f3430', darkInk2: '#9fb3ad',
-};
-const MONO = { fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontVariantNumeric: 'tabular-nums' };
-const IMPACT = { 3: { label: 'High', color: C.high }, 2: { label: 'Medium', color: C.med }, 1: { label: 'Low', color: C.low } };
+const RANGES = ['this', 'next', 'month'];
+const RANGE_LABEL = { this: 'This week', next: 'Next week', month: 'Month' };
+const DEFAULT_CCY = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'NZD', 'CNY'];
 const LOCK_MINUTES = 15;
+const IMPACT = {
+  3: { label: 'High', text: 'var(--red)', solid: 'var(--red-solid)', tint: 'var(--red-tint)', line: 'var(--red-line)' },
+  2: { label: 'Medium', text: 'var(--amber)', solid: 'var(--amber-solid)', tint: 'var(--amber-tint)', line: 'var(--amber-line)' },
+  1: { label: 'Low', text: 'var(--ink-3)', solid: 'var(--ink-faint)', tint: 'var(--surface-3)', line: 'var(--line)' },
+};
+const GRID = 'display:grid;grid-template-columns:72px 54px 40px minmax(120px,1fr) 74px 74px 74px;gap:10px';
+const MONO_TAG = "font:500 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)";
+const VAL = "text-align:right;font:400 12.5px/1.3 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums";
+const VLABEL = "display:none;font:600 9px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px";
+const CARD = 'margin-bottom:14px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden';
 
-// ── small parts ────────────────────────────────────────────────────────
-function CurrencyTag({ code }) {
-  return (
-    <span className="inline-flex h-[20px] min-w-[34px] items-center justify-center rounded-md px-1.5 text-[10.5px] font-semibold tracking-[.06em]" style={{ ...MONO, background: '#f3f6f7', border: `1px solid ${C.line}`, color: C.ink2 }}>
-      {String(code || '').slice(0, 3)}
-    </span>
-  );
-}
+function rangeSpec(key) { return key === 'next' ? rangeFor('week', 1) : key === 'month' ? rangeFor('month', 0) : rangeFor('week', 0); }
+function lockKey(acct) { return `tgx_calendar_locks_${acct || 'none'}`; }
+function readLocks(acct) { try { return JSON.parse(localStorage.getItem(lockKey(acct)) || '[]'); } catch { return []; } }
 
 function ImpactBars({ level }) {
-  if (!level) return <span className="inline-block w-[14px]" aria-hidden />;
-  const color = IMPACT[level]?.color || C.low;
+  if (!level) return null;
   return (
-    <span className="inline-flex items-end gap-[2px]" title={`${IMPACT[level]?.label || ''} impact`} aria-label={`${IMPACT[level]?.label || ''} impact`}>
-      {[1, 2, 3].map((i) => (
-        <span key={i} className="inline-block w-[3px] rounded-[1px]" style={{ height: `${6 + i * 3}px`, background: i <= level ? color : '#e2e8ea' }} />
-      ))}
+    <span style={sx('display:flex;align-items:flex-end;gap:2px;height:13px')} aria-label={`${IMPACT[level].label} impact`} title={`${IMPACT[level].label} impact`}>
+      {[1, 2, 3].map((i) => <span key={i} style={sx('width:3px;border-radius:1px', { height: `${5 + i * 4}px`, background: i <= level ? IMPACT[level].solid : 'var(--surface-3)' })} />)}
     </span>
   );
-}
-
-function Dash() { return <span style={{ color: C.ink3 }}>—</span>; }
-function Val({ v }) { return v == null || v === '' ? <Dash /> : <span style={{ color: C.ink }}>{v}</span>; }
-
-function ActualCell({ event, ms }) {
-  if (event.actual != null && event.actual !== '') {
-    const color = event.surprise === 'beat' ? C.mint : event.surprise === 'miss' ? C.high : C.ink;
-    const weight = event.surprise === 'beat' || event.surprise === 'miss' ? 600 : 400;
-    return <span style={{ color, fontWeight: weight }}>{event.actual}</span>;
-  }
-  const soon = event.time_status === 'exact' ? inLabel(ms) : null;
-  if (soon) return <span className="text-[10.5px] tracking-[.06em]" style={{ color: C.ink3 }}>{soon}</span>;
-  return <Dash />;
 }
 
 function TimeCell({ event, isNext }) {
   const t = timeCell(event);
   return (
-    <span className="inline-flex items-center gap-2">
-      {isNext && <span className="ecal-pulse inline-block h-[7px] w-[7px] rounded-full" style={{ background: C.high }} aria-hidden />}
-      {t.exact ? <span style={{ color: C.ink }}>{t.text}</span> : <span className="text-[10.5px] tracking-[.06em]" style={{ color: C.ink3 }}>{t.text}</span>}
+    <span style={sx('display:inline-flex;align-items:center;gap:7px')}>
+      {isNext && <span style={sx('width:6px;height:6px;border-radius:50%;background:var(--red-solid);animation:tgxPulse 1.6s ease-in-out infinite;flex:none')} aria-hidden />}
+      {t.exact ? <span style={sx("font:500 12.5px/1 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;color:var(--ink)")}>{t.text}</span> : <span style={sx(MONO_TAG)}>{t.text}</span>}
     </span>
   );
 }
 
-function SkeletonRows({ n = 6 }) {
-  return (
-    <div className="px-4 py-2">
-      {Array.from({ length: n }).map((_, i) => (
-        <div key={i} className="ecal-shimmer my-2 h-[34px] rounded-lg" style={{ background: '#f3f6f7' }} />
-      ))}
-    </div>
-  );
+function Actual({ event, ms }) {
+  if (event.actual != null && event.actual !== '') {
+    const color = event.surprise === 'beat' ? 'var(--mint)' : event.surprise === 'miss' ? 'var(--red)' : 'var(--ink)';
+    return <span style={sx(VAL, { color, fontWeight: 600 })}>{event.actual}</span>;
+  }
+  const soon = event.time_status === 'exact' ? inLabel(ms) : null;
+  if (soon) return <span style={sx(VAL, { color: 'var(--ink-3)' })}>{soon}</span>;
+  return <span style={sx(VAL, { color: 'var(--ink-faint)' })}>—</span>;
+}
+function Value({ v, color }) { return v == null || v === '' ? <span style={sx(VAL, { color: 'var(--ink-faint)' })}>—</span> : <span style={sx(VAL, { color })}>{v}</span>; }
+
+function InfoGlyph() {
+  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" style={{ flex: 'none', marginTop: 2, color: 'var(--ink-faint)' }}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>;
 }
 
-// ── auto-lock modal ────────────────────────────────────────────────────
-function AutoLockModal({ event, tz, onClose }) {
+function LockModal({ event, tz, onArmed, onClose }) {
   const { session } = useAuth();
   const { selectedAccount, selectedTradingAccountId } = useTradingAccounts();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const win = lockWindow(event, LOCK_MINUTES, tz);
+  useEffect(() => { const onKey = (e) => { if (e.key === 'Escape') onClose(); }; document.addEventListener('keydown', onKey); return () => document.removeEventListener('keydown', onKey); }, [onClose]);
 
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  const submit = async () => {
+  const arm = async () => {
     if (!selectedTradingAccountId) { toast.error('No account selected', 'Pick the account to lock first.'); return; }
     setBusy(true);
     try {
       await scheduleCalendarLock({ accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId, eventId: event.id, lockFrom: win.from.toISOString(), lockUntil: win.to.toISOString() });
-      toast.success('Auto-lock armed', `${selectedAccount?.name || 'This account'} locks ${win.fromLabel}–${win.toLabel} around ${event.title}.`);
+      onArmed(event.id);
+      toast.success('Auto-lock armed', `${selectedAccount?.name || 'This account'} blocks new orders ${win.fromLabel}–${win.toLabel} around ${event.title}. No cancel.`);
       onClose();
     } catch (err) {
       const status = err?.status ?? err?.details?.status;
-      toast.error(status === 404 ? 'Auto-lock is not live on the engine yet' : 'Could not arm the lock', status === 404 ? 'Nothing was armed. The calendar lock endpoint is not deployed.' : err?.message || 'Please try again.');
+      toast.error(status === 404 ? 'Auto-lock is not live on the engine yet' : 'Could not arm the lock', status === 404 ? 'Nothing was armed — the calendar lock endpoint is not deployed.' : err?.message || 'Please try again.');
     } finally { setBusy(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center p-4 sm:items-center" style={{ background: 'rgba(15,30,27,.55)' }} onClick={onClose} role="presentation">
-      <div role="dialog" aria-modal="true" aria-labelledby="ecal-lock-title" className="w-full max-w-[440px] overflow-hidden rounded-[13px]" style={{ background: C.card, border: `1px solid ${C.line}`, boxShadow: '0 18px 50px rgba(15,30,27,.18)' }} onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 pt-5 pb-4" style={{ borderBottom: `1px solid ${C.line}` }}>
-          <div className="text-[10px] font-semibold uppercase tracking-[.14em]" style={{ ...MONO, color: C.ink3 }}>Killswitch · auto-lock</div>
-          <h3 id="ecal-lock-title" className="mt-2 text-[16px] font-semibold" style={{ color: C.ink }}>Lock trading around {event.title}</h3>
-          <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: C.ink2 }}>The killswitch closes anything open at the start of the window and refuses new positions until it ends. Same lock as the manual one — same no-early-cancel rule.</p>
+    <div data-tgx-modal="1" onClick={onClose} role="presentation" style={sx('position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(3,5,10,.62);backdrop-filter:blur(3px)')}>
+      <div role="dialog" aria-modal="true" aria-labelledby="ecal-lock-title" onClick={(e) => e.stopPropagation()} style={sx('width:100%;max-width:440px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-pop);overflow:hidden;animation:tgxDrawer .2s ease-out')}>
+        <div style={sx('padding:20px 22px 16px;border-bottom:1px solid var(--line)')}>
+          <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--red)")}>Auto-lock · no cancel</div>
+          <h3 id="ecal-lock-title" style={sx("margin:10px 0 0;font:600 18px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>Lock new orders around {event.title}</h3>
+          <p style={sx('margin:7px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>From fifteen minutes before the release until fifteen after, this account refuses new orders. Open positions are left alone. Like the kill switch, there is no early cancel.</p>
         </div>
-        <div className="grid grid-cols-3 gap-2 px-5 py-4">
+        <div style={sx('display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:16px 22px')}>
           {[['Account', selectedAccount?.name || '—', false], ['Locks', win.fromLabel, true], ['Unlocks', win.toLabel, true]].map(([k, v, mono]) => (
-            <div key={k} className="rounded-[10px] px-3 py-2.5" style={{ background: '#f8fafb', border: `1px solid ${C.line}` }}>
-              <div className="text-[10px] font-semibold uppercase tracking-[.08em]" style={{ color: C.ink3 }}>{k}</div>
-              <div className="mt-1 truncate text-[14px] font-semibold" style={{ ...(mono ? MONO : {}), color: C.ink }}>{v}</div>
+            <div key={k} style={sx('padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);min-width:0')}>
+              <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{k}</div>
+              <div style={sx("margin-top:5px;font:600 14px/1.2 'Space Grotesk',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis", mono ? { fontFamily: "'JetBrains Mono',monospace", fontVariantNumeric: 'tabular-nums' } : {})}>{v}</div>
             </div>
           ))}
         </div>
-        <div className="px-5 pb-2 text-[12px]" style={{ color: C.ink2 }}>
-          <span className="inline-flex items-center gap-1.5"><CurrencyTag code={event.country} /> {event.time} · ±{LOCK_MINUTES} min{event.forecast ? ` · forecast ${event.forecast}` : ''}{event.previous ? ` · previous ${event.previous}` : ''}</span>
-        </div>
-        <div className="flex gap-2 px-5 pb-5 pt-3">
-          <button type="button" disabled={busy} onClick={submit} className="rounded-[9px] px-4 py-2.5 text-[12.5px] font-bold text-white disabled:opacity-60" style={{ background: C.high }}>{busy ? 'Arming…' : `Arm lock ${win.fromLabel}–${win.toLabel}`}</button>
-          <button type="button" onClick={onClose} className="rounded-[9px] px-4 py-2.5 text-[12.5px] font-semibold" style={{ border: `1px solid ${C.line}`, color: C.ink2, background: C.card }}>Cancel</button>
+        <div style={sx('display:flex;gap:9px;padding:0 22px 20px;flex-wrap:wrap')}>
+          <button type="button" disabled={busy} onClick={arm} style={sx('padding:10px 15px;border:0;border-radius:9px;background:var(--red-btn);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Arm ±${LOCK_MINUTES} min lock`}</button>
+          <button type="button" onClick={onClose} style={sx('padding:10px 15px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Not now</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── page ───────────────────────────────────────────────────────────────
 export default function EconomicCalendarPage() {
   const { session } = useAuth();
-  const { selectedAccount, selectedTradingAccountId } = useTradingAccounts();
-  const isMobile = useIsMobile(767);
+  const { selectedTradingAccountId } = useTradingAccounts();
+  const now = useSecondTick();
   const accessToken = session?.access_token;
+  const [params, setParams] = useSearchParams();
 
-  const [mode, setMode] = useState('week');
-  const [offset, setOffset] = useState(0);
-  const [impacts, setImpacts] = useState(() => new Set([3, 2]));
-  const [countries, setCountries] = useState([]);
-  const [ccyOpen, setCcyOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => new Set());
+  // ── URL-backed filters ─────────────────────────────────────────────
+  const rangeKey = RANGES.includes(params.get('range')) ? params.get('range') : 'this';
+  const impacts = useMemo(() => new Set((params.get('impact') ?? '3,2').split(',').map(Number).filter((n) => n >= 1 && n <= 3)), [params]);
+  const ccyParam = params.get('ccy');
+  const demo = import.meta.env.DEV && params.get('demo') === '1';
+  const setParam = useCallback((k, v) => { const next = new URLSearchParams(params); if (v == null || v === '') next.delete(k); else next.set(k, v); setParams(next, { replace: true }); }, [params, setParams]);
+
   const [data, setData] = useState(null);
   const [loadedKey, setLoadedKey] = useState(null);
   const [error, setError] = useState('');
   const [sample, setSample] = useState(false);
+  const [ccyOpen, setCcyOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => new Set());
   const [lockFor, setLockFor] = useState(null);
-  const [now, setNow] = useState(() => Date.now());
+  const [locksByAcct, setLocksByAcct] = useState({});
+  const locks = locksByAcct[selectedTradingAccountId ?? 'none'] ?? readLocks(selectedTradingAccountId);
   const todayRef = useRef(null);
-  const scrolledRef = useRef(false);
+  const scrolled = useRef(false);
+  const ccyRef = useRef(null);
+  const upcoming = useUpcomingCalendar();
 
-  const range = useMemo(() => rangeFor(mode, offset), [mode, offset]);
-  const tz = data?.timezone || selectedAccount?.timezone || undefined;
+  const range = useMemo(() => rangeSpec(rangeKey), [rangeKey]);
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const tz = data?.timezone || browserTz;
+  const fetchKey = `${range.from}:${range.to}:${selectedTradingAccountId ?? ''}:${demo ? 'demo' : 'live'}`;
 
-  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
+  useEffect(() => {
+    if (!ccyOpen) return undefined;
+    const onDoc = (e) => { if (ccyRef.current && !ccyRef.current.contains(e.target)) setCcyOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [ccyOpen]);
 
   useEffect(() => {
     if (!accessToken) return undefined;
     const ctrl = new AbortController();
-    const key = `${range.from}:${range.to}`;
-    const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const done = (r, isSample) => { if (ctrl.signal.aborted) return; setData(r); setSample(isSample); setError(''); setLoadedKey(fetchKey); };
+    if (demo) { const t = setTimeout(() => done(calendarSample(new Date(), rangeKey), true), 0); return () => { clearTimeout(t); ctrl.abort(); }; }
     fetchCalendar({ accessToken, from: range.from, to: range.to, tz: browserTz, tradingAccountId: selectedTradingAccountId, signal: ctrl.signal })
-      .then((r) => { if (!ctrl.signal.aborted) { setData(r); setSample(false); setError(''); } })
+      .then((r) => done(r, false))
       .catch((e) => {
         if (ctrl.signal.aborted) return;
-        // Local dev only: show the layout against a labelled sample when the feed is not reachable.
-        if (import.meta.env.DEV) { setData(calendarSample()); setSample(true); setError(''); return; }
-        setData({ timezone: null, days: [] }); setError(e?.message || 'Could not load the calendar');
-      })
-      .finally(() => { if (!ctrl.signal.aborted) setLoadedKey(key); });
+        if (import.meta.env.DEV) { done(calendarSample(new Date(), rangeKey), true); return; }
+        setData({ timezone: null, days: [] }); setError(e?.message || 'Could not load the calendar'); setLoadedKey(fetchKey);
+      });
     return () => ctrl.abort();
-  }, [accessToken, range.from, range.to, selectedTradingAccountId]);
+  }, [accessToken, fetchKey, range.from, range.to, rangeKey, browserTz, selectedTradingAccountId, demo]);
 
-  const loading = loadedKey !== `${range.from}:${range.to}`;
+  const loading = loadedKey !== fetchKey;
   const days = useMemo(() => data?.days ?? [], [data]);
-  const counts = useMemo(() => impactCounts(days), [days]);
-  const allCurrencies = useMemo(() => currenciesOf(days), [days]);
-  const visible = useMemo(() => filterDays(days, { impacts, countries }), [days, impacts, countries]);
-  const next = useMemo(() => nextHighImpact(days, now, countries), [days, now, countries]);
+  const allCodes = useMemo(() => { const s = new Set(DEFAULT_CCY); for (const c of currenciesOf(days)) s.add(c); return [...s]; }, [days]);
+  const countries = useMemo(() => (ccyParam == null ? allCodes : ccyParam.split(',').filter(Boolean)), [ccyParam, allCodes]);
+  const allOn = countries.length === allCodes.length;
+  const ccyScoped = useMemo(() => filterDays(days, { impacts: new Set([1, 2, 3]), countries: allOn ? [] : countries }), [days, countries, allOn]);
+  const counts = useMemo(() => impactCounts(ccyScoped), [ccyScoped]);
+  const visible = useMemo(() => filterDays(ccyScoped, { impacts, countries: [] }), [ccyScoped, impacts]);
+
+  // Hero + next-row marker come from the global dataset, not the browsed range.
+  const globalDays = useMemo(() => (demo ? calendarSample(new Date(), 'month').days : (upcoming.data?.days ?? days)), [demo, upcoming.data, days]);
+  const next = useMemo(() => nextHighImpact(globalDays, now, allOn ? null : countries), [globalDays, now, countries, allOn]);
   const nextId = next?.event.id;
+  const armed = next ? locks.includes(next.event.id) : false;
 
-  // Auto-scroll to today once the data is in.
   useEffect(() => {
-    if (loading || scrolledRef.current || !todayRef.current) return;
-    scrolledRef.current = true;
+    if (loading || scrolled.current || !todayRef.current) return;
+    scrolled.current = true;
     todayRef.current.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-  }, [loading, days]);
+  }, [loading]);
 
-  const toggleImpact = (lvl) => setImpacts((s) => { const n = new Set(s); if (n.has(lvl)) n.delete(lvl); else n.add(lvl); return n; });
-  const toggleCountry = (c) => setCountries((s) => (s.includes(c) ? s.filter((x) => x !== c) : [...s, c]));
+  const idx = RANGES.indexOf(rangeKey);
+  const stepRange = (d) => { const n = Math.min(RANGES.length - 1, Math.max(0, idx + d)); if (n !== idx) setParam('range', RANGES[n] === 'this' ? null : RANGES[n]); };
+  const toggleImpact = (lvl) => { const n = new Set(impacts); if (n.has(lvl)) n.delete(lvl); else n.add(lvl); setParam('impact', [...n].sort((a, b) => b - a).join(',')); };
+  const toggleCcy = (c) => { const n = countries.includes(c) ? countries.filter((x) => x !== c) : [...countries, c]; setParam('ccy', n.length === allCodes.length ? null : n.join(',')); };
   const toggleDay = (date) => setCollapsed((s) => { const n = new Set(s); if (n.has(date)) n.delete(date); else n.add(date); return n; });
+  const onArmed = useCallback((id) => {
+    const acct = selectedTradingAccountId ?? 'none';
+    const cur = readLocks(selectedTradingAccountId);
+    const n = cur.includes(id) ? cur : [...cur, id];
+    try { localStorage.setItem(lockKey(selectedTradingAccountId), JSON.stringify(n)); } catch { /* storage unavailable */ }
+    setLocksByAcct((m) => ({ ...m, [acct]: n }));
+  }, [selectedTradingAccountId]);
   const closeLock = useCallback(() => setLockFor(null), []);
 
-  const segBtn = (active) => `px-3 py-1.5 text-[12.5px] font-semibold rounded-[8px] transition-colors ${active ? 'text-white' : ''}`;
-  const seg = [
-    { k: 'week:0', label: 'This week', on: mode === 'week' && offset === 0, go: () => { setMode('week'); setOffset(0); } },
-    { k: 'week:1', label: 'Next week', on: mode === 'week' && offset === 1, go: () => { setMode('week'); setOffset(1); } },
-    { k: 'month', label: 'Month', on: mode === 'month', go: () => { setMode('month'); setOffset(0); } },
-  ];
+  const arrow = (dir) => {
+    const atLimit = dir < 0 ? idx === 0 : idx === RANGES.length - 1;
+    return (
+      <button type="button" aria-label={dir < 0 ? 'Previous range' : 'Next range'} aria-disabled={atLimit} onClick={() => stepRange(dir)} style={sx('width:28px;height:28px;border:0;border-radius:999px;background:transparent;display:grid;place-items:center', { color: atLimit ? 'var(--ink-faint)' : 'var(--ink-2)', cursor: atLimit ? 'default' : 'pointer' })}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={dir < 0 ? 'M14 7l-5 5 5 5' : 'M10 7l5 5-5 5'} /></svg>
+      </button>
+    );
+  };
 
   return (
-    <div className="ecal" style={{ color: C.ink, fontFamily: 'Inter, system-ui, sans-serif' }}>
-      <style>{`
-        .ecal-pulse{animation:ecalPulse 1.6s ease-in-out infinite}
-        @keyframes ecalPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
-        .ecal-shimmer{animation:ecalShimmer 1.4s ease-in-out infinite}
-        @keyframes ecalShimmer{0%,100%{opacity:1}50%{opacity:.45}}
-        .ecal-row:hover{background:#f8fafb}
-        @media (prefers-reduced-motion:reduce){.ecal-pulse,.ecal-shimmer{animation:none}}
-      `}</style>
-
-      {/* 1. Header */}
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[24px] font-semibold tracking-[-.02em]" style={{ color: C.ink }}>Economic calendar</h1>
-          <p className="mt-1 text-[13px]" style={{ color: C.ink2 }}>What will move your pairs this week — and a lock you can put around it.</p>
+    <div style={sx('animation:tgxSlide .22s ease-out')}>
+      {/* 4. Header */}
+      <div data-tgx-stack="1" style={sx('display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px')}>
+        <div style={sx('max-width:76ch')}>
+          <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Economic calendar</h1>
+          <p style={sx('margin:6px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink-3)')}>What is about to move your pairs, and the option to lock yourself out around it. Times are yours, not the exchange&rsquo;s.</p>
         </div>
-        <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11.5px] font-semibold" style={{ ...MONO, background: C.card, border: `1px solid ${C.line}`, color: C.ink2 }} title={tz || 'Browser timezone'}>
+        <span style={sx("flex:none;display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--ink-2)")} title={tz}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
           {timezoneLabel(tz, new Date(now))}
         </span>
       </div>
 
-      {data?.source?.stale && !sample && (
-        <div className="mb-4 rounded-[10px] px-3.5 py-2.5 text-[12px]" style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
-          <strong className="font-semibold">Feed is behind.</strong> The last successful update was {data.source.last_success_at ? new Date(data.source.last_success_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'unknown'} — showing the last stored copy.
-        </div>
-      )}
       {sample && (
-        <div className="mb-4 rounded-[10px] px-3.5 py-2.5 text-[12px]" style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
-          <strong className="font-semibold">Sample data.</strong> The calendar feed is not reachable from this build, so this is a labelled fixture — nothing here is real.
+        <div style={sx('margin-bottom:16px;padding:11px 14px;border:1px solid var(--amber-line);border-radius:12px;background:var(--amber-tint);font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>
+          <strong style={sx('color:var(--amber);font-weight:700')}>Sample data.</strong> {demo ? 'Seeded to show every state of this screen — nothing here is real.' : 'The calendar feed is not reachable from this build, so this is a labelled fixture — nothing here is real.'}
+        </div>
+      )}
+      {data?.source?.stale && !sample && (
+        <div style={sx('margin-bottom:16px;padding:11px 14px;border:1px solid var(--amber-line);border-radius:12px;background:var(--amber-tint);font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>
+          <strong style={sx('color:var(--amber);font-weight:700')}>Feed is behind.</strong> Last successful update {data.source.last_success_at ? new Date(data.source.last_success_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'unknown'} — showing the last stored copy.
         </div>
       )}
 
-      {/* 2. Toolbar */}
-      <div className="mb-4 flex flex-wrap items-center gap-2.5">
-        <div className="inline-flex items-center gap-0.5 rounded-[10px] p-1" style={{ background: C.card, border: `1px solid ${C.line}` }}>
-          <button type="button" aria-label="Previous" onClick={() => setOffset((o) => o - 1)} className="grid h-7 w-7 place-items-center rounded-[8px]" style={{ color: C.ink2 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 6l-6 6 6 6" /></svg></button>
-          <span className="mx-0.5 h-4 w-px" style={{ background: C.line }} />
-          {seg.map((s) => <button key={s.k} type="button" onClick={s.go} className={segBtn(s.on)} style={{ background: s.on ? C.ink : 'transparent', color: s.on ? '#fff' : C.ink2 }}>{s.label}</button>)}
-          <span className="mx-0.5 h-4 w-px" style={{ background: C.line }} />
-          <button type="button" aria-label="Next" onClick={() => setOffset((o) => o + 1)} className="grid h-7 w-7 place-items-center rounded-[8px]" style={{ color: C.ink2 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 6l6 6-6 6" /></svg></button>
+      {/* 5. Toolbar */}
+      <div data-tgx-stack="1" style={sx('display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap')}>
+        <div style={sx('display:inline-flex;align-items:center;gap:3px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);box-shadow:inset 0 1px 2px rgba(0,0,0,.35)')} role="tablist" aria-label="Range">
+          {arrow(-1)}
+          {RANGES.map((k) => {
+            const on = k === rangeKey;
+            return <button key={k} type="button" role="tab" aria-selected={on} onClick={() => setParam('range', k === 'this' ? null : k)} style={sx('padding:7px 14px;border:0;border-radius:999px;font-size:12.5px;font-weight:600;letter-spacing:-.005em;transition:background .16s ease,color .16s ease', { background: on ? 'var(--ink)' : 'transparent', color: on ? 'var(--bg-deep)' : 'var(--ink-2)' })}>{RANGE_LABEL[k]}</button>;
+          })}
+          {arrow(1)}
         </div>
-        <span className="text-[12px] font-medium" style={{ ...MONO, color: C.ink3 }}>{range.label}</span>
 
-        <div className="flex flex-wrap items-center gap-1.5 sm:ml-2">
+        <div style={sx('display:flex;gap:7px;flex-wrap:wrap')}>
           {[3, 2, 1].map((lvl) => {
-            const on = impacts.has(lvl);
+            const on = impacts.has(lvl); const t = IMPACT[lvl];
             return (
-              <button key={lvl} type="button" aria-pressed={on} onClick={() => toggleImpact(lvl)} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold" style={{ background: on ? C.card : 'transparent', border: `1px solid ${on ? C.line : 'transparent'}`, color: on ? C.ink : C.ink3, opacity: on ? 1 : 0.8 }}>
-                <span className="inline-block h-[7px] w-[7px] rounded-full" style={{ background: IMPACT[lvl].color, opacity: on ? 1 : 0.45 }} />
-                {IMPACT[lvl].label}
-                <span style={{ ...MONO, color: C.ink3 }}>{counts[lvl]}</span>
+              <button key={lvl} type="button" aria-pressed={on} onClick={() => toggleImpact(lvl)} style={sx('display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;font-size:12.5px;font-weight:600', { border: `1px solid ${on ? t.line : 'var(--line)'}`, background: on ? t.tint : 'transparent', color: on ? t.text : 'var(--ink-3)' })}>
+                <span style={sx('width:7px;height:7px;border-radius:50%', { background: t.solid, opacity: on ? 1 : 0.45 })} />
+                {t.label}
+                <span style={sx("font:500 10.5px/1 'JetBrains Mono',monospace;color:var(--ink-faint)")}>{counts[lvl]}</span>
               </button>
             );
           })}
         </div>
 
-        <div className="relative sm:ml-auto">
-          <button type="button" aria-haspopup="listbox" aria-expanded={ccyOpen} onClick={() => setCcyOpen((o) => !o)} className="inline-flex items-center gap-2 rounded-[9px] px-3 py-1.5 text-[12.5px] font-semibold" style={{ background: C.card, border: `1px solid ${C.line}`, color: C.ink }}>
-            {countries.length ? `${countries.length} currenc${countries.length === 1 ? 'y' : 'ies'}` : 'All currencies'}
+        <div ref={ccyRef} style={sx('position:relative;margin-left:auto')}>
+          <button type="button" aria-haspopup="listbox" aria-expanded={ccyOpen} onClick={() => setCcyOpen((o) => !o)} style={sx('display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink-2);font-size:12.5px;font-weight:600')}>
+            {allOn ? 'All currencies' : `${countries.length} ${countries.length === 1 ? 'currency' : 'currencies'}`}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 10l5 5 5-5" /></svg>
           </button>
           {ccyOpen && (
-            <div role="listbox" aria-multiselectable="true" className="absolute right-0 z-20 mt-1 w-[200px] rounded-[10px] p-1.5" style={{ background: C.card, border: `1px solid ${C.line}`, boxShadow: '0 10px 30px rgba(15,30,27,.12)' }}>
-              {allCurrencies.length === 0 && <div className="px-2 py-1.5 text-[12px]" style={{ color: C.ink3 }}>No currencies in range</div>}
-              {allCurrencies.map((c) => {
+            <div role="listbox" aria-multiselectable="true" style={sx('position:absolute;top:calc(100% + 7px);right:0;z-index:40;width:186px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow-pop);animation:tgxSlide .16s ease-out')}>
+              {allCodes.map((c) => {
                 const on = countries.includes(c);
                 return (
-                  <button key={c} type="button" role="option" aria-selected={on} onClick={() => toggleCountry(c)} className="flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12.5px]" style={{ color: C.ink, background: on ? C.mintBg : 'transparent' }}>
-                    <span className="grid h-[14px] w-[14px] place-items-center rounded-[4px]" style={{ border: `1px solid ${on ? C.mint : C.line}`, background: on ? C.mint : '#fff' }}>{on && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>}</span>
-                    <CurrencyTag code={c} />
+                  <button key={c} type="button" role="option" aria-selected={on} onClick={() => toggleCcy(c)} className="ecal-opt" style={sx('display:flex;align-items:center;gap:10px;width:100%;padding:8px 9px;border:0;border-radius:8px;background:transparent;text-align:left;font-size:13px;color:var(--ink)')}>
+                    <span style={sx('flex:none;width:15px;height:15px;border-radius:4px;display:grid;place-items:center', on ? { background: 'var(--mint-solid)' } : { border: '1px solid var(--line-strong)' })}>
+                      {on && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#02241d" strokeWidth="3.4" strokeLinecap="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>}
+                    </span>
+                    <span style={sx("font:500 12px/1 'JetBrains Mono',monospace;letter-spacing:.06em")}>{c}</span>
                   </button>
                 );
               })}
-              {countries.length > 0 && <button type="button" onClick={() => setCountries([])} className="mt-1 w-full rounded-[7px] px-2 py-1.5 text-left text-[12px] font-semibold" style={{ color: C.ink2, borderTop: `1px solid ${C.line}` }}>Clear</button>}
             </div>
           )}
         </div>
       </div>
 
-      {/* 3. Next-event strip */}
-      {!loading && next && (
-        <section className="mb-4 overflow-hidden rounded-[13px]" style={{ background: C.dark, color: '#fff', border: `1px solid ${C.darkLine}` }}>
-          <div className="flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
-            <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[.14em]" style={{ ...MONO, background: 'rgba(229,72,77,.18)', color: '#fca5a5' }}>
-                <span className="ecal-pulse inline-block h-[6px] w-[6px] rounded-full" style={{ background: C.high }} />Next high impact
+      {/* 6. Hero */}
+      {next && (
+        <section style={sx('position:relative;margin-bottom:26px;border:1px solid var(--red-line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-lift);overflow:hidden')}>
+          <div style={sx('position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,var(--red-tint),transparent 62%)')} aria-hidden />
+          <div data-tgx-stack="1" style={sx('position:relative;display:flex;align-items:center;gap:24px;padding:22px 24px;flex-wrap:wrap')}>
+            <div style={sx('flex:1;min-width:280px')}>
+              <span style={sx('display:inline-flex;align-items:center;gap:8px;padding:5px 11px 5px 9px;border:1px solid var(--red-line);border-radius:999px;background:var(--red-tint)')}>
+                <span style={sx('width:6px;height:6px;border-radius:50%;background:var(--red-solid);animation:tgxPulse 1.6s ease-in-out infinite')} />
+                <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--red)")}>Next high impact</span>
+              </span>
+              <div style={sx('display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap')}>
+                <span style={sx("font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.07em;padding:4px 7px;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);color:var(--ink-2)")}>{next.event.country}</span>
+                <h2 style={sx("margin:0;font:600 22px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.025em")}>{next.event.title}</h2>
               </div>
-              <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
-                <span className="text-[19px] font-semibold tracking-[-.01em]">{next.event.title}</span>
-                <span className="inline-flex h-[20px] items-center rounded-md px-1.5 text-[10.5px] font-semibold tracking-[.06em]" style={{ ...MONO, background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.14)', color: '#d4dedb' }}>{next.event.country}</span>
-              </div>
-              <div className="mt-1.5 text-[12.5px]" style={{ color: C.darkInk2 }}>
-                {next.day.label} · <span style={MONO}>{next.event.time}</span>
-                {' · '}forecast <span style={{ ...MONO, color: '#fff' }}>{next.event.forecast ?? '—'}</span>
-                {' · '}previous <span style={{ ...MONO, color: '#fff' }}>{next.event.previous ?? '—'}</span>
-              </div>
+              <p style={sx('margin:7px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
+                {next.day.label} · {next.event.time} {timezoneLabel(tz, new Date(now)).split(' · ')[0]} · {next.event.forecast ? <>Forecast <span style={sx("font-family:'JetBrains Mono',monospace;color:var(--ink)")}>{next.event.forecast}</span> vs <span style={sx("font-family:'JetBrains Mono',monospace;color:var(--ink)")}>{next.event.previous ?? '—'}</span> previous</> : 'No forecast published'}
+              </p>
             </div>
-            <div className="flex flex-col items-start gap-2.5 md:items-end">
-              <div className="text-[30px] font-semibold leading-none tracking-[-.02em]" style={MONO} aria-live="off">{countdown(next.ms)}</div>
-              <button type="button" onClick={() => setLockFor(next.event)} className="inline-flex items-center gap-2 rounded-[9px] px-3.5 py-2 text-[12.5px] font-bold" style={{ background: C.high, color: '#fff' }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
-                Auto-lock ±{LOCK_MINUTES} min
-              </button>
+            <div style={sx('flex:none;text-align:right')}>
+              <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)")}>Releases in</div>
+              <div style={sx("margin-top:8px;font:700 38px/1 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--ink)")}>{countdown(next.ms)}</div>
+              {armed ? (
+                <div style={sx('margin-top:12px')}>
+                  <span style={sx('display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--mint-line);border-radius:9px;background:var(--mint-tint);color:var(--mint);font-size:12.5px;font-weight:600')}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M7 11V8.4a5 5 0 0110 0V11" /><path d="M6 11h12v8H6z" /></svg>
+                    Auto-lock armed
+                  </span>
+                  <div style={sx('margin-top:6px;font-size:11.5px;color:var(--ink-3)')}>No cancel — like the kill switch</div>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setLockFor(next.event)} style={sx('margin-top:12px;padding:10px 15px;border:0;border-radius:9px;background:var(--red-btn);color:#fff;font-size:12.5px;font-weight:700')}>Auto-lock ±{LOCK_MINUTES} min</button>
+              )}
             </div>
+          </div>
+          <div style={sx('position:relative;display:flex;align-items:flex-start;gap:9px;padding:14px 24px;border-top:1px solid var(--line);background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
+            <InfoGlyph />
+            <span>Auto-lock blocks new orders on this account from fifteen minutes before the release until fifteen after. Open positions are left alone — a release is a reason not to enter, not a reason to be flattened at the worst tick.</span>
           </div>
         </section>
       )}
 
       {error && !loading && (
-        <div className="mb-4 rounded-[10px] px-3.5 py-3 text-[12.5px]" style={{ background: C.card, border: `1px solid ${C.line}`, color: C.ink2 }}>
-          <strong className="font-semibold" style={{ color: C.ink }}>Couldn&rsquo;t load the calendar.</strong> {error}
+        <div style={sx('margin-bottom:16px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:12.5px;color:var(--ink-2)')}>
+          <strong style={sx('color:var(--ink);font-weight:700')}>Couldn&rsquo;t load the calendar.</strong> {error}
         </div>
       )}
 
-      {/* 4. Day groups */}
+      {/* 7. Day cards */}
       {loading ? (
-        <div className="rounded-[13px]" style={{ background: C.card, border: `1px solid ${C.line}` }}>
-          <div className="ecal-shimmer mx-4 mt-4 h-4 w-40 rounded" style={{ background: '#f3f6f7' }} />
-          <SkeletonRows />
-        </div>
-      ) : visible.length === 0 && !error ? (
-        <div className="rounded-[13px] px-5 py-10 text-center text-[13px]" style={{ background: C.card, border: `1px solid ${C.line}`, color: C.ink3 }}>No events in this range.</div>
+        <section style={sx(CARD)}>
+          <div style={sx('height:46px;background:var(--surface-2);border-bottom:1px solid var(--line)')} />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} data-tgx-ecorow="1" style={sx(GRID, { padding: '12px 20px', borderBottom: '1px solid var(--line)' })}>
+              {[72, 54, 40, 160, 60, 60, 60].map((w, j) => <span key={j} style={sx('display:block;height:12px;border-radius:4px;background:var(--surface-3);animation:tgxPulse 1.4s ease-in-out infinite', { width: j === 3 ? '60%' : `${Math.min(w, 60)}px`, justifySelf: j > 3 ? 'end' : 'start' })} />)}
+            </div>
+          ))}
+        </section>
       ) : visible.map((day) => {
         const open = !collapsed.has(day.date);
-        const shown = day.events;
         const high = day.events.filter((e) => e.impact === 3).length;
         return (
-          <section key={day.date} ref={day.is_today ? todayRef : undefined} className="mb-3 overflow-hidden rounded-[13px] scroll-mt-4" style={{ background: C.card, border: `1px solid ${day.is_today ? C.mintLine : C.line}` }}>
-            <button type="button" onClick={() => toggleDay(day.date)} aria-expanded={open} className="flex w-full items-center gap-3 px-4 py-3 text-left" style={{ borderBottom: open ? `1px solid ${C.line}` : 0 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: C.ink3, transform: open ? 'rotate(0)' : 'rotate(-90deg)', transition: 'transform .15s' }}><path d="M7 10l5 5 5-5" /></svg>
-              <span className="text-[14px] font-semibold" style={{ color: C.ink }}>{day.label}</span>
-              {day.is_today && <span className="rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-[.1em]" style={{ ...MONO, background: C.mintBg, border: `1px solid ${C.mintLine}`, color: '#047857' }}>TODAY</span>}
-              <span className="ml-auto text-[12px]" style={{ ...MONO, color: C.ink3 }}>
-                {high > 0 && <><span style={{ color: C.high }}>{high} high impact</span> · </>}{shown.length} {shown.length === 1 ? 'event' : 'events'}
-              </span>
+          <section key={day.date} ref={day.is_today ? todayRef : undefined} style={sx(CARD, { scrollMarginTop: 16 })}>
+            <button type="button" onClick={() => toggleDay(day.date)} aria-expanded={open} style={sx('width:100%;display:flex;align-items:center;gap:11px;padding:14px 20px;border:0;text-align:left;color:var(--ink)', { background: day.is_today ? 'var(--mint-tint)' : 'var(--surface-2)' })}>
+              <span style={sx('font-size:13.5px;font-weight:700;letter-spacing:-.01em')}>{day.label}</span>
+              {day.is_today && <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:999px;background:var(--mint-solid);color:#02241d")}>Today</span>}
+              <span style={{ flex: 1 }} />
+              <span style={sx('font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums')}>{high > 0 ? `${high} high impact · ` : ''}{day.events.length} {day.events.length === 1 ? 'event' : 'events'}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flex: 'none', color: 'var(--ink-3)' }}><path d={open ? 'M7 14l5-5 5 5' : 'M7 10l5 5 5-5'} /></svg>
             </button>
-
-            {open && (shown.length === 0 ? (
-              <div className="px-4 py-3.5 text-[12.5px]" style={{ color: C.ink3 }}>No events</div>
-            ) : isMobile ? (
-              <div>
-                {shown.map((e) => {
+            {open && (day.events.length === 0 ? (
+              <div style={sx('padding:22px 20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-faint)')}>No events</div>
+            ) : (
+              <>
+                <div data-tgx-ecohead="1" style={sx(GRID, sx("padding:10px 20px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface-2);font:600 9px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)"))}>
+                  <span>Time</span><span>Ccy</span><span>Imp</span><span>Event</span><span style={{ textAlign: 'right' }}>Actual</span><span style={{ textAlign: 'right' }}>Forecast</span><span style={{ textAlign: 'right' }}>Previous</span>
+                </div>
+                {day.events.map((e) => {
                   const ms = msUntil(e, now); const past = isPast(e, now); const isNext = e.id === nextId; const holiday = e.impact === 0;
                   return (
-                    <div key={e.id} className="px-4 py-3" style={{ borderTop: `1px solid ${C.line}`, opacity: past ? 0.52 : 1, background: isNext ? C.highBg : 'transparent' }}>
-                      <div className="flex items-center gap-2.5 text-[12.5px]" style={MONO}>
+                    <div key={e.id} data-tgx-ecorow="1" style={sx(GRID, { alignItems: 'center', padding: '12px 20px', borderBottom: '1px solid var(--line)', background: isNext ? 'var(--red-tint)' : 'transparent', opacity: past ? 0.52 : 1 })}>
+                      <span data-tgx-ecoline="1" style={{ display: 'contents' }}>
                         <TimeCell event={e} isNext={isNext} />
-                        <CurrencyTag code={e.country} />
-                        <ImpactBars level={e.impact} />
-                        <span className="ml-auto"><ActualCell event={e} ms={ms} /></span>
-                      </div>
-                      <div className="mt-1.5 text-[13.5px] font-medium" style={{ color: holiday ? C.ink3 : C.ink, fontStyle: holiday ? 'italic' : 'normal' }}>{holiday ? '🏦 ' : ''}{e.title}</div>
+                        <span style={sx("font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.07em;padding:4px 7px;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);color:var(--ink-2);justify-self:start")}>{e.country}</span>
+                        <span><ImpactBars level={e.impact} /></span>
+                      </span>
+                      <span data-tgx-ecotitle="1" style={sx('min-width:0;text-wrap:pretty', holiday ? { fontSize: 13, fontStyle: 'italic', color: 'var(--ink-3)' } : { fontSize: 13, fontWeight: 500, color: 'var(--ink)' })}>{holiday ? '🏦 ' : ''}{e.title}</span>
                       {!holiday && (
-                        <div className="mt-1 flex gap-4 text-[11.5px]" style={{ color: C.ink3 }}>
-                          <span>Forecast <span style={{ ...MONO, color: C.ink2 }}>{e.forecast ?? '—'}</span></span>
-                          <span>Previous <span style={{ ...MONO, color: C.ink2 }}>{e.previous ?? '—'}</span></span>
-                        </div>
+                        <span data-tgx-ecovals="1" style={{ display: 'contents' }}>
+                          <span><span data-tgx-vlabel="1" style={sx(VLABEL)}>Act</span><Actual event={e} ms={ms} /></span>
+                          <span><span data-tgx-vlabel="1" style={sx(VLABEL)}>Fcst</span><Value v={e.forecast} color="var(--ink-2)" /></span>
+                          <span><span data-tgx-vlabel="1" style={sx(VLABEL)}>Prev</span><Value v={e.previous} color="var(--ink-3)" /></span>
+                        </span>
                       )}
                     </div>
                   );
                 })}
-              </div>
-            ) : (
-              <table className="w-full border-collapse text-[13px]">
-                <thead>
-                  <tr className="text-[10.5px] font-semibold uppercase tracking-[.08em]" style={{ color: C.ink3 }}>
-                    <th className="w-[112px] px-4 py-2 text-left font-semibold">Time</th>
-                    <th className="w-[72px] px-2 py-2 text-left font-semibold">Currency</th>
-                    <th className="w-[64px] px-2 py-2 text-left font-semibold">Impact</th>
-                    <th className="px-2 py-2 text-left font-semibold">Event</th>
-                    <th className="w-[96px] px-3 py-2 text-right font-semibold">Actual</th>
-                    <th className="w-[96px] px-3 py-2 text-right font-semibold">Forecast</th>
-                    <th className="w-[96px] px-4 py-2 text-right font-semibold">Previous</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shown.map((e) => {
-                    const ms = msUntil(e, now); const past = isPast(e, now); const isNext = e.id === nextId; const holiday = e.impact === 0;
-                    return (
-                      <tr key={e.id} className="ecal-row" style={{ borderTop: `1px solid ${C.line}`, opacity: past ? 0.52 : 1, background: isNext ? C.highBg : undefined }}>
-                        <td className="px-4 py-2.5 align-middle" style={MONO}><TimeCell event={e} isNext={isNext} /></td>
-                        <td className="px-2 py-2.5 align-middle"><CurrencyTag code={e.country} /></td>
-                        <td className="px-2 py-2.5 align-middle"><ImpactBars level={e.impact} /></td>
-                        <td className="px-2 py-2.5 align-middle" style={{ color: holiday ? C.ink3 : C.ink, fontStyle: holiday ? 'italic' : 'normal' }}>{holiday ? '🏦 ' : ''}{e.title}</td>
-                        {holiday ? <td colSpan={3} /> : (
-                          <>
-                            <td className="px-3 py-2.5 text-right align-middle" style={MONO}><ActualCell event={e} ms={ms} /></td>
-                            <td className="px-3 py-2.5 text-right align-middle" style={MONO}><Val v={e.forecast} /></td>
-                            <td className="px-4 py-2.5 text-right align-middle" style={MONO}><Val v={e.previous} /></td>
-                          </>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              </>
             ))}
           </section>
         );
       })}
 
-      {lockFor && <AutoLockModal event={lockFor} tz={tz} onClose={closeLock} />}
+      {lockFor && <LockModal event={lockFor} tz={tz} onArmed={onArmed} onClose={closeLock} />}
     </div>
   );
 }
