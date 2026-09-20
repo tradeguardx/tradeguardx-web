@@ -11,6 +11,9 @@ import { fetchRulesBundle, saveRuleInstance, cancelPendingRuleChange } from '../
 import { openSupport } from '../support/supportBus';
 import CooldownBanner from './CooldownBanner';
 import { useCooldown } from '../../hooks/useCooldown';
+import { useGuard } from '../../context/GuardContext';
+import { ruleGlyph } from './shell/icons';
+import PageHead from './shell/PageHead';
 
 
 // leftBorder is written out literally (not derived from iconColor at runtime)
@@ -476,7 +479,7 @@ function RuleLockBanner({ lock }) {
   );
 }
 
-function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked: cooldownLocked = false, ruleLocked = false, lockDays = 0, lockReason = null, expanded, onToggleExpand }) {
+function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked: cooldownLocked = false, ruleLocked = false, lockDays = 0, lockReason = null, expanded, onToggleExpand, enforcement = 'unprotected' }) {
   // Rule lock applies to this card only while the rule is ON. An off rule can
   // still be switched on (and saved with its settings) during a lock; it then
   // joins the lock. Once on, it is frozen like the rest.
@@ -632,16 +635,15 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
             {rule.locked && (
               <div className="absolute inset-0 rounded-lg" style={{ backgroundColor: 'var(--dash-bg-input)' }} />
             )}
-            <span className={`relative ${rule.iconColor}`}><ShieldIcon className="w-4 h-4" /></span>
+            <span className={`relative ${rule.iconColor}`}>{(() => { const G = ruleGlyph(rule.templateSlug ?? rule.slug); return <G size={16} />; })()}</span>
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-display font-semibold text-sm truncate" style={{ color: 'var(--dash-text-primary)' }}>{rule.name}</h3>
               {!rule.locked && rule.hasSavedInstance && rule.enabled && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0 text-accent"
-                  style={{ backgroundColor: isDark ? 'rgba(0,212,170,0.14)' : 'rgba(0,212,170,0.10)', border: `1px solid rgba(0,212,170,${isDark ? '0.2' : '0.30'})` }}>
-                  Armed
+                <span className={`dsh-pill dsh-pill--${enforcement === 'armed' ? 'mint' : enforcement === 'watching' ? 'amber' : 'red'}`}>
+                  {enforcement === 'armed' ? 'Armed' : enforcement === 'watching' ? 'Alert only' : 'Not enforcing'}
                 </span>
               )}
                 {!rule.locked && rule.hasSavedInstance && !rule.enabled && (
@@ -1020,6 +1022,7 @@ export default function RulesTerminal() {
   // Rule lock: the user's own commitment window. After any save, every edit
   // is refused until it lifts — the API returns 423, so the cards are disabled
   // through the same path the cooldown already uses.
+  const guardSel = useGuard().selected;
   const ruleLock = bundle?.ruleLock ?? null;
   const ruleLocked = Boolean(ruleLock?.locked);
   // The cooldown freezes everything. The rule lock freezes only rules that
@@ -1116,20 +1119,29 @@ export default function RulesTerminal() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full"
     >
-      <DashboardPageBanner
-        accent="accent"
-        title="Rules Terminal"
-        subtitle="Rules on your plan are listed below. Values are suggestions until you save — only saved rules are stored and synced for your account."
-        badge={(
-          <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent">
-            <span className="h-2 w-2 rounded-full bg-accent shadow-[0_0_6px_rgba(0,212,170,0.5)]" />
-            {bundle ? `${savedEnabledCount} saved` : '…'}
-            <span style={{ color: 'var(--dash-text-faint)' }}>
-              / {bundle?.maxRules != null ? `max ${bundle.maxRules}` : '—'}
-            </span>
-          </span>
-        )}
+      <PageHead
+        title="Rules"
+        sub={bundle ? `${savedEnabledCount} of ${(bundle?.templates ?? []).length || savedEnabledCount} rules on · rule lock ${ruleLock?.locked ? `on until ${fmtLockDate(ruleLock?.lockedUntil)}` : ruleLock?.days ? `${ruleLock.days} days after your next save` : 'off'}` : 'Loading…'}
       />
+
+      {/* The three layers — load-bearing for comprehension. */}
+      <div className="drx-explain dsh-grid-3">
+        <div className="dsh-card drx-explain__item">
+          <span className="drx-explain__n">1</span>
+          <p className="drx-explain__t">Switch on the rules you want</p>
+          <p className="dsh-meta">Every rule is off until you turn it on. Off rules do nothing at all: no alerts, no closing.</p>
+        </div>
+        <div className="dsh-card drx-explain__item">
+          <span className="drx-explain__n">2</span>
+          <p className="drx-explain__t">Rule lock holds them there</p>
+          <p className="dsh-meta">Rules that are on freeze for your window — tightening too. Rules that are off can always be turned on, even mid-freeze.</p>
+        </div>
+        <div className="dsh-card drx-explain__item">
+          <span className="drx-explain__n">3</span>
+          <p className="drx-explain__t">Kill switch is the manual one</p>
+          <p className="dsh-meta">Separate from rules. It stops you trading this account whatever your rules say. <Link to="/dashboard/live" style={{ color: 'var(--mint)', fontWeight: 700 }}>On Live guard</Link></p>
+        </div>
+      </div>
 
       {loadError && (
         <p className="mb-6 text-sm text-amber-400/90">{loadError}</p>
@@ -1146,7 +1158,7 @@ export default function RulesTerminal() {
 
       {session?.access_token && !accountsLoading && accounts.length === 0 && (
         <p className="mb-6 text-sm rounded-xl border px-4 py-3" style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}>
-          Add a trading account to save rules per prop or platform.{' '}
+          Add a trading account to save rules for it.{' '}
           <Link to="/dashboard/account/trading" className="font-semibold text-accent hover:underline">
             Trading accounts
           </Link>
@@ -1202,6 +1214,7 @@ export default function RulesTerminal() {
                         accessToken={session?.access_token}
                         tradingAccountId={selectedTradingAccountId}
                         isRetail={bundle?.isRetail}
+                        enforcement={guardSel.enforcement}
                         onSaved={load}
                         expanded={expandedRuleId === rule.id}
                         onToggleExpand={() => toggleExpandedRule(rule.id)}
@@ -1248,6 +1261,8 @@ export default function RulesTerminal() {
                           accessToken={session?.access_token}
                           tradingAccountId={selectedTradingAccountId}
                           isRetail={bundle?.isRetail}
+                          enforcement={guardSel.enforcement}
+                        enforcement={guardSel.enforcement}
                           onSaved={load}
                           expanded={expandedRuleId === rule.id}
                           onToggleExpand={() => toggleExpandedRule(rule.id)}

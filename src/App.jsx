@@ -22,11 +22,11 @@ import InfluencerLayout from './components/influencer/InfluencerLayout';
 import InfluencerOverview from './pages/influencer/InfluencerOverview';
 import InfluencerCommissions from './pages/influencer/InfluencerCommissions';
 import InfluencerPayouts from './pages/influencer/InfluencerPayouts';
-import TradeOverviewPage from './pages/TradeOverviewPage';
+import OverviewPage from './pages/OverviewPage';
 import RulesTerminal from './components/dashboard/RulesTerminal';
 import TradeJournal from './components/dashboard/TradeJournal';
 import AllTradesPage from './pages/AllTradesPage';
-import LivePage from './pages/LivePage';
+import LiveGuardPage from './pages/LiveGuardPage';
 import TradeDetailPage from './pages/TradeDetailPage';
 import TradingAccountsPage from './pages/TradingAccountsPage';
 import AccountLayout from './pages/AccountLayout';
@@ -103,8 +103,8 @@ function App() {
                   {/* Preserve the query string — signup lands on /dashboard?welcome=1
                       and a bare Navigate would drop it, so the welcome never fired. */}
                   <Route index element={<RedirectWithSearch to="/dashboard/overview" />} />
-                  <Route path="overview" element={<TradeOverviewPage />} />
-                  <Route path="live" element={<LivePage />} />
+                  <Route path="overview" element={<OverviewPage />} />
+                  <Route path="live" element={<LiveGuardPage />} />
                   <Route path="rules" element={<RulesTerminal />} />
                   <Route path="journal" element={<TradeJournal />} />
                   <Route path="trades" element={<AllTradesPage />} />

@@ -41,7 +41,7 @@ export function KillSwitchButton({ onOpen }) {
 
 export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   const { session } = useAuth();
-  const { selected, refresh } = useGuard();
+  const { selected, refresh, now } = useGuard();
   const toast = useToast();
   const navigate = useNavigate();
   const [hours, setHours] = useState(3);
@@ -55,7 +55,8 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   const locked = guard === 'locked';
 
   useEffect(() => {
-    if (!open) { setStage(1); setBlocked(''); return undefined; }
+    if (!open) return undefined;
+    const returnTo = returnFocusRef?.current;
     const t = setTimeout(() => firstRef.current?.focus(), 30);
     const onKey = (e) => {
       if (e.key === 'Escape') onClose();
@@ -68,7 +69,7 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
       }
     };
     document.addEventListener('keydown', onKey);
-    return () => { clearTimeout(t); document.removeEventListener('keydown', onKey); returnFocusRef?.current?.focus?.(); };
+    return () => { clearTimeout(t); document.removeEventListener('keydown', onKey); returnTo?.querySelector?.('button')?.focus?.(); };
   }, [open, onClose, returnFocusRef]);
 
   if (!open) return null;
@@ -154,7 +155,7 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
                 </button>
               ))}
             </div>
-            <p className="dsh-meta">Trading would resume {formatResumes(Date.now() + hours * 3600_000, tz)}.</p>
+            <p className="dsh-meta">Trading would resume {formatResumes(now + hours * 3600_000, tz)}.</p>
             {blocked && <div className="dks-blocked dsh-inset"><p className="dsh-body">{blocked}</p></div>}
             <div className="dmo-actions">
               <button type="button" className="dsh-btn dsh-btn--red" onClick={() => setStage(2)}>Continue</button>

@@ -74,6 +74,7 @@ function Shell() {
   const mainRef = useRef(null);
   const [drawer, setDrawer] = useState(false);
   const [killOpen, setKillOpen] = useState(false);
+  const [killNonce, setKillNonce] = useState(0);
   const killBtnRef = useRef(null);
 
   const billingArea = pathname.includes('/account') || pathname.includes('/billing');
@@ -111,7 +112,7 @@ function Shell() {
             <Link to="/dashboard/rules" className="dsh-btn dsh-hide-1040"><IcRules size={15} />Edit rules</Link>
           )}
           <span ref={killBtnRef} className="dsh-kill-wrap">
-            <KillSwitchButton onOpen={() => setKillOpen(true)} />
+            <KillSwitchButton onOpen={() => { setKillNonce((n) => n + 1); setKillOpen(true); }} />
           </span>
           <button type="button" className="dsh-btn dsh-btn--ghost dsh-btn--icon dsh-hide-1040" aria-label="Search" onClick={() => navigate('/dashboard/trades')}><IcSearch size={17} /></button>
           <Link to="/dashboard/alerts" className="dsh-btn dsh-btn--ghost dsh-btn--icon dsh-bell" aria-label={unreadBreaches ? `${unreadBreaches} unread alerts` : 'Alerts'}>
@@ -133,7 +134,7 @@ function Shell() {
         </main>
       </div>
 
-      <KillSwitchModal open={killOpen} onClose={() => setKillOpen(false)} returnFocusRef={killBtnRef} />
+      <KillSwitchModal key={killNonce} open={killOpen} onClose={() => setKillOpen(false)} returnFocusRef={killBtnRef} />
       <WelcomeCelebration />
       <PhonePrompt />
       <SupportChat />
