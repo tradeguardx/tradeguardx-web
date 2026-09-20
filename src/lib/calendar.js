@@ -11,11 +11,14 @@ const DAY_MS = 86400000;
 function pad(n) { return String(n).padStart(2, '0'); }
 export function isoDate(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
 
-/** Monday of the week containing `d`, local time, at 00:00. */
+/**
+ * Sunday of the week containing `d`, local time, at 00:00. Calendar weeks
+ * run Sunday→Saturday here because that is how the feed (and Forex Factory's
+ * own calendar) cuts them — on a Sunday, "This week" must be the week ahead.
+ */
 export function startOfWeek(d) {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const dow = (x.getDay() + 6) % 7; // Mon=0
-  x.setDate(x.getDate() - dow);
+  x.setDate(x.getDate() - x.getDay());
   return x;
 }
 

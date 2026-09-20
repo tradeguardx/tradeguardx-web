@@ -6,9 +6,11 @@ const now = new Date('2026-09-23T10:00:00+05:30');
 const ev = (over) => ({ id: 'x', time: '18:00', time_status: 'exact', event_time_utc: '2026-09-23T12:30:00Z', impact: 3, country: 'USD', ...over });
 
 describe('calendar helpers', () => {
-  it('week range is Monday–Sunday and shifts by offset', () => {
-    expect(rangeFor('week', 0, now)).toMatchObject({ from: '2026-09-21', to: '2026-09-27', label: 'This week' });
-    expect(rangeFor('week', 1, now)).toMatchObject({ from: '2026-09-28', to: '2026-10-04', label: 'Next week' });
+  it('week range is Sunday–Saturday like the feed, and shifts by offset', () => {
+    expect(rangeFor('week', 0, now)).toMatchObject({ from: '2026-09-20', to: '2026-09-26', label: 'This week' });
+    expect(rangeFor('week', 1, now)).toMatchObject({ from: '2026-09-27', to: '2026-10-03', label: 'Next week' });
+    // on a Sunday, this week is the week ahead — not six days of history
+    expect(rangeFor('week', 0, new Date('2026-09-20T10:00:00+05:30'))).toMatchObject({ from: '2026-09-20', to: '2026-09-26' });
     expect(rangeFor('month', 0, now)).toMatchObject({ from: '2026-09-01', to: '2026-09-30' });
   });
   it('never fabricates a clock time for non-exact events', () => {
