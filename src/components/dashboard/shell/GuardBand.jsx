@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useGuard } from '../../../context/GuardContext';
-import { IcWarn, IcLock, IcArrow } from './icons';
+import { IcWarn, IcLock } from './icons';
 import { formatRemaining, formatResumes } from './format';
 
 /**
@@ -43,15 +43,13 @@ export default function GuardBand() {
   }
 
   return (
-    <div className={`dgb dgb--${tone}`} role="status">
-      <span className="dgb-icon"><Icon size={18} /></span>
+    <div className={`dgb dgb--${tone}`} role="status" data-tgx-band data-tgx-stack>
+      <span className="dgb-icon"><Icon size={17} stroke={1.9} /></span>
       <div className="dgb-text">
         <p className="dgb-title">{title}</p>
         <p className="dgb-body">{body}</p>
       </div>
-      <Link to={to} className={`dsh-btn dsh-btn--sm ${tone === 'red' ? 'dsh-btn--red' : ''}`}>
-        {cta} <IcArrow size={14} />
-      </Link>
+      <Link to={to} className="dgb-action">{cta}</Link>
     </div>
   );
 }

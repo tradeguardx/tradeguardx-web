@@ -55,8 +55,11 @@ export default function AvatarMenu() {
       {open && (
         <div className="dav-menu dsh-card" role="menu">
           <div className="dav-head">
-            <p className="dav-name">{user?.name || 'Trader'}</p>
-            <p className="dav-email">{user?.email}</p>
+            <span className="dav-head__avatar">{initialsOf(user?.name, user?.email)}</span>
+            <div style={{ minWidth: 0 }}>
+              <p className="dav-name">{user?.name || 'Trader'}</p>
+              <p className="dav-email">{user?.email}</p>
+            </div>
           </div>
           <button ref={firstRef} type="button" role="menuitem" className="dav-item" onClick={() => go('/dashboard/preferences')}><IcPrefs size={15} />Preferences</button>
           <button type="button" role="menuitem" className="dav-item" onClick={() => go('/dashboard/account/security')}><IcSecurity size={15} />Security</button>
@@ -68,16 +71,16 @@ export default function AvatarMenu() {
       )}
 
       {confirm && (
-        <div className="dmo-backdrop" onClick={() => setConfirm(false)} role="presentation">
-          <div className="dmo dsh-card" role="dialog" aria-modal="true" aria-labelledby="dso-title" onClick={(e) => e.stopPropagation()}>
+        <div className="dmo-backdrop" data-tgx-modal onClick={() => setConfirm(false)} role="presentation">
+          <div className="dmo dsh-card" role="dialog" aria-modal="true" aria-labelledby="dso-title" onClick={(e) => e.stopPropagation()}><div className="dmo__body">
             <button type="button" className="dmo-close dsh-btn dsh-btn--ghost dsh-btn--icon" onClick={() => setConfirm(false)} aria-label="Close"><IcClose size={16} /></button>
             <h2 id="dso-title" className="dsh-h2 dmo-title">Sign out?</h2>
             <p className="dsh-body">{signOutCopy}</p>
             <div className="dmo-actions">
               <button type="button" className="dsh-btn dsh-btn--primary" autoFocus onClick={() => { setConfirm(false); logout(); }}>Sign out</button>
-              <button type="button" className="dsh-btn dsh-btn--ghost" onClick={() => setConfirm(false)}>Stay</button>
+              <button type="button" className="dsh-btn" onClick={() => setConfirm(false)}>Stay</button>
             </div>
-          </div>
+          </div></div>
         </div>
       )}
     </div>

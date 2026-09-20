@@ -40,22 +40,22 @@ export default function ConnectKeyPage() {
         sub={`One exchange API key for ${selectedAccount.name}. Trading scope, never withdrawal.`}
       />
 
-      <div className="dsh-card" style={{ padding: 22, marginBottom: 16 }}>
-        <h2 className="dsh-h2" style={{ marginBottom: 8 }}>Why scope matters</h2>
+      <div className="dsh-card" style={{ marginBottom: 16 }}>
+        <div className="dsh-card__head"><h3 className="dsh-h2">Delta India API connection</h3><p className="dsh-sub">Tick Trading. Never tick Withdrawal.</p></div>
+        <div className="dsh-card__body">
         <p className="dsh-body">
-          A read-only key connects fine and looks healthy forever while enforcing nothing. We check the
-          scope the moment you connect and say so plainly: <strong>Tick Trading. Never tick Withdrawal.</strong>{' '}
-          A trading key can cancel orders and close positions; it cannot move funds. Your money stays with Delta.
+          A read-only key connects fine and looks healthy forever while enforcing nothing. We check the scope and will tell you plainly if it cannot act.
         </p>
         {readOnly && (
           <p className="dsh-body" style={{ marginTop: 10, color: 'var(--amber)' }}>
-            The key on this account is read-only. Replace it with a trading-scope key and the engine starts enforcing on the next fill.
+            Replace this with a trading-scope key and the engine starts enforcing on the next fill.
           </p>
         )}
+        </div>
       </div>
 
       {isExchange ? (
-        <div className="dsh-card" style={{ padding: 22 }}>
+        <div className="dsh-card"><div className="dsh-card__body">
           <ExchangeConnectionPanel
             account={selectedAccount}
             accessToken={session?.access_token}
@@ -64,7 +64,7 @@ export default function ConnectKeyPage() {
               success: (...a) => { toast.success(...a); refreshTradingAccounts?.(); refresh(); },
             }}
           />
-        </div>
+        </div></div>
       ) : (
         <div className="dsh-card" style={{ padding: 22 }}>
           <p className="dsh-body">This account has no venue yet. Pick Delta Exchange on the Accounts page, then come back to connect the key.</p>

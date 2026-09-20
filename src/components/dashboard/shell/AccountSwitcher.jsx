@@ -44,11 +44,12 @@ export default function AccountSwitcher() {
   const inProgress = selectedAccount && !selectedAccount.propFirmSlug;
 
   return (
-    <div className="dsw" ref={ref}>
+    <div className="dsw" ref={ref} data-tgx-acctwrap>
       <button
         ref={btnRef}
         type="button"
         className="dsw-btn"
+        data-tgx-acct
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
@@ -58,7 +59,7 @@ export default function AccountSwitcher() {
           <span className="dsw-label">{inProgress ? 'New account' : selectedAccount?.name ?? 'No account'}</span>
           <span className="dsw-venue">{inProgress ? 'Not created yet' : venue ?? 'Add one to begin'}</span>
         </span>
-        <IcChevron size={14} className="dsw-chev" />
+        <IcChevron size={13} className="dsw-chev" />
       </button>
 
       {open && (
@@ -81,7 +82,8 @@ export default function AccountSwitcher() {
                   <span className="dsw-label">{draft ? 'New account' : a.name}</span>
                   <span className="dsw-venue">{draft ? 'Not created yet' : brokerLabel(a.propFirmSlug)}</span>
                 </span>
-                <span className={`dsh-pill dsh-pill--${TONE[s.guard]}`}>{WORD[s.guard]}</span>
+                <span className="dsw-dot" style={{ background: `var(--${TONE[s.guard]}-solid)` }} aria-hidden />
+                <span className="dsh-meta" style={{ color: `var(--${TONE[s.guard]})` }}>{WORD[s.guard]}</span>
                 {active && <IcCheck size={14} className="dsw-check" />}
               </button>
             );

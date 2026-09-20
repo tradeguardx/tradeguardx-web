@@ -13,6 +13,10 @@ export const DEFAULT_PREFS = {
   weekStart: 'mon', // 'mon' | 'sun'
   confirmBeforeClose: true,
   soundOnRuleFire: false,
+  // §6 tweak props — root attributes with token overrides
+  accent: 'mint', // 'mint' | 'signal' | 'ion'
+  chrome: 'depth', // 'depth' | 'flat' | 'print'
+  voice: 'coach', // 'coach' | 'clinical'
 };
 
 export function readPrefs() {

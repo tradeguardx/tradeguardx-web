@@ -71,8 +71,8 @@ export default function PreferencesPage() {
     <>
       <PageHead title="Preferences" sub="How the dashboard behaves for you. These follow this browser." />
 
-      <section className="dsh-card dpf-section">
-        <h2 className="dsh-h2">Profile</h2>
+      <section className="dsh-card dpf-section" style={{ marginBottom: 16 }}>
+        <h3 className="dsh-h2">Profile</h3><div className="dpf-section__body">
         <Row label="Name">
           <div style={{ display: 'flex', gap: 8 }}>
             <input className="dsh-input" value={name} onChange={(e) => setName(e.target.value)} style={{ maxWidth: 260 }} />
@@ -82,23 +82,29 @@ export default function PreferencesPage() {
         <Row label="Email" hint="Your login and the fallback alert channel. Change it from Security with a password check.">
           <input className="dsh-input" value={user?.email ?? ''} readOnly style={{ maxWidth: 320, color: 'var(--ink-3)' }} />
         </Row>
-      </section>
+      </div></section>
 
-      <section className="dsh-card dpf-section">
-        <h2 className="dsh-h2">Display</h2>
+      <section className="dsh-card dpf-section" style={{ marginBottom: 16 }}>
+        <h3 className="dsh-h2">Display</h3><div className="dpf-section__body">
         <Row label="Row density">
           <Seg value={prefs.density} onChange={(v) => setPref('density', v)} options={[{ value: 'comfortable', label: 'Comfortable' }, { value: 'compact', label: 'Compact' }]} />
         </Row>
         <Row label="Display currency" hint="For our own figures. The Tax centre is always INR — it must match what is filed.">
           <Seg value={prefs.currency} onChange={(v) => setPref('currency', v)} options={[{ value: 'USD', label: 'USD' }, { value: 'INR', label: 'INR' }]} />
         </Row>
+        <Row label="Accent" hint="Rewires the armed colour everywhere.">
+          <Seg value={prefs.accent} onChange={(v) => setPref('accent', v)} options={[{ value: 'mint', label: 'Mint' }, { value: 'signal', label: 'Signal' }, { value: 'ion', label: 'Ion' }]} />
+        </Row>
+        <Row label="Chrome" hint="Depth keeps shadows and washes; flat and print strip them.">
+          <Seg value={prefs.chrome} onChange={(v) => setPref('chrome', v)} options={[{ value: 'depth', label: 'Depth' }, { value: 'flat', label: 'Flat' }, { value: 'print', label: 'Print' }]} />
+        </Row>
         <Row label="Week starts on">
           <Seg value={prefs.weekStart} onChange={(v) => setPref('weekStart', v)} options={[{ value: 'mon', label: 'Monday' }, { value: 'sun', label: 'Sunday' }]} />
         </Row>
-      </section>
+      </div></section>
 
-      <section className="dsh-card dpf-section">
-        <h2 className="dsh-h2">Session</h2>
+      <section className="dsh-card dpf-section" style={{ marginBottom: 16 }}>
+        <h3 className="dsh-h2">Session behaviour</h3><div className="dpf-section__body">
         <Row label="Landing screen" hint="Where sign-in takes you.">
           <Seg value={prefs.landing} onChange={(v) => setPref('landing', v)} options={[{ value: 'overview', label: 'Overview' }, { value: 'live', label: 'Live guard' }]} />
         </Row>
@@ -108,14 +114,14 @@ export default function PreferencesPage() {
         <Row label="Sound on rule fire" hint="A short tone when a breach toast appears while the dashboard is open.">
           <Toggle on={prefs.soundOnRuleFire} onChange={(v) => setPref('soundOnRuleFire', v)} label="Sound on rule fire" />
         </Row>
-      </section>
+      </div></section>
 
-      <section className="dsh-card dpf-section">
-        <h2 className="dsh-h2">Close account</h2>
-        <p className="dsh-body">Keys are deleted immediately. Trade records are kept for 30 days so you can export them, then removed.</p>
+      <section className="dsh-card dpf-section" style={{ marginBottom: 16 }}>
+        <h3 className="dsh-h2">Close your account</h3><div className="dpf-section__body">
+        <p className="dsh-body" style={{ paddingTop: 14 }}>Keys are deleted immediately. Trade records are kept for 30 days so you can export them, then removed.</p>
         {/* TODO(api): no close-account endpoint exists; routes to support. */}
-        <Link to="/support" className="dsh-btn" style={{ marginTop: 12, color: 'var(--red)' }}>Request account closure</Link>
-      </section>
+        <Link to="/support" className="dsh-btn dsh-btn--danger" style={{ marginTop: 12 }}>Request account closure</Link>
+      </div></section>
     </>
   );
 }

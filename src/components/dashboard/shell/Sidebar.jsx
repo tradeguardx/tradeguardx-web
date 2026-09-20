@@ -4,7 +4,7 @@ import { useTradingAccounts } from '../../../context/TradingAccountContext';
 import { useDashboardTheme } from '../../../context/DashboardThemeContext';
 import {
   IcOverview, IcLive, IcRules, IcJournal, IcTrades, IcTax,
-  IcAccounts, IcKey, IcBell, IcBilling, IcSecurity, IcPrefs, IcSun, IcMoon,
+  IcAccounts, IcKey, IcBell, IcBilling, IcSecurity, IcPrefs, IcSun, IcMoon, IcShield,
 } from './icons';
 
 /**
@@ -75,12 +75,7 @@ export default function Sidebar({ onNavigate }) {
   return (
     <div className="dsb">
       <Link to="/dashboard/overview" className="dsb-brand" onClick={onNavigate}>
-        <span className="dsb-brand__mark" aria-hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
-          </svg>
-        </span>
+        <span className="dsb-brand__mark" aria-hidden><IcShield size={18} /></span>
         <span className="dsb-brand__name">TradeGuardX</span>
       </Link>
 
@@ -96,7 +91,7 @@ export default function Sidebar({ onNavigate }) {
                 onClick={onNavigate}
                 className={({ isActive }) => `dsb-link${isActive ? ' dsb-link--active' : ''}`}
               >
-                <Icon size={17} />
+                <Icon size={16} />
                 <span className="dsb-link__label">{label}</span>
                 {badge && <Badge kind={badge} guard={g} accounts={accounts} />}
               </NavLink>
@@ -107,16 +102,17 @@ export default function Sidebar({ onNavigate }) {
 
       <div className="dsb-foot">
         <button type="button" className="dsb-link" onClick={toggleTheme} aria-label="Toggle theme">
-          {isDark ? <IcSun size={17} /> : <IcMoon size={17} />}
-          <span className="dsb-link__label">{isDark ? 'Light mode' : 'Dark mode'}</span>
+          {isDark ? <IcSun size={16} /> : <IcMoon size={16} />}
+          <span>{isDark ? 'Light' : 'Dark'}</span>
         </button>
         <NavLink
           to="/dashboard/preferences"
           onClick={onNavigate}
-          className={({ isActive }) => `dsb-link${isActive ? ' dsb-link--active' : ''}`}
+          className={({ isActive }) => `dsb-link dsb-link--icon${isActive ? ' dsb-link--active' : ''}`}
+          aria-label="Preferences"
+          title="Preferences"
         >
-          <IcPrefs size={17} />
-          <span className="dsb-link__label">Preferences</span>
+          <IcPrefs size={16} />
         </NavLink>
       </div>
     </div>

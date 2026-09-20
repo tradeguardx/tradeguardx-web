@@ -21,19 +21,24 @@ import { formatRemaining, formatResumes } from '../components/dashboard/shell/fo
 
 const PROOF = [
   { k: 'Enforced', v: 'Server' },
-  { k: 'Reaction', v: 'Seconds' },
+  { k: 'Reaction', v: '~120ms' },
   { k: 'Key scope', v: 'Trading · cannot withdraw' },
 ];
 
-function Stat({ label, value, sub, tone, bar }) {
+function Stat({ label, value, sub, tone, bar, trend }) {
   return (
-    <div className="dsh-card dov-stat">
-      <div className="dsh-mono">{label}</div>
-      <div className={`dsh-stat-figure dov-stat__v${tone ? ` dov-stat__v--${tone}` : ''}`}>{value}</div>
+    <div className="dsh-stat">
+      <div className="dsh-mono dsh-mono--stat">{label}</div>
+      <div className="dsh-stat-figure" style={{ color: tone ? `var(--${tone})` : 'var(--ink)' }}>{value}</div>
       {sub && <div className="dsh-meta">{sub}</div>}
       {bar != null && (
-        <div className="dov-bar" aria-hidden>
-          <span style={{ width: `${Math.max(0, Math.min(100, bar))}%` }} className={tone ? `dov-bar__fill--${tone}` : ''} />
+        <div className="dsh-progress" style={{ marginTop: 10 }} aria-hidden>
+          <span style={{ width: `${Math.max(0, Math.min(100, bar))}%` }} className={tone === 'amber' ? 'is-amber' : tone === 'red' ? 'is-red' : ''} />
+        </div>
+      )}
+      {trend && (
+        <div className="dsh-trend" aria-hidden>
+          {trend.map((h, i) => <span key={i} style={{ height: `${Math.max(8, Math.min(100, h))}%` }} />)}
         </div>
       )}
     </div>
@@ -96,10 +101,15 @@ export default function OverviewPage() {
   return (
     <div className="dov">
       {/* ── Hero ────────────────────────────────────────────────────── */}
+      <div className="dph">
+        <h1 className="dsh-h1">Overview</h1>
+        <p className="dph-sub">Three questions, in order: is the guard on, what is today costing me, and what should I do next.</p>
+      </div>
+
       <section className={`dsh-card dov-hero dov-hero--${tone}`}>
         <div className="dov-hero__main">
           <span className={`dsh-pill dsh-pill--${tone}`}><span className={`dot${g.guard === 'armed' ? ' dot--pulse' : ''}`} />{noAccount ? 'NO ACCOUNT' : pill}</span>
-          <h1 className="dsh-h1 dov-hero__title">{noAccount ? 'Nothing is protected yet.' : title}</h1>
+          <h2 className="dsh-hero-title dov-hero__title">{noAccount ? 'Nothing is protected yet.' : title}</h2>
           <p className="dsh-body dov-hero__sub">{sub}</p>
           <div className="dov-hero__ctas">
             <Link to={noAccount ? '/dashboard/account/trading' : cta1.to} className="dsh-btn dsh-btn--primary">{noAccount ? 'Add an account' : cta1.label} <IcArrow size={14} /></Link>
@@ -110,7 +120,7 @@ export default function OverviewPage() {
           {PROOF.map((p) => (
             <div key={p.k} className="dov-proof__item">
               <dt className="dsh-mono">{p.k}</dt>
-              <dd>{p.v}</dd>
+              <dd className="dsh-inline-figure" style={{ fontSize: 15, color: 'var(--ink)' }}>{p.v}</dd>
             </div>
           ))}
         </dl>
@@ -118,12 +128,13 @@ export default function OverviewPage() {
 
       {/* ── Setup checklist ─────────────────────────────────────────── */}
       {showChecklist && (
-        <section className="dsh-card dov-check">
+        <section className="dsh-card">
           <div className="dov-check__head">
-            <h2 className="dsh-h2">Set up {selectedAccount.name}</h2>
+            <h3 className="dsh-h2">Set up {selectedAccount.name}</h3>
             <span className="dsh-meta tnum">{doneCount} of 4</span>
           </div>
-          <div className="dov-check__bar" aria-hidden><span style={{ width: `${(doneCount / 4) * 100}%` }} /></div>
+          <div className="dov-check__body">
+          <div className="dsh-progress" aria-hidden><span style={{ width: `${(doneCount / 4) * 100}%` }} /></div>
           <ol className="dov-check__list">
             {steps.map((st, i) => (
               <li key={st.key} className={`dov-check__item${st.done ? ' dov-check__item--done' : ''}`}>
@@ -134,11 +145,12 @@ export default function OverviewPage() {
             ))}
           </ol>
           <p className="dsh-meta">Nothing is enforced until all four are done.</p>
+          </div>
         </section>
       )}
 
       {/* ── Stats ───────────────────────────────────────────────────── */}
-      <section className="dsh-grid-4 dov-stats">
+      <section className="dsh-stat-grid">
         <Stat
           label="Today"
           value={s.pnl == null ? '—' : fmtMoney(s.pnl, cur, { sign: true })}
@@ -168,8 +180,9 @@ export default function OverviewPage() {
 
       {/* ── Next actions ────────────────────────────────────────────── */}
       {selectedAccount && (
-        <section className="dsh-card dov-next">
-          <h2 className="dsh-h2">Next</h2>
+        <section className="dsh-card">
+          <div className="dsh-card__head"><h3 className="dsh-h2">Next</h3></div>
+          <div className="dsh-card__body">
           {g.gaps.length === 0 ? (
             <p className="dsh-body">Nothing to fix. Open Live guard when you sit down to trade.</p>
           ) : (
@@ -185,13 +198,14 @@ export default function OverviewPage() {
               ))}
             </ul>
           )}
+          </div>
         </section>
       )}
 
       {/* ── Plain English ───────────────────────────────────────────── */}
-      <p className="dsh-meta dov-plain">
+      <p className="dov-plain">
         <strong>Plain English.</strong> We cannot stop you placing an order inside Delta&rsquo;s own app. What we do is
-        close the position immediately after it opens, cancel what is resting, then check you are actually flat.
+        close the position immediately after it opens, cancel what is resting, then check you are actually flat — in about 120 milliseconds, from our servers, not your browser.
         {g.enforcement !== 'armed' && ' Right now the key on this account cannot close anything, so that promise does not apply until it can.'}
       </p>
     </div>

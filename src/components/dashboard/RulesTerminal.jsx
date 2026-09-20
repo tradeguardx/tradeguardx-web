@@ -642,7 +642,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-display font-semibold text-sm truncate" style={{ color: 'var(--dash-text-primary)' }}>{rule.name}</h3>
               {!rule.locked && rule.hasSavedInstance && rule.enabled && (
-                <span className={`dsh-pill dsh-pill--${enforcement === 'armed' ? 'mint' : enforcement === 'watching' ? 'amber' : 'red'}`}>
+                <span className={`dsh-chip dsh-chip--${enforcement === 'armed' ? 'mint' : enforcement === 'watching' ? 'amber' : 'red'}`}>
                   {enforcement === 'armed' ? 'Armed' : enforcement === 'watching' ? 'Alert only' : 'Not enforcing'}
                 </span>
               )}
@@ -1124,24 +1124,27 @@ export default function RulesTerminal() {
         sub={bundle ? `${savedEnabledCount} of ${(bundle?.templates ?? []).length || savedEnabledCount} rules on · rule lock ${ruleLock?.locked ? `on until ${fmtLockDate(ruleLock?.lockedUntil)}` : ruleLock?.days ? `${ruleLock.days} days after your next save` : 'off'}` : 'Loading…'}
       />
 
-      {/* The three layers — load-bearing for comprehension. */}
-      <div className="drx-explain dsh-grid-3">
-        <div className="dsh-card drx-explain__item">
-          <span className="drx-explain__n">1</span>
-          <p className="drx-explain__t">Switch on the rules you want</p>
-          <p className="dsh-meta">Every rule is off until you turn it on. Off rules do nothing at all: no alerts, no closing.</p>
+      {/* The three layers — load-bearing for comprehension. Copy verbatim (§4). */}
+      <section className="dsh-card drx-explain">
+        <div className="dsh-card__head"><h3 className="dsh-h2">How your protection fits together</h3></div>
+        <div className="dsh-card__body dsh-grid-3">
+          <div className="drx-explain__item">
+            <span className="drx-explain__n">1</span>
+            <p className="drx-explain__t">Switch on the rules you want</p>
+            <p className="dsh-meta">Every rule is off until you turn it on. Off rules do nothing at all — no alerts, no closing.</p>
+          </div>
+          <div className="drx-explain__item">
+            <span className="drx-explain__n">2</span>
+            <p className="drx-explain__t">Rule lock holds them there</p>
+            <p className="dsh-meta">Rules that are <strong>on</strong> freeze for the window you pick — 7 days by default. Rules that are <strong>off</strong> can always be turned on.</p>
+          </div>
+          <div className="drx-explain__item">
+            <span className="drx-explain__n">3</span>
+            <p className="drx-explain__t">Kill switch is the manual one</p>
+            <p className="dsh-meta">Separate from rules. It stops you trading this account for a few hours, whatever your rules say. <Link to="/dashboard/live" style={{ color: 'var(--mint)', fontWeight: 700 }}>On Live guard</Link></p>
+          </div>
         </div>
-        <div className="dsh-card drx-explain__item">
-          <span className="drx-explain__n">2</span>
-          <p className="drx-explain__t">Rule lock holds them there</p>
-          <p className="dsh-meta">Rules that are on freeze for your window — tightening too. Rules that are off can always be turned on, even mid-freeze.</p>
-        </div>
-        <div className="dsh-card drx-explain__item">
-          <span className="drx-explain__n">3</span>
-          <p className="drx-explain__t">Kill switch is the manual one</p>
-          <p className="dsh-meta">Separate from rules. It stops you trading this account whatever your rules say. <Link to="/dashboard/live" style={{ color: 'var(--mint)', fontWeight: 700 }}>On Live guard</Link></p>
-        </div>
-      </div>
+      </section>
 
       {loadError && (
         <p className="mb-6 text-sm text-amber-400/90">{loadError}</p>

@@ -17,7 +17,7 @@ import GuardPill from './shell/GuardPill';
 import GuardBand from './shell/GuardBand';
 import AvatarMenu from './shell/AvatarMenu';
 import { KillSwitchButton, KillSwitchModal } from './shell/KillSwitch';
-import { IcMenu, IcClose, IcBell, IcRules, IcSearch } from './shell/icons';
+import { IcMenu, IcBell, IcSliders, IcSearch } from './shell/icons';
 
 /**
  * Dashboard shell.
@@ -32,37 +32,6 @@ import { IcMenu, IcClose, IcBell, IcRules, IcSearch } from './shell/icons';
  * ≤900 drawer; ≤700 single nowrap header row with the kill switch
  * collapsed to an icon (re-expands to the countdown when armed).
  */
-
-function Drawer({ open, onClose }) {
-  const panelRef = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'Tab' && panelRef.current) {
-        const f = panelRef.current.querySelectorAll('a[href], button:not(:disabled)');
-        if (!f.length) return;
-        const first = f[0]; const last = f[f.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    const t = setTimeout(() => panelRef.current?.querySelector('a[href]')?.focus(), 30);
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.body.style.overflow = ''; };
-  }, [open, onClose]);
-
-  return (
-    <div className={`ddr${open ? ' ddr--open' : ''}`} aria-hidden={!open}>
-      <div className="ddr-scrim" onClick={onClose} />
-      <div className="ddr-panel" ref={panelRef} role="dialog" aria-modal="true" aria-label="Navigation">
-        <button type="button" className="ddr-close dsh-btn dsh-btn--ghost dsh-btn--icon" onClick={onClose} aria-label="Close menu"><IcClose size={18} /></button>
-        <Sidebar onNavigate={onClose} />
-      </div>
-    </div>
-  );
-}
 
 function Shell() {
   const { user } = useAuth();
@@ -79,6 +48,17 @@ function Shell() {
 
   const billingArea = pathname.includes('/account') || pathname.includes('/billing');
   const locked = Boolean(user?.isExpired) && !billingArea;
+  // §3.5 per-screen max-widths: Overview/Accounts/Plan 980 · Alerts/Security/Preferences 760–780
+  const narrow = /\/dashboard\/(overview|account\/trading|account\/billing)$/.test(pathname);
+  const tight = /\/dashboard\/(alerts|account\/security|preferences|account\/notifications)$/.test(pathname);
+
+  useEffect(() => {
+    if (!drawer) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setDrawer(false); };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+  }, [drawer]);
 
   useEffect(() => {
     document.body.style.paddingTop = '';
@@ -96,36 +76,48 @@ function Shell() {
   }, [pathname]);
 
   return (
-    <div data-dash-theme={theme} data-density={prefs.density} className="dsh-root" style={{ backgroundColor: 'var(--bg)' }}>
-      <aside className="dsh-side">
-        <Sidebar />
+    <div
+      data-tgx
+      data-dash-theme={theme}
+      data-theme={theme}
+      data-accent={prefs.accent}
+      data-chrome={prefs.chrome}
+      data-density={prefs.density}
+      className="dsh-root"
+      style={{ backgroundColor: 'var(--bg)' }}
+    >
+      <aside className="dsh-side" data-tgx-aside data-open={drawer ? '1' : '0'}>
+        <Sidebar onNavigate={() => setDrawer(false)} />
       </aside>
-      <Drawer open={drawer} onClose={() => setDrawer(false)} />
-
+      <div className="ddr-scrim" data-tgx-scrim style={{ position: 'fixed', inset: 0, zIndex: 85, opacity: drawer ? 1 : 0, pointerEvents: drawer ? 'auto' : 'none' }} onClick={() => setDrawer(false)} />
       <div className="dsh-main">
         <header className="dsh-header">
-          <button type="button" className="dsh-btn dsh-btn--ghost dsh-btn--icon dsh-burger" onClick={() => setDrawer(true)} aria-label="Open menu"><IcMenu size={18} /></button>
-          <AccountSwitcher />
-          <GuardPill className="dsh-hide-1040" />
-          <div className="dsh-spacer" />
-          {!pathname.startsWith('/dashboard/rules') && (
-            <Link to="/dashboard/rules" className="dsh-btn dsh-hide-1040"><IcRules size={15} />Edit rules</Link>
-          )}
-          <span ref={killBtnRef} className="dsh-kill-wrap">
-            <KillSwitchButton onOpen={() => { setKillNonce((n) => n + 1); setKillOpen(true); }} />
-          </span>
-          <button type="button" className="dsh-btn dsh-btn--ghost dsh-btn--icon dsh-hide-1040" aria-label="Search" onClick={() => navigate('/dashboard/trades')}><IcSearch size={17} /></button>
-          <Link to="/dashboard/alerts" className="dsh-btn dsh-btn--ghost dsh-btn--icon dsh-bell" aria-label={unreadBreaches ? `${unreadBreaches} unread alerts` : 'Alerts'}>
-            <IcBell size={17} />
-            {unreadBreaches > 0 && <span className="dsh-bell__dot" />}
-          </Link>
-          <AvatarMenu />
+          <div className="dsh-headbar" data-tgx-headbar>
+            <button type="button" className="dsh-burger" data-tgx-burger onClick={() => setDrawer(true)} aria-label="Open menu"><IcMenu size={17} /></button>
+            <AccountSwitcher />
+            <GuardPill mdhide />
+            <div className="dsh-spacer" />
+            {!pathname.startsWith('/dashboard/rules') && (
+              <Link to="/dashboard/rules" className="dsh-edit" data-tgx-mdhide><IcSliders size={15} stroke={1.8} />Edit rules</Link>
+            )}
+            <span ref={killBtnRef}>
+              <KillSwitchButton onOpen={() => { setKillNonce((n) => n + 1); setKillOpen(true); }} />
+            </span>
+            <button type="button" className="dsh-search" data-tgx-mdhide aria-label="Search" onClick={() => navigate('/dashboard/trades')}>
+              <IcSearch size={15} />Search<span className="dsh-search__k">⌘K</span>
+            </button>
+            <Link to="/dashboard/alerts" className="dsh-bell" aria-label={unreadBreaches ? `${unreadBreaches} unread alerts` : 'Alerts'}>
+              <IcBell size={16} />
+              {unreadBreaches > 0 && <span className="dsh-bell__dot" />}
+            </Link>
+            <AvatarMenu />
+          </div>
         </header>
 
         <GuardBand />
 
         <main ref={mainRef} className="dsh-page">
-          <div className="dsh-page__inner">
+          <div className={`dsh-page__inner${narrow ? ' dsh-page__inner--narrow' : ''}${tight ? ' dsh-page__inner--tight' : ''}`} data-tgx-main key={pathname}>
             <VerifyEmailBanner />
             <BreachBanner />
             <TrialBanner />

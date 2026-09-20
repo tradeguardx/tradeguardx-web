@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useGuard } from '../../../context/GuardContext';
 import { useToast } from '../../common/ToastProvider';
 import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../../../api/userApi';
-import { IcPower, IcClose, IcLock } from './icons';
+import { IcPower, IcClose } from './icons';
 import { formatRemaining, formatResumes } from './format';
 
 /**
@@ -24,17 +24,15 @@ export function KillSwitchButton({ onOpen }) {
   return (
     <button
       type="button"
-      className={`dsh-btn dsh-btn--red dks-btn${locked ? ' dks-btn--locked' : ''}`}
+      className={`dks-btn${locked ? ' dks-btn--locked' : ''}`}
+      data-tgx-ks
+      data-armed={locked ? '1' : '0'}
       onClick={onOpen}
       title={locked ? 'Lockout running' : 'Lock yourself out of trading'}
       aria-label={locked ? 'Kill switch running' : 'Kill switch'}
     >
-      {locked ? <IcLock size={15} /> : <IcPower size={15} />}
-      {locked ? (
-        <span className="dsh-code dks-count">{formatRemaining(selected.lockRemainingMs)}</span>
-      ) : (
-        <span className="dks-label">Kill switch</span>
-      )}
+      <IcPower size={15} />
+      <span data-tgx-kslabel>{locked ? formatRemaining(selected.lockRemainingMs) : 'Kill switch'}</span>
     </button>
   );
 }
@@ -96,14 +94,14 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   const tz = account?.timezone || 'Asia/Kolkata';
 
   return (
-    <div className="dmo-backdrop" onClick={onClose} role="presentation">
-      <div className="dmo dsh-card" role="dialog" aria-modal="true" aria-labelledby="dks-title" ref={cardRef} onClick={(e) => e.stopPropagation()}>
+    <div className="dmo-backdrop" data-tgx-modal onClick={onClose} role="presentation">
+      <div className="dmo dsh-card" role="dialog" aria-modal="true" aria-labelledby="dks-title" ref={cardRef} onClick={(e) => e.stopPropagation()}><div className="dmo__body">
         <button type="button" className="dmo-close dsh-btn dsh-btn--ghost dsh-btn--icon" onClick={onClose} aria-label="Close"><IcClose size={16} /></button>
 
         {locked ? (
           <>
             <span className="dsh-pill dsh-pill--red"><span className="dot" />Locked</span>
-            <h2 id="dks-title" className="dsh-h1 dmo-title">{formatRemaining(lockRemainingMs)}</h2>
+            <h2 id="dks-title" className="dsh-countdown dsh-countdown--modal dmo-title">{formatRemaining(lockRemainingMs)}</h2>
             <p className="dsh-body">
               Trading resumes {formatResumes(lockUntil, tz)}. {lockReason === 'manual' ? 'You armed this yourself.' : 'A rule armed this, not you.'}
             </p>
@@ -137,7 +135,7 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
             <span className="dsh-pill dsh-pill--red"><IcPower size={11} />Kill switch</span>
             <h2 id="dks-title" className="dsh-h2 dmo-title">Lock yourself out of {account?.name}</h2>
             <p className="dsh-body">
-              For the window you choose, any position you open is closed on sight and orders are cancelled. We cannot stop you placing an order inside Delta&rsquo;s own app; what we do is close it immediately after and verify you are flat.
+              Lock yourself out of this account for a window you choose. <strong>You can&rsquo;t call it off yourself</strong> — there is no off button, only the clock.
             </p>
             <div className="dks-hours" role="radiogroup" aria-label="Duration">
               {LOCKOUT_HOUR_OPTIONS.map((h, i) => (
@@ -167,7 +165,7 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
             <span className="dsh-pill dsh-pill--red"><IcPower size={11} />Last check</span>
             <h2 id="dks-title" className="dsh-h2 dmo-title">Lock {account?.name} for {hours} hours?</h2>
             <div className="dmo-note dsh-inset">
-              <p className="dsh-body"><strong>There is no off button.</strong> Only the clock ends it. Support can lift it if something real happens; you cannot. If you are holding a position, we will refuse and tell you to flatten first.</p>
+              <p className="dsh-body">You will not be able to trade this account for {hours} hours. There is no cancel. Orders placed anywhere in the meantime get closed on sight.</p>
             </div>
             {blocked && <div className="dks-blocked dsh-inset"><p className="dsh-body">{blocked}</p></div>}
             <div className="dmo-actions">
@@ -178,7 +176,7 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
             </div>
           </>
         )}
-      </div>
+      </div></div>
     </div>
   );
 }

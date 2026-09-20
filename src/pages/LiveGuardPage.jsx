@@ -10,7 +10,7 @@ import OpenPositions from '../components/dashboard/OpenPositions';
 import ManualKillswitchCard from '../components/dashboard/ManualKillswitchCard';
 import RuleLockCard from '../components/dashboard/RuleLockCard';
 import PageHead from '../components/dashboard/shell/PageHead';
-import { ruleGlyph, IcArrow, IcClock } from '../components/dashboard/shell/icons';
+import { ruleGlyph, ruleAccent, IcArrow, IcClock } from '../components/dashboard/shell/icons';
 import { formatRemaining, formatResumes, lockReasonLabel } from '../components/dashboard/shell/format';
 
 /**
@@ -90,7 +90,7 @@ export default function LiveGuardPage() {
       />
 
       {/* ── Session ────────────────────────────────────────────────── */}
-      <section className="dsh-card dlg-session">
+      <section className="dsh-card">
         <div className="dlg-session__top">
           <div>
             <div className="dsh-mono">Session P&amp;L</div>
@@ -129,17 +129,18 @@ export default function LiveGuardPage() {
       </section>
 
       {/* ── Positions ──────────────────────────────────────────────── */}
-      <section className="dsh-card dlg-block">
-        <h2 className="dsh-h2">Open positions</h2>
-        <OpenPositions accessToken={accessToken} tradingAccountId={selectedTradingAccountId} />
+      <section className="dsh-card">
+        <div className="dsh-card__head"><h3 className="dsh-h2">Open positions</h3></div>
+        <div className="dsh-card__body"><OpenPositions accessToken={accessToken} tradingAccountId={selectedTradingAccountId} /></div>
       </section>
 
       {/* ── Live rules ─────────────────────────────────────────────── */}
-      <section className="dsh-card dlg-block">
-        <div className="dlg-block__head">
-          <h2 className="dsh-h2">Rules watching this account</h2>
+      <section className="dsh-card">
+        <div className="dsh-card__head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+          <h3 className="dsh-h2">Rules watching this account</h3>
           <span className="dsh-meta tnum">{g.rulesOn} of {g.rulesTotal} on</span>
         </div>
+        <div className="dsh-card__body">
         {armedRules.length === 0 ? (
           <p className="dsh-body">No rules are on. Off rules do nothing at all — no alerts, no closing. <Link to="/dashboard/rules" style={{ color: 'var(--mint)', fontWeight: 700 }}>Choose rules</Link></p>
         ) : (
@@ -153,42 +154,45 @@ export default function LiveGuardPage() {
               const chipWord = !enforcing && c?.tone === 'ok' ? (g.enforcement === 'watching' ? 'Alert only' : 'Not enforcing') : c ? TONE_WORD[c.tone] : 'Configured';
               return (
                 <li key={r.templateSlug} className="dlg-rule">
-                  <span className="dlg-rule__glyph"><Glyph size={16} /></span>
+                  <span className="dlg-rule__glyph" style={{ color: ruleAccent(r.templateSlug).color, background: ruleAccent(r.templateSlug).tint }}><Glyph size={16} /></span>
                   <div className="dlg-rule__text">
                     <p className="dlg-rule__name">{t?.name ?? r.templateSlug}</p>
                     <p className="dsh-meta">{c?.trigger ?? t?.description}</p>
                     {c?.status && <p className="dsh-meta dlg-rule__status">{c.status}</p>}
-                    {c?.bar && <div className="dov-bar" aria-hidden><span style={{ width: `${c.bar.pct}%` }} className={tone ? `dov-bar__fill--${tone}` : ''} /></div>}
+                    {c?.bar && <div className="dsh-progress" style={{ marginTop: 8 }} aria-hidden><span style={{ width: `${c.bar.pct}%` }} className={tone === 'amber' ? 'is-amber' : tone === 'red' ? 'is-red' : ''} /></div>}
                   </div>
-                  <span className={`dsh-pill${chipTone ? ` dsh-pill--${chipTone}` : ''}`}>{chipWord}</span>
+                  <span className={`dsh-chip${chipTone ? ` dsh-chip--${chipTone}` : ''}`}>{chipWord}</span>
                 </li>
               );
             })}
           </ul>
         )}
+        </div>
       </section>
 
       {/* ── Cooldown — rule-triggered, its own section ─────────────── */}
       {showCooldown && (
         <section className="dsh-card dlg-cool">
+          <div className="dsh-card__body">
           <div className="dlg-cool__head">
             <span className="dlg-cool__icon"><IcClock size={18} /></span>
             <div>
-              <h2 className="dsh-h2">Cooldown running — a rule stopped you, not you</h2>
-              <p className="dsh-meta">Fired by <strong>{lockReasonLabel(g.lockReason)}</strong>. New orders allowed from {formatResumes(g.lockUntil, tz)}.</p>
+              <h3 className="dsh-h2">Cooldown running — a rule stopped you, not you</h3>
+              <p className="dsh-meta">Fired by <strong>{lockReasonLabel(g.lockReason)}</strong> · New orders allowed from {formatResumes(g.lockUntil, tz)}</p>
             </div>
-            <span className="dsh-code dlg-cool__count">{formatRemaining(g.lockRemainingMs)}</span>
+            <span className="dsh-countdown dlg-cool__count">{formatRemaining(g.lockRemainingMs)}</span>
           </div>
-          <p className="dsh-body">
-            Existing positions are untouched — you can still manage or close what is open. Only new entries are blocked, because the third loss in a row is where revenge trading starts.
+          <p className="dsh-body" style={{ marginTop: 12 }}>
+            Existing positions are untouched — you can still manage or close what is open. Only new entries are blocked, because the third loss in a row is where revenge trading starts. The clock runs down on its own; there is nothing to cancel.
           </p>
+          </div>
         </section>
       )}
 
       {/* ── Commitment controls ────────────────────────────────────── */}
       <section className="dlg-commit">
         <div className="dlg-commit__head">
-          <h2 className="dsh-h2">Commitment controls</h2>
+          <h3 className="dsh-h2">Commitment controls</h3>
           <p className="dsh-meta">Switches you throw while calm. Neither has an undo.</p>
         </div>
         <div className="dsh-grid-2">
@@ -197,8 +201,8 @@ export default function LiveGuardPage() {
         </div>
       </section>
 
-      <p className="dsh-meta dov-plain">
-        We cannot stop you placing an order inside Delta&rsquo;s own app; what we do is close it immediately after it opens, then check you are actually flat.
+      <p className="dov-plain">
+        We cannot stop you placing an order inside Delta&rsquo;s own app; what we do is close it immediately after it opens, then check you are actually flat — in about 120 milliseconds, from our servers, not your browser.
         {' '}<Link to="/dashboard/rules" style={{ color: 'var(--mint)', fontWeight: 700 }}>Rules <IcArrow size={11} /></Link>
       </p>
     </div>
