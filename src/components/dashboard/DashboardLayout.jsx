@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { TradingAccountProvider } from '../../context/TradingAccountContext';
 import { DashboardThemeProvider, useDashboardTheme } from '../../context/DashboardThemeContext';
@@ -39,7 +39,6 @@ function Shell() {
   const { prefs } = usePrefs();
   const { unreadBreaches } = useGuard();
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   const mainRef = useRef(null);
   const [drawer, setDrawer] = useState(false);
   const [killOpen, setKillOpen] = useState(false);
@@ -105,10 +104,6 @@ function Shell() {
             <span ref={killBtnRef} style={{ display: 'contents' }}>
               <KillSwitchButton onOpen={() => { setKillNonce((n) => n + 1); setKillOpen(true); }} />
             </span>
-            <button type="button" data-tgx-mdhide="1" className="hdr-search" aria-label="Search" onClick={() => navigate('/dashboard/trades')} style={sx('flex:none;display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink-3);font-size:12.5px;white-space:nowrap')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" style={{ flex: 'none' }}><circle cx="11" cy="11" r="7" /><path d="M16.5 16.5L21 21" /></svg>
-              <span style={sx("font:500 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--ink-faint)")}>⌘K</span>
-            </button>
             <Link to="/dashboard/alerts" className="hdr-bell" aria-label={unreadBreaches ? `${unreadBreaches} unread alerts` : 'Alerts'} style={sx('position:relative;display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink-3)')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4a5.2 5.2 0 00-5.2 5.2c0 5-2 6.3-2 6.3h14.4s-2-1.3-2-6.3A5.2 5.2 0 0012 4z" /><path d="M10.2 18.4a2 2 0 003.6 0" /></svg>
               {unreadBreaches > 0 && <span style={sx('position:absolute;top:6px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--red-solid)')} />}
