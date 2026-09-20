@@ -70,7 +70,7 @@ export function PhonePromptDialog({ phone, onPhoneChange, optIn, onOptInChange, 
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         className="relative w-full max-w-[400px] overflow-hidden rounded-2xl border shadow-2xl"
         style={{
-          backgroundColor: 'var(--dash-surface, #0d0f14)',
+          backgroundColor: 'var(--surface)',
           borderColor: 'var(--dash-border, rgba(255,255,255,0.1))',
         }}
       >
@@ -144,7 +144,7 @@ export function PhonePromptDialog({ phone, onPhoneChange, optIn, onOptInChange, 
           <div
             className="mt-5 flex items-stretch overflow-hidden rounded-xl border transition-colors focus-within:border-accent"
             style={{
-              backgroundColor: 'var(--dash-input-bg, rgba(255,255,255,0.04))',
+              backgroundColor: 'var(--surface-2)',
               borderColor: error ? '#ef4444' : 'var(--dash-border, rgba(255,255,255,0.12))',
             }}
           >

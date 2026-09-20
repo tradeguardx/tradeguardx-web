@@ -30,7 +30,7 @@ function n(v) {
   return Number.isFinite(x) ? x : null;
 }
 
-function resolveAmount(cfg, dse, amountKey, pctKey) {
+export function resolveAmount(cfg, dse, amountKey, pctKey) {
   if (!cfg) return null;
   const mode = cfg.mode === 'amount' ? 'amount' : 'percent';
   if (mode === 'amount') return n(cfg[amountKey]);
@@ -44,7 +44,7 @@ function resolveAmount(cfg, dse, amountKey, pctKey) {
  *   bar  = continuous progress (for $ amounts)
  *   pips = discrete counter (for trade/loss counts) → clearer than a bar
  */
-function computeRule(slug, cfg, live, balance, fmt) {
+export function computeRule(slug, cfg, live, balance, fmt) {
   const dse = live.dailyStartingEquity;
   const ce = live.currentEquity;
   const equity = ce != null ? ce : balance;
@@ -122,8 +122,8 @@ function computeRule(slug, cfg, live, balance, fmt) {
       if (pct == null || pct <= 0) return { trigger: 'Set, but no risk % configured.', tone: 'muted' };
       const amount = equity != null ? equity * (pct / 100) : null;
       return {
-        trigger: amount != null ? `Auto-closes a trade risking over ${pct}% of equity (${fmt(amount)})` : `Caps each trade's risk at ${pct}% of equity`,
-        status: equity != null ? `Based on ${fmt(equity)} equity` : 'Waiting for live equity',
+        trigger: amount != null ? `Auto-closes a trade risking over ${pct}% (${fmt(amount)})` : `Caps each trade's risk at ${pct}%`,
+        status: equity != null ? 'Sized from live equity' : 'Waiting for live equity',
         tone: 'ok',
       };
     }
@@ -132,13 +132,12 @@ function computeRule(slug, cfg, live, balance, fmt) {
       if (pct == null || pct <= 0) return { trigger: 'Set, but no drawdown % configured.', tone: 'muted' };
       if (balance == null) return { trigger: `Alerts if the account falls ${pct}% from its balance`, tone: 'muted' };
       const amount = balance * (pct / 100);
-      const floor = balance - amount;
       const drawdown = equity != null ? balance - equity : null;
       const ddPct = drawdown != null && amount > 0 ? Math.min(Math.max((drawdown / amount) * 100, 0), 100) : 0;
       const hit = drawdown != null && drawdown >= amount;
       return {
-        trigger: `Alerts if the account drops ${pct}% — down to ${fmt(floor)}`,
-        status: equity != null ? `Now at ${fmt(equity)}` : 'Waiting for live equity',
+        trigger: `Locks the account if it draws down ${pct}% (${fmt(amount)})`,
+        status: drawdown != null ? (drawdown > 0 ? `Down ${fmt(drawdown)} of ${fmt(amount)}` : 'No drawdown from the sizing balance') : 'Waiting for live equity',
         tone: hit ? 'danger' : ddPct >= 75 ? 'warn' : 'ok',
         bar: { pct: ddPct, color: hit ? RED : ddPct >= 75 ? AMBER : ACCENT },
       };

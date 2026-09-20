@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import DashboardPageBanner from '../components/dashboard/DashboardPageBanner';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ShimmerBlock } from '../components/common/LoadingSkeleton';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
@@ -21,13 +20,10 @@ import {
   MISTAKE_TYPES,
 } from '../hooks/useTradeAnnotations';
 import { shortId, sourceLabel } from '../lib/labels';
+import { fmtMoney } from '../lib/session';
+import { sx } from '../components/dashboard/shell/sx';
 
 // ─── utils ──────────────────────────────────────────────────────────────────
-function fmt$(v, currency = 'USD') {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return '—';
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency, signDisplay: 'exceptZero', maximumFractionDigits: 2 }).format(n);
-}
 function fmtNum(v, dp = 2) {
   const n = Number(v);
   return Number.isFinite(n) ? n.toFixed(dp) : '—';
@@ -497,47 +493,36 @@ function MediaReel({ media }) {
 // ─── Event Timeline ───────────────────────────────────────────────────────────
 function EventTimeline({ events }) {
   if (!events.length) return (
-    <div className="text-sm" style={{ color: 'var(--dash-text-faint)' }}>No events recorded yet.</div>
+    <div style={sx('padding:30px 21px;font-size:13px;color:var(--ink-3)')}>No events recorded on this trade yet.</div>
   );
+  const clock = (v) => (v ? new Date(v).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }) : '—');
+  const dotOf = (type) => (type === 'RULE_BLOCK' || type === 'SL_UPDATE' ? 'var(--red)' : type === 'OPEN' ? 'var(--mint)' : type === 'CLOSE' ? 'var(--ink-faint)' : type === 'PARTIAL_CLOSE' || type === 'SIZE_UPDATE' ? 'var(--amber)' : 'var(--line-strong)');
 
-  return (
-    <div className="relative">
-      <div className="absolute left-3.5 top-0 bottom-0 w-px" style={{ backgroundColor: 'var(--dash-border)' }} />
-      <div className="space-y-3">
-        {events.map((e, i) => {
-          const meta = EVENT_META[e.eventType] || { label: e.eventType, color: '#94a3b8', dot: '●', bg: 'rgba(148,163,184,0.1)' };
-          const detail = [];
-          if (e.currentPrice) detail.push(`Price: ${fmtNum(e.currentPrice)}`);
-          if (e.slBefore && e.slAfter) detail.push(`SL ${fmtNum(e.slBefore)} → ${fmtNum(e.slAfter)}`);
-          if (e.tpBefore && e.tpAfter) detail.push(`TP ${fmtNum(e.tpBefore)} → ${fmtNum(e.tpAfter)}`);
-          if (e.pnl != null) detail.push(`P&L: ${fmtNum(e.pnl, 2)}`);
-          if (e.quantity) detail.push(`Qty: ${e.quantity}`);
-          const payloadNote = e.payload?.reason || e.payload?.rule || null;
-
-          return (
-            <motion.div key={e.id || i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i * 0.04, 0.6) }}
-              className="relative flex gap-3 pl-8">
-              <div className="absolute left-0 flex h-7 w-7 items-center justify-center rounded-full text-[13px]" style={{ backgroundColor: meta.bg, color: meta.color }}>
-                {meta.dot}
-              </div>
-              <div className="flex-1 rounded-xl border px-3 py-2.5" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)' }}>
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-xs font-semibold" style={{ color: meta.color }}>{meta.label}</span>
-                  <span className="text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>{fmtDate(e.eventAt)}</span>
-                </div>
-                {detail.length > 0 && (
-                  <p className="mt-1 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>{detail.join(' · ')}</p>
-                )}
-                {payloadNote && (
-                  <p className="mt-1 text-[11px] italic" style={{ color: 'var(--dash-text-faint)' }}>{payloadNote}</p>
-                )}
-              </div>
-            </motion.div>
-          );
-        })}
+  return events.map((e, i) => {
+    const meta = EVENT_META[e.eventType] || { label: e.eventType };
+    const detail = [];
+    if (e.currentPrice) detail.push(`Price ${fmtNum(e.currentPrice)}`);
+    if (e.slBefore && e.slAfter) detail.push(`Stop ${fmtNum(e.slBefore)} → ${fmtNum(e.slAfter)}`);
+    if (e.tpBefore && e.tpAfter) detail.push(`Target ${fmtNum(e.tpBefore)} → ${fmtNum(e.tpAfter)}`);
+    if (e.quantity) detail.push(`Qty ${e.quantity}`);
+    const note = e.payload?.reason || e.payload?.rule || null;
+    const cost = e.pnl != null && Number.isFinite(Number(e.pnl)) ? Number(e.pnl) : null;
+    return (
+      <div key={e.id || i} style={sx('display:flex;gap:14px;padding:15px 18px;border-bottom:1px solid var(--line)')}>
+        <span style={sx("flex:none;width:44px;font:500 12px/1.4 'JetBrains Mono',monospace;color:var(--ink-faint);padding-top:2px")}>{clock(e.eventAt)}</span>
+        <span style={sx('flex:none;width:8px;height:8px;border-radius:50%;margin-top:5px', { background: dotOf(e.eventType) })} />
+        <span style={sx('flex:1;min-width:0')}>
+          <span style={sx('display:block;font-size:13.5px;font-weight:600')}>{meta.label}</span>
+          {(detail.length > 0 || note) && (
+            <span style={sx('display:block;font-size:12.5px;line-height:1.55;color:var(--ink-2);margin-top:4px;max-width:84ch')}>{[...detail, note].filter(Boolean).join(' · ')}</span>
+          )}
+        </span>
+        {cost != null && (
+          <span style={sx("flex:none;font:600 13px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;padding-top:3px", { color: cost < 0 ? 'var(--red)' : cost > 0 ? 'var(--mint)' : 'var(--ink-3)' })}>{fmtMoney(cost, 'USD', { sign: true })}</span>
+        )}
       </div>
-    </div>
-  );
+    );
+  });
 }
 
 // ─── Star Rating ──────────────────────────────────────────────────────────────
@@ -1265,121 +1250,94 @@ export default function TradeDetailPage() {
     );
   }
 
-  if (error) return (
-    <div className="space-y-3">
-      <DashboardPageBanner accent="violet" title="Trade Detail" subtitle="Inspect one trade in depth." actions={<Link to="/dashboard/trades" className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-semibold" style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}>← Back</Link>} />
-      <p className="text-sm text-amber-400">{error}</p>
-    </div>
-  );
-
-  if (!trade) return (
-    <div className="space-y-3">
-      <DashboardPageBanner accent="violet" title="Trade Detail" subtitle="Trade not found or outside history window." actions={<Link to="/dashboard/trades" className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-semibold" style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}>← Back</Link>} />
+  if (error || !trade) return (
+    <div>
+      <Link to="/dashboard/trades" style={sx('display:inline-flex;align-items:center;gap:7px;margin-bottom:14px;padding:6px 11px 6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600;text-decoration:none')}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 6l-6 6 6 6" /></svg>
+        All trades
+      </Link>
+      <section style={sx('padding:52px 20px;text-align:center;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card)')}>
+        <div style={sx('font-size:14px;font-weight:600')}>{error ? 'Could not load this trade' : 'Trade not found'}</div>
+        <p style={sx('margin:7px auto 0;font-size:12.5px;line-height:1.55;color:var(--ink-3);max-width:46ch')}>{error || 'It may be outside the history window for your plan, or belong to a different account.'}</p>
+      </section>
     </div>
   );
 
   const pnl = Number(trade.pnl);
-  const isWin = pnl > 0;
   const side = (trade.side || '').toLowerCase();
   const isLong = side === 'buy' || side === 'long';
   const isClosed = String(trade.status || '').toUpperCase() === 'CLOSED';
-  const pnlColor = isClosed && Number.isFinite(pnl) ? (isWin ? '#22c55e' : '#ef4444') : '#f59e0b';
+
+  // Reference detail header (lines 1401–1445): symbol · side+size · date · window,
+  // then the P&L against the plan, then the AI verdict, then the price grid.
+  const cur = trade.currency || 'USD';
+  const parsedVerdict = parseNarrative(narrative?.narrative).verdict;
+  const firstSl = events.find((e) => e.eventType === 'OPEN' && e.slAfter)?.slAfter ?? events.find((e) => e.slBefore)?.slBefore ?? null;
+  const lastSl = [...events].reverse().find((e) => e.slAfter)?.slAfter ?? null;
+  const stopMoved = firstSl != null && lastSl != null && Number(firstSl) !== Number(lastSl);
+  const pnlFg = !isClosed || !Number.isFinite(pnl) ? 'var(--ink-3)' : pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink)';
+  const when = trade.openedAt ? new Date(trade.openedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }) : '—';
+  const clock = (v) => (v ? new Date(v).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }) : null);
+  const windowText = [clock(trade.openedAt), clock(trade.closedAt)].filter(Boolean).join('–') || (isClosed ? '' : 'open');
+  const cell = (label, value, fg) => (
+    <div key={label} style={sx('padding:14px 18px;border-right:1px solid var(--line)')}>
+      <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{label}</div>
+      <div style={sx("margin-top:6px;font:600 16px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums", fg ? { color: fg } : undefined)}>{value}</div>
+    </div>
+  );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-
-      {/* ── Hero header ─────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full blur-[80px] opacity-20" style={{ backgroundColor: pnlColor }} />
-        <div className="pointer-events-none absolute left-1/3 -bottom-12 h-48 w-48 rounded-full blur-[60px] opacity-10" style={{ backgroundColor: isLong ? '#22c55e' : '#ef4444' }} />
-
-        <div className="relative flex flex-col gap-3 px-4 pt-5 pb-0 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <div
-              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ring-1 ${isLong ? 'ring-emerald-500/25' : 'ring-red-500/25'}`}
-              style={{ background: isLong ? 'linear-gradient(145deg,rgba(34,197,94,0.18),rgba(34,197,94,0.07))' : 'linear-gradient(145deg,rgba(239,68,68,0.18),rgba(239,68,68,0.07))' }}
-            >
-              <svg className="h-7 w-7" style={{ color: isLong ? '#22c55e' : '#ef4444' }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d={isLong ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'} />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-display font-black tracking-tight sm:text-2xl" style={{ color: 'var(--dash-text-primary)' }}>{trade.symbol || 'Unknown'}</h1>
-                <span className={`rounded-lg px-2.5 py-1 text-[10px] font-bold ${isLong ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/15' : 'bg-red-500/10 text-red-400 ring-1 ring-red-500/15'}`}>{(trade.side || '—').toUpperCase()}</span>
-                <span className={`rounded-lg px-2.5 py-1 text-[10px] font-bold ${isClosed ? 'bg-slate-500/10 text-slate-400' : 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/15'}`}>{trade.status}</span>
-              </div>
-              <p className="mt-1 font-mono text-[10px]" style={{ color: 'var(--dash-text-faint)' }} title={trade.tradeUid}>
-                {shortId(trade.tradeUid, 14)}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {isClosed && (
-              <button type="button" onClick={() => setShareOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12px] font-bold transition-all active:scale-95"
-                style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.15), rgba(0,212,170,0.08))', color: '#00d4aa', border: '1px solid rgba(0,212,170,0.2)' }}>
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                Share
-              </button>
-            )}
-            <Link to="/dashboard/trades" className="inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-[12px] font-semibold transition-all hover:border-accent/25 hover:shadow-sm active:scale-95"
-              style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-muted)', backgroundColor: 'var(--dash-bg-card)' }}>
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
-              All Trades
-            </Link>
-          </div>
-        </div>
-
-        <div className="relative px-6 lg:px-8 pb-6 pt-5">
-          <div className="mb-5 flex flex-wrap items-end gap-4">
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: pnlColor + '70' }}>Profit / Loss</p>
-              <p className="text-5xl font-display font-black tracking-tighter" style={{ color: pnlColor, textShadow: isClosed ? `0 0 60px ${pnlColor}30` : 'none' }}>
-                {isClosed && Number.isFinite(pnl) ? fmt$(pnl, trade.currency || 'USD') : 'OPEN'}
-              </p>
-            </div>
-            {isClosed && Number.isFinite(pnl) && trade.entryPrice && (
-              <span className="rounded-xl px-3 py-1.5 text-xs font-bold mb-1" style={{ backgroundColor: pnlColor + '12', color: pnlColor }}>
-                {((pnl / (Number(trade.entryPrice) * (Number(trade.quantity) || 1))) * 100).toFixed(2)}% return
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            {[
-              { label: 'Entry', value: fmtNum(trade.entryPrice, 2), color: '#22c55e', rgb: '34,197,94' },
-              { label: 'Exit', value: fmtNum(trade.exitPrice, 2), color: '#ef4444', rgb: '239,68,68' },
-              { label: 'Hold Time', value: fmtDuration(holdSeconds), color: '#f59e0b', rgb: '245,158,11' },
-              { label: 'Quantity', value: trade.quantity || '—', color: '#8b5cf6', rgb: '139,92,246' },
-              { label: 'Opened', value: trade.openedAt ? new Date(trade.openedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—', color: '#60a5fa', rgb: '96,165,250' },
-              { label: 'Closed', value: trade.closedAt ? new Date(trade.closedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—', color: '#94a3b8', rgb: '148,163,184' },
-            ].map((s) => (
-              <div key={s.label} className="rounded-xl border px-3 py-3" style={{ borderColor: `rgba(${s.rgb},${isDark ? 0.15 : 0.25})`, backgroundColor: isDark ? `rgba(${s.rgb},0.06)` : '#ffffff', boxShadow: isDark ? 'none' : `0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(${s.rgb},0.08)` }}>
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `rgba(${s.rgb},${isDark ? 0.5 : 0.65})` }}>{s.label}</p>
-                <p className="mt-1.5 break-words font-mono text-[13px] font-bold sm:text-sm" style={{ color: 'var(--dash-text-primary)' }}>{s.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+    <div style={sx('animation:tgxSlide .22s ease-out')}>
+      <div style={sx('display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap')}>
+        <Link to="/dashboard/trades" style={sx('display:flex;align-items:center;gap:7px;padding:6px 11px 6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600;text-decoration:none')}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 6l-6 6 6 6" /></svg>
+          All trades
+        </Link>
+        {isClosed && (
+          <button type="button" onClick={() => setShareOpen(true)} style={sx('margin-left:auto;padding:6px 11px;border:1px solid var(--mint-line);border-radius:8px;background:var(--mint-tint);color:var(--mint);font-size:12.5px;font-weight:600')}>Share</button>
+        )}
       </div>
 
-      {/* ── Tabs ────────────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 overflow-x-auto rounded-2xl border p-1.5" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
-        {TABS.map((t) => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)}
-            className="relative shrink-0 rounded-xl px-4 py-2.5 text-[11px] font-bold transition-all"
-            style={{ color: tab === t.id ? '#00d4aa' : 'var(--dash-text-muted)' }}>
-            {tab === t.id && (
-              <motion.div layoutId="activeTab" className="absolute inset-0 rounded-xl"
-                style={{ backgroundColor: 'rgba(0,212,170,0.1)', border: '1px solid rgba(0,212,170,0.25)', boxShadow: '0 1px 4px rgba(0,212,170,0.08)' }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }} />
+      <section style={sx('margin-bottom:18px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+        <div style={sx('padding:22px 24px')}>
+          <div style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px')}>
+            <span style={sx("font:600 17px/1 'Space Grotesk',sans-serif")}>{trade.symbol || 'Unknown'}</span>
+            <span style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: isLong ? 'var(--mint)' : 'var(--red)' })}>{isLong ? 'Long' : 'Short'} {trade.quantity || ''}</span>
+            <span style={sx('font-size:12.5px;color:var(--ink-3)')}>{when}{windowText ? ` · ${windowText}` : ''}</span>
+            {!isClosed && <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--amber)')}>Open</span>}
+            <span style={sx("margin-left:auto;font:500 10px/1 'JetBrains Mono',monospace;color:var(--ink-faint)")} title={trade.tradeUid}>{shortId(trade.tradeUid, 14)} · {sourceLabel(trade.source)}</span>
+          </div>
+          <div style={sx('display:flex;align-items:baseline;gap:14px;flex-wrap:wrap')}>
+            <span style={sx("font:700 40px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: pnlFg })}>{isClosed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : 'open'}</span>
+            {isClosed && Number.isFinite(pnl) && trade.entryPrice && (
+              <span style={sx('font-size:14px;color:var(--ink-3)')}>{((pnl / (Number(trade.entryPrice) * (Number(trade.quantity) || 1))) * 100).toFixed(2)}% on the position</span>
             )}
-            <span className="relative">{t.label}</span>
-          </button>
-        ))}
+            {narrative?.analysis?.disciplineScore?.overall != null && (
+              <span style={sx("font:600 16px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums", { color: narrative.analysis.disciplineScore.overall >= 80 ? 'var(--mint)' : narrative.analysis.disciplineScore.overall >= 50 ? 'var(--amber)' : 'var(--red)' })}>{narrative.analysis.disciplineScore.overall}/100 discipline</span>
+            )}
+          </div>
+          {parsedVerdict ? (
+            <p style={sx('margin:12px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink-2);max-width:72ch')}>{parsedVerdict}</p>
+          ) : narrativeBusy ? (
+            <p style={sx('margin:12px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink-3);max-width:72ch')}>Reading the trade…</p>
+          ) : null}
+        </div>
+        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-top:1px solid var(--line)')}>
+          {cell('Entry', fmtNum(trade.entryPrice, 2))}
+          {cell('Exit', isClosed ? fmtNum(trade.exitPrice, 2) : '—')}
+          {cell('Stop as planned', firstSl != null ? fmtNum(firstSl, 2) : '—')}
+          {cell('Stop at close', lastSl != null ? fmtNum(lastSl, 2) : '—', stopMoved ? 'var(--red)' : undefined)}
+          {cell('Hold', fmtDuration(holdSeconds))}
+        </div>
+      </section>
+
+      <div style={sx('display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap')} role="tablist">
+        {TABS.map((t) => {
+          const on = tab === t.id;
+          return (
+            <button key={t.id} type="button" role="tab" aria-selected={on} onClick={() => setTab(t.id)} style={sx('padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:600', { border: `1px solid ${on ? 'var(--ink)' : 'var(--line)'}`, background: on ? 'var(--ink)' : 'var(--surface-2)', color: on ? 'var(--surface)' : 'var(--ink-2)' })}>{t.label}</button>
+          );
+        })}
       </div>
 
       {/* ── Tab content ─────────────────────────────────────────────────────── */}
@@ -1473,18 +1431,13 @@ export default function TradeDetailPage() {
           {tab === 'media' && <MediaReel media={media} />}
 
           {tab === 'timeline' && (
-            <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold" style={{ color: 'var(--dash-text-secondary)' }}>Event Timeline</h3>
-                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--dash-text-faint)' }}>Every modification and action during this trade</p>
-                </div>
-                {events.length > 0 && (
-                  <span className="rounded-lg px-2.5 py-1 text-[10px] font-bold" style={{ backgroundColor: 'var(--dash-bg-card)', color: 'var(--dash-text-faint)' }}>{events.length} event{events.length !== 1 ? 's' : ''}</span>
-                )}
+            <section style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+              <div style={sx('padding:18px 21px;border-bottom:1px solid var(--line)')}>
+                <h3 style={sx("margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em")}>Timeline</h3>
+                <p style={sx('margin:5px 0 0;font-size:12.5px;color:var(--ink-3)')}>Where discipline cost money, priced where it happened.</p>
               </div>
               <EventTimeline events={events} />
-            </div>
+            </section>
           )}
 
         </motion.div>
@@ -1494,6 +1447,6 @@ export default function TradeDetailPage() {
       <ShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} cardRef={shareCardRef} title={`${trade.symbol} Trade`}>
         <TradeShareCard ref={shareCardRef} trade={trade} disciplineScore={narrative?.analysis?.disciplineScore?.overall ?? 100} events={events} />
       </ShareModal>
-    </motion.div>
+    </div>
   );
 }

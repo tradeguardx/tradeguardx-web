@@ -22,26 +22,25 @@ import InfluencerLayout from './components/influencer/InfluencerLayout';
 import InfluencerOverview from './pages/influencer/InfluencerOverview';
 import InfluencerCommissions from './pages/influencer/InfluencerCommissions';
 import InfluencerPayouts from './pages/influencer/InfluencerPayouts';
-import TradeOverviewPage from './pages/TradeOverviewPage';
+import OverviewPage from './pages/OverviewPage';
 import RulesTerminal from './components/dashboard/RulesTerminal';
-import TradeJournal from './components/dashboard/TradeJournal';
+import JournalPage from './pages/JournalPage';
+import EconomicCalendarPage from './pages/EconomicCalendarPage';
 import AllTradesPage from './pages/AllTradesPage';
-import LivePage from './pages/LivePage';
+import LiveGuardPage from './pages/LiveGuardPage';
 import TradeDetailPage from './pages/TradeDetailPage';
-import TradingAccountsPage from './pages/TradingAccountsPage';
-import AccountLayout from './pages/AccountLayout';
+import AccountsPage from './pages/AccountsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import CryptoKillSwitchPage from './pages/CryptoKillSwitchPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import TaxPage from './pages/TaxPage';
-import AccountOverviewPage from './pages/AccountOverviewPage';
-import NotificationsPage from './pages/NotificationsPage';
+import AlertsPage from './pages/AlertsPage';
 import RedirectWithSearch from './pages/RedirectWithSearch';
-import InstallExtensionPage from './pages/InstallExtensionPage';
 import BillingPage from './pages/BillingPage';
-import PairingPage from './pages/PairingPage';
+import ConnectKeyPage from './pages/ConnectKeyPage';
+import PreferencesPage from './pages/PreferencesPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ScrollToTop from './components/common/ScrollToTop';
 import ReferralCapture from './components/common/ReferralCapture';
@@ -103,24 +102,27 @@ function App() {
                   {/* Preserve the query string — signup lands on /dashboard?welcome=1
                       and a bare Navigate would drop it, so the welcome never fired. */}
                   <Route index element={<RedirectWithSearch to="/dashboard/overview" />} />
-                  <Route path="overview" element={<TradeOverviewPage />} />
-                  <Route path="live" element={<LivePage />} />
+                  <Route path="overview" element={<OverviewPage />} />
+                  <Route path="live" element={<LiveGuardPage />} />
                   <Route path="rules" element={<RulesTerminal />} />
-                  <Route path="journal" element={<TradeJournal />} />
+                  <Route path="journal" element={<JournalPage />} />
+                  <Route path="calendar" element={<EconomicCalendarPage />} />
                   <Route path="trades" element={<AllTradesPage />} />
                   <Route path="tax" element={<TaxPage />} />
                   <Route path="trades/:tradeUid" element={<TradeDetailPage />} />
-                  <Route path="account" element={<AccountLayout />}>
-                    <Route index element={<AccountOverviewPage />} />
-                    <Route path="billing" element={<BillingPage />} />
-                    <Route path="trading" element={<TradingAccountsPage />} />
-                    <Route path="notifications" element={<NotificationsPage />} />
-                    <Route path="security" element={<SecuritySettingsPage />} />
-                  </Route>
+                  <Route path="account" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
+                  <Route path="account/billing" element={<BillingPage />} />
+                  <Route path="account/trading" element={<AccountsPage />} />
+                  <Route path="account/notifications" element={<RedirectWithSearch to="/dashboard/alerts" />} />
+                  <Route path="account/security" element={<SecuritySettingsPage />} />
                   <Route path="trading-accounts" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
                   <Route path="billing" element={<RedirectWithSearch to="/dashboard/account/billing" />} />
-                  <Route path="install-extension" element={<InstallExtensionPage />} />
-                  <Route path="pairing" element={<PairingPage />} />
+                  <Route path="connect" element={<ConnectKeyPage />} />
+                  <Route path="alerts" element={<AlertsPage />} />
+                  <Route path="preferences" element={<PreferencesPage />} />
+                  {/* Extension-era routes: the product is server-side only now. */}
+                  <Route path="install-extension" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
+                  <Route path="pairing" element={<RedirectWithSearch to="/dashboard/connect" />} />
                 </Route>
                 <Route path="influencer" element={<ProtectedRoute><InfluencerLayout /></ProtectedRoute>}>
                   <Route index element={<Navigate to="/influencer/overview" replace />} />

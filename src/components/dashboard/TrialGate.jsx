@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { sx } from './shell/sx';
 import { useAuth } from '../../context/AuthContext';
 
 /**
@@ -14,29 +15,14 @@ export function TrialBanner() {
     days == null ? 'Your free trial is active' : days <= 0 ? 'Your trial ends today' : `${days} day${days === 1 ? '' : 's'} left`;
 
   return (
-    <div
-      className="mb-4 flex flex-col gap-3 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-      style={{
-        borderColor: 'rgba(0,212,170,0.28)',
-        background: 'linear-gradient(135deg, rgba(0,212,170,0.10), rgba(0,212,170,0.045))',
-      }}
-    >
-      <div className="flex items-start gap-2.5 sm:items-center">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(0,212,170,0.15)' }}>
-          <svg className="h-4 w-4" style={{ color: 'var(--accent, #00d4aa)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-        </span>
-        <p className="text-sm" style={{ color: 'var(--dash-text-primary)' }}>
-          <span className="font-bold">Free trial — everything unlocked.</span>{' '}
-          <span style={{ color: 'var(--dash-text-secondary)' }}>{left}. Upgrade any time to keep full access.</span>
-        </p>
-      </div>
-      <Link
-        to="/pricing"
-        className="block w-full shrink-0 rounded-lg px-3.5 py-2 text-center text-xs font-bold transition-transform hover:scale-[1.02] sm:w-auto sm:py-1.5"
-        style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c' }}
-      >
-        Upgrade
-      </Link>
+    <div data-tgx-stack="1" style={sx('display:flex;align-items:center;gap:14px;padding:12px 15px;margin-bottom:16px;border:1px solid var(--mint-line);border-radius:14px;background:var(--mint-tint);flex-wrap:wrap')}>
+      <span style={sx('flex:none;width:28px;height:28px;border-radius:8px;background:var(--surface);display:grid;place-items:center;color:var(--mint)')}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3L4 14h7l-1 7 9-11h-7z" /></svg>
+      </span>
+      <p style={sx('flex:1;min-width:min(220px,100%);margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)')}>
+        <strong style={sx('color:var(--ink);font-weight:700')}>Free trial — everything unlocked.</strong> {left}. Upgrade any time to keep full access.
+      </p>
+      <Link to="/pricing" style={sx('flex:none;padding:8px 13px;border:1px solid var(--mint-solid);border-radius:9px;background:var(--mint-solid);color:#05221c;font-size:12.5px;font-weight:700;text-decoration:none')}>Upgrade</Link>
     </div>
   );
 }
