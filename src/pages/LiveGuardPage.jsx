@@ -396,6 +396,9 @@ export default function LiveGuardPage() {
                     {rlHelp ? 'Hide' : 'What each option means'}
                   </button>
                 </div>
+                <div style={sx('display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px')} aria-hidden>
+                  {[0, 3, 7, 30].map((d) => <span key={d} style={sx("text-align:center;font:600 9px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);min-height:9px")}>{d === 7 ? 'Default' : ''}</span>)}
+                </div>
                 <div style={sx('display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px')} role="radiogroup" aria-label="Rule lock window">
                   {[0, 3, 7, 30].map((d) => <button key={d} type="button" role="radio" aria-checked={rlPick === d} onClick={() => setPick(d)} style={sx(rlPick === d ? DAY_ON : DAY_OFF)}>{d === 0 ? 'Off' : `${d}d`}</button>)}
                 </div>
@@ -404,9 +407,9 @@ export default function LiveGuardPage() {
                     {[['Off', 'Editable until your first trade of the day. After that they hold until the daily reset.'], ['3 days', 'Active rules lock for three days.'], ['7 days', 'Active rules lock for a week. This is the default.'], ['30 days', 'Active rules lock for a month.']].map(([k, v]) => (
                       <div key={k} style={sx('display:flex;gap:9px;font-size:12px;line-height:1.5;color:var(--ink-3)')}><span style={sx('flex:none;width:48px;font-weight:700;color:var(--ink-2)')}>{k}</span><span>{v}</span></div>
                     ))}
+                    <p style={sx('margin:4px 0 0;padding-top:9px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-2);line-height:1.5')}>{rlPick === 0 ? 'Off does not mean always editable. Rules stay editable until your first trade of the day — after that they hold until the next daily reset.' : `Active rules lock for ${rlPick} days. You cannot shorten the window once it is running, and you cannot edit a rule until it expires.`}</p>
                   </div>
                 )}
-                <p style={sx('margin:0 0 12px;padding:10px 12px;border-radius:9px;background:var(--surface-2);font-size:12px;color:var(--ink-2);line-height:1.5')}>{rlPick === 0 ? 'Off does not mean always editable. Rules stay editable until your first trade of the day — after that they hold until the next daily reset.' : `Active rules lock for ${rlPick} days. You cannot shorten the window once it is running, and you cannot edit a rule until it expires.`}</p>
                 <button type="button" className="rl-arm" disabled={rlBusy || rlPick === (rl?.days ?? 7)} onClick={applyLock} style={sx('width:100%;padding:11px;border:1px solid var(--mint-line);border-radius:10px;background:var(--mint-tint);color:var(--mint);font-size:13px;font-weight:700')}>{rlBusy ? 'Saving…' : rlPick === 0 ? 'Use the daily setting' : `Lock active rules for ${rlPick} days`}</button>
               </div>
             )}
