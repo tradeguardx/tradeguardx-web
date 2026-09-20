@@ -144,7 +144,7 @@ function AutoLockModal({ event, tz, onClose }) {
 // ── page ───────────────────────────────────────────────────────────────
 export default function EconomicCalendarPage() {
   const { session } = useAuth();
-  const { selectedAccount } = useTradingAccounts();
+  const { selectedAccount, selectedTradingAccountId } = useTradingAccounts();
   const isMobile = useIsMobile(767);
   const accessToken = session?.access_token;
 
@@ -172,7 +172,8 @@ export default function EconomicCalendarPage() {
     if (!accessToken) return undefined;
     const ctrl = new AbortController();
     const key = `${range.from}:${range.to}`;
-    fetchCalendar({ accessToken, from: range.from, to: range.to, signal: ctrl.signal })
+    const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    fetchCalendar({ accessToken, from: range.from, to: range.to, tz: browserTz, tradingAccountId: selectedTradingAccountId, signal: ctrl.signal })
       .then((r) => { if (!ctrl.signal.aborted) { setData(r); setSample(false); setError(''); } })
       .catch((e) => {
         if (ctrl.signal.aborted) return;
@@ -182,7 +183,7 @@ export default function EconomicCalendarPage() {
       })
       .finally(() => { if (!ctrl.signal.aborted) setLoadedKey(key); });
     return () => ctrl.abort();
-  }, [accessToken, range.from, range.to]);
+  }, [accessToken, range.from, range.to, selectedTradingAccountId]);
 
   const loading = loadedKey !== `${range.from}:${range.to}`;
   const days = useMemo(() => data?.days ?? [], [data]);
@@ -234,6 +235,11 @@ export default function EconomicCalendarPage() {
         </span>
       </div>
 
+      {data?.source?.stale && !sample && (
+        <div className="mb-4 rounded-[10px] px-3.5 py-2.5 text-[12px]" style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
+          <strong className="font-semibold">Feed is behind.</strong> The last successful update was {data.source.last_success_at ? new Date(data.source.last_success_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'unknown'} — showing the last stored copy.
+        </div>
+      )}
       {sample && (
         <div className="mb-4 rounded-[10px] px-3.5 py-2.5 text-[12px]" style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
           <strong className="font-semibold">Sample data.</strong> The calendar feed is not reachable from this build, so this is a labelled fixture — nothing here is real.

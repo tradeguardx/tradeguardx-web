@@ -12,20 +12,22 @@ function unwrap(payload) {
  * Times in `events[].time` are already in the user's timezone; countdowns
  * must still be computed client-side from `event_time_utc`.
  */
-export async function fetchCalendar({ accessToken, from, to, impact, countries, signal } = {}) {
+export async function fetchCalendar({ accessToken, from, to, impact, countries, tz, tradingAccountId, signal } = {}) {
   if (!accessToken) throw new Error('Missing access token');
   const q = new URLSearchParams();
   if (from) q.set('from', from);
   if (to) q.set('to', to);
   if (impact) q.set('impact', String(impact));
   if (countries?.length) q.set('countries', countries.join(','));
+  if (tz) q.set('tz', tz);
+  if (tradingAccountId) q.set('tradingAccountId', tradingAccountId);
   const payload = await apiGet(`/calendar?${q.toString()}`, {
     signal,
     baseUrl: TRADE_API_BASE_URL,
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const data = unwrap(payload);
-  return { timezone: data?.timezone ?? null, days: Array.isArray(data?.days) ? data.days : [] };
+  return { timezone: data?.timezone ?? null, days: Array.isArray(data?.days) ? data.days : [], source: data?.source ?? null };
 }
 
 /**
