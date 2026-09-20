@@ -26,8 +26,8 @@ import { ruleLockNow } from '../lib/guard';
 const POLL_MS = 15_000;
 const MONO_LABEL = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)";
 const H3 = "margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em";
-const HOUR_ON = "flex:1;padding:11px;border-radius:11px;font:600 14px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
-const HOUR_OFF = "flex:1;padding:11px;border-radius:11px;font:600 14px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
+const HOUR_ON = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
+const HOUR_OFF = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
 const DAY_ON = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
 const DAY_OFF = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
 
@@ -304,7 +304,7 @@ export default function LiveGuardPage() {
         </div>
         <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))')}>
 
-          <div style={sx('padding:19px 20px;border-right:1px solid var(--line)')}>
+          <div style={sx('padding:19px 20px;border-right:1px solid var(--line);display:flex;flex-direction:column')}>
             <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:5px')}>
               <span style={sx('width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--red-tint);color:var(--red)')}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
@@ -332,9 +332,12 @@ export default function LiveGuardPage() {
             )}
 
             {armable && (
-              <div>
-                <div style={sx('font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:8px')}>Lock duration</div>
-                <div style={sx('display:flex;gap:8px;margin-bottom:13px')} role="radiogroup" aria-label="Lock duration">
+              <div style={sx('margin-top:auto')}>
+                <div style={sx('display:flex;align-items:center;min-height:15px;margin-bottom:10px')}>
+                  <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)")}>Lock duration</span>
+                </div>
+                <div style={sx('min-height:9px;margin-bottom:4px')} aria-hidden />
+                <div style={sx('display:flex;gap:8px;margin-bottom:12px')} role="radiogroup" aria-label="Lock duration">
                   {LOCKOUT_HOUR_OPTIONS.map((h) => <button key={h} type="button" role="radio" aria-checked={hours === h} onClick={() => setHours(h)} style={sx(hours === h ? HOUR_ON : HOUR_OFF)}>{h}h</button>)}
                 </div>
                 {stage === 0 && <button type="button" className="ks-arm" onClick={() => setStage(1)} style={sx('width:100%;padding:11px;border:1px solid var(--red-line);border-radius:10px;background:var(--red-tint);color:var(--red);font-size:13px;font-weight:700')}>Arm the lockout</button>}
@@ -371,7 +374,7 @@ export default function LiveGuardPage() {
             )}
           </div>
 
-          <div style={sx('padding:19px 20px')}>
+          <div style={sx('padding:19px 20px;display:flex;flex-direction:column')}>
             <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:5px')}>
               <span style={sx('width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--mint-tint);color:var(--mint)')}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M6 11V8.4a6 6 0 1112 0V11" /><path d="M5 11h14v9H5z" /></svg>
@@ -396,14 +399,14 @@ export default function LiveGuardPage() {
             )}
 
             {!rlLocked && !noEnforce && (
-              <div>
+              <div style={sx('margin-top:auto')}>
                 {rlSettling && (
                   <div style={sx('display:flex;align-items:center;gap:12px;padding:11px 13px;margin-bottom:12px;border:1px solid var(--amber-line);border-radius:10px;background:var(--amber-tint)')}>
                     <span style={sx("flex:none;font:700 20px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--amber)")}>{formatRemaining(Date.parse(rl.locksAt) - now)}</span>
                     <span style={sx('font-size:12px;line-height:1.5;color:var(--ink-2)')}><strong style={sx('color:var(--amber);font-weight:700')}>Setup window running.</strong> You can still change the length now; when it closes your active rules freeze for {rl.days} days.</span>
                   </div>
                 )}
-                <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px')}>
+                <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:15px;margin-bottom:10px')}>
                   <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)")}>Choose your commitment</span>
                   <button type="button" onClick={() => setRlHelp((v) => !v)} aria-expanded={rlHelp} aria-controls="rl-help" style={sx('display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;font-size:11.5px;font-weight:600;color:var(--ink-3)')}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" /><circle cx="12" cy="12" r="2.6" /></svg>
