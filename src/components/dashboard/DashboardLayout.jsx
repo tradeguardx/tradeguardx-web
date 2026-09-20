@@ -120,7 +120,7 @@ function Shell() {
 
         <BreachToast />
 
-        <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;animation:tgxSlide .22s ease-out')}>
+        <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;margin:0 auto;animation:tgxSlide .22s ease-out')}>
           <VerifyEmailBanner />
           <TrialBanner />
           {locked ? <UpgradeWall /> : <Outlet />}
