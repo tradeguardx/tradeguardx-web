@@ -1262,6 +1262,7 @@
 [data-tgx] .rl-arm:hover:not(:disabled){background:var(--mint-solid)!important;color:#04241d!important;border-color:var(--mint-solid)!important}
 [data-tgx] .rl-arm:disabled{opacity:.55;cursor:not-allowed}
 [data-tgx] .rx-row:hover{background:var(--surface-2)!important}
+[data-tgx] .tr-row:hover{background:var(--surface-2)!important;cursor:pointer}
 [data-tgx] .rx-group > .group > div:last-child{border-bottom:0}
 [data-tgx] .cx-link:hover{text-decoration:none!important;border-color:var(--ink)!important}
 [data-tgx] .jn-day:hover{border-color:var(--line-strong)!important}
