@@ -97,7 +97,7 @@ export default function AllTradesPage() {
           );
         })}
       </div>
-      <section style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+      <section data-tgx-table="" style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
         <div style={sx('display:grid;grid-template-columns:1.3fr 1fr .8fr .7fr .8fr 1fr .8fr;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>
           <span>When</span><span>Symbol</span><span>Side</span><span>Size</span><span>Hold</span><span>Rule breaks</span><span style={{ textAlign: 'right' }}>P&amp;L</span>
         </div>

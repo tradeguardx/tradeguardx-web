@@ -966,6 +966,9 @@
 [data-tgx] .dsh-mono{font:600 9.5px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)}
 [data-tgx] .dsh-mono--stat{letter-spacing:.17em}
 [data-tgx] .dsh-code{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+/* Tax centre (left structurally unchanged) picks up the brief's mono face for its figures. */
+[data-tgx] .font-mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+[data-tgx] .font-display{font-family:'Space Grotesk',system-ui,sans-serif}
 
 /* §3.6 surfaces */
 [data-tgx] .dsh-card{border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden}
@@ -1167,6 +1170,11 @@
   [data-tgx-ks]{padding:0!important;width:36px;justify-content:center}
   [data-tgx-ks][data-armed="1"]{width:auto;padding:8px 11px!important}
   [data-tgx-ks][data-armed="1"] [data-tgx-kslabel]{display:inline}
+}
+@media (max-width:700px){
+  /* Seven-column trade rows scroll inside their card on phones rather than the page. */
+  [data-tgx-table]{overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+  [data-tgx-table] > *{min-width:640px}
 }
 @media (max-width:560px){
   [data-tgx-main] h1{font-size:24px!important}

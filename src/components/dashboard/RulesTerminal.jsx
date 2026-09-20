@@ -794,7 +794,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                 }}
               >
                 <span className="font-semibold text-amber-400/95">Not active yet.</span>{' '}
-                Numbers and toggles here are template suggestions. Nothing is applied to your account or extension until you save this rule.
+                Numbers and toggles here are template suggestions. Nothing is applied to your account until you save this rule.
               </div>
             )}
 
@@ -824,7 +824,7 @@ function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSave
                             className="flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-colors"
                             style={{
                               backgroundColor: active ? 'var(--accent)' : 'transparent',
-                              color: active ? 'var(--surface-950, #0d0f14)' : 'var(--dash-text-muted)',
+                              color: active ? 'var(--surface)' : 'var(--dash-text-muted)',
                             }}
                           >
                             {opt.label}
