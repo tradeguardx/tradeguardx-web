@@ -226,7 +226,6 @@ export default function JournalPage() {
     for (const t of closed) { const k = dayKey(new Date(pick(t, 'closedAt'))); const row = m.get(k) || { n: 0, trades: [] }; row.n += pnlOf(t); row.trades.push(t); m.set(k, row); }
     return m;
   }, [closed]);
-  const breachesByDay = useMemo(() => { const m = new Map(); for (const b of breaches) { const k = dayKey(new Date(b.createdAt)); m.set(k, [...(m.get(k) || []), b]); } return m; }, [breaches]);
   const monthLabel = month.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   const weekStartsMon = prefs.weekStart !== 'sun';
   const cells = useMemo(() => {
@@ -253,7 +252,6 @@ export default function JournalPage() {
     ? [{ k: 'Green days', v: '—', fg: 'var(--ink-3)' }, { k: 'Red days', v: '—', fg: 'var(--ink-3)' }, { k: 'Month', v: '—', fg: 'var(--ink-3)' }, { k: 'Best / worst', v: '—', fg: 'var(--ink-3)' }]
     : [{ k: 'Green days', v: String(green), fg: 'var(--mint)' }, { k: 'Red days', v: String(red), fg: 'var(--red)' }, { k: 'Month', v: money(monthTotal, cur, 2), fg: signFg(monthTotal) }, { k: 'Best / worst', v: `${money(best, cur, 0)} / ${money(worst, cur, 0)}`, fg: 'var(--ink)' }];
   const dayCell = day ? cells.find((c) => c.key === day) : null;
-  const drawerBreaks = dayCell ? (breachesByDay.get(dayCell.key) || []).map((b) => ({ id: b.id, text: `${RULE_NAME[breachRule(b)] || 'Rule'} — ${b.message}`, cost: breachCost(b, tradeByUid) })) : [];
   const dayNames = weekStartsMon ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const ring = score == null ? 'conic-gradient(var(--surface-3) 0turn 1turn)' : `conic-gradient(${score < 60 ? 'var(--red-solid)' : score < 80 ? 'var(--amber-solid)' : 'var(--mint-solid)'} 0turn ${score / 100}turn, var(--surface-3) ${score / 100}turn 1turn)`;
@@ -478,7 +476,7 @@ export default function JournalPage() {
       )}
 
       {tab === 'calendar' && (
-        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px;align-items:start')}>
+        <div className="jn-cal" style={sx('display:grid;gap:14px;align-items:start', { gridTemplateColumns: dayCell ? 'minmax(0,calc(75% - 3.5px)) minmax(0,calc(25% - 10.5px))' : 'minmax(0,1fr)' })}>
           <section style={sx(CARD)}>
             <div style={sx('padding:15px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap')}>
               <div style={sx('display:flex;align-items:center;gap:8px')}>
@@ -513,7 +511,7 @@ export default function JournalPage() {
           </section>
 
           {dayCell && (
-            <aside style={sx('width:100%;max-width:360px;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-pop);overflow:hidden;animation:tgxDrawer .2s ease-out')}>
+            <aside style={sx('width:100%;min-width:0;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-pop);overflow:hidden;animation:tgxDrawer .2s ease-out')}>
               <div style={sx('padding:18px 21px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:10px')}>
                 <div>
                   <div style={sx('font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{dayCell.day} {monthLabel}</div>
@@ -536,16 +534,6 @@ export default function JournalPage() {
                   </div>
                 );
               })}
-              <div style={sx('padding:13px 18px 6px;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>Rules broken</div>
-              {drawerBreaks.length === 0 ? (
-                <div style={sx('padding:10px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-3)')}>None recorded on this day.</div>
-              ) : drawerBreaks.map((b) => (
-                <div key={b.id} style={sx('display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line);font-size:12.5px')}>
-                  <span style={sx('width:6px;height:6px;border-radius:50%;background:var(--red-solid);flex:none')} />
-                  <span style={sx('flex:1;color:var(--ink-2)')}>{b.text}</span>
-                  <span style={sx('font-weight:600;font-variant-numeric:tabular-nums;color:var(--red);white-space:nowrap')}>{b.cost != null ? money(b.cost, cur, 0) : '—'}</span>
-                </div>
-              ))}
               <div style={sx('padding:14px 18px')}>
                 <button type="button" onClick={() => navigate('/dashboard/trades')} style={sx('width:100%;padding:9px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700')}>Open these in all trades</button>
               </div>
