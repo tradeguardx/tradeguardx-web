@@ -235,7 +235,7 @@ function fieldDisplay(field, value) {
   return `${field.prefix ? `${field.prefix}` : ''}${value}${field.suffix ? ` ${field.suffix}` : ''}`;
 }
 
-function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, expanded, onToggleExpand, enforcement }) {
+function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, expanded, onToggleExpand, enforcement }) {
   const toast = useToast();
   const isOn = !rule.locked && rule.enabled;
   // Reference A7/A8 derivations. Off wins over everything.
@@ -423,7 +423,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
             </div>
           ) : !isOn ? (
             <div style={sx('display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2);flex-wrap:wrap')}>
-              <span style={sx('flex:1;min-width:220px')}>This rule is off, so nothing here is being enforced. You can turn it on at any time — even while your other rules are locked.</span>
+              <span style={sx('flex:1;min-width:220px')}>This rule is off, so nothing here is being enforced. You can turn it on at any time — even while your other rules are locked.{lockNote ? <span style={sx('display:block;margin-top:4px;font-size:11.5px;color:var(--ink-3)')}>{lockNote}</span> : null}</span>
               {editing ? (
                 <>
                   <button type="button" disabled={busy} onClick={handleSave} style={sx(BTN_SOLID)}>{busy ? 'Saving…' : 'Save limits'}</button>
@@ -442,11 +442,13 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
                 <>
                   <button type="button" disabled={busy} onClick={handleSave} style={sx(BTN_SOLID)}>{busy ? 'Saving…' : 'Save changes'}</button>
                   <button type="button" disabled={busy} onClick={() => setEditing(false)} style={sx(BTN_GHOST)}>Cancel</button>
+                  {lockNote && <span style={sx('align-self:center;font-size:11.5px;color:var(--ink-3)')}>{lockNote}</span>}
                 </>
               ) : (
                 <>
                   <button type="button" onClick={() => setEditing(true)} style={sx(BTN_SOLID)}>Edit rule</button>
                   <button type="button" disabled={busy} onClick={toggleEnabled} style={sx(BTN_GHOST)}>{busy ? 'Updating…' : 'Turn off'}</button>
+                  {lockNote && <span style={sx('align-self:center;font-size:11.5px;color:var(--ink-3)')}>{lockNote}</span>}
                 </>
               )}
             </div>
@@ -527,6 +529,18 @@ export default function RulesTerminal() {
   const { label: lockLeft, ms: lockMs } = useCountdown(lockTarget);
   const lockLabel = ruleLock?.locked ? `${lockLeft} left` : ruleLock?.days ? `${ruleLock.days} days` : 'Off — daily';
   const graceShow = Boolean(ruleLock?.settling && !ruleLock?.locked && !cooled);
+  const dayMode = ruleLock?.mode === 'day';
+  // Said before the click, not learned from a 423 afterwards.
+  const lockNote = ruleLocked
+    ? 'Turning a rule on adds it to the running lock'
+    : dayMode
+      ? 'Rules are set for the day once you take your first trade'
+      : ruleLock?.settling
+        ? `Saves apply now; everything locks for ${ruleLock.days} days when the window closes`
+        : ruleLock?.days
+          ? `Saving starts a 15-minute window, then locks all rules for ${ruleLock.days} days`
+          : '';
+  const firstLock = (bundle?.instances ?? []).length <= 1;
   const graceSec = Math.floor(lockMs / 1000);
   const graceClock = `${String(Math.floor(graceSec / 60)).padStart(2, '0')}:${String(graceSec % 60).padStart(2, '0')}`;
   const gracePct = `${Math.min(100, Math.max(0, (1 - lockMs / SETTLE_MS) * 100))}%`;
@@ -535,7 +549,7 @@ export default function RulesTerminal() {
 
   const rowProps = (rule) => ({
     key: `${rule.id}-${reloadNonce}`, rule, accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId,
-    isRetail: bundle?.isRetail, onSaved: load, cooled, ruleLocked, enforcement: guardSel.enforcement,
+    isRetail: bundle?.isRetail, onSaved: load, cooled, ruleLocked, lockNote, enforcement: guardSel.enforcement,
     expanded: expandedRuleId === rule.id, onToggleExpand: () => toggleExpandedRule(rule.id),
   });
 
@@ -583,7 +597,7 @@ export default function RulesTerminal() {
           <div style={sx("flex:none;font:700 26px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em;color:var(--amber)")}>{graceClock}</div>
           <div style={sx('flex:1;min-width:260px')}>
             <div style={sx('font-size:13.5px;font-weight:700;color:var(--amber)')}>Setup window — change anything you like</div>
-            <p style={sx('margin:4px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:88ch')}>First time setting rules, so you get fifteen minutes to adjust freely before the lock takes hold. When the clock runs out your <strong style={sx('color:var(--ink);font-weight:700')}>{ruleLock?.days ? `${ruleLock.days}-day` : 'session'} default</strong> starts. Change the window on Live guard if a week is wrong for you.</p>
+            <p style={sx('margin:4px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:88ch')}>{firstLock ? 'First time setting rules, so you get fifteen minutes to adjust freely before the lock takes hold.' : 'You saved just now, so you have fifteen minutes to finish any other changes before the lock takes hold.'} When the clock runs out your <strong style={sx('color:var(--ink);font-weight:700')}>{ruleLock?.days ? `${ruleLock.days}-day` : 'session'} {firstLock ? 'default' : 'window'}</strong> starts. <button type="button" onClick={() => navigate('/dashboard/live')} style={sx('padding:0;border:0;background:none;color:var(--mint);font:inherit;font-weight:700;text-decoration:underline')}>Change the window on Live guard</button> if {ruleLock?.days === 7 ? 'a week' : 'that'} is wrong for you.</p>
             <div style={sx('margin-top:10px;height:4px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>
               <div style={sx('height:100%;border-radius:999px;background:var(--amber-solid)', { width: gracePct })} />
             </div>
@@ -596,8 +610,10 @@ export default function RulesTerminal() {
         <div style={sx('display:flex;align-items:flex-start;gap:12px;padding:15px 18px;margin-bottom:16px;border:1px solid var(--mint-line);border-radius:13px;background:var(--mint-tint)')}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mint)" strokeWidth="1.8" strokeLinecap="round" style={{ flex: 'none', marginTop: 1 }}><path d="M6 11V8.4a6 6 0 1112 0V11" /><path d="M5 11h14v9H5z" /></svg>
           <div style={{ flex: 1 }}>
-            <div style={sx('font-size:13.5px;font-weight:700;color:var(--mint)')}>Rules are frozen for another {lockLeft}</div>
-            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:92ch')}>You can read every rule and see exactly what is armed. You cannot change one — including making it stricter, because the point of the freeze is not touching them at all. This is the rule lock you set on Live guard.</p>
+            <div style={sx('font-size:13.5px;font-weight:700;color:var(--mint)')}>{dayMode ? `Rules are set for today's session — ${lockLeft} to the reset` : `Rules are frozen for another ${lockLeft}`}</div>
+            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:92ch')}>{dayMode
+              ? 'You have traded today, so the rules that are on hold until the daily reset. You can still turn on a rule that is off. Tomorrow, set your rules before your first trade.'
+              : 'You can read every rule and see exactly what is armed. You cannot change one — including making it stricter, because the point of the freeze is not touching them at all. This is the rule lock you set on Live guard.'}</p>
             <button type="button" onClick={() => openSupport(`I'd like my rule lock released early. It's locked until ${fmtLockDate(ruleLock?.lockedUntil)}. Reason: `)} style={sx('margin-top:8px;padding:0;border:0;background:none;font-size:12px;color:var(--ink-3);text-decoration:underline')}>Need it lifted? Ask support</button>
           </div>
         </div>
