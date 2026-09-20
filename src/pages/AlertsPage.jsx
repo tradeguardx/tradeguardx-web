@@ -10,8 +10,7 @@ import { sx } from '../components/dashboard/shell/sx';
 /**
  * Alerts — transcribed from the reference (lines 1769–1983). Same settings
  * endpoints as before: channel toggles, delivery email, mobile number,
- * severity threshold, Telegram binding link. "Show me one" fires a sample
- * of the in-app toast (dispatched to the shell; nothing is sent).
+ * severity threshold, Telegram binding link.
  */
 
 const MONO = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)";
@@ -81,7 +80,6 @@ export default function AlertsPage() {
     try { await disconnectTelegram({ accessToken }); await load(); await refresh(); } catch (e) { toast.error('Could not disconnect', e?.message); }
   };
 
-  const fireToast = () => window.dispatchEvent(new CustomEvent('tgx:sample-breach'));
 
   const tgOn = Boolean(s?.telegramConnected);
   const emOn = Boolean(s?.emailNotificationsEnabled);
@@ -98,48 +96,6 @@ export default function AlertsPage() {
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Alerts</h1>
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>The guard acts whether or not you are watching. Alerts are how you find out it did.</p>
       </div>
-
-      <section style={sx('margin-bottom:16px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
-        <div data-tgx-stack="1" style={sx('display:flex;align-items:flex-start;gap:14px;padding:18px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap')}>
-          <div style={sx('flex:1;min-width:230px')}>
-            <h3 style={sx("margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em")}>What a breach looks like</h3>
-            <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:74ch')}>Every channel says the same four things: which rule, what it cost, what we did about it, and whether you are flat. No channel is a teaser that makes you open the app to find out.</p>
-          </div>
-          <button type="button" onClick={fireToast} style={sx('flex:none;padding:9px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700')}>Show me one</button>
-        </div>
-
-        <div style={sx('padding:18px 21px;display:grid;gap:15px')}>
-          <div>
-            <div style={sx(MONO, { marginBottom: 9 })}>Telegram · arrives in about 2 seconds</div>
-            <div style={sx('max-width:420px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;border-bottom-left-radius:5px;background:var(--surface-2)')}>
-              <div style={sx('font-size:13px;line-height:1.6;color:var(--ink)')}>
-                <strong style={sx('font-weight:700;color:var(--red)')}>Rule breached — Daily loss protection</strong><br />
-                Delta · Main · 14:42:07 IST<br /><br />
-                You hit <strong style={sx('font-weight:700;font-variant-numeric:tabular-nums')}>−$249.60</strong> against your <strong style={sx('font-weight:700;font-variant-numeric:tabular-nums')}>−$249.60</strong> daily limit.<br /><br />
-                <span style={{ color: 'var(--ink-2)' }}>Cancelled 2 open orders<br />Closed 1 position (BTCUSD, −$118.20)<br />Confirmed flat at 14:42:09</span><br /><br />
-                The day is locked until 05:30 IST. Nothing you do in the Delta app will reopen it.
-              </div>
-              <div style={sx('margin-top:9px;font-size:11px;color:var(--ink-faint);text-align:right;font-variant-numeric:tabular-nums')}>14:42 ✓✓</div>
-            </div>
-          </div>
-
-          <div style={sx('padding-top:15px;border-top:1px solid var(--line)')}>
-            <div style={sx(MONO, { marginBottom: 9 })}>Email · the record, not the alarm</div>
-            <div style={sx('max-width:520px;border:1px solid var(--line);border-radius:13px;background:var(--surface-2);overflow:hidden')}>
-              <div style={sx('padding:12px 15px;border-bottom:1px solid var(--line)')}>
-                <div style={sx('font-size:12.5px;font-weight:600')}>Daily loss protection closed your day on Delta · Main</div>
-                <div style={sx('margin-top:4px;font-size:11.5px;color:var(--ink-3)')}>TradeGuardX · to {user?.email ?? 'you'} · 14:42</div>
-              </div>
-              <div style={sx('padding:13px 15px;font-size:12.5px;line-height:1.6;color:var(--ink-2)')}>Carries the fill-by-fill timeline, the exact figures we acted on, and a link to the trade in your journal — written so it still makes sense when you read it that evening.</div>
-            </div>
-          </div>
-
-          <div style={sx('padding-top:15px;border-top:1px solid var(--line)')}>
-            <div style={sx(MONO, { marginBottom: 9 })}>In-app · only if the dashboard is open</div>
-            <p style={sx('margin:0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:74ch')}>A banner that holds for nine seconds and links to Live guard. It never replaces Telegram — the point is that the guard acts while you are looking somewhere else.</p>
-          </div>
-        </div>
-      </section>
 
       <section style={sx('margin-bottom:16px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
         <div style={sx('display:flex;align-items:flex-start;gap:14px;padding:18px 21px;border-bottom:1px solid var(--line)')}>

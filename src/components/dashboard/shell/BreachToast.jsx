@@ -41,15 +41,12 @@ export default function BreachToast() {
     return () => { ctrl.abort(); clearInterval(id); };
   }, [accessToken, selectedTradingAccountId, seen]);
 
-  // "Show me one" on the Alerts page fires a sample — the same surface, nothing sent.
-  useEffect(() => {
-    const onSample = () => setBreach({
-      id: `sample-${Date.now()}`, sample: true, createdAt: new Date().toISOString(), ruleSlug: 'daily-loss',
-      message: 'You hit −$249.60 against a −$249.60 limit. We cancelled 2 open orders, closed 1 position, and confirmed you are flat. The day is locked until the 05:30 reset.',
-    });
-    window.addEventListener('tgx:sample-breach', onSample);
-    return () => window.removeEventListener('tgx:sample-breach', onSample);
-  }, []);
+  const dismiss = () => {
+    if (!breach) return;
+    setSeen((s) => new Set(s).add(breach.id));
+    acknowledgeBreaches({ accessToken, ids: [breach.id] }).catch(() => {});
+    setBreach(null);
+  };
 
   useEffect(() => {
     if (!breach) return undefined;
@@ -57,13 +54,6 @@ export default function BreachToast() {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [breach]);
-
-  const dismiss = () => {
-    if (!breach) return;
-    setSeen((s) => new Set(s).add(breach.id));
-    if (!breach.sample) acknowledgeBreaches({ accessToken, ids: [breach.id] }).catch(() => {});
-    setBreach(null);
-  };
 
   if (!breach) return null;
   const rule = breach.ruleSlug || breach.breachType || 'Rule';
