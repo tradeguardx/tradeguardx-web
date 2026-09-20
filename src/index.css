@@ -1153,14 +1153,15 @@
   [data-tgx-acct] span{text-overflow:ellipsis;overflow:hidden}
 }
 @media (max-width:900px){
-  [data-tgx-aside]{position:fixed;top:0;left:0;bottom:0;z-index:90;width:270px;transform:translateX(-100%);transition:transform .22s ease}
+  /* !important: the aside/main carry the reference's inline styles (sticky, 252px, 26px padding); a real browser lets inline win otherwise. */
+  [data-tgx-aside]{position:fixed!important;top:0!important;left:0!important;bottom:0!important;height:auto!important;z-index:90;width:270px!important;transform:translateX(-100%);transition:transform .22s ease;box-shadow:none}
   [data-tgx-aside][data-open="1"]{transform:none;box-shadow:0 0 60px rgba(0,0,0,.55)}
   [data-tgx-scrim]{display:block}
   [data-tgx-burger]{display:grid}
-  [data-tgx-main]{padding:18px 15px 72px}
-  [data-tgx-headbar]{padding:10px 15px;gap:9px;flex-wrap:wrap}
-  [data-tgx-band]{padding:11px 15px}
-  [data-tgx-modal]{padding:14px;align-items:flex-end}
+  [data-tgx-main]{padding:18px 15px 72px!important}
+  [data-tgx-headbar]{padding:10px 15px!important;gap:9px!important;flex-wrap:wrap}
+  [data-tgx-band]{padding:11px 15px!important}
+  [data-tgx-modal]{padding:14px!important;align-items:flex-end!important}
   [data-tgx-toast]{top:auto!important;bottom:14px;right:14px;left:14px;width:auto}
 }
 @media (max-width:700px){
@@ -1172,9 +1173,16 @@
   [data-tgx-ks][data-armed="1"] [data-tgx-kslabel]{display:inline}
 }
 @media (max-width:700px){
-  /* Seven-column trade rows scroll inside their card on phones rather than the page. */
-  [data-tgx-table]{overflow-x:auto!important;-webkit-overflow-scrolling:touch}
-  [data-tgx-table] > *{min-width:640px}
+  /* Trade rows stack on phones: symbol · side · P&L on line one, the rest muted beneath. */
+  [data-tgx-thead]{display:none!important}
+  [data-tgx-trow]{display:flex!important;flex-wrap:wrap;align-items:center;gap:5px 10px;padding:12px 16px!important}
+  [data-tgx-trow]::after{content:'';order:4;flex-basis:100%;height:0}
+  [data-tgx-trow] > [data-c="sym"]{order:1;font-size:14px}
+  [data-tgx-trow] > [data-c="side"]{order:2}
+  [data-tgx-trow] > [data-c="pnl"]{order:3;margin-left:auto}
+  [data-tgx-trow] > [data-c="when"],[data-tgx-trow] > [data-c="size"],[data-tgx-trow] > [data-c="hold"],[data-tgx-trow] > [data-c="blocks"]{order:5;font-size:11.5px;color:var(--ink-3)}
+  [data-tgx-trow] > [data-c="size"]::before{content:'Size ';color:var(--ink-faint)}
+  [data-tgx-trow] > [data-c="hold"]::before{content:'Hold ';color:var(--ink-faint)}
 }
 /* Economic calendar: the content column, not the viewport, is the constraint (924 − 252 − 48 − 2 = 622px). */
 [data-tgx] .ecal-opt:hover{background:var(--surface-2)!important}
@@ -1190,7 +1198,7 @@
 }
 @media (max-width:560px){
   [data-tgx-main] h1{font-size:24px!important}
-  [data-tgx-stack]{flex-direction:column;align-items:stretch}
+  [data-tgx-stack]{flex-direction:column!important;align-items:stretch!important}
   [data-tgx-stack] > *{width:100%}
 }
 
@@ -1287,3 +1295,7 @@
 [data-tgx] .cx-link:hover{text-decoration:none!important;border-color:var(--ink)!important}
 [data-tgx] .jn-day:hover{border-color:var(--line-strong)!important}
 @media (max-width:820px){[data-tgx] .jn-two{grid-template-columns:1fr!important}[data-tgx] .jn-beh{grid-template-columns:1fr!important}[data-tgx] .jn-beh > section:first-child{width:100%!important}}
+/* Phones: rule rows drop the status chip beside the toggle (it moves into the expanded panel) and the panel loses its 63px glyph indent. */
+@media (max-width:560px){[data-tgx-rxstatus]{display:none!important}[data-tgx-rxstatus-sm]{display:inline-block!important}[data-tgx-rxpanel]{padding:2px 18px 19px 18px!important}}
+/* Phones: the segmented tabs become a 2×2 grid and stat cards sit two per row. */
+@media (max-width:520px){[data-tgx] .jn-tabs{display:grid!important;grid-template-columns:1fr 1fr;width:100%;border-radius:16px!important}[data-tgx] .jn-tabs > button{text-align:center}[data-tgx] .jn-stats{grid-template-columns:1fr 1fr!important;gap:10px!important}}

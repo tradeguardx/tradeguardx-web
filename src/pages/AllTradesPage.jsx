@@ -98,7 +98,7 @@ export default function AllTradesPage() {
         })}
       </div>
       <section data-tgx-table="" style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
-        <div style={sx('display:grid;grid-template-columns:1.3fr 1fr .8fr .7fr .8fr 1fr .8fr;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>
+        <div data-tgx-thead="1" style={sx('display:grid;grid-template-columns:1.3fr 1fr .8fr .7fr .8fr 1fr .8fr;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>
           <span>When</span><span>Symbol</span><span>Side</span><span>Size</span><span>Hold</span><span>Rule breaks</span><span style={{ textAlign: 'right' }}>P&amp;L</span>
         </div>
         {error && <div style={sx('padding:14px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--amber)')}>{error}</div>}
@@ -116,14 +116,14 @@ export default function AllTradesPage() {
           const blocks = ruleBlockCount(t);
           const closed = isClosed(t);
           return (
-            <button key={t.tradeUid || t.id} type="button" className="tr-row" onClick={() => t.tradeUid && navigate(`/dashboard/trades/${encodeURIComponent(t.tradeUid)}`)} style={sx('width:100%;display:grid;grid-template-columns:1.3fr 1fr .8fr .7fr .8fr 1fr .8fr;gap:12px;padding:13px 18px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;align-items:center;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums')}>
-              <span style={sx('color:var(--ink-3)')}>{fmtWhen(pick(t, 'openedAt', 'closedAt'))}</span>
-              <span style={sx('font-weight:600')}>{pick(t, 'symbol')}</span>
-              <span style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: long ? 'var(--mint)' : 'var(--red)' })}>{long ? 'Long' : 'Short'}</span>
-              <span>{pick(t, 'quantity', 'volume') ?? '—'}</span>
-              <span style={sx('color:var(--ink-3)')}>{fmtHold(pick(t, 'openedAt'), pick(t, 'closedAt'))}</span>
-              <span><span style={sx('font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px', blocks > 0 ? { background: 'var(--red-tint)', color: 'var(--red)' } : { background: 'var(--surface-3)', color: 'var(--ink-3)' })}>{blocks > 0 ? `${blocks} ${blocks === 1 ? 'break' : 'breaks'}` : 'clean'}</span></span>
-              <span style={sx('text-align:right;font-weight:600', { color: !closed ? 'var(--ink-3)' : pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink)' })}>{closed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : 'open'}</span>
+            <button key={t.tradeUid || t.id} type="button" className="tr-row" data-tgx-trow="1" onClick={() => t.tradeUid && navigate(`/dashboard/trades/${encodeURIComponent(t.tradeUid)}`)} style={sx('width:100%;display:grid;grid-template-columns:1.3fr 1fr .8fr .7fr .8fr 1fr .8fr;gap:12px;padding:13px 18px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;align-items:center;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums')}>
+              <span data-c="when" style={sx('color:var(--ink-3)')}>{fmtWhen(pick(t, 'openedAt', 'closedAt'))}</span>
+              <span data-c="sym" style={sx('font-weight:600')}>{pick(t, 'symbol')}</span>
+              <span data-c="side" style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: long ? 'var(--mint)' : 'var(--red)' })}>{long ? 'Long' : 'Short'}</span>
+              <span data-c="size">{pick(t, 'quantity', 'volume') ?? '—'}</span>
+              <span data-c="hold" style={sx('color:var(--ink-3)')}>{fmtHold(pick(t, 'openedAt'), pick(t, 'closedAt'))}</span>
+              <span data-c="blocks"><span style={sx('font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px', blocks > 0 ? { background: 'var(--red-tint)', color: 'var(--red)' } : { background: 'var(--surface-3)', color: 'var(--ink-3)' })}>{blocks > 0 ? `${blocks} ${blocks === 1 ? 'break' : 'breaks'}` : 'clean'}</span></span>
+              <span data-c="pnl" style={sx('text-align:right;font-weight:600', { color: !closed ? 'var(--ink-3)' : pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink)' })}>{closed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : 'open'}</span>
             </button>
           );
         })}

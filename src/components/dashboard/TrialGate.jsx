@@ -19,7 +19,7 @@ export function TrialBanner() {
       <span style={sx('flex:none;width:28px;height:28px;border-radius:8px;background:var(--surface);display:grid;place-items:center;color:var(--mint)')}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3L4 14h7l-1 7 9-11h-7z" /></svg>
       </span>
-      <p style={sx('flex:1;min-width:220px;margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)')}>
+      <p style={sx('flex:1;min-width:min(220px,100%);margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)')}>
         <strong style={sx('color:var(--ink);font-weight:700')}>Free trial — everything unlocked.</strong> {left}. Upgrade any time to keep full access.
       </p>
       <Link to="/pricing" style={sx('flex:none;padding:8px 13px;border:1px solid var(--mint-solid);border-radius:9px;background:var(--mint-solid);color:#05221c;font-size:12.5px;font-weight:700;text-decoration:none')}>Upgrade</Link>

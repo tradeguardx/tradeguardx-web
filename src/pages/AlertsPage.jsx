@@ -139,7 +139,7 @@ export default function AlertsPage() {
             <div style={sx('margin:13px 0 0 48px')}>
               <div style={sx(MONO, { marginBottom: 8 })}>Delivery address</div>
               <div style={sx('display:flex;gap:9px;flex-wrap:wrap')}>
-                <input value={emailVal} onChange={(e) => setEmailVal(e.target.value)} placeholder={user?.email || 'you@example.com'} style={sx('flex:1;min-width:220px;padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font-size:13px')} />
+                <input value={emailVal} onChange={(e) => setEmailVal(e.target.value)} placeholder={user?.email || 'you@example.com'} style={sx('flex:1;min-width:min(220px,100%);padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font-size:13px')} />
                 {emailDirty ? (
                   <button type="button" disabled={busy} onClick={() => save({ notificationEmail: emailVal.trim() || null })} style={sx('flex:none;padding:11px 16px;border:1px solid var(--ink);border-radius:10px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700')}>Save</button>
                 ) : (

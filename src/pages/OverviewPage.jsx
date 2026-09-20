@@ -209,7 +209,7 @@ export default function OverviewPage() {
         <div style={sx('position:absolute;inset:0;background:var(--wash);pointer-events:none')} />
         <div style={sx('position:absolute;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:40px 40px;mask-image:linear-gradient(160deg,#000,transparent 62%);-webkit-mask-image:linear-gradient(160deg,#000,transparent 62%);pointer-events:none')} />
         <div style={sx('position:relative;display:flex;align-items:center;gap:32px;padding:30px 32px 28px;flex-wrap:wrap')}>
-          <div style={sx('flex:1;min-width:320px')}>
+          <div style={sx('flex:1;min-width:min(320px,100%)')}>
             <div style={sx('display:inline-flex;align-items:center;gap:9px;padding:5px 12px 5px 9px;margin-bottom:16px;border-radius:999px', { border: `1px solid var(--${d.tone}-line)`, background: `var(--${d.tone}-tint)` })}>
               <span style={sx('width:7px;height:7px;border-radius:50%;animation:tgxPulse 2.1s ease-in-out infinite', { background: `var(--${d.tone}-solid)`, boxShadow: `0 0 0 4px var(--${d.tone}-tint)` })} />
               <span style={sx("font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase", { color: `var(--${d.tone})` })}>{d.pill}</span>

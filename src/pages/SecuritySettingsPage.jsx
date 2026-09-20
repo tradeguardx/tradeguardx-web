@@ -68,7 +68,7 @@ export default function SecuritySettingsPage() {
         <span style={sx('flex:none;width:34px;height:34px;border-radius:10px;background:var(--surface);display:grid;place-items:center;color:var(--mint)')}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
         </span>
-        <span style={sx('flex:1;min-width:240px')}>
+        <span style={sx('flex:1;min-width:min(240px,100%)')}>
           <span style={sx('display:block;font-size:13.5px;font-weight:700;color:var(--mint)')}>Looking for the killswitch or rule lock?</span>
           <span style={sx('display:block;font-size:12.5px;line-height:1.55;color:var(--ink-2);margin-top:3px;max-width:82ch')}>They moved out of settings and onto Live guard, next to the trading they protect — you should be able to reach them mid-session without hunting through account pages.</span>
         </span>
@@ -100,7 +100,7 @@ export default function SecuritySettingsPage() {
         {keyRows.length === 0 && <div style={sx('padding:15px 19px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-3)')}>No accounts yet.</div>}
         {keyRows.map((r) => (
           <div key={r.id} style={sx('display:flex;align-items:center;gap:12px;padding:15px 19px;border-bottom:1px solid var(--line);flex-wrap:wrap')}>
-            <span style={sx('flex:1;min-width:220px;font-size:13px;color:var(--ink-2)')}><strong style={sx('color:var(--ink);font-weight:600')}>{r.label}</strong> — {r.note}</span>
+            <span style={sx('flex:1;min-width:min(220px,100%);font-size:13px;color:var(--ink-2)')}><strong style={sx('color:var(--ink);font-weight:600')}>{r.label}</strong> — {r.note}</span>
             <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase", { color: r.fg })}>{r.badge}</span>
             {r.act && !anyLocked && (
               <button type="button" onClick={() => navigate('/dashboard/connect')} style={sx('padding:7px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700')}>{r.act}</button>

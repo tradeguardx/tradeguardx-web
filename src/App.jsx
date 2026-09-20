@@ -30,14 +30,12 @@ import AllTradesPage from './pages/AllTradesPage';
 import LiveGuardPage from './pages/LiveGuardPage';
 import TradeDetailPage from './pages/TradeDetailPage';
 import AccountsPage from './pages/AccountsPage';
-import AccountLayout from './pages/AccountLayout';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import CryptoKillSwitchPage from './pages/CryptoKillSwitchPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import TaxPage from './pages/TaxPage';
-import AccountOverviewPage from './pages/AccountOverviewPage';
 import AlertsPage from './pages/AlertsPage';
 import RedirectWithSearch from './pages/RedirectWithSearch';
 import BillingPage from './pages/BillingPage';
@@ -112,13 +110,11 @@ function App() {
                   <Route path="trades" element={<AllTradesPage />} />
                   <Route path="tax" element={<TaxPage />} />
                   <Route path="trades/:tradeUid" element={<TradeDetailPage />} />
-                  <Route path="account" element={<AccountLayout />}>
-                    <Route index element={<AccountOverviewPage />} />
-                    <Route path="billing" element={<BillingPage />} />
-                    <Route path="trading" element={<AccountsPage />} />
-                    <Route path="notifications" element={<RedirectWithSearch to="/dashboard/alerts" />} />
-                    <Route path="security" element={<SecuritySettingsPage />} />
-                  </Route>
+                  <Route path="account" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
+                  <Route path="account/billing" element={<BillingPage />} />
+                  <Route path="account/trading" element={<AccountsPage />} />
+                  <Route path="account/notifications" element={<RedirectWithSearch to="/dashboard/alerts" />} />
+                  <Route path="account/security" element={<SecuritySettingsPage />} />
                   <Route path="trading-accounts" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
                   <Route path="billing" element={<RedirectWithSearch to="/dashboard/account/billing" />} />
                   <Route path="connect" element={<ConnectKeyPage />} />

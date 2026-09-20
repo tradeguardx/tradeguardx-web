@@ -113,7 +113,7 @@ export default function AccountsPage() {
           <section key={a.id} style={sx('margin-bottom:12px;border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden', { border: `1px solid var(--${tone}-line)` })}>
             <div style={sx('display:flex;align-items:center;gap:15px;padding:17px 19px;flex-wrap:wrap')}>
               <span style={sx("flex:none;width:38px;height:38px;border-radius:11px;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font:600 12px/1 'JetBrains Mono',monospace;color:var(--ink-2)")}>{tagOf(a.name)}</span>
-              <span style={sx('flex:1;min-width:200px')}>
+              <span style={sx('flex:1;min-width:min(200px,100%)')}>
                 <span style={sx('display:flex;align-items:center;gap:9px;flex-wrap:wrap')}>
                   <span style={sx('font-size:14.5px;font-weight:600')}>{a.name}</span>
                   <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:999px', { background: `var(--${tone}-tint)`, color: `var(--${tone})` })}>{d.label}</span>
@@ -150,7 +150,7 @@ export default function AccountsPage() {
                 </div>
               ) : (
                 <div style={sx('display:flex;align-items:center;gap:12px;padding:14px 15px;border:1px dashed var(--line-strong);border-radius:13px;background:var(--surface);flex-wrap:wrap')}>
-                  <span style={sx('flex:1;min-width:230px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{key.scope}</span>
+                  <span style={sx('flex:1;min-width:min(230px,100%);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{key.scope}</span>
                   <button type="button" onClick={() => go(a.id, '/dashboard/connect')} style={sx('flex:none;padding:9px 14px;border:1px solid var(--ink);border-radius:9px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700')}>Connect key</button>
                 </div>
               )}

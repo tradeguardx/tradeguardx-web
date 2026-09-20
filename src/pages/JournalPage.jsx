@@ -291,13 +291,13 @@ export default function JournalPage() {
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>Not a diary. A record of which habits cost you money, with the receipts attached.</p>
       </div>
 
-      <div style={sx('display:inline-flex;gap:3px;margin-bottom:20px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);box-shadow:inset 0 1px 2px rgba(0,0,0,.35);flex-wrap:wrap')} role="tablist">
+      <div className="jn-tabs" style={sx('display:inline-flex;gap:3px;margin-bottom:20px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);box-shadow:inset 0 1px 2px rgba(0,0,0,.35)')} role="tablist">
         {[['perf', 'Performance'], ['coach', 'Coach'], ['calendar', 'P&L calendar'], ['behaviour', 'Behaviour']].map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={sx(tab === id ? TAB_ON : TAB_OFF)}>{label}</button>
         ))}
       </div>
 
-      <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,232px),1fr));gap:14px;margin-bottom:22px')}>
+      <div className="jn-stats" style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,232px),1fr));gap:14px;margin-bottom:22px')}>
         {jStats.map((c) => (
           <div key={c.k} style={sx('padding:17px 18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);background-image:linear-gradient(180deg,rgba(255,255,255,.028),transparent 46%);box-shadow:var(--shadow-card)')}>
             <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)")}>{c.k}</div>

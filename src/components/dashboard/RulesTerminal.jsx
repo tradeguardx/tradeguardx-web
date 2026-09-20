@@ -345,7 +345,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
             <span role="button" tabIndex={0} onClick={cancelPending} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') cancelPending(e); }} title="Keep the current, stricter setting" style={sx('font-size:10.5px;font-weight:700;padding:4px 8px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2)')}>{cancelling ? 'Cancelling…' : 'Cancel'}</span>
           </span>
         )}
-        <span style={sx('flex:none;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px', { background: rule.locked ? 'var(--surface-3)' : tone.bg, color: rule.locked ? 'var(--ink-3)' : tone.fg })}>{rule.locked ? 'Upgrade' : status}</span>
+        <span data-tgx-rxstatus="1" style={sx('flex:none;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px', { background: rule.locked ? 'var(--surface-3)' : tone.bg, color: rule.locked ? 'var(--ink-3)' : tone.fg })}>{rule.locked ? 'Upgrade' : status}</span>
 
         {rule.locked ? (
           <Link to="/pricing" onClick={(e) => e.stopPropagation()} style={sx('flex:none;padding:6px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none')}>Upgrade</Link>
@@ -375,7 +375,8 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
       </button>
 
       {expanded && (
-        <div style={sx('padding:2px 18px 19px 63px')}>
+        <div data-tgx-rxpanel="1" style={sx('padding:2px 18px 19px 63px')}>
+          <span data-tgx-rxstatus-sm="1" style={sx('display:none;margin-bottom:12px;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px', { background: rule.locked ? 'var(--surface-3)' : tone.bg, color: rule.locked ? 'var(--ink-3)' : tone.fg })}>{rule.locked ? 'Upgrade' : status}</span>
           <p style={sx('margin:0 0 15px;font-size:13px;line-height:1.6;color:var(--ink-2);max-width:82ch')}>{plain}</p>
 
           <div style={sx('display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px')}>
@@ -424,7 +425,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
             </div>
           ) : !isOn ? (
             <div style={sx('display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2);flex-wrap:wrap')}>
-              <span style={sx('flex:1;min-width:220px')}>This rule is off, so nothing here is being enforced. You can turn it on at any time — even while your other rules are locked.{lockNote ? <span style={sx('display:block;margin-top:4px;font-size:11.5px;color:var(--ink-3)')}>{lockNote}</span> : null}</span>
+              <span style={sx('flex:1;min-width:min(220px,100%)')}>This rule is off, so nothing here is being enforced. You can turn it on at any time — even while your other rules are locked.{lockNote ? <span style={sx('display:block;margin-top:4px;font-size:11.5px;color:var(--ink-3)')}>{lockNote}</span> : null}</span>
               {editing ? (
                 <>
                   <button type="button" disabled={busy} onClick={handleSave} style={sx(BTN_SOLID)}>{busy ? 'Saving…' : 'Save limits'}</button>
@@ -599,7 +600,7 @@ export default function RulesTerminal() {
       {graceShow && (
         <div style={sx('display:flex;align-items:center;gap:14px;padding:16px 19px;margin-bottom:16px;border:1px solid var(--amber-line);border-radius:18px;background:var(--amber-tint);flex-wrap:wrap')}>
           <div style={sx("flex:none;font:700 26px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em;color:var(--amber)")}>{graceClock}</div>
-          <div style={sx('flex:1;min-width:260px')}>
+          <div style={sx('flex:1;min-width:min(260px,100%)')}>
             <div style={sx('font-size:13.5px;font-weight:700;color:var(--amber)')}>Setup window — change anything you like</div>
             <p style={sx('margin:4px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:88ch')}>{firstLock ? 'First time setting rules, so you get fifteen minutes to adjust freely before the lock takes hold.' : 'You saved just now, so you have fifteen minutes to finish any other changes before the lock takes hold.'} When the clock runs out your <strong style={sx('color:var(--ink);font-weight:700')}>{ruleLock?.days ? `${ruleLock.days}-day` : 'session'} {firstLock ? 'default' : 'window'}</strong> starts. <button type="button" onClick={() => navigate('/dashboard/live')} style={sx('padding:0;border:0;background:none;color:var(--mint);font:inherit;font-weight:700;text-decoration:underline')}>Change the window on Live guard</button> if {ruleLock?.days === 7 ? 'a week' : 'that'} is wrong for you.</p>
             <div style={sx('margin-top:10px;height:4px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>

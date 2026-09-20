@@ -63,7 +63,7 @@ export default function PreferencesPage() {
         <div style={sx('padding:16px 19px;border-bottom:1px solid var(--line)')}><h3 style={sx(H3)}>Your profile</h3></div>
         <div style={sx('padding:18px 19px;display:flex;align-items:center;gap:15px;flex-wrap:wrap')}>
           <span style={sx("flex:none;width:52px;height:52px;border-radius:50%;background:var(--surface-3);border:1px solid var(--line);display:grid;place-items:center;font:600 17px/1 'Space Grotesk',sans-serif;color:var(--ink-2)")}>{initialsOf(user?.name, user?.email)}</span>
-          <div style={sx('flex:1;min-width:220px;display:grid;gap:9px')}>
+          <div style={sx('flex:1;min-width:min(220px,100%);display:grid;gap:9px')}>
             <input value={name} onChange={(e) => setName(e.target.value)} aria-label="Name" style={sx('width:100%;padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font-size:13px')} />
             <input value={user?.email ?? ''} readOnly aria-label="Email" style={sx('width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-3);color:var(--ink-3);font-size:13px')} />
           </div>

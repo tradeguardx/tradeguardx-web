@@ -299,7 +299,7 @@ export default function EconomicCalendarPage() {
         <section style={sx('position:relative;margin-bottom:26px;border:1px solid var(--red-line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-lift);overflow:hidden')}>
           <div style={sx('position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,var(--red-tint),transparent 62%)')} aria-hidden />
           <div data-tgx-stack="1" style={sx('position:relative;display:flex;align-items:center;gap:24px;padding:22px 24px;flex-wrap:wrap')}>
-            <div style={sx('flex:1;min-width:280px')}>
+            <div style={sx('flex:1;min-width:min(280px,100%)')}>
               <span style={sx('display:inline-flex;align-items:center;gap:8px;padding:5px 11px 5px 9px;border:1px solid var(--red-line);border-radius:999px;background:var(--red-tint)')}>
                 <span style={sx('width:6px;height:6px;border-radius:50%;background:var(--red-solid);animation:tgxPulse 1.6s ease-in-out infinite')} />
                 <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--red)")}>Next high impact</span>

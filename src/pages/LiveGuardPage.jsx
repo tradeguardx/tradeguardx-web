@@ -216,12 +216,12 @@ export default function LiveGuardPage() {
         <div style={sx('position:absolute;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:38px 38px;mask-image:radial-gradient(90% 120% at 20% 0%,#000,transparent 70%);-webkit-mask-image:radial-gradient(90% 120% at 20% 0%,#000,transparent 70%);pointer-events:none')} />
         <div style={sx('position:relative;padding:26px 28px 30px')}>
           <div style={sx('display:flex;align-items:flex-start;justify-content:space-between;gap:26px;flex-wrap:wrap')}>
-            <div style={sx('min-width:280px')}>
+            <div style={sx('min-width:min(280px,100%)')}>
               <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>Today · session P&amp;L</div>
               <div style={sx("margin-top:12px;font:700 62px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.05em", { color: fg, textShadow: `0 0 48px ${glow}` })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
               <div style={sx('margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink-2);max-width:52ch;text-wrap:pretty')}>{summary}</div>
             </div>
-            <div style={sx('flex:1;min-width:260px;max-width:420px')}>
+            <div style={sx('flex:1;min-width:min(260px,100%);max-width:420px')}>
               <svg viewBox="0 0 320 96" preserveAspectRatio="none" style={sx('width:100%;height:96px;display:block')}>
                 <path d={spark} fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 7px ${glow})` }} />
               </svg>
@@ -249,9 +249,9 @@ export default function LiveGuardPage() {
           </div>
 
           {!hasLimits ? (
-            <div style={sx('display:flex;align-items:center;gap:11px;margin-top:24px;padding:14px 16px;border:1px dashed var(--line-strong);border-radius:13px;background:var(--surface-2)')}>
+            <div style={sx('display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-top:24px;padding:14px 16px;border:1px dashed var(--line-strong);border-radius:13px;background:var(--surface-2)')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="1.8" strokeLinecap="round" style={{ flex: 'none' }}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
-              <span style={sx('flex:1;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>No limits yet. Every threshold is a percentage of your account balance, so the loss and target scale appears once setup is finished.</span>
+              <span style={sx('flex:1;min-width:min(220px,100%);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>No limits yet. Every threshold is a percentage of your account balance, so the loss and target scale appears once setup is finished.</span>
               <button type="button" onClick={() => navigate(g.setupDone ? '/dashboard/rules' : '/dashboard/account/trading')} style={sx('flex:none;padding:8px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700')}>{g.setupDone ? 'Choose rules' : 'Finish setup'}</button>
             </div>
           ) : (
