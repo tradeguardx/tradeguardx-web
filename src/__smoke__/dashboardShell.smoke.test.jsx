@@ -44,6 +44,7 @@ vi.mock('../api/notificationsApi', () => ({
   fetchNotificationSettings: vi.fn(async () => ({ telegramConnected: true, emailNotificationsEnabled: false })),
   updateNotificationSettings: vi.fn(), createTelegramBindingLink: vi.fn(), disconnectTelegram: vi.fn(),
 }));
+vi.mock('../api/calendarApi', async () => { const { calendarSample } = await import('../fixtures/calendarSample'); return { fetchCalendar: vi.fn(async () => calendarSample()), scheduleCalendarLock: vi.fn() }; });
 vi.mock('../api/breachesApi', () => ({ fetchBreaches: vi.fn(async () => []), acknowledgeBreaches: vi.fn() }));
 const d = (n) => new Date(Date.now() - n * 86400000);
 const closedTrades = [
@@ -74,6 +75,7 @@ import OverviewPage from '../pages/OverviewPage';
 import LiveGuardPage from '../pages/LiveGuardPage';
 import JournalPage from '../pages/JournalPage';
 import RulesTerminal from '../components/dashboard/RulesTerminal';
+import EconomicCalendarPage from '../pages/EconomicCalendarPage';
 import { ToastProvider } from '../components/common/ToastProvider';
 
 function mount(path) {
@@ -86,6 +88,7 @@ function mount(path) {
             <Route path="live" element={<LiveGuardPage />} />
             <Route path="journal" element={<JournalPage />} />
             <Route path="rules" element={<RulesTerminal />} />
+            <Route path="calendar" element={<EconomicCalendarPage />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -143,5 +146,21 @@ describe('dashboard shell', () => {
     screen.getByText('Max trades per day').click();
     await waitFor(() => expect(screen.getByText(/This rule is off, so nothing here is being enforced/)).toBeTruthy());
     expect(screen.getByText('Enforced by: Risk engine · server-side')).toBeTruthy();
+  });
+
+  it('renders the Economic calendar with the next-event strip, status cells and no fabricated times', async () => {
+    mount('/dashboard/calendar');
+    await waitFor(() => expect(screen.getByText('Next high impact')).toBeTruthy());
+    expect(screen.getAllByText('Core CPI m/m').length).toBeGreaterThan(0);
+    expect(screen.getByText('TENTATIVE')).toBeTruthy();
+    expect(screen.getByText('ALL DAY')).toBeTruthy();
+    expect(screen.getByText('DAY 1')).toBeTruthy();
+    expect(screen.getByText('TODAY')).toBeTruthy();
+    expect(screen.getAllByText('IN 3H 07M').length).toBe(2); // the two CPI prints at the same minute
+    expect(screen.getByText('No events')).toBeTruthy();
+    expect(screen.queryByText(/null/)).toBeNull();
+    screen.getByText(/Auto-lock ±15 min/).click();
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeTruthy());
+    expect(screen.getByText(/Lock trading around Core CPI m\/m/)).toBeTruthy();
   });
 });

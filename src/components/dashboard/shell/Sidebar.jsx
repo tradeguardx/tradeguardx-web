@@ -61,6 +61,9 @@ export default function Sidebar({ onNavigate }) {
     { id: 'trades', to: '/dashboard/trades', label: 'All trades' },
     { id: 'tax', to: '/dashboard/tax', label: 'Tax centre' },
   ];
+  const market = [
+    { id: 'calendar', to: '/dashboard/calendar', label: 'Economic calendar' },
+  ];
   const setup = [
     { id: 'accounts', to: '/dashboard/account/trading', label: 'Accounts', badge: accounts.length ? String(accounts.length) : '' },
     { id: 'connect', to: '/dashboard/connect', label: 'Connect key', badge: g.loaded && g.account && g.guard !== 'armed' ? '!' : '' },
@@ -86,6 +89,8 @@ export default function Sidebar({ onNavigate }) {
         {protect.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
         <div style={sx(GROUP_LABEL)}>Review</div>
         {review.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
+        <div style={sx(GROUP_LABEL)}>Market</div>
+        {market.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
         <div style={sx(GROUP_LABEL)}>Setup</div>
         {setup.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
       </nav>

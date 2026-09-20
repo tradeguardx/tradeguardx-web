@@ -35,6 +35,7 @@ export const ICON = {
   live: ['M3 12h4l3-7 4 14 3-7h4', ''],
   rules: ['M12 3l7 3v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6l7-3z', 'M9 12l2.2 2.2L15.5 10'],
   journal: ['M5 4h11l3 3v13H5z', 'M8 9h8M8 13h8M8 17h5'],
+  calendar: ['M4 6h16v14H4z', 'M4 10h16M9 3v4M15 3v4'],
   trades: ['M4 6h16M4 12h16M4 18h16', ''],
   accounts: ['M3 9l9-5 9 5v11H3z', 'M9 20v-6h6v6'],
   connect: ['M9.5 14.5l5-5', 'M7 12l-2 2a3.5 3.5 0 005 5l2-2M17 12l2-2a3.5 3.5 0 00-5-5l-2 2'],
