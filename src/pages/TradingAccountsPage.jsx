@@ -543,7 +543,7 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
   );
 }
 
-function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toast }) {
+export function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toast }) {
   const [selectedSlug, setSelectedSlug] = useState('');
   const [name, setName] = useState('');
   const [platform, setPlatform] = useState('');

@@ -28,7 +28,7 @@ import TradeJournal from './components/dashboard/TradeJournal';
 import AllTradesPage from './pages/AllTradesPage';
 import LiveGuardPage from './pages/LiveGuardPage';
 import TradeDetailPage from './pages/TradeDetailPage';
-import TradingAccountsPage from './pages/TradingAccountsPage';
+import AccountsPage from './pages/AccountsPage';
 import AccountLayout from './pages/AccountLayout';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
@@ -113,7 +113,7 @@ function App() {
                   <Route path="account" element={<AccountLayout />}>
                     <Route index element={<AccountOverviewPage />} />
                     <Route path="billing" element={<BillingPage />} />
-                    <Route path="trading" element={<TradingAccountsPage />} />
+                    <Route path="trading" element={<AccountsPage />} />
                     <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="security" element={<SecuritySettingsPage />} />
                   </Route>
