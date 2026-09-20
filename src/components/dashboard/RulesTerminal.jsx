@@ -1,157 +1,36 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import DashboardPageBanner, { DashboardSectionHeading } from './DashboardPageBanner';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
-import { useDashboardTheme } from '../../context/DashboardThemeContext';
 import { useToast } from '../common/ToastProvider';
-import { ShimmerBlock } from '../common/LoadingSkeleton';
 import { fetchRulesBundle, saveRuleInstance, cancelPendingRuleChange } from '../../api/rulesApi';
 import { openSupport } from '../support/supportBus';
-import CooldownBanner from './CooldownBanner';
 import { useCooldown } from '../../hooks/useCooldown';
 import { useGuard } from '../../context/GuardContext';
-import { ruleGlyph, ruleAccent } from './shell/icons';
+import { Icon, RULE_GLYPH, ICON, ruleAccent } from './shell/icons';
 import { sx } from './shell/sx';
 
+/**
+ * Rules — transcribed from the reference (lines 1010–1176) and the Rules &
+ * Journal exact-build spec, Part A. Data layer is unchanged: the rules bundle,
+ * saveRuleInstance (deferred loosening, immediate tightening), pending-change
+ * cancel, the rule lock (settling → locked) and the cooldown all flow through
+ * the same endpoints as before. Only the presentation is new.
+ */
 
-// leftBorder is written out literally (not derived from iconColor at runtime)
-// because Tailwind's build-time scanner only generates CSS for class names it
-// can find as complete text in source — a class assembled via string
-// concatenation/replace in the browser never gets generated at all.
-const RULE_VISUALS = {
-  _default: {
-    gradient: 'from-slate-500 to-slate-400',
-    bgGlow: 'bg-slate-500/[0.06]',
-    iconColor: 'text-slate-400',
-    leftBorder: 'border-l-slate-400',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
-  },
-  'daily-loss': {
-    gradient: 'from-accent to-emerald-500',
-    bgGlow: 'bg-accent/[0.07]',
-    iconColor: 'text-accent',
-    leftBorder: 'border-l-accent',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
-  },
-  hedging: {
-    gradient: 'from-rose-500 to-orange-400',
-    bgGlow: 'bg-rose-500/[0.06]',
-    iconColor: 'text-rose-400',
-    leftBorder: 'border-l-rose-400',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-      </svg>
-    ),
-  },
-  'risk-per-trade': {
-    gradient: 'from-blue-500 to-cyan-400',
-    bgGlow: 'bg-blue-500/[0.06]',
-    iconColor: 'text-blue-400',
-    leftBorder: 'border-l-blue-400',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
-  'max-total-loss': {
-    gradient: 'from-violet-500 to-purple-400',
-    bgGlow: 'bg-violet-500/[0.06]',
-    iconColor: 'text-violet-400',
-    leftBorder: 'border-l-violet-400',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-      </svg>
-    ),
-  },
-  stacking: {
-    gradient: 'from-amber-400 to-yellow-300',
-    bgGlow: 'bg-amber-500/[0.06]',
-    iconColor: 'text-amber-400',
-    leftBorder: 'border-l-amber-400',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-      </svg>
-    ),
-  },
-  'max-trades-day': {
-    gradient: 'from-teal-400 to-emerald-400',
-    bgGlow: 'bg-teal-500/[0.06]',
-    iconColor: 'text-teal-400',
-    leftBorder: 'border-l-teal-400',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-      </svg>
-    ),
-  },
-  'close-after-losses': {
-    gradient: 'from-pink-500 to-rose-400',
-    bgGlow: 'bg-pink-500/[0.06]',
-    iconColor: 'text-pink-400',
-    leftBorder: 'border-l-pink-400',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-    ),
-  },
-  'stop-loss-alert': {
-    gradient: 'from-orange-500 to-amber-400',
-    bgGlow: 'bg-orange-500/[0.06]',
-    iconColor: 'text-orange-400',
-    leftBorder: 'border-l-orange-400',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-      </svg>
-    ),
-  },
-  'minimum-hold': {
-    gradient: 'from-cyan-500 to-sky-400',
-    bgGlow: 'bg-cyan-500/[0.06]',
-    iconColor: 'text-cyan-400',
-    leftBorder: 'border-l-cyan-400',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
-  'htf-minimum': {
-    gradient: 'from-indigo-500 to-violet-400',
-    bgGlow: 'bg-indigo-500/[0.06]',
-    iconColor: 'text-indigo-300',
-    leftBorder: 'border-l-indigo-300',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4v16" />
-      </svg>
-    ),
-  },
+// Reference plain-English copy per rule (line 2456–2462). Rules the catalog
+// adds beyond these seven fall back to their docs summary.
+const REF_PLAIN = {
+  'daily-loss': 'We watch realised plus unrealised loss on the day. At the warning number you get a ping; at the hard number we cancel orders, close positions and lock the account until tomorrow.',
+  'daily-profit-target': 'The opposite job: once you are properly up, we close the day so you stop handing it back. The account locks until the next reset and the gain is kept.',
+  'stop-loss-alert': 'A position with no stop is the single most expensive habit in your ledger. We give you a short grace period to add one, then alert.',
+  'risk-per-trade': 'Measured from entry to your stop. Without a stop we cannot size the risk, so this rule leans on stop loss protection being on.',
+  'max-total-loss': 'Peak-to-trough across the whole account, not just today. Enforcement for this one is still being finished — right now it alerts rather than closes, and we would rather say so.',
+  'max-trades-day': 'A trade counter is the cheapest revenge-trading brake there is. Hitting the cap locks the account for the rest of the session.',
+  'close-after-losses': 'Two tiers. Three losses in a row buys you a short forced break; five means the day is over. The soft tier is the one that changes behaviour.',
 };
-
-/** Uniform shield glyph used on every rule card — color comes from the rule's own accent (RULE_VISUALS), not a per-rule icon shape. */
-function ShieldIcon({ className = 'w-5 h-5' }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-    </svg>
-  );
-}
+// Rules whose enforcement is alert-only today (the engine does not close for them).
+const PARTIAL = new Set(['max-total-loss', 'stop-loss-alert']);
 
 function buildFields(template, instance) {
   const raw = Array.isArray(template.definition?.fields) ? template.definition.fields : [];
@@ -345,742 +224,323 @@ function useCountdown(iso) {
 
 const SETTLE_MS = 15 * 60_000;
 
-/**
- * The rule lock, in the same visual language as the rule cards beneath it:
- * accent edge, icon tile, a state pill, and the countdown drawn as a bar so
- * time has a shape rather than just a number.
- *
- * Two states:
- *  - settling: saved in the last 15 minutes; more edits allowed. Bar fills as
- *    the window closes — a visual "finish now".
- *  - locked: nothing can change until the date. Bar shows how far through.
- * Support can lift it, and the copy says so with the address.
- */
-function RuleLockBanner({ lock }) {
-  const day = lock.mode === 'day';
-  const target = lock.locked ? lock.lockedUntil : lock.locksAt;
-  const { label, ms } = useCountdown(target);
-  const until = fmtLockDate(lock.lockedUntil);
-  const locksAt = fmtLockDate(lock.locksAt);
+const BTN_SOLID = 'padding:9px 14px;border:1px solid var(--ink);border-radius:9px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700';
+const BTN_GHOST = 'padding:9px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600';
+const INPUT = "width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font:600 14px/1.2 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums";
 
-  // Progress through the current phase, 0..1. A session lock has no fixed
-  // length (it starts at the first trade), so it fills over the day.
-  const total = day ? 86_400_000 : lock.locked ? lock.days * 86_400_000 : SETTLE_MS;
-  const progress = Math.min(1, Math.max(0, 1 - ms / total));
-
-  const t = lock.locked
-    ? { edge: '#f59e0b', fg: '#d97706', tint: 'rgba(245,158,11,0.10)', line: 'rgba(245,158,11,0.30)', pill: 'LOCKED' }
-    : { edge: '#00d4aa', fg: '#0d9488', tint: 'rgba(0,212,170,0.08)', line: 'rgba(0,212,170,0.28)', pill: 'CLOSING SOON' };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="dash-card-elevated relative mb-8 overflow-hidden rounded-2xl"
-      style={{ borderLeft: `4px solid ${t.edge}` }}
-    >
-      {/* soft glow, like the protection hero */}
-      <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl" style={{ backgroundColor: t.tint }} aria-hidden />
-
-      <div className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: t.tint, color: t.fg }}>
-            {lock.locked ? (
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <rect x="4" y="11" width="16" height="9" rx="2" />
-                <path strokeLinecap="round" d="M8 11V7a4 4 0 118 0v4" />
-              </svg>
-            ) : (
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            )}
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-display text-base font-bold" style={{ color: 'var(--dash-text-primary)' }}>
-                {day ? `Rules set for today's session · resets ${until}` : lock.locked ? `Rules locked until ${until}` : `Rules lock at ${locksAt}`}
-              </p>
-              <span className="rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider" style={{ borderColor: t.line, color: t.fg, backgroundColor: t.tint }}>
-                {t.pill}
-              </span>
-            </div>
-            <p className="mt-1 max-w-2xl text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-              {day
-                ? `You've traded today. Rules that are on can't be changed or turned off until the daily reset. You can still turn on a rule that's off. Tomorrow, set your rules before your first trade.`
-                : lock.locked
-                  ? `You chose a ${lock.days}-day lock. Rules that are on can't be changed or turned off until then. You can still turn on a rule that's off — it joins this lock.`
-                  : `You saved recently. Finish any other changes now; they apply immediately. 15 minutes after your last save, every rule locks for ${lock.days} days.`}
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {lock.locked && (
-                <button
-                  type="button"
-                  onClick={() => openSupport(`I'd like my rule lock released early. It's locked until ${until}. Reason: `)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold"
-                  style={{ borderColor: t.line, color: t.fg, backgroundColor: t.tint }}
-                >
-                  Request release
-                </button>
-              )}
-              <Link
-                to="/dashboard/account/security"
-                className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold"
-                style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
-                title={lock.locked ? 'The lock setting can be changed once the lock lifts' : 'Change the lock setting'}
-              >
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Lock settings
-              </Link>
-              <span className="text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
-                or email <a href="mailto:support@tradeguardx.com" className="underline underline-offset-2">support@tradeguardx.com</a>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* The timer: number on top of a bar that fills as the phase runs out. */}
-        <div className="flex-shrink-0 sm:w-52">
-          <div className="rounded-xl border px-4 py-3" style={{ borderColor: t.line, backgroundColor: t.tint }}>
-            <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: t.fg }}>
-              {day ? 'Resets in' : lock.locked ? 'Releases in' : 'Locks in'}
-            </p>
-            {/* Segmented, so "6d 23h 31m" reads as three units rather than a
-                string of digits, and never wraps. */}
-            <p className="mt-1 flex items-baseline gap-1.5 whitespace-nowrap font-display leading-none" style={{ color: 'var(--dash-text-primary)' }}>
-              {label.split(' ').map((seg, i) => {
-                const m = /^(\d+)([a-z]+)$/.exec(seg);
-                return m ? (
-                  <span key={i} className="flex items-baseline gap-0.5">
-                    <span className="text-xl font-bold tabular-nums">{m[1]}</span>
-                    <span className="text-[11px] font-semibold" style={{ color: t.fg }}>{m[2]}</span>
-                  </span>
-                ) : (
-                  <span key={i} className="font-mono text-xl font-bold tabular-nums">{seg}</span>
-                );
-              })}
-            </p>
-            <div className="mt-2.5 h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.08)' }}>
-              <motion.div
-                className="h-full rounded-full"
-                style={{ backgroundColor: t.edge }}
-                initial={false}
-                animate={{ width: `${progress * 100}%` }}
-                transition={{ duration: 0.6 }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
+function fieldDisplay(field, value) {
+  if (field.type === 'select') return (field.options || []).find((o) => o.value === value)?.label ?? String(value ?? '—');
+  if (field.type === 'toggle') return value ? 'On' : 'Off';
+  if (value === '' || value == null) return '—';
+  return `${field.prefix ? `${field.prefix}` : ''}${value}${field.suffix ? ` ${field.suffix}` : ''}`;
 }
 
-function RuleCard({ rule, index, accessToken, tradingAccountId, isRetail, onSaved, accountLocked: cooldownLocked = false, ruleLocked = false, lockDays = 0, lockReason = null, expanded, onToggleExpand, enforcement = 'unprotected' }) {
-  // Rule lock applies to this card only while the rule is ON. An off rule can
-  // still be switched on (and saved with its settings) during a lock; it then
-  // joins the lock. Once on, it is frozen like the rest.
-  const accountLocked = cooldownLocked || (ruleLocked && rule.enabled);
-  // A change staged during a lockout must be revocable. Otherwise a decision
-  // made while locked out and frustrated executes hours later without asking
-  // again, and staging becomes a delayed trap rather than breathing room.
-  const [cancelling, setCancelling] = useState(false);
-  const [toggling, setToggling] = useState(false);
+function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, expanded, onToggleExpand, enforcement }) {
+  const toast = useToast();
+  const isOn = !rule.locked && rule.enabled;
+  // Reference A7/A8 derivations. Off wins over everything.
+  const status = !isOn ? 'Off' : enforcement === 'armed' ? 'Armed' : enforcement === 'watching' ? 'Alert only' : 'Not enforcing';
+  const tone = status === 'Armed' ? { bg: 'var(--mint-tint)', fg: 'var(--mint)' } : status === 'Alert only' ? { bg: 'var(--amber-tint)', fg: 'var(--amber)' } : { bg: 'var(--surface-3)', fg: 'var(--ink-3)' };
+  const onUnlocked = isOn && !ruleLocked && !cooled;
+  const toggleBlocked = isOn && (ruleLocked || cooled);
+  const editable = !rule.locked && isOn && !ruleLocked && !cooled;
+  const frozen = isOn && ruleLocked && !cooled;
+  const isCooled = isOn && cooled;
 
-  /**
-   * Flip a rule on or off.
-   *
-   * Turning OFF is a loosening: the backend defers it past any active lockout
-   * (and past the cooling-off window), so the toast reports when it lands
-   * rather than claiming it is already done. Turning ON is immediate — more
-   * protection never waits.
-   */
+  const [busy, setBusy] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const hasMode = rule.fields.some((f) => f.key === 'mode');
+  const [values, setValues] = useState(() => {
+    const base = rule.fields.reduce((acc, f) => ({ ...acc, [f.key]: f.value }), {});
+    // Mode is pinned, never user-selectable: retail states limits in dollars,
+    // prop firms in percent of account size.
+    if (hasMode) base.mode = isRetail ? 'amount' : 'percent';
+    return base;
+  });
+  const visibleFields = rule.fields.filter((f) => f.key !== 'mode' && (!f.showWhen || values[f.showWhen.key] === f.showWhen.equals));
+
+  const configFromValues = () => {
+    const relevant = new Set(rule.fields.filter((f) => !f.showWhen || values[f.showWhen.key] === f.showWhen.equals).map((f) => f.key));
+    const config = {};
+    for (const k of Object.keys(values)) {
+      if (!relevant.has(k)) continue;
+      const field = rule.fields.find((x) => x.key === k);
+      let val = values[k];
+      if (field?.type === 'number' && typeof val === 'string' && val !== '') { const n = Number(val); if (!Number.isNaN(n)) val = n; }
+      config[k] = val;
+    }
+    return config;
+  };
+
+  /** Flip on/off. Off is a loosening the backend may defer; on is immediate. */
   const toggleEnabled = async () => {
+    if (busy || rule.locked) return;
     const next = !rule.enabled;
-    setToggling(true);
+    setBusy(true);
     try {
       const res = await saveRuleInstance({
-        accessToken,
-        tradingAccountId,
-        templateSlug: rule.id,
-        enabled: next,
+        accessToken, tradingAccountId, templateSlug: rule.id, enabled: next,
+        // A rule with no saved instance yet is created with its current limits.
+        ...(rule.hasSavedInstance ? {} : { config: configFromValues() }),
       });
       if (res?.deferred?.effectiveAt) {
         const when = new Date(res.deferred.effectiveAt);
-        toast.success(
-          'Scheduled',
-          `${rule.name} turns off ${when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}. It stays active until then — you can cancel before it lands.`,
-        );
+        toast.success('Scheduled', `${rule.name} turns off ${when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}. It stays active until then — you can cancel before it lands.`);
       } else {
         toast.success(next ? 'Rule on' : 'Rule off', `${rule.name} is now ${next ? 'active' : 'inactive'}.`);
       }
       onSaved?.();
     } catch (err) {
       toast.error('Could not update', err?.details?.error?.message || err?.message || 'Please try again.');
-    } finally {
-      setToggling(false);
-    }
+    } finally { setBusy(false); }
   };
-  const toast = useToast();
-  const { isDark } = useDashboardTheme();
-  const hasMode = rule.fields.some((f) => f.key === 'mode');
-  const [values, setValues] = useState(() => {
-    const base = rule.fields.reduce((acc, f) => ({ ...acc, [f.key]: f.value }), {});
-    if (hasMode) {
-      // Mode is pinned, never user-selectable: retail states limits in dollars,
-      // prop firms in percent of account size (how their own rules are written).
-      // The %/$ selector this used to render was the only way to switch, so
-      // removing it means the pin below is now the single source of truth.
-      base.mode = isRetail ? 'amount' : 'percent';
-    }
-    return base;
-  });
-  /** Fields for the pinned mode. The `mode` field itself is never rendered. */
-  const visibleFields = rule.fields.filter((f) => {
-    if (f.key === 'mode') return false;
-    if (f.showWhen && values[f.showWhen.key] !== f.showWhen.equals) return false;
-    return true;
-  });
-  const [saving, setSaving] = useState(false);
-  const [showDocs, setShowDocs] = useState(false);
-  const docs = RULE_DOCS[rule.id];
+
   const handleSave = async () => {
-    if (!accessToken || !tradingAccountId || rule.locked) return;
-    setSaving(true);
+    if (!accessToken || !tradingAccountId || rule.locked || busy) return;
+    setBusy(true);
     try {
-      // Persist only fields relevant to the active mode (the mode key itself has
-      // no showWhen, so it's always kept); skips the hidden mode's stale values.
-      const relevant = new Set(
-        rule.fields
-          .filter((f) => !f.showWhen || values[f.showWhen.key] === f.showWhen.equals)
-          .map((f) => f.key),
-      );
-      const config = {};
-      for (const k of Object.keys(values)) {
-        if (!relevant.has(k)) continue;
-        const field = rule.fields.find((x) => x.key === k);
-        let val = values[k];
-        if (field?.type === 'number' && typeof val === 'string' && val !== '') {
-          const n = Number(val);
-          if (!Number.isNaN(n)) val = n;
-        }
-        config[k] = val;
-      }
-      const res = await saveRuleInstance({
-        accessToken,
-        tradingAccountId,
-        templateSlug: rule.id,
-        config,
-          // Was hardcoded true, which silently re-armed a rule the user had
-          // turned off whenever they edited any value.
-          enabled: rule.enabled !== false,
-      });
+      const res = await saveRuleInstance({ accessToken, tradingAccountId, templateSlug: rule.id, config: configFromValues(), enabled: rule.enabled !== false });
       if (res?.deferred?.effectiveAt) {
         const when = new Date(res.deferred.effectiveAt);
         const hrs = Math.max(1, Math.round((when.getTime() - Date.now()) / 3600000));
-        toast.success(
-          'Tightening applied — loosening scheduled',
-          `Making a limit looser waits ${hrs}h (protects you from impulse changes). It takes effect ${when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}.`,
-        );
+        toast.success('Tightening applied — loosening scheduled', `Making a limit looser waits ${hrs}h (protects you from impulse changes). It takes effect ${when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}.`);
       } else {
         toast.success('Saved', `${rule.name} updated.`);
       }
+      setEditing(false);
       onSaved?.();
     } catch (e) {
       toast.error('Save failed', e?.message || 'Try again.');
-    } finally {
-      setSaving(false);
-    }
+    } finally { setBusy(false); }
   };
 
-  return (
-    <div className="group relative" data-rule-index={index}>
-      <div style={sx('border-bottom:1px solid var(--line)')}>
-        <button
-          type="button"
-          onClick={onToggleExpand}
-          className="rx-row"
-          style={sx('width:100%;display:flex;align-items:center;gap:13px;padding:15px 18px;border:0;background:transparent;text-align:left;color:var(--ink)')}
-        >
-          <span style={sx('flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center', rule.locked ? { background: 'var(--surface-3)', color: 'var(--ink-3)' } : { background: ruleAccent(rule.templateSlug ?? rule.slug).tint, color: ruleAccent(rule.templateSlug ?? rule.slug).color })}>
-            {(() => { const G = ruleGlyph(rule.templateSlug ?? rule.slug); return <G size={17} />; })()}
-          </span>
+  const cancelPending = async (e) => {
+    e.stopPropagation();
+    setCancelling(true);
+    try { await cancelPendingRuleChange({ accessToken, tradingAccountId, templateSlug: rule.id }); onSaved?.(); }
+    finally { setCancelling(false); }
+  };
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 style={sx("margin:0;font-size:14px;font-weight:600;letter-spacing:-.005em;font-family:Manrope,system-ui,sans-serif")}>{rule.name}</h3>
-              {!rule.locked && rule.hasSavedInstance && rule.enabled && (
-                <span className={`dsh-chip dsh-chip--${enforcement === 'armed' ? 'mint' : enforcement === 'watching' ? 'amber' : 'red'}`}>
-                  {enforcement === 'armed' ? 'Armed' : enforcement === 'watching' ? 'Alert only' : 'Not enforcing'}
-                </span>
-              )}
-                {!rule.locked && rule.hasSavedInstance && !rule.enabled && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0"
-                    style={{ color: 'var(--dash-text-muted)', backgroundColor: 'var(--dash-bg-input)', border: '1px solid var(--dash-border)' }}>
-                    Off
-                  </span>
-                )}
-              {!rule.locked && !rule.hasSavedInstance && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0 text-rose-400"
-                  style={{ backgroundColor: isDark ? 'rgba(244,63,94,0.12)' : 'rgba(244,63,94,0.08)', border: `1px solid rgba(244,63,94,${isDark ? '0.25' : '0.35'})` }}>
-                  Suggested
-                </span>
-              )}
-              {!rule.locked && rule.pendingEffectiveAt && (
-                <>
-                <span
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 text-sky-400"
-                  title={`${rule.pendingEnabled === false ? 'This rule turns off' : 'Looser limit takes effect'} ${new Date(rule.pendingEffectiveAt).toLocaleString()}`}
-                  style={{ backgroundColor: isDark ? 'rgba(56,189,248,0.10)' : 'rgba(56,189,248,0.08)', border: `1px solid rgba(56,189,248,${isDark ? '0.25' : '0.35'})` }}>
-                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  {rule.pendingEnabled === false ? 'Turns off when lock lifts' : 'Looser limit pending'}
-                </span>
-                  <button
-                    type="button"
-                    disabled={cancelling}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      setCancelling(true);
-                      try {
-                        await cancelPendingRuleChange({
-                          accessToken,
-                          tradingAccountId,
-                          templateSlug: rule.id,
-                        });
-                        onSaved?.();
-                      } finally {
-                        setCancelling(false);
-                      }
-                    }}
-                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 disabled:opacity-50"
-                    title="Keep the current, stricter setting"
-                    style={{ color: 'var(--dash-text-muted)', border: '1px solid var(--dash-border)' }}
-                  >
-                    {cancelling ? 'Cancelling…' : 'Cancel'}
+  const slug = rule.templateSlug ?? rule.id;
+  const accent = rule.locked ? { color: 'var(--ink-3)', tint: 'var(--surface-3)' } : ruleAccent(slug);
+  const glyph = RULE_GLYPH[slug] ?? ICON.rules;
+  const plain = REF_PLAIN[slug] || (RULE_DOCS[slug] ? `${RULE_DOCS[slug].summary} ${RULE_DOCS[slug].trigger}` : rule.description);
+  const summary = rule.locked ? rule.description : ruleSummaryLine(rule.id, values, rule.description);
+
+  return (
+    <div style={sx('border-bottom:1px solid var(--line)')}>
+      <button type="button" onClick={onToggleExpand} className="rx-row" style={sx('width:100%;display:flex;align-items:center;gap:13px;padding:15px 18px;border:0;background:transparent;text-align:left;color:var(--ink)')}>
+        <span style={sx('flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center', { background: accent.tint, color: accent.color })}>
+          <Icon d1={glyph[0]} d2={glyph[1]} stroke={1.7} size={17} />
+        </span>
+        <span style={sx('flex:1;min-width:0')}>
+          <span style={sx('display:block;font-size:14px;font-weight:600;letter-spacing:-.005em')}>{rule.name}</span>
+          <span style={sx('display:block;font-size:12.5px;color:var(--ink-3);margin-top:3px')}>{summary}</span>
+        </span>
+        {rule.pendingEffectiveAt && !rule.locked && (
+          <span style={sx('flex:none;display:inline-flex;align-items:center;gap:6px')} title={`${rule.pendingEnabled === false ? 'This rule turns off' : 'Looser limit takes effect'} ${new Date(rule.pendingEffectiveAt).toLocaleString()}`}>
+            <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:rgba(31,111,208,0.12);color:var(--blue)')}>{rule.pendingEnabled === false ? 'Turns off when lock lifts' : 'Looser limit pending'}</span>
+            <span role="button" tabIndex={0} onClick={cancelPending} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') cancelPending(e); }} title="Keep the current, stricter setting" style={sx('font-size:10.5px;font-weight:700;padding:4px 8px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2)')}>{cancelling ? 'Cancelling…' : 'Cancel'}</span>
+          </span>
+        )}
+        <span style={sx('flex:none;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px', { background: rule.locked ? 'var(--surface-3)' : tone.bg, color: rule.locked ? 'var(--ink-3)' : tone.fg })}>{rule.locked ? 'Upgrade' : status}</span>
+
+        {rule.locked ? (
+          <Link to="/pricing" onClick={(e) => e.stopPropagation()} style={sx('flex:none;padding:6px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none')}>Upgrade</Link>
+        ) : onUnlocked ? (
+          <span role="switch" tabIndex={0} aria-checked="true" aria-label={`Turn off ${rule.name}`} title="Turn this rule off"
+            onClick={(e) => { e.stopPropagation(); void toggleEnabled(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); void toggleEnabled(); } }}
+            style={sx('flex:none;position:relative;display:block;width:38px;height:22px;border-radius:999px;background:var(--mint-solid);cursor:pointer', { opacity: busy ? 0.5 : 1 })}>
+            <span style={sx('position:absolute;top:3px;left:19px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35)')} />
+          </span>
+        ) : toggleBlocked ? (
+          <span role="switch" aria-checked="true" aria-disabled="true" title="Locked — you set this window yourself" onClick={(e) => e.stopPropagation()} style={sx('flex:none;position:relative;display:block;width:38px;height:22px;border-radius:999px;background:var(--mint-tint);border:1px solid var(--mint-line);cursor:not-allowed')}>
+            <span style={sx('position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background:var(--mint);display:grid;place-items:center')}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--surface)" strokeWidth="3" strokeLinecap="round"><path d="M8 10V7.5a4 4 0 018 0V10" /><path d="M6 10h12v9H6z" /></svg>
+            </span>
+          </span>
+        ) : (
+          <span role="switch" tabIndex={0} aria-checked="false" aria-label={`Turn on ${rule.name}`} title="Turn this rule on"
+            onClick={(e) => { e.stopPropagation(); void toggleEnabled(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); void toggleEnabled(); } }}
+            style={sx('flex:none;position:relative;display:block;width:38px;height:22px;border-radius:999px;background:var(--surface-3);border:1px solid var(--line);cursor:pointer', { opacity: busy ? 0.5 : 1 })}>
+            <span style={sx('position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-faint)')} />
+          </span>
+        )}
+
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flex: 'none', color: expanded ? 'var(--ink)' : 'var(--ink-3)' }}><path d={expanded ? 'M7 14l5-5 5 5' : 'M7 10l5 5 5-5'} /></svg>
+      </button>
+
+      {expanded && (
+        <div style={sx('padding:2px 18px 19px 63px')}>
+          <p style={sx('margin:0 0 15px;font-size:13px;line-height:1.6;color:var(--ink-2);max-width:82ch')}>{plain}</p>
+
+          <div style={sx('display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px')}>
+            {visibleFields.map((field) => (
+              <div key={field.key} style={sx('min-width:132px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)', editing ? { minWidth: 180 } : {})}>
+                <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{field.label}</div>
+                {!editing || rule.locked ? (
+                  <div style={sx("margin-top:5px;font:600 15px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums")}>{rule.locked ? 'Upgrade to configure' : fieldDisplay(field, values[field.key])}</div>
+                ) : field.type === 'select' ? (
+                  <div style={sx('margin-top:6px;display:flex;gap:4px')}>
+                    {(field.options || []).map((opt) => {
+                      const on = values[field.key] === opt.value;
+                      return <button key={opt.value} type="button" onClick={() => setValues((v) => ({ ...v, [field.key]: opt.value }))} style={sx('padding:6px 10px;border-radius:7px;font-size:12px;font-weight:600', { border: `1px solid ${on ? 'var(--ink)' : 'var(--line)'}`, background: on ? 'var(--ink)' : 'var(--surface)', color: on ? 'var(--surface)' : 'var(--ink-2)' })}>{opt.label}</button>;
+                    })}
+                  </div>
+                ) : field.type === 'toggle' ? (
+                  <button type="button" role="switch" aria-checked={Boolean(values[field.key])} onClick={() => setValues((v) => ({ ...v, [field.key]: !v[field.key] }))} style={sx('margin-top:6px;position:relative;display:block;width:38px;height:22px;border-radius:999px;padding:0', { background: values[field.key] ? 'var(--mint-solid)' : 'var(--surface-3)', border: `1px solid ${values[field.key] ? 'var(--mint-solid)' : 'var(--line)'}` })}>
+                    <span style={sx('position:absolute;top:2px;width:16px;height:16px;border-radius:50%', { left: values[field.key] ? '18px' : '2px', background: values[field.key] ? '#fff' : 'var(--ink-faint)' })} />
                   </button>
+                ) : (
+                  <div style={sx('margin-top:6px;display:flex;align-items:center;gap:6px')}>
+                    {field.prefix && <span style={sx('font-size:13px;color:var(--ink-3)')}>{field.prefix}</span>}
+                    <input type={field.type === 'number' ? 'number' : 'text'} value={values[field.key] ?? ''} onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))} aria-label={field.label} style={sx(INPUT)} />
+                    {field.suffix && <span style={sx('font-size:13px;color:var(--ink-3)')}>{field.suffix}</span>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={sx('display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3);margin-bottom:14px')}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" style={{ color: 'var(--ink-faint)' }}><circle cx="12" cy="12" r="9" /><path d="M12 8v4l3 2" /></svg>
+            Enforced by: Risk engine · server-side
+          </div>
+
+          {PARTIAL.has(slug) && (
+            <div style={sx('padding:12px 14px;margin-bottom:14px;border:1px solid var(--amber-line);border-radius:10px;background:var(--amber-tint);font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>
+              <strong style={sx('color:var(--amber);font-weight:700')}>Honest caveat:</strong> enforcement for this rule is still being built. Today it alerts you rather than closing anything, and we would rather tell you than let you assume otherwise.
+            </div>
+          )}
+
+          {rule.locked ? (
+            <div style={sx('display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--ink-3)')}>
+              <span>Included on a higher plan.</span>
+              <Link to="/pricing" style={sx(BTN_GHOST, { textDecoration: 'none' })}>View plans</Link>
+            </div>
+          ) : !isOn ? (
+            <div style={sx('display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2);flex-wrap:wrap')}>
+              <span style={sx('flex:1;min-width:220px')}>This rule is off, so nothing here is being enforced. You can turn it on at any time — even while your other rules are locked.</span>
+              {editing ? (
+                <>
+                  <button type="button" disabled={busy} onClick={handleSave} style={sx(BTN_SOLID)}>{busy ? 'Saving…' : 'Save limits'}</button>
+                  <button type="button" disabled={busy} onClick={() => setEditing(false)} style={sx(BTN_GHOST)}>Cancel</button>
+                </>
+              ) : (
+                <>
+                  {!cooled && <button type="button" onClick={() => setEditing(true)} style={sx(BTN_GHOST)}>Edit limits</button>}
+                  <button type="button" disabled={busy} onClick={toggleEnabled} style={sx('flex:none;padding:8px 13px;border:1px solid var(--mint-line);border-radius:9px;background:var(--mint-tint);color:var(--mint);font-size:12.5px;font-weight:700')}>{busy ? 'Turning on…' : 'Turn this rule on'}</button>
                 </>
               )}
             </div>
-            <p className="mt-0.5 line-clamp-2 font-mono text-xs" style={{ color: 'var(--dash-text-muted)' }}>
-              {rule.locked ? rule.description : ruleSummaryLine(rule.id, values, rule.description)}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {rule.locked && (
-              <Link
-                to="/pricing"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-accent/10 to-emerald-500/10 border border-accent/15 text-accent text-xs font-semibold hover:from-accent/20 hover:to-emerald-500/15 transition-all"
-              >
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-                Upgrade
-              </Link>
-            )}
-              {/* Toggle lives on the header so a rule can be switched without
-                  opening it — the whole point of scanning a list of guardrails
-                  is seeing, and changing, their state at a glance.
-
-                  stopPropagation because the header is itself the expand
-                  control; without it every toggle would also open the card. */}
-              {!rule.locked && rule.hasSavedInstance && (
-                <span
-                  role="switch"
-                  tabIndex={0}
-                  aria-checked={rule.enabled}
-                  aria-label={`${rule.enabled ? 'Turn off' : 'Turn on'} ${rule.name}`}
-                  title={rule.enabled ? 'Turn this rule off' : 'Turn this rule on'}
-                  onClick={(e) => { e.stopPropagation(); if (!toggling && !saving) void toggleEnabled(); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!toggling && !saving) void toggleEnabled();
-                    }
-                  }}
-                  style={sx('flex:none;position:relative;display:block;width:38px;height:22px;border-radius:999px', rule.enabled
-                    ? (ruleLocked ? { background: 'var(--mint-tint)', border: '1px solid var(--mint-line)', cursor: 'not-allowed' } : { background: 'var(--mint-solid)', cursor: 'pointer' })
-                    : { background: 'var(--surface-3)', border: '1px solid var(--line)', cursor: 'pointer' }, { opacity: toggling ? 0.5 : 1 })}
-                >
-                  {rule.enabled && ruleLocked ? (
-                    <span style={sx('position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background:var(--mint);display:grid;place-items:center')}>
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--surface)" strokeWidth="3" strokeLinecap="round"><path d="M8 10V7.5a4 4 0 018 0V10" /><path d="M6 10h12v9H6z" /></svg>
-                    </span>
-                  ) : rule.enabled ? (
-                    <span style={sx('position:absolute;top:3px;left:19px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35)')} />
-                  ) : (
-                    <span style={sx('position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-faint)')} />
-                  )}
-                </span>
+          ) : editable ? (
+            <div style={sx('display:flex;gap:9px;flex-wrap:wrap')}>
+              {editing ? (
+                <>
+                  <button type="button" disabled={busy} onClick={handleSave} style={sx(BTN_SOLID)}>{busy ? 'Saving…' : 'Save changes'}</button>
+                  <button type="button" disabled={busy} onClick={() => setEditing(false)} style={sx(BTN_GHOST)}>Cancel</button>
+                </>
+              ) : (
+                <>
+                  <button type="button" onClick={() => setEditing(true)} style={sx(BTN_SOLID)}>Edit rule</button>
+                  <button type="button" disabled={busy} onClick={toggleEnabled} style={sx(BTN_GHOST)}>{busy ? 'Updating…' : 'Turn off'}</button>
+                </>
               )}
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flex: 'none', color: expanded ? 'var(--ink)' : 'var(--ink-3)' }}><path d={expanded ? 'M7 14l5-5 5 5' : 'M7 10l5 5 5-5'} /></svg>
-          </div>
-        </button>
-
-        <motion.div
-          initial={false}
-          animate={{ height: expanded ? 'auto' : 0, opacity: expanded ? 1 : 0 }}
-          transition={{ duration: 0.25, ease: 'easeInOut' }}
-          className="overflow-hidden"
-        >
-          <div style={sx('padding:2px 18px 19px 63px')}>
-
-            {docs && (
-              <div className="mb-4">
-                <button
-                  type="button"
-                  onClick={() => setShowDocs((s) => !s)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors hover:bg-[var(--dash-bg-card-hover)]"
-                  style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
-                  aria-expanded={showDocs}
-                >
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                  How it works
-                  <svg className="h-3 w-3 transition-transform" style={{ transform: showDocs ? 'rotate(180deg)' : 'none' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {showDocs && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.22, ease: 'easeInOut' }}
-                      className="overflow-hidden"
-                    >
-                      <div
-                        className="mt-2 rounded-xl border p-3.5 text-xs leading-relaxed"
-                        style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)', color: 'var(--dash-text-secondary)' }}
-                      >
-                        <p style={{ color: 'var(--dash-text-secondary)' }}>{docs.summary}</p>
-
-                        <p className="mt-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--dash-text-faint)' }}>How it works</p>
-                        <ul className="space-y-1.5">
-                          {docs.how.map((line, i) => (
-                            <li key={i} className="flex items-start gap-2">
-                              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
-                              <span>{line}</span>
-                            </li>
-                          ))}
-                        </ul>
-
-                        <p className="mt-3 rounded-lg px-2.5 py-2" style={{ backgroundColor: 'var(--dash-bg-card)' }}>
-                          <span className="font-semibold" style={{ color: 'var(--dash-text-primary)' }}>When it triggers: </span>
-                          {docs.trigger}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {!rule.locked && !rule.hasSavedInstance && (
-              <div
-                className="mb-4 rounded-xl border px-3 py-2.5 text-xs leading-relaxed"
-                style={{
-                  borderColor: isDark ? 'rgba(251,191,36,0.25)' : 'rgba(245,158,11,0.35)',
-                  backgroundColor: isDark ? 'rgba(251,191,36,0.06)' : '#fffbeb',
-                  color: 'var(--dash-text-secondary)',
-                }}
-              >
-                <span className="font-semibold text-amber-400/95">Not active yet.</span>{' '}
-                Numbers and toggles here are template suggestions. Nothing is applied to your account until you save this rule.
-              </div>
-            )}
-
-            {/* Fixed-width fields packed left, not a stretch-to-fit grid — on a wide
-                card, full-width inputs for a 3-digit number read as broken. */}
-            <div className="flex flex-wrap gap-4">
-              {visibleFields.map((field) => (
-                <div key={field.key} className="flex w-full flex-col gap-2 sm:w-[200px]">
-                  <label
-                    className="text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--dash-text-faint)' }}
-                  >
-                    {field.label}
-                  </label>
-
-                  {rule.locked ? (
-                    <span className="text-sm italic" style={{ color: 'var(--dash-text-faint)' }}>Upgrade to configure</span>
-                  ) : field.type === 'select' ? (
-                    <div className="flex w-full rounded-xl p-1" style={{ backgroundColor: 'var(--dash-bg-input)', border: '1px solid var(--dash-border)' }}>
-                      {(field.options || []).map((opt) => {
-                        const active = values[field.key] === opt.value;
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setValues((v) => ({ ...v, [field.key]: opt.value }))}
-                            className="flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-colors"
-                            style={{
-                              backgroundColor: active ? 'var(--accent)' : 'transparent',
-                              color: active ? 'var(--surface)' : 'var(--dash-text-muted)',
-                            }}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : field.type === 'toggle' ? (
-                    <button
-                      type="button"
-                      onClick={() => setValues((v) => ({ ...v, [field.key]: !v[field.key] }))}
-                      disabled={accountLocked}
-                      className="relative w-14 h-8 rounded-full transition-all duration-300 disabled:opacity-50"
-                      style={{ backgroundColor: values[field.key] ? undefined : 'var(--dash-toggle-track)' }}
-                    >
-                      {values[field.key] && (
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-accent to-emerald-400 shadow-sm shadow-accent/25" />
-                      )}
-                      <motion.span
-                        animate={{ x: values[field.key] ? 24 : 0 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                        className="absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow-md"
-                      />
-                      <span className="sr-only">{values[field.key] ? 'Enabled' : 'Disabled'}</span>
-                    </button>
-                  ) : (
-                    <div className="relative w-full">
-                      {field.prefix && (
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{ color: 'var(--dash-text-muted)' }}>
-                          {field.prefix}
-                        </span>
-                      )}
-                      <input
-                        type={field.type === 'number' ? 'number' : 'text'}
-                        value={values[field.key]}
-                        onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))}
-                        disabled={accountLocked}
-                        className={`h-11 w-full rounded-xl font-mono text-sm font-semibold tabular-nums transition-all focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 disabled:opacity-60 ${
-                          field.prefix ? 'pl-8 pr-3' : 'px-3.5'
-                        } ${field.suffix ? 'pr-11' : ''}`}
-                        style={{
-                          backgroundColor: 'var(--dash-bg-input)',
-                          border: '1px solid var(--dash-border)',
-                          color: 'var(--dash-text-primary)',
-                        }}
-                      />
-                      {field.suffix && (
-                        <span
-                          className="absolute right-3 top-1/2 -translate-y-1/2 pl-1.5 text-sm pointer-events-none"
-                          style={{ color: 'var(--dash-text-muted)' }}
-                        >
-                          {field.suffix}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
             </div>
-
-            {!rule.locked && (
-              // Left-aligned with the fields above, not floated to the far right —
-              // on a wide card that left a large dead gap between the input and
-              // the button that made them read as unrelated.
-              <div className="mt-4 flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving || accountLocked}
-                  title={accountLocked ? (lockReason || 'Locked until the cooldown ends') : undefined}
-                  className="h-9 w-full rounded-lg bg-accent px-4 text-[13px] font-semibold text-surface-950 transition-colors hover:bg-accent-hover disabled:opacity-50 sm:w-auto"
-                >
-                  {saving ? 'Saving…' : rule.hasSavedInstance ? 'Save changes' : 'Save & enable'}
-                </button>
-                {/* Said on the button, before the click. With a 7-day default,
-                    an existing user's next save locks them for a week; nobody
-                    should learn that from a 423 afterwards. */}
-                {!accountLocked && (
-                  <span className="text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
-                    {ruleLocked
-                      ? 'Turning this on adds it to the current lock'
-                      : lockDays > 0
-                        ? `Saving locks all rules for ${lockDays} days`
-                        : 'Rules are set for the day once you take your first trade'}
-                  </span>
-                )}
-                {/* The only way to switch a rule off. Without it `enabled`
-                    existed end-to-end — API, engine, cooling-off — with nothing
-                    able to set it, so a trader who wanted one rule gone had to
-                    delete their API key instead.
-
-                    Turning OFF is a loosening, so the backend defers it by the
-                    cooling-off window (and past any active lockout). Turning ON
-                    is immediate: more protection never waits. */}
-                {rule.hasSavedInstance && (
-                  <button
-                    type="button"
-                    disabled={saving || toggling}
-                    onClick={async () => {
-                      const next = !rule.enabled;
-                      setToggling(true);
-                      try {
-                        const res = await saveRuleInstance({
-                          accessToken,
-                          tradingAccountId,
-                          templateSlug: rule.id,
-                          enabled: next,
-                        });
-                        if (res?.deferred?.effectiveAt) {
-                          const when = new Date(res.deferred.effectiveAt);
-                          toast.success(
-                            'Scheduled',
-                            `${rule.name} turns off ${when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}. It stays active until then — you can cancel any time before.`,
-                          );
-                        } else {
-                          toast.success(next ? 'Rule on' : 'Rule off', `${rule.name} is now ${next ? 'active' : 'inactive'}.`);
-                        }
-                        onSaved?.();
-                      } catch (err) {
-                        toast.error('Could not update', err?.details?.error?.message || err?.message || 'Please try again.');
-                      } finally {
-                        setToggling(false);
-                      }
-                    }}
-                    className="h-9 w-full rounded-lg border px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 sm:w-auto"
-                    style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
-                  >
-                    {toggling ? 'Updating…' : rule.enabled ? 'Turn off' : 'Turn on'}
-                  </button>
-                )}
-                {rule.hasSavedInstance && !saving && (
-                  <span className="hidden text-xs sm:inline" style={{ color: 'var(--dash-text-faint)' }}>
-                    Saved — edit any value to update.
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </motion.div>
-      </div>
+          ) : frozen ? (
+            <div style={sx('display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--mint-line);border-radius:9px;background:var(--mint-tint);font-size:12.5px;color:var(--mint);font-weight:600')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M7 11V8.4a5 5 0 0110 0V11" /><path d="M6 11h12v8H6z" /></svg>
+              On and frozen by your rule lock — you chose this window
+            </div>
+          ) : isCooled ? (
+            <div style={sx('display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:74ch')}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="1.9" strokeLinecap="round" style={{ flex: 'none', marginTop: 1 }}><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
+              <span><strong style={sx('color:var(--red);font-weight:700')}>Editing blocked while your lockout runs.</strong> Different lock, different reason: this one stops you trading, and loosening a rule mid-lockout would be a way around it.</span>
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
 
 export default function RulesTerminal() {
   const { session } = useAuth();
-  const { isDark } = useDashboardTheme();
+  const navigate = useNavigate();
   const { accounts, accountsLoading, selectedTradingAccountId, selectedAccount } = useTradingAccounts();
-  // While the account is locked the API rejects rule edits and deletes, so the
-  // UI disables them rather than letting someone type a change that can't save.
-  const { locked: cooldownLocked } = useCooldown({
-    accessToken: session?.access_token,
-    tradingAccountId: selectedTradingAccountId,
-    account: selectedAccount,
-  });
-  const [bundle, setBundle] = useState(null);
-  // Rule lock: the user's own commitment window. After any save, every edit
-  // is refused until it lifts — the API returns 423, so the cards are disabled
-  // through the same path the cooldown already uses.
+  // While the account is locked the API rejects rule edits, so the UI blocks
+  // them rather than letting someone type a change that cannot save.
+  const { locked: cooldownLocked } = useCooldown({ accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId, account: selectedAccount });
   const guardSel = useGuard().selected;
+  const cooled = cooldownLocked || guardSel.guard === 'locked';
+  const [bundle, setBundle] = useState(null);
   const ruleLock = bundle?.ruleLock ?? null;
   const ruleLocked = Boolean(ruleLock?.locked);
-  // The cooldown freezes everything. The rule lock freezes only rules that
-  // are ON — a rule that is off may still be turned on and joins the running
-  // lock. So the rule-lock part is applied per card, not here.
-  const accountLocked = cooldownLocked;
   const [bundleLoading, setBundleLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [reloadNonce, setReloadNonce] = useState(0);
-  // Accordion: at most one rule card open at a time — opening one closes whichever
-  // else was open. Lifted up here (rather than local state per card) because that's
-  // the only way one card's click can affect another's.
+  // Accordion: at most one rule open at a time.
   const [expandedRuleId, setExpandedRuleId] = useState(null);
-  const toggleExpandedRule = useCallback((ruleId) => {
-    setExpandedRuleId((cur) => (cur === ruleId ? null : ruleId));
-  }, []);
+  const toggleExpandedRule = useCallback((ruleId) => setExpandedRuleId((cur) => (cur === ruleId ? null : ruleId)), []);
 
   const load = useCallback(async () => {
     const token = session?.access_token;
-    if (!token || !selectedTradingAccountId) {
-      setBundle(null);
-      setBundleLoading(false);
-      return;
-    }
-    setBundleLoading(true);
-    setLoadError('');
+    if (!token || !selectedTradingAccountId) { setBundle(null); setBundleLoading(false); return; }
+    setBundleLoading(true); setLoadError('');
     try {
-      const data = await fetchRulesBundle({
-        accessToken: token,
-        tradingAccountId: selectedTradingAccountId,
-      });
-      setBundle(data);
-      setLoadError('');
-      setReloadNonce((n) => n + 1);
+      const data = await fetchRulesBundle({ accessToken: token, tradingAccountId: selectedTradingAccountId });
+      setBundle(data); setLoadError(''); setReloadNonce((n) => n + 1);
     } catch (e) {
-      setLoadError(e?.message || 'Could not load rules');
-      setBundle(null);
-    } finally {
-      setBundleLoading(false);
-    }
+      setLoadError(e?.message || 'Could not load rules'); setBundle(null);
+    } finally { setBundleLoading(false); }
   }, [session?.access_token, selectedTradingAccountId]);
+  useEffect(() => { const t = setTimeout(load, 0); return () => clearTimeout(t); }, [load]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const instanceBySlug = useMemo(() => {
-    const m = new Map();
-    (bundle?.instances || []).forEach((i) => m.set(i.templateSlug, i));
-    return m;
-  }, [bundle]);
-
+  const instanceBySlug = useMemo(() => { const m = new Map(); (bundle?.instances || []).forEach((i) => m.set(i.templateSlug, i)); return m; }, [bundle]);
   const displayRules = useMemo(() => {
     if (!bundle?.templates?.length) return [];
     return bundle.templates.map((t) => {
-      const vis = RULE_VISUALS[t.slug] || RULE_VISUALS._default;
       const inst = instanceBySlug.get(t.slug);
       return {
-        id: t.slug,
-        name: t.name,
-        description: t.description,
-        locked: !t.eligible,
-        eligible: t.eligible,
+        id: t.slug, templateSlug: t.slug, name: t.name, description: t.description,
+        locked: !t.eligible, eligible: t.eligible,
         hasSavedInstance: Boolean(inst),
-          // A saved rule can be switched OFF. Without this the toggle read
-          // "off" for every armed rule, because rule.enabled was undefined.
-          enabled: inst ? inst.enabled !== false : false,
-          pendingEnabled: inst?.pendingEnabled ?? null,
-        pendingEffectiveAt: inst?.pendingEffectiveAt ?? null,
+        enabled: inst ? inst.enabled !== false : false,
+        pendingEnabled: inst?.pendingEnabled ?? null, pendingEffectiveAt: inst?.pendingEffectiveAt ?? null,
         fields: buildFields(t, inst),
-        planSlugs: t.planSlugs,
-        minPlanSlug: t.minPlanSlug,
-        planSectionTitle: t.planSectionTitle,
-        planSectionSortOrder: t.planSectionSortOrder,
-        ...vis,
+        planSlugs: t.planSlugs, minPlanSlug: t.minPlanSlug, planSectionTitle: t.planSectionTitle, planSectionSortOrder: t.planSectionSortOrder,
       };
     });
   }, [bundle, instanceBySlug]);
 
   const availableRules = displayRules.filter((r) => r.eligible);
   const lockedRules = displayRules.filter((r) => !r.eligible);
-  const availableByPlan = useMemo(() => groupRulesByPlanSection(availableRules), [availableRules]);
   const lockedByPlan = useMemo(() => groupRulesByPlanSection(lockedRules), [lockedRules]);
-  const savedEnabledCount = (bundle?.instances || []).filter((i) => i.enabled).length;
+  const onCount = availableRules.filter((r) => r.enabled).length;
+  const total = availableRules.length;
 
-  const showRulesSkeleton =
-    Boolean(session?.access_token) &&
-    !loadError &&
-    (accountsLoading || (Boolean(selectedTradingAccountId) && bundleLoading));
+  // Lock label (spec A3): locked → time left; unlocked → the chosen window.
+  const lockTarget = ruleLock?.locked ? ruleLock.lockedUntil : ruleLock?.settling ? ruleLock.locksAt : null;
+  const { label: lockLeft, ms: lockMs } = useCountdown(lockTarget);
+  const lockLabel = ruleLock?.locked ? `${lockLeft} left` : ruleLock?.days ? `${ruleLock.days} days` : 'Off — daily';
+  const graceShow = Boolean(ruleLock?.settling && !ruleLock?.locked && !cooled);
+  const graceSec = Math.floor(lockMs / 1000);
+  const graceClock = `${String(Math.floor(graceSec / 60)).padStart(2, '0')}:${String(graceSec % 60).padStart(2, '0')}`;
+  const gracePct = `${Math.min(100, Math.max(0, (1 - lockMs / SETTLE_MS) * 100))}%`;
+
+  const showSkeleton = Boolean(session?.access_token) && !loadError && (accountsLoading || (Boolean(selectedTradingAccountId) && bundleLoading));
+
+  const rowProps = (rule) => ({
+    key: `${rule.id}-${reloadNonce}`, rule, accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId,
+    isRetail: bundle?.isRetail, onSaved: load, cooled, ruleLocked, enforcement: guardSel.enforcement,
+    expanded: expandedRuleId === rule.id, onToggleExpand: () => toggleExpandedRule(rule.id),
+  });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full"
-    >
+    <div style={sx('animation:tgxSlide .22s ease-out')}>
       <div style={sx('margin-bottom:18px;max-width:78ch')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Rules</h1>
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>Switch on what you want enforced. Every rule is on every plan — set them while calm, because they only matter when you are not.</p>
@@ -1090,14 +550,14 @@ export default function RulesTerminal() {
         <div style={sx('display:flex;align-items:center;gap:12px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap')}>
           <h2 style={sx("margin:0;font:600 15px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.015em")}>How your protection fits together</h2>
           <span style={{ flex: 1 }} />
-          <span style={sx('font-size:12px;color:var(--ink-3)')}><strong style={sx('color:var(--mint);font-weight:700;font-variant-numeric:tabular-nums')}>{savedEnabledCount}</strong> of {(bundle?.templates ?? []).length || savedEnabledCount} rules on</span>
-          <span style={sx('font-size:12px;color:var(--ink-3)')}>rule lock <strong style={sx('font-weight:700', { color: ruleLock?.locked ? 'var(--mint)' : 'var(--ink-2)' })}>{ruleLock?.locked ? `on · ${fmtLockDate(ruleLock?.lockedUntil)}` : ruleLock?.days ? `${ruleLock.days} days` : 'off'}</strong></span>
+          <span style={sx('font-size:12px;color:var(--ink-3)')}><strong style={sx('color:var(--mint);font-weight:700;font-variant-numeric:tabular-nums')}>{onCount}</strong> of {total} rules on</span>
+          <span style={sx('font-size:12px;color:var(--ink-3)')}>rule lock <strong style={sx('font-weight:700', { color: ruleLocked ? 'var(--mint)' : 'var(--ink-2)' })}>{lockLabel}</strong></span>
         </div>
         <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))')}>
           {[
             ['1', 'Switch on the rules you want', <>Every rule is off until you turn it on. Off rules do nothing at all — no alerts, no closing. Start with two.</>],
             ['2', 'Rule lock holds them there', <>Rules that are <strong style={sx('color:var(--ink);font-weight:700')}>on</strong> freeze for the window you pick — 7 days by default. Rules that are <strong style={sx('color:var(--ink);font-weight:700')}>off</strong> can always be turned on.</>],
-            ['3', 'Killswitch is the manual one', <>Separate from rules. It stops you trading this account for a few hours, whatever your rules say. Set it on <Link to="/dashboard/live" style={sx('padding:0;border:0;background:none;color:var(--mint);font:inherit;font-weight:700;text-decoration:underline')}>Live guard</Link>.</>],
+            ['3', 'Killswitch is the manual one', <>Separate from rules. It stops you trading this account for a few hours, whatever your rules say. Set it on <button type="button" onClick={() => navigate('/dashboard/live')} style={sx('padding:0;border:0;background:none;color:var(--mint);font:inherit;font-weight:700;text-decoration:underline')}>Live guard</button>.</>],
           ].map(([n, title, body], idx) => (
             <div key={n} style={sx('padding:17px 21px', idx < 2 ? { borderRight: '1px solid var(--line)' } : {})}>
               <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:8px')}>
@@ -1110,175 +570,70 @@ export default function RulesTerminal() {
         </div>
       </section>
 
-      {loadError && (
-        <p className="mb-6 text-sm text-amber-400/90">{loadError}</p>
-      )}
-
-      {!accountsLoading && selectedTradingAccountId && (
-        <CooldownBanner
-          accessToken={session?.access_token}
-          tradingAccountId={selectedTradingAccountId}
-          account={selectedAccount}
-          note="Rules are locked until the cooldown lifts. You can still add a new rule."
-        />
-      )}
+      {loadError && <p style={sx('margin:0 0 16px;font-size:12.5px;color:var(--amber)')}>{loadError}</p>}
 
       {session?.access_token && !accountsLoading && accounts.length === 0 && (
-        <p className="mb-6 text-sm rounded-xl border px-4 py-3" style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}>
-          Add a trading account to save rules for it.{' '}
-          <Link to="/dashboard/account/trading" className="font-semibold text-accent hover:underline">
-            Trading accounts
-          </Link>
+        <p style={sx('margin:0 0 16px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);font-size:12.5px;color:var(--ink-2)')}>
+          Add a trading account to save rules for it. <Link to="/dashboard/account/trading" style={sx('color:var(--mint);font-weight:700;text-decoration:underline')}>Trading accounts</Link>
         </p>
       )}
 
-      {showRulesSkeleton ? (
-        <>
-          <p className="mb-6 text-sm" style={{ color: 'var(--dash-text-muted)' }}>
-            {accountsLoading ? 'Loading trading accounts…' : 'Loading rules…'}
-          </p>
-          <div className="mb-10 space-y-3">
-            <ShimmerBlock className="h-5 w-40" />
-            {[...Array(4)].map((_, i) => (
-              <ShimmerBlock key={i} className="h-[88px] w-full rounded-2xl" />
-            ))}
+      {graceShow && (
+        <div style={sx('display:flex;align-items:center;gap:14px;padding:16px 19px;margin-bottom:16px;border:1px solid var(--amber-line);border-radius:18px;background:var(--amber-tint);flex-wrap:wrap')}>
+          <div style={sx("flex:none;font:700 26px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em;color:var(--amber)")}>{graceClock}</div>
+          <div style={sx('flex:1;min-width:260px')}>
+            <div style={sx('font-size:13.5px;font-weight:700;color:var(--amber)')}>Setup window — change anything you like</div>
+            <p style={sx('margin:4px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:88ch')}>First time setting rules, so you get fifteen minutes to adjust freely before the lock takes hold. When the clock runs out your <strong style={sx('color:var(--ink);font-weight:700')}>{ruleLock?.days ? `${ruleLock.days}-day` : 'session'} default</strong> starts. Change the window on Live guard if a week is wrong for you.</p>
+            <div style={sx('margin-top:10px;height:4px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>
+              <div style={sx('height:100%;border-radius:999px;background:var(--amber-solid)', { width: gracePct })} />
+            </div>
           </div>
-        </>
+          {/* TODO(api): no endpoint ends the settling window early ("Lock them in now"); the lock engages when the clock runs out. */}
+        </div>
+      )}
+
+      {ruleLocked && (
+        <div style={sx('display:flex;align-items:flex-start;gap:12px;padding:15px 18px;margin-bottom:16px;border:1px solid var(--mint-line);border-radius:13px;background:var(--mint-tint)')}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mint)" strokeWidth="1.8" strokeLinecap="round" style={{ flex: 'none', marginTop: 1 }}><path d="M6 11V8.4a6 6 0 1112 0V11" /><path d="M5 11h14v9H5z" /></svg>
+          <div style={{ flex: 1 }}>
+            <div style={sx('font-size:13.5px;font-weight:700;color:var(--mint)')}>Rules are frozen for another {lockLeft}</div>
+            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:92ch')}>You can read every rule and see exactly what is armed. You cannot change one — including making it stricter, because the point of the freeze is not touching them at all. This is the rule lock you set on Live guard.</p>
+            <button type="button" onClick={() => openSupport(`I'd like my rule lock released early. It's locked until ${fmtLockDate(ruleLock?.lockedUntil)}. Reason: `)} style={sx('margin-top:8px;padding:0;border:0;background:none;font-size:12px;color:var(--ink-3);text-decoration:underline')}>Need it lifted? Ask support</button>
+          </div>
+        </div>
+      )}
+
+      {showSkeleton ? (
+        <div style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+          {[0, 1, 2, 3].map((i) => <div key={i} style={sx('height:64px;border-bottom:1px solid var(--line);background:var(--surface-2);animation:tgxPulse 1.4s ease-in-out infinite')} />)}
+        </div>
       ) : (
         <>
-          {ruleLock && (ruleLock.locked || ruleLock.settling) && (
-            <RuleLockBanner lock={ruleLock} />
-          )}
-          <div className="mb-10">
-            <DashboardSectionHeading
-              icon={(
-                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent/15 text-[10px] font-bold text-accent">✓</span>
-              )}
-            >
-              Available on your plan
-            </DashboardSectionHeading>
-            <div className="space-y-8">
-              {availableByPlan.map((section) => (
-                <div key={section.key}>
-                  {section.title && section.title !== 'Rules' && (
-                    <p
-                      className="text-[11px] font-semibold uppercase tracking-wider mb-3"
-                      style={{ color: 'var(--dash-text-muted)' }}
-                    >
-                      {section.title}
-                    </p>
-                  )}
-                  <div className="rx-group" style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
-                    {section.rules.map((rule, i) => (
-                      <RuleCard
-                        accountLocked={accountLocked}
-                        ruleLocked={ruleLocked}
-                        lockDays={ruleLock?.days ?? 0}
-                        lockReason={ruleLocked ? (ruleLock?.mode === 'day' ? `You've traded today — rules reset ${fmtLockDate(ruleLock?.lockedUntil)}` : `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}`) : null}
-                        key={`${rule.id}-${reloadNonce}`}
-                        rule={rule}
-                        index={i}
-                        accessToken={session?.access_token}
-                        tradingAccountId={selectedTradingAccountId}
-                        isRetail={bundle?.isRetail}
-                        enforcement={guardSel.enforcement}
-                        onSaved={load}
-                        expanded={expandedRuleId === rule.id}
-                        onToggleExpand={() => toggleExpandedRule(rule.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {lockedRules.length > 0 && (
-            <div className="mb-8">
-              <DashboardSectionHeading
-                icon={(
-                  <svg className="h-4 w-4 text-violet-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-              >
-                Upgrade to unlock
-              </DashboardSectionHeading>
-              <div className="space-y-8">
-                {lockedByPlan.map((section) => (
-                  <div key={`locked-${section.key}`}>
-                    {section.title && section.title !== 'Rules' && (
-                      <p
-                        className="text-[11px] font-semibold uppercase tracking-wider mb-3"
-                        style={{ color: 'var(--dash-text-muted)' }}
-                      >
-                        {section.title}
-                      </p>
-                    )}
-                    <div className="rx-group" style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
-                      {section.rules.map((rule, i) => (
-                        <RuleCard
-                          accountLocked={accountLocked}
-                          ruleLocked={ruleLocked}
-                          lockDays={ruleLock?.days ?? 0}
-                          lockReason={ruleLocked ? (ruleLock?.mode === 'day' ? `You've traded today — rules reset ${fmtLockDate(ruleLock?.lockedUntil)}` : `Rules are locked until ${fmtLockDate(ruleLock?.lockedUntil)}`) : null}
-                          key={`${rule.id}-${reloadNonce}`}
-                          rule={rule}
-                          index={i + availableRules.length}
-                          accessToken={session?.access_token}
-                          tradingAccountId={selectedTradingAccountId}
-                          isRetail={bundle?.isRetail}
-                          enforcement={guardSel.enforcement}
-                          onSaved={load}
-                          expanded={expandedRuleId === rule.id}
-                          onToggleExpand={() => toggleExpandedRule(rule.id)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+          {availableRules.length > 0 && (
+            <section style={sx('margin-bottom:22px')}>
+              <div style={sx('display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap')}>
+                <h2 style={sx("margin:0;font:600 16px/1.2 'Space Grotesk',sans-serif")}>Your rules</h2>
+                <span style={sx('font-size:12.5px;color:var(--ink-3)')}>Every rule is on every plan, on every account.</span>
               </div>
-            </div>
-          )}
-
-          {lockedRules.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="relative overflow-hidden rounded-2xl border"
-              style={{ borderColor: isDark ? 'rgba(0,212,170,0.15)' : 'rgba(0,212,170,0.25)', backgroundColor: isDark ? 'transparent' : '#f0fdf9', boxShadow: isDark ? 'none' : '0 1px 6px rgba(0,212,170,0.08)' }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-accent/[0.06] via-violet-500/[0.04] to-transparent" />
-              <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-accent/[0.1] blur-3xl" />
-              <div className="pointer-events-none absolute -left-8 -bottom-8 h-32 w-32 rounded-full bg-violet-500/[0.08] blur-3xl" />
-
-              <div className="relative p-6 sm:p-8 text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-emerald-500/15 ring-1 ring-accent/20">
-                  <svg className="h-6 w-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <h3 className="font-display text-lg font-bold mb-2" style={{ color: 'var(--dash-text-primary)' }}>Unlock {lockedRules.length} more rules</h3>
-                <p className="text-sm mb-6 max-w-md mx-auto leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>
-                  Higher plans include additional protection templates. Upgrade to configure them here.
-                </p>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Link
-                    to="/pricing"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-accent to-emerald-400 text-surface-950 font-bold text-sm shadow-lg shadow-accent/20 transition-all hover:shadow-accent/30 hover:brightness-110"
-                  >
-                    View plans
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </Link>
-                </motion.div>
+              <div className="rx-group" style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+                {availableRules.map((rule) => <RuleRow {...rowProps(rule)} />)}
               </div>
-            </motion.div>
+            </section>
           )}
+
+          {lockedByPlan.map((section) => (
+            <section key={`locked-${section.key}`} style={sx('margin-bottom:22px')}>
+              <div style={sx('display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap')}>
+                <h2 style={sx("margin:0;font:600 16px/1.2 'Space Grotesk',sans-serif")}>{section.title && section.title !== 'Rules' ? section.title : 'On a higher plan'}</h2>
+                <span style={sx('font-size:12.5px;color:var(--ink-3)')}>Included when you upgrade — <Link to="/pricing" style={sx('color:var(--mint);font-weight:700;text-decoration:underline')}>view plans</Link>.</span>
+              </div>
+              <div className="rx-group" style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+                {section.rules.map((rule) => <RuleRow {...rowProps(rule)} />)}
+              </div>
+            </section>
+          ))}
         </>
       )}
-    </motion.div>
+    </div>
   );
 }
