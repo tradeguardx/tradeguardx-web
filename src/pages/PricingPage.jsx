@@ -234,7 +234,8 @@ export default function PricingPage() {
     if (plan.key === 'free') { navigate(plan.ctaLink); return; }
     if (!session?.access_token) { navigate(plan.ctaLink); return; }
     const elig = paidCheckoutEligibility(user?.billingPlan, plan.key);
-    if (!elig.allowed) {
+    const compOnSameTier = elig.reason === 'current' && user?.subscriptionSource !== 'payment';
+    if (!elig.allowed && !compOnSameTier) {
       if (elig.reason === 'current') toast.error('Already on this plan', 'You are already subscribed to this tier.');
       else if (elig.reason === 'downgrade') toast.info('Change plan in Billing', 'To switch to a lower tier, use Billing → manage subscription.');
       return;
@@ -269,7 +270,7 @@ export default function PricingPage() {
     if (!plan) { clearPendingCheckoutPlan(); return; }
     if (plan.key === 'free') return;
     const resumeElig = paidCheckoutEligibility(user?.billingPlan, plan.key);
-    if (!resumeElig.allowed) { clearPendingCheckoutPlan(); return; }
+    if (!resumeElig.allowed && !(resumeElig.reason === 'current' && user?.subscriptionSource !== 'payment')) { clearPendingCheckoutPlan(); return; }
     if (resumeCheckoutRef.current) return;
     resumeCheckoutRef.current = true;
     let cancelled = false;
@@ -349,7 +350,16 @@ export default function PricingPage() {
         // move between intervals (Dodo prorates via the customer portal).
         const currentStyle = { backgroundColor: 'rgba(0,212,170,0.10)', color: '#00d4aa', border: '1px solid rgba(0,212,170,0.35)' };
         const source = user?.subscriptionSource;
-        if (source !== 'payment') return <div className={`${baseClass} text-center`} style={currentStyle}>{source === 'admin' ? 'Your plan — complimentary ✓' : 'Current plan ✓'}</div>;
+        if (source !== 'payment') {
+          // Comped or legacy free-active on this tier: nothing is billed, so
+          // buying any interval is a real upgrade — offer the checkout.
+          const line0 = priceFor(plan);
+          return (
+            <button type="button" onClick={() => handlePaidPlanCta(plan)} disabled={checkoutKey === plan.key} className={`${baseClass} disabled:opacity-60`} style={isPrimary ? primaryStyle : secondaryStyle}>
+              {checkoutKey === plan.key ? 'Opening checkout…' : `Start Pro — ${line0.interval}`}
+            </button>
+          );
+        }
         const currentInterval = subscription?.subscription?.billingInterval || 'monthly';
         const line = priceFor(plan);
         if (plan.intervals.length > 1 && line.interval !== currentInterval) {
