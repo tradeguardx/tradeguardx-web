@@ -5,7 +5,7 @@ import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useGuard } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
 import { clearPendingCheckoutPlan } from '../lib/checkoutIntent';
-import { openBillingPortal, updateSubscriptionPaymentMethod } from '../api/paymentsApi';
+import { openBillingPortal, updateSubscriptionPaymentMethod, createCheckoutSession } from '../api/paymentsApi';
 import { getPricingPlans } from '../api/pricingApi';
 import { isPaidPlan, planTierRank, maxTradingAccountsForPlan, journalPeriodBadgeLabel } from '../lib/planLimits';
 import { sx } from '../components/dashboard/shell/sx';
@@ -38,6 +38,7 @@ export default function BillingPage() {
   const [params] = useSearchParams();
   const [plans, setPlans] = useState([]);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [checkoutKey, setCheckoutKey] = useState(null);
 
   useEffect(() => {
     if (params.get('checkout') === 'success') { clearPendingCheckoutPlan(); refetchSubscription?.(); }
@@ -105,21 +106,38 @@ export default function BillingPage() {
   ];
 
   const myRank = planTierRank(user?.billingPlan ?? user?.subscribedPlanSlug);
-  // Free → Pro → Pro+, whatever order the pricing API returns them in.
-  const cards = [...plans].sort((a, b) => planTierRank(String(a.slug || a.name || '').toLowerCase().replace(/[\s+]/g, '_')) - planTierRank(String(b.slug || b.name || '').toLowerCase().replace(/[\s+]/g, '_'))).map((p) => {
-    const slug = String(p.slug || p.name || '').toLowerCase().replace(/[\s+]/g, '_').replace('pro_', 'pro_');
-    const rank = planTierRank(slug);
-    const price = Number(p.priceMonthly ?? p.price_monthly ?? 0);
-    const feats = p.features?.cardFeatures ?? [];
-    const accLimit = maxTradingAccountsForPlan(slug);
-    const current = rank === myRank && !user?.isTrial;
-    return {
-      key: slug, name: p.name, price: price === 0 ? '₹0' : `₹${price.toLocaleString('en-IN')}`, per: price === 0 ? 'forever' : 'per month',
-      intervals: Array.isArray(p.intervals) ? p.intervals.filter((iv) => iv.interval !== 'monthly' && iv.price > 0) : [],
-      rules: feats[0]?.text ?? 'Every rule', accounts: accLimit == null ? 'Unlimited accounts' : `${accLimit} account${accLimit === 1 ? '' : 's'}`, history: journalPeriodBadgeLabel(slug).startsWith('Last') ? `${journalPeriodBadgeLabel(slug).replace('Last ', '')} of journal` : `${journalPeriodBadgeLabel(slug)} of journal`,
-      state: current ? 'Current plan' : '', current, rank,
-      cta: current ? (hasBillingRecord ? 'Manage billing' : '') : rank > myRank ? 'Upgrade' : hasBillingRecord ? 'Downgrade' : '',
-    };
+  const paying = hasBillingRecord;
+  const currentInterval = subscription?.subscription?.billingInterval || 'monthly';
+  const onPro = myRank >= 1 && !user?.isTrial;
+
+  const startCheckout = async (interval) => {
+    if (!session?.access_token) { toast.error('Not signed in', 'Please sign in again.'); return; }
+    setCheckoutKey(interval);
+    try {
+      const res = await createCheckoutSession({ accessToken: session.access_token, planSlug: 'pro', interval });
+      const url = res?.data?.checkoutUrl;
+      if (!url) throw new Error('No checkout URL returned');
+      window.location.href = url;
+    } catch (err) {
+      toast.error('Checkout failed', err?.message || 'Please try again.');
+      setCheckoutKey(null);
+    }
+  };
+
+  const pro = plans.find((p) => planTierRank(String(p.slug || '').toLowerCase()) === 1);
+  const proFeats = (pro?.features?.cardFeatures ?? []).map((f) => f.text).slice(0, 4);
+  const LABEL = { monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Yearly' };
+  const PER = { monthly: 'per month', quarterly: 'per quarter', yearly: 'per year' };
+  // One card per Pro interval. Free is described once, below, as the fallback.
+  const cards = (pro?.intervals ?? []).filter((iv) => iv.price > 0).map((iv) => {
+    const isCurrent = onPro && paying && iv.interval === currentInterval;
+    let cta = 'Start Pro'; let action = () => startCheckout(iv.interval); let tone = 'solid';
+    if (isCurrent) { cta = ''; }
+    else if (onPro && paying) { cta = `Switch to ${LABEL[iv.interval].toLowerCase()}`; action = openPortal; tone = 'ghost'; }
+    else if (onPro && !paying) { cta = `Start Pro — ${LABEL[iv.interval].toLowerCase()}`; }
+    return { key: iv.interval, name: `Pro · ${LABEL[iv.interval]}`, price: `₹${iv.price.toLocaleString('en-IN')}`, per: PER[iv.interval],
+      perMonth: iv.interval === 'monthly' ? null : `₹${iv.perMonth.toLocaleString('en-IN')}/mo · save ${iv.savingsPct}%`,
+      state: isCurrent ? 'Current plan' : iv.interval === 'yearly' ? 'Best value' : '', current: isCurrent, cta, action, tone };
   });
 
   return (
@@ -154,30 +172,31 @@ export default function BillingPage() {
         </div>
       </section>
 
-      <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:14px')}>
+      <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px')}>
         {cards.map((p) => (
-          <section key={p.key} style={sx('padding:19px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card)', p.current ? { borderColor: 'var(--mint-line)' } : {})}>
-            <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:12px')}>
+          <section key={p.key} style={sx('display:flex;flex-direction:column;padding:19px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card)', p.current ? { borderColor: 'var(--mint-line)', background: 'var(--mint-tint)' } : {})}>
+            <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap')}>
               <span style={sx("font:600 16px/1 'Space Grotesk',sans-serif")}>{p.name}</span>
-              {p.state && <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mint)')}>{p.state}</span>}
+              {p.state && <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase', { color: p.current ? 'var(--mint)' : 'var(--amber)' })}>{p.state}</span>}
             </div>
             <div style={sx("font:700 28px/1 'Space Grotesk',sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums")}>{p.price}</div>
-            <div style={sx('font-size:12px;color:var(--ink-3);margin-top:5px')}>{p.per}</div>
-            {p.intervals.length > 0 && (
-              <div style={sx('margin-top:8px;font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums')}>{p.intervals.map((iv) => `₹${iv.price.toLocaleString('en-IN')} ${iv.interval} (₹${iv.perMonth.toLocaleString('en-IN')}/mo)`).join(' · ')}</div>
-            )}
+            <div style={sx('font-size:12px;color:var(--ink-3);margin-top:5px')}>{p.per}{p.perMonth ? ` · ${p.perMonth}` : ''}</div>
             <div style={sx('margin:15px 0;height:1px;background:var(--line)')} />
-            <div style={sx('font-size:13px;color:var(--ink-2);line-height:2')}>
-              <div>{p.rules}</div>
-              <div>{p.accounts}</div>
-              <div>{p.history}</div>
+            <div style={sx('font-size:12.5px;color:var(--ink-2);line-height:1.9;flex:1')}>
+              {proFeats.map((f) => <div key={f}>{f}</div>)}
             </div>
-            {p.cta && (
-              <button type="button" disabled={portalLoading} onClick={() => (p.cta === 'Upgrade' ? navigate(`/pricing?plan=${p.key}&interval=yearly`) : openPortal())} style={sx('width:100%;margin-top:15px;padding:10px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700')}>{p.cta}</button>
+            {p.cta ? (
+              <button type="button" disabled={portalLoading || checkoutKey != null} onClick={p.action} style={sx('width:100%;margin-top:15px;padding:10px;border-radius:9px;font-size:12.5px;font-weight:700', p.tone === 'solid' ? { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' } : { border: '1px solid var(--line-strong)', background: 'var(--surface-2)', color: 'var(--ink)' })}>{checkoutKey === p.key ? 'Opening checkout…' : p.cta}</button>
+            ) : (
+              <div style={sx('margin-top:15px;padding:10px;border:1px solid var(--mint-line);border-radius:9px;text-align:center;font-size:12.5px;font-weight:700;color:var(--mint)')}>Current plan ✓</div>
             )}
           </section>
         ))}
       </div>
+
+      <p style={sx('margin:14px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-3);max-width:80ch')}>
+        {paying ? 'Switching interval goes through the billing portal, where the unused part of your current period is credited against the new one.' : 'Free stays available if you stop paying: one trading account, every rule, seven days of journal. Nothing is deleted.'}
+      </p>
     </div>
   );
 }
