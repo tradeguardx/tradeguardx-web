@@ -294,7 +294,7 @@ export default function PricingPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [isLoading, loadError, plans, session?.access_token, subscriptionLoading, user?.billingPlan, toast, interval]);
+  }, [isLoading, loadError, plans, session?.access_token, subscriptionLoading, user?.billingPlan, user?.subscriptionSource, toast, interval]);
 
   useEffect(() => {
     let cancelled = false;
