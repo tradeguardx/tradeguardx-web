@@ -62,12 +62,12 @@ export async function updateSubscriptionPaymentMethod({ accessToken }, options =
  * (see `lib/referralCode.js`). The backend validates it against `influencer_profiles`
  * and silently drops it if it doesn't match — checkout always proceeds either way.
  */
-export async function createCheckoutSession({ accessToken, planSlug, couponCode }, options = {}) {
+export async function createCheckoutSession({ accessToken, planSlug, couponCode, interval = 'monthly' }, options = {}) {
   if (!accessToken) {
     throw new Error('Missing access token for checkout');
   }
   const baseUrl = options.baseUrl ?? resolvePaymentsApiBaseUrl();
-  const body = couponCode ? { planSlug, couponCode } : { planSlug };
+  const body = { planSlug, interval, ...(couponCode ? { couponCode } : {}) };
   return apiPost(
     '/checkout/session',
     body,

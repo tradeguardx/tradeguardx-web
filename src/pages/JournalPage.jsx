@@ -98,7 +98,7 @@ export default function JournalPage() {
   const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [day, setDay] = useState(null);
 
-  const planDays = journalHistoryDaysForPlan(user?.plan) ?? 3650;
+  const planDays = journalHistoryDaysForPlan(user?.plan);
   const days = Math.min(planDays, 90);
   const cur = selectedAccount?.accountCurrency || 'USD';
 

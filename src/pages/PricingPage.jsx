@@ -7,7 +7,7 @@ import { getPricingPlans } from '../api/pricingApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/ToastProvider';
 import { createCheckoutSession } from '../api/paymentsApi';
-import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
+import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch, getPendingCheckoutInterval, normalizeInterval, BILLING_INTERVALS } from '../lib/checkoutIntent';
 import { trackCheckoutStarted } from '../lib/analytics';
 import { getStoredReferralCode } from '../lib/referralCode';
 import { getLinkPromoCode } from '../lib/promoLink';
@@ -130,12 +130,18 @@ function normalizePlan(raw, index) {
     .filter((f) => f.text);
   const monthlyPrice = Number(raw.priceMonthly ?? raw.monthlyPrice ?? 0);
   const ctaLink = raw.features?.ctaLink || (key === 'free' ? '/signup' : `/signup?plan=${key}`);
+  // Billing intervals from the API; a plan without them (or Free) is monthly only.
+  const intervals = Array.isArray(raw.intervals) && raw.intervals.length
+    ? raw.intervals.map((iv) => ({ interval: normalizeInterval(iv.interval), price: Number(iv.price) || 0, perMonth: Number(iv.perMonth) || 0, savingsPct: Number(iv.savingsPct) || 0 }))
+    : [{ interval: 'monthly', price: monthlyPrice, perMonth: monthlyPrice, savingsPct: 0 }];
 
   return {
     id: raw.id || key || `${index}`,
     key,
     name,
     monthlyPrice,
+    intervals,
+    refundDays: Number(raw.features?.refundDays) || 7,
     cta: raw.features?.cta || (key === 'free' ? 'Get Started Free' : `Start ${name} Plan`),
     ctaLink,
     primary: Boolean(raw.features?.primary ?? (key === 'pro')),
@@ -209,6 +215,14 @@ export default function PricingPage() {
   const { session, user, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+  const [interval, setInterval_] = useState(() => {
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get('interval');
+      return normalizeInterval(fromUrl || getPendingCheckoutInterval());
+    } catch { return 'monthly'; }
+  });
+  /** Price line for a card on the selected interval; monthly-only plans ignore the toggle. */
+  const priceFor = (plan) => plan.intervals.find((iv) => iv.interval === interval) || plan.intervals[0];
 
   useEffect(() => {
     // The pill under the header names whichever code will actually be sent;
@@ -230,7 +244,8 @@ export default function PricingPage() {
       const res = await createCheckoutSession({
         accessToken: session.access_token,
         planSlug: plan.key,
-        couponCode: checkoutCouponCode(),
+        interval: plan.intervals.length > 1 ? interval : 'monthly',
+        couponCode: plan.intervals.length > 1 && interval !== 'monthly' ? undefined : checkoutCouponCode(),
       });
       const url = res?.data?.checkoutUrl;
       if (url) { trackCheckoutStarted(plan.key); window.location.href = url; return; }
@@ -264,7 +279,8 @@ export default function PricingPage() {
         const res = await createCheckoutSession({
           accessToken: session.access_token,
           planSlug: plan.key,
-          couponCode: checkoutCouponCode(),
+          interval: plan.intervals.length > 1 ? interval : 'monthly',
+          couponCode: plan.intervals.length > 1 && interval !== 'monthly' ? undefined : checkoutCouponCode(),
         });
         if (cancelled) return;
         const url = res?.data?.checkoutUrl;
@@ -277,7 +293,7 @@ export default function PricingPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [isLoading, loadError, plans, session?.access_token, subscriptionLoading, user?.billingPlan, toast]);
+  }, [isLoading, loadError, plans, session?.access_token, subscriptionLoading, user?.billingPlan, toast, interval]);
 
   useEffect(() => {
     let cancelled = false;
@@ -424,17 +440,39 @@ export default function PricingPage() {
           )}
         </motion.header>
 
+        {/* ── Billing interval ─────────────────────────────────────────────── */}
+        {plans.some((p) => p.intervals.length > 1) && (
+          <div className="mb-8 flex justify-center">
+            <div role="tablist" aria-label="Billing interval" className="inline-flex items-center gap-1 rounded-full border p-1" style={{ borderColor: 'rgba(255,255,255,0.10)', backgroundColor: 'rgba(255,255,255,0.04)' }}>
+              {BILLING_INTERVALS.map((iv) => {
+                const on = iv === interval;
+                const best = plans.flatMap((p) => p.intervals).filter((x) => x.interval === iv).reduce((m, x) => Math.max(m, x.savingsPct), 0);
+                return (
+                  <button key={iv} type="button" role="tab" aria-selected={on} onClick={() => setInterval_(iv)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors" style={{ backgroundColor: on ? '#00d4aa' : 'transparent', color: on ? '#05221c' : '#94a3b8' }}>
+                    {iv === 'monthly' ? 'Monthly' : iv === 'quarterly' ? 'Quarterly' : 'Yearly'}
+                    {best > 0 && <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: on ? 'rgba(5,34,28,0.18)' : 'rgba(0,212,170,0.12)', color: on ? '#05221c' : '#00d4aa' }}>−{best}%</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ── Plan cards ───────────────────────────────────────────────────── */}
         {plans.length > 0 && (
-          <div className="grid md:grid-cols-3 gap-5 lg:gap-6 max-w-5xl mx-auto mb-6 items-stretch">
+          <div className={`grid ${plans.length >= 3 ? 'md:grid-cols-3 max-w-5xl' : 'md:grid-cols-2 max-w-3xl'} gap-5 lg:gap-6 mx-auto mb-6 items-stretch`}>
             {plans.map((plan, i) => {
               const t = PLAN_THEME[plan.key] || PLAN_THEME.free;
               const isPrimary = plan.primary;
-              const price = plan.monthlyPrice;
-              // First-month promo price for this card. Free plans and a missing
-              // promo both yield null, so the block below simply doesn't render.
+              const line = priceFor(plan);
+              const price = line.price;
+              const multi = plan.intervals.length > 1;
+              const perLabel = line.interval === 'yearly' ? '/yr' : line.interval === 'quarterly' ? '/qtr' : '/mo';
+              const billedLabel = line.interval === 'yearly' ? 'Billed yearly' : line.interval === 'quarterly' ? 'Billed quarterly' : 'Billed monthly';
+              // First-month promo price for this card. Only on monthly — the
+              // interval discount is the deal on quarterly and yearly.
               const promoPrice =
-                activePromo?.discountPct && price > 0
+                activePromo?.discountPct && price > 0 && (!multi || line.interval === 'monthly')
                   ? discountedPrice(price, activePromo.discountPct)
                   : null;
 
@@ -576,10 +614,18 @@ export default function PricingPage() {
                                   {price === 0 ? '₹0' : `₹${price.toLocaleString('en-IN')}`}
                                 </motion.span>
                               </AnimatePresence>
-                              {price > 0 && <span className="text-sm font-medium" style={{ color: '#64748b' }}>/mo</span>}
+                              {price > 0 && <span className="text-sm font-medium" style={{ color: '#64748b' }}>{perLabel}</span>}
+                              {price > 0 && line.interval !== 'monthly' && (
+                                <span className="ml-1 rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ backgroundColor: 'rgba(0,212,170,0.12)', color: '#00d4aa' }}>save {line.savingsPct}%</span>
+                              )}
                             </div>
+                            {price > 0 && line.interval !== 'monthly' && (
+                              <p className="text-[12px] leading-relaxed mb-1" style={{ color: '#94a3b8' }}>
+                                That&rsquo;s ₹{line.perMonth.toLocaleString('en-IN')}/mo — against ₹{plan.monthlyPrice.toLocaleString('en-IN')} billed monthly.
+                              </p>
+                            )}
                             <p className="text-[11px] mb-6 font-medium" style={{ color: '#475569' }}>
-                              {price === 0 ? 'No credit card required' : 'Billed monthly · incl. 18% GST · cancel anytime'}
+                              {price === 0 ? 'No credit card required' : `${billedLabel} · incl. 18% GST · ${line.interval === 'monthly' ? 'cancel anytime' : `${plan.refundDays}-day money-back`}`}
                             </p>
                           </>
                         )}
