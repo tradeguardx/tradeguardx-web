@@ -212,7 +212,7 @@ export default function PricingPage() {
     () => (getStoredReferralCode() || getLinkPromoCode() ? null : getActivePromo()),
     [],
   );
-  const { session, user, subscriptionLoading } = useAuth();
+  const { session, user, subscription, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [interval, setInterval_] = useState(() => {
@@ -344,7 +344,19 @@ export default function PricingPage() {
     if (plan.key !== 'free' && session?.access_token) {
       const paidElig = paidCheckoutEligibility(user?.billingPlan, plan.key);
       if (subscriptionLoading) return <button disabled className={`${baseClass} opacity-60 cursor-wait`} style={isPrimary ? primaryStyle : secondaryStyle}>Loading plan…</button>;
-      if (paidElig && !paidElig.allowed && paidElig.reason === 'current') return <button disabled className={`${baseClass} opacity-70 cursor-not-allowed`} style={secondaryStyle}>Current plan ✓</button>;
+      if (paidElig && !paidElig.allowed && paidElig.reason === 'current') {
+        // Same tier. A comp has nothing to buy; a paid subscriber can still
+        // move between intervals (Dodo prorates via the customer portal).
+        const currentStyle = { backgroundColor: 'rgba(0,212,170,0.10)', color: '#00d4aa', border: '1px solid rgba(0,212,170,0.35)' };
+        const source = user?.subscriptionSource;
+        if (source !== 'payment') return <div className={`${baseClass} text-center`} style={currentStyle}>{source === 'admin' ? 'Your plan — complimentary ✓' : 'Current plan ✓'}</div>;
+        const currentInterval = subscription?.subscription?.billingInterval || 'monthly';
+        const line = priceFor(plan);
+        if (plan.intervals.length > 1 && line.interval !== currentInterval) {
+          return <Link to="/dashboard/account/billing" className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>Switch to {line.interval} billing</Link>;
+        }
+        return <div className={`${baseClass} text-center`} style={currentStyle}>Current plan · billed {currentInterval} ✓</div>;
+      }
       if (paidElig && !paidElig.allowed && paidElig.reason === 'downgrade') return <Link to="/dashboard/account/billing" className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>Manage subscription</Link>;
       return (
         <button type="button" onClick={() => handlePaidPlanCta(plan)} disabled={checkoutKey === plan.key} className={`${baseClass} disabled:opacity-60`} style={isPrimary ? primaryStyle : secondaryStyle}>
