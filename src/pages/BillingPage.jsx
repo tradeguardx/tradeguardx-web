@@ -51,13 +51,15 @@ export default function BillingPage() {
   const hasBillingRecord = isPaidPlan(user?.subscribedPlanSlug) && source === 'payment';
   const isAdminComp = source === 'admin';
   const periodEnd = fmtDate(subscription?.subscription?.currentPeriodEnd ?? user?.currentPeriodEnd);
+  const interval = subscription?.subscription?.billingInterval || 'monthly';
+  const billedLabel = interval === 'yearly' ? 'billed yearly' : interval === 'quarterly' ? 'billed quarterly' : 'billed monthly';
 
   const sub = user?.isTrial
     ? `You are on a free trial with everything unlocked${user?.trialDaysLeft != null ? ` — ${user.trialDaysLeft} day${user.trialDaysLeft === 1 ? '' : 's'} left` : ''}. Pick a plan to keep it after that.`
     : isAdminComp
       ? `You are on a complimentary ${subscribedLabel} plan as a founding member. No card needed, nothing to cancel.`
       : hasBillingRecord
-        ? `You are on ${subscribedLabel}, billed monthly${periodEnd ? `, next charge ${periodEnd}` : ''}. Prices include 18% GST.`
+        ? `You are on ${subscribedLabel}, ${billedLabel}${periodEnd ? `, ${interval === 'monthly' ? 'next charge' : 'renews'} ${periodEnd}` : ''}. Prices include 18% GST.`
         : 'You are on Free. Prices include 18% GST.';
 
   const openPortal = useCallback(async () => {
@@ -113,7 +115,8 @@ export default function BillingPage() {
     const current = rank === myRank && !user?.isTrial;
     return {
       key: slug, name: p.name, price: price === 0 ? '₹0' : `₹${price.toLocaleString('en-IN')}`, per: price === 0 ? 'forever' : 'per month',
-      rules: feats[0]?.text ?? 'All rules', accounts: accLimit == null ? 'Unlimited accounts' : `${accLimit} account${accLimit === 1 ? '' : 's'}`, history: journalPeriodBadgeLabel(slug).replace('Last ', '') + (journalPeriodBadgeLabel(slug).startsWith('Last') ? ' of journal' : ''),
+      intervals: Array.isArray(p.intervals) ? p.intervals.filter((iv) => iv.interval !== 'monthly' && iv.price > 0) : [],
+      rules: feats[0]?.text ?? 'Every rule', accounts: accLimit == null ? 'Unlimited accounts' : `${accLimit} account${accLimit === 1 ? '' : 's'}`, history: journalPeriodBadgeLabel(slug).startsWith('Last') ? `${journalPeriodBadgeLabel(slug).replace('Last ', '')} of journal` : `${journalPeriodBadgeLabel(slug)} of journal`,
       state: current ? 'Current plan' : '', current, rank,
       cta: current ? (hasBillingRecord ? 'Manage billing' : '') : rank > myRank ? 'Upgrade' : hasBillingRecord ? 'Downgrade' : '',
     };
@@ -160,6 +163,9 @@ export default function BillingPage() {
             </div>
             <div style={sx("font:700 28px/1 'Space Grotesk',sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums")}>{p.price}</div>
             <div style={sx('font-size:12px;color:var(--ink-3);margin-top:5px')}>{p.per}</div>
+            {p.intervals.length > 0 && (
+              <div style={sx('margin-top:8px;font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums')}>{p.intervals.map((iv) => `₹${iv.price.toLocaleString('en-IN')} ${iv.interval} (₹${iv.perMonth.toLocaleString('en-IN')}/mo)`).join(' · ')}</div>
+            )}
             <div style={sx('margin:15px 0;height:1px;background:var(--line)')} />
             <div style={sx('font-size:13px;color:var(--ink-2);line-height:2')}>
               <div>{p.rules}</div>
@@ -167,7 +173,7 @@ export default function BillingPage() {
               <div>{p.history}</div>
             </div>
             {p.cta && (
-              <button type="button" disabled={portalLoading} onClick={() => (p.cta === 'Upgrade' ? navigate(`/pricing?plan=${p.key}`) : openPortal())} style={sx('width:100%;margin-top:15px;padding:10px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700')}>{p.cta}</button>
+              <button type="button" disabled={portalLoading} onClick={() => (p.cta === 'Upgrade' ? navigate(`/pricing?plan=${p.key}&interval=yearly`) : openPortal())} style={sx('width:100%;margin-top:15px;padding:10px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700')}>{p.cta}</button>
             )}
           </section>
         ))}
