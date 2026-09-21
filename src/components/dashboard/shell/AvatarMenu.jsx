@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useGuard } from '../../../context/GuardContext';
@@ -83,7 +84,7 @@ export default function AvatarMenu() {
         </div>
       )}
 
-      {confirm && (
+      {confirm && createPortal(
         <div data-tgx-modal="1" onClick={() => setConfirm(false)} role="presentation" style={sx('position:fixed;inset:0;z-index:70;background:rgba(3,5,10,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px')}>
           <div role="dialog" aria-modal="true" aria-labelledby="so-title" onClick={(e) => e.stopPropagation()} style={sx('width:100%;max-width:420px;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:var(--shadow-pop);overflow:hidden;animation:tgxSlide .18s ease-out')}>
             <div style={sx('padding:21px 23px 17px')}>
@@ -96,7 +97,7 @@ export default function AvatarMenu() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 }
