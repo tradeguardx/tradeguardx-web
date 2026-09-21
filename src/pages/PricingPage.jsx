@@ -351,9 +351,10 @@ export default function PricingPage() {
         const currentStyle = { backgroundColor: 'rgba(0,212,170,0.10)', color: '#00d4aa', border: '1px solid rgba(0,212,170,0.35)' };
         const source = user?.subscriptionSource;
         if (source !== 'payment') {
-          // Comped or legacy free-active on this tier: nothing is billed, so
-          // buying any interval is a real upgrade — offer the checkout.
+          // Comped on this tier: monthly is what they effectively hold, so it
+          // reads as their plan; a longer interval is a genuine upgrade.
           const line0 = priceFor(plan);
+          if (line0.interval === 'monthly') return <div className={`${baseClass} text-center`} style={currentStyle}>Your plan — complimentary ✓</div>;
           return (
             <button type="button" onClick={() => handlePaidPlanCta(plan)} disabled={checkoutKey === plan.key} className={`${baseClass} disabled:opacity-60`} style={isPrimary ? primaryStyle : secondaryStyle}>
               {checkoutKey === plan.key ? 'Opening checkout…' : `Start Pro — ${line0.interval}`}

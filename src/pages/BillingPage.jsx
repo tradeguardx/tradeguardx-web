@@ -130,14 +130,15 @@ export default function BillingPage() {
   const PER = { monthly: 'per month', quarterly: 'per quarter', yearly: 'per year' };
   // One card per Pro interval. Free is described once, below, as the fallback.
   const cards = (pro?.intervals ?? []).filter((iv) => iv.price > 0).map((iv) => {
-    const isCurrent = onPro && paying && iv.interval === currentInterval;
+    const isCurrent = onPro && (paying ? iv.interval === currentInterval : iv.interval === 'monthly');
     let cta = 'Start Pro'; let action = () => startCheckout(iv.interval); let tone = 'solid';
     if (isCurrent) { cta = ''; }
+    else if (onPro && !paying && iv.interval === 'monthly') { cta = ''; }
     else if (onPro && paying) { cta = `Switch to ${LABEL[iv.interval].toLowerCase()}`; action = openPortal; tone = 'ghost'; }
     else if (onPro && !paying) { cta = `Start Pro — ${LABEL[iv.interval].toLowerCase()}`; }
     return { key: iv.interval, name: `Pro · ${LABEL[iv.interval]}`, price: `₹${iv.price.toLocaleString('en-IN')}`, per: PER[iv.interval],
       perMonth: iv.interval === 'monthly' ? null : `₹${iv.perMonth.toLocaleString('en-IN')}/mo · save ${iv.savingsPct}%`,
-      state: isCurrent ? 'Current plan' : iv.interval === 'yearly' ? 'Best value' : '', current: isCurrent, cta, action, tone };
+      state: isCurrent ? (paying ? 'Current plan' : 'Complimentary') : iv.interval === 'yearly' ? 'Best value' : '', current: isCurrent, cta, action, tone, currentLabel: paying ? 'Current plan ✓' : 'Your plan — complimentary ✓' };
   });
 
   return (
@@ -188,7 +189,7 @@ export default function BillingPage() {
             {p.cta ? (
               <button type="button" disabled={portalLoading || checkoutKey != null} onClick={p.action} style={sx('width:100%;margin-top:15px;padding:10px;border-radius:9px;font-size:12.5px;font-weight:700', p.tone === 'solid' ? { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' } : { border: '1px solid var(--line-strong)', background: 'var(--surface-2)', color: 'var(--ink)' })}>{checkoutKey === p.key ? 'Opening checkout…' : p.cta}</button>
             ) : (
-              <div style={sx('margin-top:15px;padding:10px;border:1px solid var(--mint-line);border-radius:9px;text-align:center;font-size:12.5px;font-weight:700;color:var(--mint)')}>Current plan ✓</div>
+              <div style={sx('margin-top:15px;padding:10px;border:1px solid var(--mint-line);border-radius:9px;text-align:center;font-size:12.5px;font-weight:700;color:var(--mint)')}>{p.currentLabel}</div>
             )}
           </section>
         ))}
