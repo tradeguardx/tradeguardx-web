@@ -97,7 +97,7 @@ export default function AvatarMenu() {
             </div>
           </div>
         </div>
-      , document.body)}
+      , document.querySelector('[data-tgx]') ?? document.body)}
     </div>
   );
 }
