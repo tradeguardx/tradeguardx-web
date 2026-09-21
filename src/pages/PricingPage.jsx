@@ -218,8 +218,11 @@ export default function PricingPage() {
   const [interval, setInterval_] = useState(() => {
     try {
       const fromUrl = new URLSearchParams(window.location.search).get('interval');
-      return normalizeInterval(fromUrl || getPendingCheckoutInterval());
-    } catch { return 'monthly'; }
+      // Yearly is the default view: the first price a visitor sees is ₹750/mo.
+      if (fromUrl) return normalizeInterval(fromUrl);
+      try { if (sessionStorage.getItem('tgx_pending_checkout_plan')) return getPendingCheckoutInterval(); } catch { /* ignore */ }
+      return 'yearly';
+    } catch { return 'yearly'; }
   });
   /** Price line for a card on the selected interval; monthly-only plans ignore the toggle. */
   const priceFor = (plan) => plan.intervals.find((iv) => iv.interval === interval) || plan.intervals[0];
