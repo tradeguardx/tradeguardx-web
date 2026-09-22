@@ -35,7 +35,9 @@ const VENUES = {
     longName: 'CoinDCX Futures',
     // One venue: CoinDCX's INR and USDT "margin modes" list the same
     // instruments, all priced in USDT — only the wallet posting margin differs.
-    keysUrl: () => 'https://coindcx.com/api-dashboard',
+    // The page that actually creates a key. /api-dashboard only lists the
+    // existing ones, so it left the user a step short of what we asked for.
+    keysUrl: () => 'https://coindcx.com/create-api',
     ipField: 'Bind IP Address',
     // CoinDCX lets a key be unbound; binding it to our IP means the key only
     // works from our engine, which is the point — but it is their toggle.
