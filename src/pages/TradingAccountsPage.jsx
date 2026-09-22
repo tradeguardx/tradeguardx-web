@@ -18,7 +18,7 @@ import {
   getExchangeCredentialsStatus,
 } from '../api/exchangeCredentialsApi';
 import ExchangeConnectionPanel from '../components/dashboard/ExchangeConnectionPanel';
-import VenueMark from '../components/dashboard/VenueMark';
+import VenueMark, { VenueBetaBadge } from '../components/dashboard/VenueMark';
 import DeltaAppGuide from '../components/dashboard/DeltaAppGuide';
 import SecretInput from '../components/common/SecretInput';
 import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPanel } from '../components/dashboard/deltaConnectShared';
@@ -696,6 +696,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   <span className="flex-1 min-w-0 text-sm font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
                     {p.name}
                   </span>
+                  <VenueBetaBadge slug={p.brokerId} />
                   <span
                     className="text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5"
                     style={{

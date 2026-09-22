@@ -26,6 +26,8 @@ const VENUES = {
     suggestsKeyName: true,
     /** Screenshot walkthrough exists for this app. */
     hasAppGuide: true,
+    /** Proven in production. A beta venue says so on every surface. */
+    beta: false,
   },
   coindcx: {
     family: 'coindcx',
@@ -43,6 +45,10 @@ const VENUES = {
     withdrawalNote: 'Do not grant Withdraw. We never ask for it and refuse a key that has it.',
     suggestsKeyName: true,
     hasAppGuide: false,
+    // Live, but no real key has run through it end to end yet — so every
+    // surface that names CoinDCX says so. Cheaper than a user finding out
+    // during a breach.
+    beta: true,
   },
 };
 
@@ -52,6 +58,11 @@ export function venueFor(exchangeSlug) {
   if (exchangeSlug.startsWith('delta')) return VENUES.delta;
   if (exchangeSlug.startsWith('coindcx')) return VENUES.coindcx;
   return null;
+}
+
+/** True while a venue has not been proven end to end with a real key. */
+export function isBetaVenue(exchangeSlug) {
+  return Boolean(venueFor(exchangeSlug)?.beta);
 }
 
 /** Our egress IP is one address for every venue — the NAT in front of the engine. */

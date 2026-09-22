@@ -9,7 +9,7 @@ import { disconnectExchangeCredentials } from '../api/exchangeCredentialsApi';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel } from '../lib/labels';
 import { AddAccountForm } from './TradingAccountsPage';
-import VenueMark from '../components/dashboard/VenueMark';
+import VenueMark, { VenueBetaBadge } from '../components/dashboard/VenueMark';
 import { sx } from '../components/dashboard/shell/sx';
 
 /**
@@ -128,6 +128,7 @@ export default function AccountsPage() {
                 </span>
                 <span style={sx('display:flex;align-items:center;gap:7px;margin-top:5px;font-size:12.5px;color:var(--ink-3);flex-wrap:wrap')}>
                   <span>{venue}</span>
+                  <VenueBetaBadge slug={a.propFirmSlug} />
                   <span style={sx('width:3px;height:3px;border-radius:50%;background:var(--ink-faint)')} />
                   <span>server-side enforcement</span>
                 </span>
@@ -211,6 +212,7 @@ export default function AccountsPage() {
             <div style={sx('display:flex;align-items:center;gap:6px')}>
               <VenueMark slug="delta_india" name="Delta" size={22} radius={7} />
               <VenueMark slug="coindcx" name="CoinDCX" size={22} radius={7} />
+              <VenueBetaBadge slug="coindcx" />
             </div>
           </div>
           <p style={sx('margin:7px 0 13px;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:70ch')}>{capLine} Delta Exchange and CoinDCX Futures are the venues we enforce on today — prop-firm support is in progress, and we will say so plainly rather than list it as if it works.</p>

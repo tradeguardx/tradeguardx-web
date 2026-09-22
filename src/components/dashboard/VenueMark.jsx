@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isBetaVenue } from '../../lib/venues';
 import { sx } from './shell/sx';
 
 /**
@@ -15,7 +16,7 @@ import { sx } from './shell/sx';
  */
 const VENUES = {
   delta: { logo: '/brokers/delta-exchange.svg', accent: '#FD7D02', short: 'DX' },
-  coindcx: { logo: null, accent: '#2E6DF6', short: 'CD' },
+  coindcx: { logo: null, accent: '#EF7A18', short: 'CD' },
 };
 
 function familyOf(slug) {
@@ -25,6 +26,23 @@ function familyOf(slug) {
   if (s.startsWith('bybit')) return 'bybit';
   if (s.startsWith('bitget')) return 'bitget';
   return null;
+}
+
+/**
+ * "BETA" beside a venue's name. Small, but it is the difference between a
+ * user choosing CoinDCX knowing no real key has run through it end to end,
+ * and finding that out during a breach.
+ */
+export function VenueBetaBadge({ slug }) {
+  if (!isBetaVenue(slug)) return null;
+  return (
+    <span
+      title="Live, but newly added — tell us straight away if anything looks wrong."
+      style={sx("font:700 8.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;padding:3px 6px;border-radius:5px;background:var(--amber-tint);color:var(--amber);border:1px solid var(--amber-line);white-space:nowrap")}
+    >
+      Beta
+    </span>
+  );
 }
 
 export default function VenueMark({ slug, name, size = 38, radius = 11 }) {

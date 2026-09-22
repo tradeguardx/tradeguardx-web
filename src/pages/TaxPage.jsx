@@ -209,7 +209,7 @@ function Panel({ open, children }) {
 
 export default function TaxPage() {
   const { session } = useAuth();
-  const { selectedAccount } = useTradingAccounts();
+  const { accounts = [], selectedAccount } = useTradingAccounts();
   const accessToken = session?.access_token;
   const tradingAccountId = selectedAccount?.id;
 
@@ -338,6 +338,22 @@ export default function TaxPage() {
             Your {fyLabelFor(fy)} economic result, rebuilt from exchange fills and reconciled against your
             wallet — then shown under each treatment your CA may apply.
           </p>
+          {accounts.length > 1 && (
+            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs" style={{ color: MUTED }}>
+              <span>
+                Covers <strong style={{ color: PRIMARY }}>all {accounts.length} of your accounts</strong> together — tax is assessed on you, not per exchange account:
+              </span>
+              {accounts.map((a) => (
+                <span
+                  key={a.id}
+                  className="rounded-md px-1.5 py-0.5 text-[11px] font-semibold"
+                  style={{ backgroundColor: RAISED, border: `1px solid ${BORDER}`, color: PRIMARY }}
+                >
+                  {a.name}
+                </span>
+              ))}
+            </p>
+          )}
         </div>
 
         <div className="flex gap-1 rounded-xl border p-1" style={{ borderColor: BORDER, backgroundColor: RAISED }}>
