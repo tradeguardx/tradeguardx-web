@@ -12,8 +12,7 @@ function unwrap(payload) {
 export function exchangeFromBrokerSlug(slug) {
   if (slug === 'delta_india') return 'delta_india';
   if (slug === 'delta_global') return 'delta_global';
-  if (slug === 'coindcx_inr') return 'coindcx_inr';
-  if (slug === 'coindcx_usdt') return 'coindcx_usdt';
+  if (slug === 'coindcx') return 'coindcx';
   return null;
 }
 

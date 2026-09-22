@@ -11,9 +11,7 @@ const PLAN_LABELS = { free: 'Free', pro: 'Pro', pro_plus: 'Pro+', proplus: 'Pro+
 const BROKER_LABELS = {
   delta_india: 'Delta Exchange',
   delta_global: 'Delta Exchange (Global)',
-  coindcx: 'CoinDCX',
-  coindcx_inr: 'CoinDCX Futures (INR)',
-  coindcx_usdt: 'CoinDCX Futures (USDT)',
+  coindcx: 'CoinDCX Futures',
 };
 
 const EQUITY_MODE_LABELS = { funded: 'Funded', live: 'Live', demo: 'Demo' };

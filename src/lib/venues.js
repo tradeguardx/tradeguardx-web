@@ -31,6 +31,8 @@ const VENUES = {
     family: 'coindcx',
     name: 'CoinDCX',
     longName: 'CoinDCX Futures',
+    // One venue: CoinDCX's INR and USDT "margin modes" list the same
+    // instruments, all priced in USDT — only the wallet posting margin differs.
     keysUrl: () => 'https://coindcx.com/api-dashboard',
     ipField: 'Bind IP Address',
     // CoinDCX lets a key be unbound; binding it to our IP means the key only
