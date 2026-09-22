@@ -26,6 +26,17 @@ const VENUES = {
     suggestsKeyName: true,
     /** Screenshot walkthrough exists for this app. */
     hasAppGuide: true,
+    /**
+     * The venue's own form, field by field, in the venue's own words. Shown
+     * beside our step 1 so the page the user lands on is already familiar —
+     * the generic "create a key with trading scope" is where people stall.
+     */
+    createSteps: [
+      { title: 'Name', body: 'Anything you will recognise later. We suggest the name shown below.' },
+      { title: 'Whitelisted IP', body: 'Paste our IP. The key then works only from our engine and nowhere else.' },
+      { title: 'Trading', body: 'Tick it. Read-only connects fine and can never close a position.' },
+      { title: 'Create', body: 'Delta shows the key and secret once. Copy both, then paste them here.' },
+    ],
     /** Proven in production. A beta venue says so on every surface. */
     beta: false,
   },
@@ -47,6 +58,14 @@ const VENUES = {
     withdrawalNote: 'Do not grant Withdraw. We never ask for it and refuse a key that has it.',
     suggestsKeyName: true,
     hasAppGuide: false,
+    // Matches CoinDCX's Create API key form field for field, and their own
+    // setup docs: label → bind IP → email AND SMS OTP → key shown once.
+    createSteps: [
+      { title: 'Label', body: 'Anything you will recognise later. We suggest the name shown below.' },
+      { title: 'Bind IP Address to API key', body: 'Tick the box, then paste our IP into the IP Address field that appears. The key then works only from our engine.' },
+      { title: 'Send OTP', body: 'CoinDCX sends a code to your email and another by SMS. Enter both to confirm the key.' },
+      { title: 'Copy the key and secret', body: 'Both appear once, on that screen. Copy them now — CoinDCX will not show the secret again — then paste them here.' },
+    ],
     // Live, but no real key has run through it end to end yet — so every
     // surface that names CoinDCX says so. Cheaper than a user finding out
     // during a breach.

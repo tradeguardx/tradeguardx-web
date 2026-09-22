@@ -132,10 +132,34 @@ export default function ConnectKeyPage() {
               <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:74ch')}>{st.body}</p>
 
               {st.kind === 'link' && (
-                <a href={v.keysUrl(exchangeSlug)} target="_blank" rel="noreferrer" className="cx-link" style={sx('display:inline-flex;align-items:center;gap:7px;margin-top:12px;padding:9px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700;text-decoration:none')}>
-                  Open the key page
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 17L17 7M9 7h8v8" /></svg>
-                </a>
+                <>
+                  <a href={v.keysUrl(exchangeSlug)} target="_blank" rel="noreferrer" className="cx-link" style={sx('display:inline-flex;align-items:center;gap:7px;margin-top:12px;padding:9px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700;text-decoration:none')}>
+                    Open the key page
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 17L17 7M9 7h8v8" /></svg>
+                  </a>
+
+                  {/* The venue's own form, named field by field. People stall
+                      on the other tab, not on this one — so describe what is
+                      in front of them there, in their words. */}
+                  {v.createSteps?.length > 0 && (
+                    <div style={sx('margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);overflow:hidden')}>
+                      <div style={sx("padding:10px 14px;border-bottom:1px solid var(--line);font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)")}>
+                        What {v.name} asks for
+                      </div>
+                      <ol style={sx('margin:0;padding:6px 0;list-style:none')}>
+                        {v.createSteps.map((cs, n) => (
+                          <li key={cs.title} style={sx('display:flex;gap:11px;padding:9px 14px')}>
+                            <span style={sx("flex:none;width:19px;height:19px;border-radius:6px;display:grid;place-items:center;margin-top:1px;background:var(--surface-3);font:700 10px/1 'JetBrains Mono',monospace;color:var(--ink-3)")}>{n + 1}</span>
+                            <span style={sx('flex:1;min-width:0')}>
+                              <span style={sx('display:block;font-size:12.5px;font-weight:600')}>{cs.title}</span>
+                              <span style={sx('display:block;margin-top:2px;font-size:12px;line-height:1.55;color:var(--ink-3)')}>{cs.body}</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </>
               )}
 
               {st.kind === 'ip' && (
