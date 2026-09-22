@@ -8,8 +8,15 @@ import { sx } from './sx';
 
 /**
  * Breach toast — reference lines 394–415. Shows the newest unacknowledged
- * breach for the selected account, once, while the dashboard is open.
+ * breach on ANY of the user's accounts, once, while the dashboard is open.
  * Auto-dismisses after 9s; "See what happened" goes to Live guard.
+ *
+ * Deliberately not scoped to the selected account. A kill switch firing is
+ * the most urgent thing this product ever says, and which account happens to
+ * be on screen has nothing to do with which account is in trouble — someone
+ * watching CoinDCX would have seen nothing while their Delta account was
+ * being flattened. The row names its account, and switching to it is one
+ * click on "See what happened".
  *
  * Reads the unread list GuardContext already polls rather than polling
  * /breaches itself: it was the third consumer of that endpoint on a 30s
@@ -23,18 +30,21 @@ function timeOf(iso) {
 
 export default function BreachToast() {
   const { session } = useAuth();
-  const { selectedTradingAccountId, selectedAccount } = useTradingAccounts();
+  const { accounts, selectedTradingAccountId, setSelectedTradingAccountId } = useTradingAccounts();
   const { unreadList } = useGuard();
   const navigate = useNavigate();
   const [breach, setBreach] = useState(null);
   const [seen, setSeen] = useState(() => new Set());
   const accessToken = session?.access_token;
 
-  // Newest unread breach on this account that has not been shown yet.
-  const candidate = useMemo(() => {
-    if (!selectedTradingAccountId) return null;
-    return (unreadList ?? []).find((b) => b.tradingAccountId === selectedTradingAccountId && !seen.has(b.id)) ?? null;
-  }, [unreadList, selectedTradingAccountId, seen]);
+  // Newest unread breach on any account that has not been shown yet.
+  const candidate = useMemo(
+    () => (unreadList ?? []).find((b) => !seen.has(b.id)) ?? null,
+    [unreadList, seen],
+  );
+  const breachAccountName = breach
+    ? accounts.find((a) => a.id === breach.tradingAccountId)?.name ?? 'your account'
+    : '';
 
   useEffect(() => {
     if (candidate) setBreach(candidate);
@@ -70,10 +80,23 @@ export default function BreachToast() {
             <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--red)")}>Rule breached</span>
             <span style={sx('font-size:11.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums')}>{timeOf(breach.createdAt)}</span>
           </div>
-          <div style={sx('margin-top:6px;font-size:13.5px;font-weight:600;line-height:1.4')}>{name} fired on {selectedAccount?.name}</div>
+          <div style={sx('margin-top:6px;font-size:13.5px;font-weight:600;line-height:1.4')}>{name} fired on {breachAccountName}</div>
           <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{breach.message}</p>
           <div style={sx('display:flex;gap:8px;margin-top:11px;flex-wrap:wrap')}>
-            <button type="button" onClick={() => { dismiss(); navigate('/dashboard/live'); }} style={sx('padding:7px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface-2);color:var(--ink);font-size:12px;font-weight:700')}>See what happened</button>
+            <button
+              type="button"
+              onClick={() => {
+                // Switch to the account that breached first — otherwise Live
+                // guard opens on a different account and shows nothing wrong.
+                const id = breach.tradingAccountId;
+                dismiss();
+                if (id && id !== selectedTradingAccountId) setSelectedTradingAccountId?.(id);
+                navigate('/dashboard/live');
+              }}
+              style={sx('padding:7px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface-2);color:var(--ink);font-size:12px;font-weight:700')}
+            >
+              See what happened
+            </button>
             <button type="button" onClick={dismiss} style={sx('padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink-3);font-size:12px;font-weight:600')}>Dismiss</button>
           </div>
         </div>
