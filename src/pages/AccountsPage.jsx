@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
@@ -9,6 +9,7 @@ import { disconnectExchangeCredentials } from '../api/exchangeCredentialsApi';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel } from '../lib/labels';
 import { AddAccountForm } from './TradingAccountsPage';
+import VenueMark from '../components/dashboard/VenueMark';
 import { sx } from '../components/dashboard/shell/sx';
 
 /**
@@ -20,13 +21,6 @@ import { sx } from '../components/dashboard/shell/sx';
  * Creation is the existing AddAccountForm, unchanged — it opens in place of
  * the "Add another account" panel. Never a balance figure anywhere here.
  */
-
-function tagOf(name) {
-  const n = (name || '').trim();
-  if (!n) return '—';
-  const parts = n.split(/[\s·]+/).filter(Boolean);
-  return (parts.length > 1 ? parts[0][0] + parts[1][0] : n.slice(0, 2)).toUpperCase();
-}
 
 function fmtVerified(iso) {
   if (!iso) return '—';
@@ -122,34 +116,58 @@ export default function AccountsPage() {
         const to = d.to;
         return (
           <section key={a.id} style={sx('margin-bottom:12px;border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden', { border: `1px solid var(--${tone}-line)` })}>
-            <div style={sx('display:flex;align-items:center;gap:15px;padding:17px 19px;flex-wrap:wrap')}>
-              <span style={sx("flex:none;width:38px;height:38px;border-radius:11px;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font:600 12px/1 'JetBrains Mono',monospace;color:var(--ink-2)")}>{tagOf(a.name)}</span>
+            {/* A hairline in the guard's colour: the card's state is readable
+                before any text is, and it costs no vertical space. */}
+            <div style={sx('height:3px', { background: `var(--${tone}-solid)`, opacity: 0.85 })} />
+            <div style={sx('display:flex;align-items:center;gap:14px;padding:16px 19px;flex-wrap:wrap')}>
+              <VenueMark slug={a.propFirmSlug} name={a.name} size={40} radius={12} />
               <span style={sx('flex:1;min-width:min(200px,100%)')}>
                 <span style={sx('display:flex;align-items:center;gap:9px;flex-wrap:wrap')}>
-                  <span style={sx('font-size:14.5px;font-weight:600')}>{a.name}</span>
-                  <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:999px', { background: `var(--${tone}-tint)`, color: `var(--${tone})` })}>{d.label}</span>
+                  <span style={sx('font-size:15px;font-weight:600;letter-spacing:-.006em')}>{a.name}</span>
+                  <span style={sx("font:700 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;padding:4px 8px;border-radius:999px", { background: `var(--${tone}-tint)`, color: `var(--${tone})` })}>{d.label}</span>
                 </span>
-                <span style={sx('display:block;font-size:12.5px;color:var(--ink-3);margin-top:4px')}>{venue} · server-side enforcement</span>
+                <span style={sx('display:flex;align-items:center;gap:7px;margin-top:5px;font-size:12.5px;color:var(--ink-3);flex-wrap:wrap')}>
+                  <span>{venue}</span>
+                  <span style={sx('width:3px;height:3px;border-radius:50%;background:var(--ink-faint)')} />
+                  <span>server-side enforcement</span>
+                </span>
               </span>
-              <span style={sx('flex:none;text-align:right')}>
-                <span style={sx('display:block;font-size:12px;color:var(--ink-3)')}>{locked ? 'Rules and keys locked while the lockout runs' : `${st.rulesOn} of ${st.rulesTotal} rules on`}</span>
+              <span style={sx('flex:none;text-align:right;min-width:92px')}>
+                {locked ? (
+                  <span style={sx('display:block;font-size:12px;color:var(--ink-3);max-width:20ch')}>Rules and keys locked while the lockout runs</span>
+                ) : (
+                  <>
+                    <span style={sx("display:block;font:600 18px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums", { color: st.rulesOn > 0 ? 'var(--ink)' : 'var(--ink-3)' })}>{st.rulesOn}<span style={sx('font-size:13px;color:var(--ink-faint)')}>/{st.rulesTotal}</span></span>
+                    <span style={sx("display:block;margin-top:3px;font:600 9px/1 'JetBrains Mono',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)")}>rules on</span>
+                  </>
+                )}
               </span>
-              <button type="button" onClick={() => go(a.id, to)} style={sx('flex:none;padding:9px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700')}>{action}</button>
+              <button type="button" onClick={() => go(a.id, to)} style={sx('flex:none;padding:9px 15px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700')}>{action}</button>
             </div>
 
-            <div style={sx('padding:16px 19px;border-top:1px solid var(--line);background:var(--surface-2)')}>
-              <div style={sx('display:flex;align-items:center;gap:10px;margin-bottom:11px;flex-wrap:wrap')}>
+            <div style={sx('padding:16px 19px 18px;border-top:1px solid var(--line);background:var(--surface-2)')}>
+              <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap')}>
                 <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)")}>{venue} API connection</span>
                 <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;padding:4px 8px;border-radius:999px", { background: key.bg, color: key.fg })}>{key.badge}</span>
               </div>
 
               {key.has ? (
-                <div style={sx('padding:14px 15px;border:1px solid var(--line);border-radius:13px;background:var(--surface)')}>
-                  <div style={sx('display:grid;gap:5px;font-size:12.5px;color:var(--ink-2)')}>
-                    <span>Exchange user: <strong style={sx('color:var(--ink);font-weight:600')}>{user?.email ?? '—'}</strong></span>
-                    <span>Account ID: <strong style={sx('color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums')}>{conn.exchangeAccountId ?? '—'}</strong></span>
-                    <span>Last verified: <strong style={sx('color:var(--ink);font-weight:600')}>{fmtVerified(conn.lastValidatedAt)}</strong></span>
-                    <span style={sx('color:var(--ink-3);margin-top:2px')}>{key.scope}</span>
+                <div style={sx('padding:15px 16px;border:1px solid var(--line);border-radius:13px;background:var(--surface)')}>
+                  <div style={sx('display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:12.5px;align-items:baseline')}>
+                    {[
+                      ['Exchange user', user?.email ?? '—', false],
+                      ['Account ID', conn.exchangeAccountId ?? '—', true],
+                      ['Last verified', fmtVerified(conn.lastValidatedAt), false],
+                    ].map(([k, val, mono]) => (
+                      <Fragment key={k}>
+                        <span style={sx('color:var(--ink-faint);white-space:nowrap')}>{k}</span>
+                        <span style={sx('color:var(--ink);font-weight:600;overflow-wrap:anywhere', mono ? { fontFamily: "'JetBrains Mono',monospace", fontVariantNumeric: 'tabular-nums' } : {})}>{val}</span>
+                      </Fragment>
+                    ))}
+                  </div>
+                  <div style={sx('display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px', { color: `var(--${key.has && key.badge === 'Connected' ? 'mint' : 'amber'})` })}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}><path d="M20 6L9 17l-5-5" /></svg>
+                    <span style={sx('color:var(--ink-2)')}>{key.scope}</span>
                   </div>
                   {!locked && (
                     <div style={sx('display:flex;gap:9px;margin-top:13px;flex-wrap:wrap')}>
@@ -185,10 +203,18 @@ export default function AccountsPage() {
           )}
         </section>
       ) : (
-        <section style={sx('padding:19px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface-2)')}>
-          <div style={sx('font-size:14px;font-weight:600')}>Add another account</div>
-          <p style={sx('margin:5px 0 12px;font-size:12.5px;color:var(--ink-2);max-width:70ch')}>{capLine} Delta Exchange and CoinDCX Futures are the venues we enforce on today — prop-firm support is in progress, and we will say so plainly rather than list it as if it works.</p>
-          <button type="button" disabled={atCap} onClick={() => setShowAdd(true)} style={sx('padding:9px 14px;border-radius:9px;font-size:12.5px;font-weight:700', atCap ? { border: '1px solid var(--surface-3)', background: 'var(--surface-3)', color: 'var(--ink-3)', cursor: 'not-allowed' } : { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' })}>{atCap ? `Plan limit reached (${maxAccounts})` : 'Choose a venue'}</button>
+        <section style={sx('padding:20px;border:1px dashed var(--line-strong);border-radius:16px;background:var(--surface-2)')}>
+          <div style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap')}>
+            <div style={sx('font-size:14.5px;font-weight:600')}>Add another account</div>
+            {/* The venues, shown rather than listed — the marks answer "is my
+                exchange here?" faster than the sentence below does. */}
+            <div style={sx('display:flex;align-items:center;gap:6px')}>
+              <VenueMark slug="delta_india" name="Delta" size={22} radius={7} />
+              <VenueMark slug="coindcx" name="CoinDCX" size={22} radius={7} />
+            </div>
+          </div>
+          <p style={sx('margin:7px 0 13px;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:70ch')}>{capLine} Delta Exchange and CoinDCX Futures are the venues we enforce on today — prop-firm support is in progress, and we will say so plainly rather than list it as if it works.</p>
+          <button type="button" disabled={atCap} onClick={() => setShowAdd(true)} style={sx('padding:10px 15px;border-radius:10px;font-size:12.5px;font-weight:700', atCap ? { border: '1px solid var(--surface-3)', background: 'var(--surface-3)', color: 'var(--ink-3)', cursor: 'not-allowed' } : { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' })}>{atCap ? `Plan limit reached (${maxAccounts})` : 'Choose a venue'}</button>
         </section>
       )}
 

@@ -18,6 +18,7 @@ import {
   getExchangeCredentialsStatus,
 } from '../api/exchangeCredentialsApi';
 import ExchangeConnectionPanel from '../components/dashboard/ExchangeConnectionPanel';
+import VenueMark from '../components/dashboard/VenueMark';
 import DeltaAppGuide from '../components/dashboard/DeltaAppGuide';
 import SecretInput from '../components/common/SecretInput';
 import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPanel } from '../components/dashboard/deltaConnectShared';
@@ -665,7 +666,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
     >
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--dash-text-muted)' }}>
-          1. Choose prop firm or broker
+          1. Choose your venue
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {supportedProps.length === 0 && (
@@ -690,8 +691,9 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   boxShadow: active ? '0 0 0 2px rgba(0,212,170,0.25)' : 'none',
                 }}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
+                <div className="flex items-center gap-2.5">
+                  <VenueMark slug={p.brokerId} name={p.name} size={28} radius={9} />
+                  <span className="flex-1 min-w-0 text-sm font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
                     {p.name}
                   </span>
                   <span
@@ -709,12 +711,12 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   </span>
                 </div>
                 {isPlanned ? (
-                  <p className="text-[10px] mt-1 font-semibold uppercase tracking-wider" style={{ color: 'rgb(168, 85, 247)' }}>
+                  <p className="text-[10px] mt-1.5 ml-[38px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(168, 85, 247)' }}>
                     Coming soon
                   </p>
                 ) : (
                   p.equityMode === 'funded' && (
-                    <p className="text-[10px] mt-1" style={{ color: 'var(--dash-text-muted)' }}>
+                    <p className="text-[10px] mt-1.5 ml-[38px]" style={{ color: 'var(--dash-text-muted)' }}>
                       Daily reset {p.defaultResetTimeLocal} {shortTz(p.defaultTimezone)}
                     </p>
                   )
