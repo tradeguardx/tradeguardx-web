@@ -53,9 +53,12 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   const cardRef = useRef(null);
   const firstRef = useRef(null);
 
-  const { account, guard, enforcement, gap, lockRemainingMs, lockReason, readOnly } = selected;
+  const { account, guard, gap, lockRemainingMs, lockReason, readOnly, canLockOut } = selected;
   const armed = guard === 'locked';
-  const noEnforce = !armed && enforcement !== 'armed';
+  // A lockout holds on the key alone. Rules are the automatic half of the
+  // product and have nothing to do with a user deciding to stop: the engine's
+  // cooldown watchdog closes whatever is opened during the lock either way.
+  const noEnforce = !armed && !canLockOut;
   const armable = !armed && !noEnforce && !blocked;
   const ksGap = gap && gap.key !== 'alerts' ? gap : null;
 
@@ -96,11 +99,14 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
     } finally { setBusy(false); }
   };
 
+  // What is actually missing is a key that can act — never a rule. Point at
+  // the key first; only fall back to the setup gap when there is no key at all.
+  const keyGap = ksGap && ksGap.key !== 'rules' ? ksGap : null;
   const noEnforceBody = readOnly
     ? 'The key on this account is read-only, so we could not close anything the lockout was meant to stop.'
-    : ksGap ? ksGap.body : '';
-  const noEnforceCta = readOnly ? 'Replace the key' : ksGap ? ksGap.cta : 'Finish setup';
-  const noEnforceTo = readOnly ? '/dashboard/connect' : ksGap ? ksGap.to : '/dashboard/account/trading';
+    : keyGap ? keyGap.body : 'Connect a key that can act and the lockout has something to hold it.';
+  const noEnforceCta = readOnly ? 'Replace the key' : keyGap ? keyGap.cta : 'Connect a key';
+  const noEnforceTo = readOnly ? '/dashboard/connect' : keyGap ? keyGap.to : '/dashboard/connect';
   const armedBody = readOnly
     ? 'Clears on its own, then the account trades again. Rule and key changes are blocked so you cannot undo it — but the key here is read-only, so we cannot close anything you open in the meantime. This one holds because you decided it does.'
     : 'Clears on its own, then the account trades again. Support can lift it early if something real happens — you cannot.';

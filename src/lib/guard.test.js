@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enforcementOf, guardOf, gapsOf, describeGuard } from './guard';
+import { canLockOutOf, enforcementOf, guardOf, gapsOf, describeGuard } from './guard';
 
 const account = { id: 'a', name: 'Delta main', propFirmSlug: 'delta_india', accountSize: 5000, cooldownUntil: null };
 const key = { status: 'active', enforcementCapable: true };
@@ -22,6 +22,20 @@ describe('enforcementOf', () => {
     expect(enforcementOf({ account: { ...account, accountSize: null }, connection: key, rules })).toBe('armed');
     expect(enforcementOf({ account: { ...account, equityMode: 'funded', accountSize: null }, connection: key, rules })).toBe('unprotected');
     expect(enforcementOf({ account: { ...account, propFirmSlug: null }, connection: key, rules })).toBe('unprotected');
+  });
+});
+
+describe('canLockOutOf', () => {
+  it('holds with a trading key and NO rules — a lockout is not a rule', () => {
+    expect(canLockOutOf({ account, connection: key, rules: noRules })).toBe(true);
+  });
+  it('cannot hold with a read-only key: nothing could close what it stops', () => {
+    expect(canLockOutOf({ account, connection: readOnly })).toBe(false);
+  });
+  it('cannot hold with no key, or before setup is complete', () => {
+    expect(canLockOutOf({ account, connection: null })).toBe(false);
+    expect(canLockOutOf({ account: { ...account, propFirmSlug: null }, connection: key })).toBe(false);
+    expect(canLockOutOf({ account, connection: key, loaded: false })).toBe(false);
   });
 });
 

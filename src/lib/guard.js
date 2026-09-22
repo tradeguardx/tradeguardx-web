@@ -140,6 +140,22 @@ export function enforcementOf({ account, connection, rules, loaded = true }) {
   return ENFORCEMENT.ARMED;
 }
 
+/**
+ * Can a manual lockout actually hold? It needs an account that is set up and
+ * a key that can ACT — nothing else. Rules are the automatic side of the
+ * product; a lockout is the user deciding to stop, and the engine's cooldown
+ * watchdog closes anything opened during it whether or not a single rule is
+ * switched on. Gating this on `enforcement === 'armed'` told someone who
+ * wanted to lock themselves out to go configure a rule first, which is both
+ * wrong and exactly the wrong moment to ask for configuration.
+ */
+export function canLockOutOf({ account, connection, loaded = true }) {
+  if (!loaded) return false;
+  if (!setupCompleteOf(account)) return false;
+  if (!connection || connection.status !== 'active') return false;
+  return connection.enforcementCapable !== false;
+}
+
 export function guardOf(input, now = Date.now()) {
   // A live lock is read off the account row, which arrives with the account
   // list — so it is still authoritative before the guard fetch lands.

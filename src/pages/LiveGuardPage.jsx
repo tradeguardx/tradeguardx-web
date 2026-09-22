@@ -81,8 +81,9 @@ export default function LiveGuardPage() {
   const [busy, setBusy] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const armed = g.guard === 'locked';
-  const noEnforce = !armed && g.enforcement !== 'armed';
-  const ksGap = g.gap && g.gap.key !== 'alerts' ? g.gap : null;
+  // Lockout needs a key that can act — not rules. See canLockOutOf in guard.js.
+  const noEnforce = !armed && !g.canLockOut;
+  const ksGap = g.gap && g.gap.key !== 'alerts' && g.gap.key !== 'rules' ? g.gap : null;
   const armable = !armed && !noEnforce && !blocked && !posOpen;
   const arm = async () => {
     setBusy(true);
@@ -97,9 +98,9 @@ export default function LiveGuardPage() {
       else toast.error('Could not start the lockout', err?.details?.error?.message || err?.message || 'Please try again.');
     } finally { setBusy(false); }
   };
-  const noEnforceBody = g.readOnly ? 'The key on this account is read-only, so we could not close anything the lockout was meant to stop.' : ksGap ? ksGap.body : '';
-  const noEnforceCta = g.readOnly ? 'Replace the key' : ksGap ? ksGap.cta : 'Finish setup';
-  const noEnforceTo = g.readOnly ? '/dashboard/connect' : ksGap ? ksGap.to : '/dashboard/account/trading';
+  const noEnforceBody = g.readOnly ? 'The key on this account is read-only, so we could not close anything the lockout was meant to stop.' : ksGap ? ksGap.body : 'Connect a key that can act and the lockout has something to hold it.';
+  const noEnforceCta = g.readOnly ? 'Replace the key' : ksGap ? ksGap.cta : 'Connect a key';
+  const noEnforceTo = g.readOnly ? '/dashboard/connect' : ksGap ? ksGap.to : '/dashboard/connect';
   const armedBody = g.readOnly
     ? 'Clears on its own, then the account trades again. Rule and key changes are blocked so you cannot undo it — but the key here is read-only, so we cannot close anything you open in the meantime. This one holds because you decided it does.'
     : 'Clears on its own, then the account trades again. Support can lift it early if something real happens — you cannot.';

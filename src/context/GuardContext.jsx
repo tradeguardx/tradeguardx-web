@@ -6,6 +6,7 @@ import { fetchRulesBundle } from '../api/rulesApi';
 import { fetchNotificationSettings } from '../api/notificationsApi';
 import { fetchBreaches } from '../api/breachesApi';
 import {
+  canLockOutOf,
   describeGuard,
   enabledRuleCount,
   enforcementCopy,
@@ -172,6 +173,8 @@ export function GuardProvider({ children }) {
         copy: enforcementCopy(enforcement),
         setupDone: gaps.filter((g) => g.key !== 'alerts').length === 0,
         readOnly: slice.connection?.enforcementCapable === false,
+        // A lockout needs a key that can act, not rules — see canLockOutOf.
+        canLockOut: canLockOutOf(input),
       };
     },
     [accounts, perAccount, notifications, now, loaded],
