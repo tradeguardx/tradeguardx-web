@@ -31,7 +31,7 @@ export default function ConnectKeyPage() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null); // { ok, summary | message }
 
-  const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'Delta Exchange';
+  const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'your exchange';
   const tag = (selectedAccount?.name || 'acct').replace(/[^A-Za-z0-9]+/g, '').slice(0, 8) || 'acct';
   const keyName = `TradeGuardX-${tag}-guard`;
   const ip = ENGINE_EGRESS_IP || '13.205.214.83';

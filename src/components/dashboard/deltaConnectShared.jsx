@@ -1,7 +1,7 @@
 import SecretInput from '../common/SecretInput';
 
 /**
- * Shared pieces of the Delta connect UI — used by BOTH the first-time
+ * Shared pieces of the exchange connect UI — used by BOTH the first-time
  * "Add account" flow (TradingAccountsPage) and the "Replace key" flow on an
  * existing account (ExchangeConnectionPanel). Extracted after the two flows
  * drifted once already (three different Delta URLs in three different files,
@@ -61,10 +61,13 @@ export function StepRow({ n, label, children }) {
  * checkmark: a distinct "IP whitelisted" row (the backend doesn't return that
  * as its own boolean — it's folded into `enforcementCapable`, so a separate
  * checkmark would imply precision we don't have) and "withdrawal blocked" is
- * shown as a structural fact, not a live check, since Delta doesn't offer
- * withdrawal scope on API keys at all — there's nothing to verify.
+ * shown as a structural fact, not a live check: the note comes from the
+ * venue, and we never request the scope regardless.
  */
-export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, apiKey, apiSecret, onApiKeyChange, onApiSecretChange }) {
+export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, apiKey, apiSecret, onApiKeyChange, onApiSecretChange, venue }) {
+  // `venue` names the exchange the user actually connected; without it this
+  // panel told every CoinDCX user that "Delta" was connected.
+  const venueName = venue?.name ?? 'Exchange';
   if (outcome.ok) {
     const { summary } = outcome;
     const live = summary?.enforcementCapable === true;
@@ -74,7 +77,7 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
         style={{ borderColor: 'rgba(0,212,170,0.3)', backgroundColor: 'rgba(0,212,170,0.05)' }}
       >
         <p className="mb-3 text-[13px] font-bold" style={{ color: 'var(--accent, #00d4aa)' }}>
-          Delta connected
+          {venueName} connected
         </p>
         <ul className="space-y-2 text-[13px]" style={{ color: 'var(--dash-text-primary)' }}>
           <li className="flex items-start gap-2">
@@ -93,7 +96,7 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
           </li>
           <li className="flex items-start gap-2 text-[12px]" style={{ color: 'var(--dash-text-muted)' }}>
             <span>·</span>
-            <span>Withdrawal was never requested — Delta doesn&apos;t offer it on API keys, so there&apos;s nothing that can move your funds.</span>
+            <span>Withdrawal was never requested{venue?.withdrawalNote ? ` — ${venue.withdrawalNote}` : ''} Nothing here can move your funds.</span>
           </li>
         </ul>
         {!live && (

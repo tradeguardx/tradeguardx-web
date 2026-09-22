@@ -97,7 +97,7 @@ const RULE_DOCS = {
     summary: 'Caps how much any single trade can risk, based on where your stop-loss sits. Stops one oversized bet from doing outsized damage.',
     how: [
       'For each open position, it computes the loss your stop-loss implies as a percentage of equity.',
-      'Uses the contract size and mark price, so the risk figure is accurate for Delta contracts.',
+      'Uses the contract size and mark price, so the risk figure is accurate for the contract you actually hold.',
       'Only affects the offending position — the rest of your account is untouched.',
     ],
     trigger: 'If a trade’s stop implies more than your limit, that single position is auto-closed (reduce-only). The rest of the account keeps trading.',

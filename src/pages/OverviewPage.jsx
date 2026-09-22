@@ -63,7 +63,7 @@ export default function OverviewPage() {
   const noAccount = !accountsLoading && !selectedAccount;
   const d = g.describe;
   const cur = s.currency;
-  const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'Delta Exchange';
+  const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'your exchange';
   const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });
 
   // ── dial ────────────────────────────────────────────────────────────

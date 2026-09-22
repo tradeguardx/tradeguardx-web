@@ -15,7 +15,7 @@ import { sx } from '../components/dashboard/shell/sx';
  * Accounts — transcribed from the reference (lines 1703–1768) plus the
  * disconnect confirm (417–430). One card per account: tag, label, state
  * chip, venue · server-side enforcement, rules-on count, an action that
- * always navigates, and the Delta India API connection block.
+ * always navigates, and the exchange API connection block.
  *
  * Creation is the existing AddAccountForm, unchanged — it opens in place of
  * the "Add another account" panel. Never a balance figure anywhere here.

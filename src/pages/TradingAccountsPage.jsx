@@ -329,8 +329,6 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(collapsible ? defaultExpanded : true);
   const isFunded = account.equityMode === 'funded';
-  // Delta accounts connect via API key, not the extension — hide extension-only UI.
-  const isDelta = exchangeFromBrokerSlug(account.propFirmSlug) !== null;
 
   useEffect(() => {
     setName(account.name || '');
@@ -875,6 +873,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 {isFunded ? '5.' : '3.'} Connect {v.name} API key
               </p>
               <ConnectResultPanel
+                venue={v}
                 outcome={connectOutcome}
                 retrying={retrying}
                 onRetry={retryConnect}

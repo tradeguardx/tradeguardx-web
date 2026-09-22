@@ -5,7 +5,8 @@ import {
   exchangeFromBrokerSlug,
   getExchangeCredentialsStatus,
 } from '../../api/exchangeCredentialsApi';
-import { DELTA_EGRESS_IP, deltaApiKeysUrl } from '../../api/config';
+import { DELTA_EGRESS_IP } from '../../api/config';
+import { venueFor } from '../../lib/venues';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import DeltaAppGuide from './DeltaAppGuide';
 import SecretInput from '../common/SecretInput';
@@ -22,8 +23,8 @@ function formatDateTime(iso) {
 }
 
 /**
- * Delta API-key connection: steps + whitelist IP + key/secret form + status.
- * Renders only for exchange (Delta) accounts — returns null otherwise, so it's
+ * Exchange API-key connection: steps + whitelist IP + key/secret form + status.
+ * Renders only for exchange accounts — returns null otherwise, so it's
  * safe to drop into any account context (Accounts page, Pairing page).
  */
 export default function ExchangeConnectionPanel({ account, accessToken, toast }) {
@@ -93,7 +94,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
     refresh();
   }, [refresh, exchangeSlug]);
 
-  if (!exchangeSlug) return null; // Only render for Delta accounts
+  if (!exchangeSlug) return null; // Only render for exchange accounts
 
   const isConnected = connection?.status === 'active';
   const canSubmit = apiKey.trim().length > 0 && apiSecret.trim().length > 0 && !submitting;
@@ -115,7 +116,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
       setConnection(result);
       setConnectOutcome({ ok: true, summary: result });
     } catch (e) {
-      setConnectOutcome({ ok: false, message: e?.message || 'Delta rejected the connection. Try again.' });
+      setConnectOutcome({ ok: false, message: e?.message || `${v.name} rejected the connection. Try again.` });
     } finally {
       setSubmitting(false);
     }
@@ -136,13 +137,13 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   };
 
   const onDisconnect = async () => {
-    if (!window.confirm('Disconnect this Delta key? The risk-engine will stop streaming events.')) return;
+    if (!window.confirm(`Disconnect this ${v.name} key? The risk-engine will stop streaming events.`)) return;
     setDisconnecting(true);
     try {
       await disconnectExchangeCredentials({ accessToken, accountId: account.id });
       setConnection(null);
       setConnectOutcome(null);
-      toast.success('Disconnected', 'Delta connection removed.');
+      toast.success('Disconnected', `${v.name} connection removed.`);
     } catch (e) {
       toast.error('Could not disconnect', e?.message || 'Try again.');
     } finally {
@@ -150,14 +151,18 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
     }
   };
 
-  const region = exchangeSlug === 'delta_india' ? 'India' : 'Global';
-  const apiKeysLink = deltaApiKeysUrl(exchangeSlug);
+  // Every word below comes from the venue, not from Delta. This panel renders
+  // for any exchange account, and a CoinDCX user was being told to "Open Delta
+  // & create key" — with a link to Delta's site.
+  const v = venueFor(exchangeSlug);
+  const venueTitle = v.family === 'delta' ? `Delta ${exchangeSlug === 'delta_india' ? 'India' : 'Global'}` : v.name;
+  const apiKeysLink = v.keysUrl(exchangeSlug);
 
   return (
     <div className="pt-4 mt-4 border-t" style={{ borderColor: 'var(--dash-border)' }}>
       <div className="flex items-center justify-between gap-2 mb-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--dash-text-muted)' }}>
-          Delta {region} API connection
+          {venueTitle} API connection
         </p>
         {!loading && (
           <span
@@ -203,7 +208,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
           <div className="grid gap-1 text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
             {connection.exchangeUserEmail && (
               <div>
-                <span style={{ color: 'var(--dash-text-muted)' }}>Delta user:</span>{' '}
+                <span style={{ color: 'var(--dash-text-muted)' }}>Exchange user:</span>{' '}
                 <span style={{ color: 'var(--dash-text-primary)' }}>{connection.exchangeUserEmail}</span>
               </div>
             )}
@@ -254,6 +259,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
 
       {!loading && (!isConnected || showForm) && connectOutcome && (
         <ConnectResultPanel
+          venue={v}
           outcome={connectOutcome}
           retrying={submitting}
           onRetry={onConnect}
@@ -274,15 +280,15 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               backgroundColor: 'rgba(0,212,170,0.04)',
             }}
           >
-            {isMobile ? (
-              // Mobile: users are in the Delta app, not a browser tab. Guide them
-              // through the app's Algo Hub → APIs flow with the screenshot walkthrough.
+            {isMobile && v.hasAppGuide ? (
+              // Mobile: users are in the exchange's app, not a browser tab. Guide
+              // them through its key flow with the screenshot walkthrough.
               // Same treatment whether this is a first connect or a reconnect after
               // disconnect — no stripped-down version for the second case.
               <div>
                 <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                  Create a <strong>Trading</strong> key in the <strong>Delta app</strong> (Algo Hub → APIs).
-                  Enable <strong>Trading</strong>, whitelist the IP below, and paste the key here.
+                  Create a <strong>{v.scopeLabel}</strong> key in the <strong>{v.name} app</strong> ({v.mobilePath}).
+                  Enable <strong>{v.scopeLabel}</strong>, whitelist the IP below, and paste the key here.
                   A read-only key only sends alerts — it can&apos;t stop trading.
                 </p>
                 <button
@@ -301,7 +307,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
             ) : (
               <div className="space-y-3">
                 <p className="text-[12px] font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
-                  {isConnected ? 'Create a new key on Delta (takes ~2 min):' : 'Create your key on Delta (takes ~2 min):'}
+                  {isConnected ? `Create a new key on ${v.name} (takes ~2 min):` : `Create your key on ${v.name} (takes ~2 min):`}
                 </p>
 
                 <StepRow n={1}>
@@ -312,14 +318,14 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                     className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold text-surface-950"
                     style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
                   >
-                    Open Delta &amp; create key
+                    Open {v.name} &amp; create key
                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" aria-hidden>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </a>
                 </StepRow>
 
-                <StepRow n={2} label="Copy these into Delta's form">
+                <StepRow n={2} label={`Copy these into ${v.name}'s form`}>
                   <div className="space-y-2">
                     <div
                       className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
@@ -344,7 +350,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                       className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
                       style={{ backgroundColor: 'var(--dash-bg-input)' }}
                     >
-                      <span className="text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>Whitelisted IP</span>
+                      <span className="text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>{v.ipField}</span>
                       {DELTA_EGRESS_IP ? (
                         <button
                           type="button"
@@ -372,7 +378,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12l3 3 5-6" />
                     </svg>
                     <span className="text-[12.5px]" style={{ color: 'var(--dash-text-primary)' }}>
-                      <strong>Trading</strong> — without this the kill switch can only alert, never act.
+                      <strong>{v.scopeLabel}</strong> — without this the kill switch can only alert, never act.
                     </span>
                   </div>
                 </StepRow>
@@ -385,7 +391,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               </div>
             )}
             <p className="mt-3 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
-              Secret shown once — copy it now. Stored encrypted (KMS); Delta never offers a withdrawal permission on API keys.
+              Secret shown once — copy it now. Stored encrypted (KMS). {v.withdrawalNote}
             </p>
           </div>
 
@@ -464,7 +470,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
         </div>
       )}
 
-      <DeltaAppGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
+      {v.hasAppGuide && <DeltaAppGuide open={guideOpen} onClose={() => setGuideOpen(false)} />}
     </div>
   );
 }
