@@ -30,6 +30,7 @@ export default function ConnectKeyPage() {
   const [copied, setCopied] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null); // { ok, summary | message }
+  const [replacing, setReplacing] = useState(false); // he asked to swap a working key
 
   const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'your exchange';
   const tag = (selectedAccount?.name || 'acct').replace(/[^A-Za-z0-9]+/g, '').slice(0, 8) || 'acct';
@@ -73,6 +74,11 @@ export default function ConnectKeyPage() {
     .map((s, i) => ({ ...s, n: i + 1 }));
   const pasteStep = steps.find((s) => s.kind === 'paste')?.n ?? steps.length;
 
+  // A key that is in place and can act. A read-only key counts as connected
+  // to the exchange and NOT as protection, so it does not hide the guide.
+  const connected = g.connection?.status === 'active' && !g.readOnly;
+  const showGuide = !connected || replacing;
+
   // Dot rail: the paste step while pasting, one past the last step when the
   // key is in, 1 until a key exists. Derived from the list so a venue with
   // one step fewer doesn't leave the rail stuck.
@@ -94,7 +100,9 @@ export default function ConnectKeyPage() {
     <div style={sx('max-width:900px')}>
       <div style={sx('margin-bottom:16px;max-width:76ch')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Connect enforcement</h1>
-        <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>This is the step that turns your rules from a note into something that acts. {steps.length === 3 ? 'Three' : 'Four'} short moves, two tabs, about three minutes.</p>
+        <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>{connected && !replacing
+          ? `${venue} is connected and the engine can act on your account. Your rules decide when it does.`
+          : `This is the step that turns your rules from a note into something that acts. ${steps.length === 3 ? 'Three' : 'Four'} short moves, two tabs, about three minutes.`}</p>
       </div>
 
       <div style={sx('display:inline-flex;gap:3px;margin-bottom:20px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);box-shadow:inset 0 1px 2px rgba(0,0,0,.35)')}>
@@ -105,7 +113,7 @@ export default function ConnectKeyPage() {
         <div style={sx('display:flex;align-items:flex-start;gap:12px;padding:15px 18px;margin-bottom:16px;border-radius:13px', g.readOnly ? { border: '1px solid var(--amber-line)', background: 'var(--amber-tint)' } : { border: '1px solid var(--mint-line)', background: 'var(--mint-tint)' })}>
           <div style={sx('flex:1')}>
             <div style={sx('font-size:13.5px;font-weight:700', { color: g.readOnly ? 'var(--amber)' : 'var(--mint)' })}>{g.readOnly ? 'A read-only key is connected' : 'A trading-scope key is connected'}</div>
-            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:92ch')}>{g.readOnly ? 'Replace this with a trading-scope key and the engine starts enforcing on the next fill.' : 'Pasting a new key below replaces it. Nothing changes until the new one verifies.'}</p>
+            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:92ch')}>{g.readOnly ? 'Replace this with a trading-scope key and the engine starts enforcing on the next fill.' : replacing ? 'Pasting a new key below replaces it. Nothing changes until the new one verifies.' : 'Scope verified. The engine holds a live socket to your account.'}</p>
           </div>
         </div>
       )}
@@ -126,6 +134,24 @@ export default function ConnectKeyPage() {
         </div>
       )}
 
+      {/* The guide is onboarding. Once a key is verified and can actually
+          act, the most prominent thing on the page should not be a form
+          asking for credentials — it is noise, and it trains people to paste
+          keys into a form they did not go looking for. Replacing stays one
+          click away, because keys expire, get revoked, and outlive IPs.
+          A read-only key is the exception: it is connected and useless, so
+          the guide stays open — that user's whole job is to replace it. */}
+      {connected && !showGuide && (
+        <section style={sx('display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:17px 20px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card)')}>
+          <div style={sx('min-width:0')}>
+            <div style={sx('font-size:13.5px;font-weight:600')}>Your key is in place</div>
+            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-3);max-width:70ch')}>Nothing to do here. Replacing only matters if {venue} revoked the key, you rotated it, or our IP changed — pasting a new one replaces it, and nothing changes until the new one verifies.</p>
+          </div>
+          <button type="button" onClick={() => setReplacing(true)} style={sx('flex:none;padding:9px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700')}>Replace key</button>
+        </section>
+      )}
+
+      {showGuide && (
       <section style={sx('border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
         {steps.map((st) => (
           <div key={st.n} style={sx('display:flex;gap:15px;padding:19px 22px;border-bottom:1px solid var(--line)')}>
@@ -219,7 +245,13 @@ export default function ConnectKeyPage() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" style={{ flex: 'none', marginTop: 2, color: 'var(--ink-faint)' }}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
           <span>Doing this on your phone? The exchange app hides the allowed-IP field under advanced settings. <a href="/help" target="_blank" rel="noreferrer">Read the mobile walkthrough</a>.</span>
         </div>
+        {connected && !g.readOnly && (
+          <div style={sx('padding:13px 22px;border-top:1px solid var(--line);background:var(--surface-2)')}>
+            <button type="button" onClick={() => { setReplacing(false); setKeyVal(""); setSecretVal(""); }} style={sx('padding:8px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Cancel — keep the key I have</button>
+          </div>
+        )}
       </section>
+      )}
     </div>
   );
 }
