@@ -72,3 +72,46 @@ describe('ruleLockNow', () => {
     expect(ruleLockNow(rl, Date.parse('2026-09-28T00:00:00Z'))).toMatchObject({ settling: false, locked: false });
   });
 });
+
+/**
+ * Regression guard for the false "not protected" flash on login.
+ *
+ * `connection: null` means two different things — "no key" and "not fetched
+ * yet" — and the derivations used to treat both as unprotected. For the
+ * half-second before the first fetch landed, a fully armed account was told
+ * its key was missing, which is the most alarming claim this product makes.
+ */
+describe('guard state before data arrives', () => {
+  const armedInput = {
+    account: { propFirmSlug: 'coindcx', equityMode: 'live' },
+    connection: { status: 'active', enforcementCapable: true },
+    rules: { instances: [{ enabled: true }], templates: [{ slug: 'daily-loss' }] },
+    notifications: { telegramConnected: true },
+  };
+
+  it('is "loading", never "unprotected", while the fetch is in flight', () => {
+    expect(enforcementOf({ ...armedInput, connection: null, rules: null, loaded: false })).toBe('loading');
+    expect(guardOf({ ...armedInput, connection: null, rules: null, loaded: false })).toBe('loading');
+  });
+
+  it('claims no gaps while loading, so no screen tells the user to connect a key', () => {
+    expect(gapsOf({ ...armedInput, connection: null, rules: null, loaded: false })).toEqual([]);
+  });
+
+  it('describes loading with no verdict and no band', () => {
+    const d = describeGuard('loading', {});
+    expect(d.loading).toBe(true);
+    expect(d.showBand).toBe(false);
+    expect(d.pill).toBe('');
+  });
+
+  it('still reports an active lock before the fetch — that comes from the account row', () => {
+    const locked = { ...armedInput, connection: null, rules: null, loaded: false, account: { ...armedInput.account, cooldownUntil: new Date(Date.now() + 60_000).toISOString() } };
+    expect(guardOf(locked)).toBe('locked');
+  });
+
+  it('returns the real verdict once loaded', () => {
+    expect(guardOf({ ...armedInput, loaded: true })).toBe('armed');
+    expect(guardOf({ ...armedInput, connection: null, loaded: true })).toBe('unprotected');
+  });
+});

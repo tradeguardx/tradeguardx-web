@@ -177,7 +177,8 @@ export default function LiveGuardPage() {
     const gl = RULE_GLYPH[r.templateSlug] ?? ['M12 3l7 3v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6l7-3z', ''];
     const acc = ruleAccent(r.templateSlug);
     let st;
-    if (g.guard === 'unprotected') st = { label: 'Not enforcing', bg: 'var(--surface-3)', fg: 'var(--ink-3)', live: 'Nothing is watching this rule yet', bar: '0%' };
+    if (!g.loaded) st = { label: '…', bg: 'var(--surface-3)', fg: 'var(--ink-3)', live: 'Checking this account', bar: '0%' };
+    else if (g.guard === 'unprotected') st = { label: 'Not enforcing', bg: 'var(--surface-3)', fg: 'var(--ink-3)', live: 'Nothing is watching this rule yet', bar: '0%' };
     else if (g.guard === 'watching') st = { label: 'Alert only', bg: 'var(--amber-tint)', fg: 'var(--amber)', live: 'Evaluated, but the key cannot act', bar: '0%' };
     else {
       const c = live ? computeRule(r.templateSlug, r.config, live, live.accountSize, fmt0) : null;

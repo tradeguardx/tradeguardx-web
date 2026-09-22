@@ -9,16 +9,29 @@
  *     'armed'        trading-scope key verified AND ≥1 rule on AND setup complete
  *     'watching'     key present but read-only — we see fills, cannot act
  *     'unprotected'  no key, or no rules on, or setup incomplete
+ *     'loading'      the account's connection/rules have not been fetched yet
  *
  *   guardOf        = lockActive ? 'locked' : enforcementOf
+ *
+ * `loading` exists because the absence of data and the absence of a key look
+ * identical in these shapes: both are `connection: null`. Without it, every
+ * screen asserted "No key with trading scope" for the half-second before the
+ * first fetch landed, which is the most alarming thing the product can say
+ * and it was saying it to people who were fully protected. Callers pass
+ * `loaded` through; anything derived while false is neutral, never a verdict.
  *
  * Gap resolution (first unmet wins) drives the band body, its CTA and the
  * Overview next action. Alerts are gap 5: they do not lower enforcement —
  * the engine still closes positions — but a breach would be silent.
  */
 
-export const ENFORCEMENT = { ARMED: 'armed', WATCHING: 'watching', UNPROTECTED: 'unprotected' };
+export const ENFORCEMENT = { ARMED: 'armed', WATCHING: 'watching', UNPROTECTED: 'unprotected', LOADING: 'loading' };
 export const GUARD = { ...ENFORCEMENT, LOCKED: 'locked' };
+
+/** True while this account's guard state is still unknown. */
+export function isLoadingGuard(guard) {
+  return guard === GUARD.LOADING;
+}
 
 /**
  * Is the account's setup complete enough to size limits and connect?
@@ -66,9 +79,13 @@ export function hasAlertChannel(settings) {
  * Ordered gaps. Each is { key, title, body, cta, to }. `to` is a dashboard
  * route the CTA navigates to. Returns [] when nothing is missing.
  */
-export function gapsOf({ account, connection, rules, notifications }) {
+export function gapsOf({ account, connection, rules, notifications, loaded = true }) {
   // Copy verbatim from the reference's gapOf(). Read-only is not a gap here —
   // it is the 'watching' state, with its own band copy (see describeGuard).
+  //
+  // Nothing is a gap until the data is in: a pending fetch is not a missing
+  // key, and saying so turned every login into a false alarm.
+  if (!loaded) return [];
   const gaps = [];
   if (!setupCompleteOf(account)) {
     gaps.push({
@@ -114,7 +131,8 @@ export function gapsOf({ account, connection, rules, notifications }) {
   return gaps;
 }
 
-export function enforcementOf({ account, connection, rules }) {
+export function enforcementOf({ account, connection, rules, loaded = true }) {
+  if (!loaded) return ENFORCEMENT.LOADING;
   if (!setupCompleteOf(account)) return ENFORCEMENT.UNPROTECTED;
   if (!connection || connection.status !== 'active') return ENFORCEMENT.UNPROTECTED;
   if (enabledRuleCount(rules) === 0) return ENFORCEMENT.UNPROTECTED;
@@ -123,6 +141,8 @@ export function enforcementOf({ account, connection, rules }) {
 }
 
 export function guardOf(input, now = Date.now()) {
+  // A live lock is read off the account row, which arrives with the account
+  // list — so it is still authoritative before the guard fetch lands.
   return lockUntilOf(input.account, now) ? GUARD.LOCKED : enforcementOf(input);
 }
 
@@ -132,6 +152,15 @@ export function guardOf(input, now = Date.now()) {
  */
 export function describeGuard(guard, { on = 0, total = 0, gap = null, label = '', readOnly = false } = {}) {
   switch (guard) {
+    case GUARD.LOADING:
+      // Deliberately says nothing about protection: we do not know yet, and a
+      // guess in either direction is worse than a blank.
+      return {
+        pill: '', label: '', tone: 'neutral', pillNote: '',
+        title: '', sub: '',
+        showBand: false, bandTitle: '', bandBody: '', cta: '', to: '/dashboard/live', action: '',
+        loading: true,
+      };
     case GUARD.LOCKED:
       return {
         pill: 'Locked', label: 'Locked', tone: 'red', pillNote: 'no trading on this account',

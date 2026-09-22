@@ -102,7 +102,10 @@ export default function AccountsPage() {
         const venue = a.propFirmSlug ? brokerLabel(a.propFirmSlug) : 'No venue yet';
         const conn = st.connection;
         const hasKey = conn && conn.status === 'active';
-        const key = !hasKey
+        // "Not connected" is a claim; make it only once the fetch has landed.
+        const key = !st.loaded
+          ? { has: false, badge: 'Checking…', fg: 'var(--ink-3)', bg: 'var(--surface-3)', scope: 'Reading this account’s key status', note: '' }
+          : !hasKey
           ? { has: false, badge: 'Not connected', fg: 'var(--red)', bg: 'var(--red-tint)', scope: 'No key — nothing is being enforced on this account', note: '' }
           : st.enforcement === 'watching' || conn.enforcementCapable === false
             ? { has: true, badge: 'Read-only', fg: 'var(--amber)', bg: 'var(--amber-tint)', scope: 'Read-only scope — we can see fills but cannot close anything', note: locked ? 'Key changes are blocked while the kill switch runs.' : 'Replace this with a trading-scope key and the engine starts enforcing on the next fill.' }

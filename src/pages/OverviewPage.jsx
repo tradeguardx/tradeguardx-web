@@ -134,7 +134,11 @@ export default function OverviewPage() {
 
   // ── next actions ────────────────────────────────────────────────────
   const settling = g.rules?.ruleLock?.settling;
-  const nextActions = g.guard !== 'armed'
+  // No advice until we know the state — "Finish setup" shown to a fully
+  // configured account is the same false alarm as the red pill.
+  const nextActions = !g.loaded
+    ? []
+    : g.guard !== 'armed'
     ? [
       { title: g.gap?.title ?? 'Finish setup', body: g.gap?.body ?? 'A few steps remain before anything is enforced.', to: g.gap?.to ?? '/dashboard/account/trading', accent: 'var(--red)', tint: 'var(--red-tint)', d: ICON.rules },
       { title: 'Decide your rule-lock window while calm', body: 'Seven days is the default. Choosing the length before you need it is the whole point of the device.', to: '/dashboard/live', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.security },

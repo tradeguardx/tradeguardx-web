@@ -442,6 +442,10 @@
   --amber-tint:rgba(240,180,41,.12); --amber-line:rgba(240,180,41,.32);
   --red:#ff9086; --red-solid:#ef4444; --red-btn:#c8322a;
   --red-tint:rgba(239,68,68,.13); --red-line:rgba(239,68,68,.34);
+  /* Tone used while a verdict is still unknown (guard state loading). Grey on
+     purpose: any coloured answer here would be a guess. */
+  --neutral:var(--ink-3); --neutral-solid:var(--surface-3);
+  --neutral-tint:var(--surface-2); --neutral-line:var(--line);
   --violet:#bda6ff; --blue:#7cb9ff; --gold:#f0b429;
   --grid:rgba(255,255,255,.035);
   --wash: radial-gradient(ellipse 70% 60% at 0% 0%, rgba(0,212,170,.14), transparent 60%);
@@ -500,6 +504,8 @@
   --amber-tint:rgba(240,180,41,.17); --amber-line:rgba(200,110,6,.36);
   --red:#b62a22; --red-solid:#e03b30; --red-btn:#bc2b22;
   --red-tint:rgba(224,59,48,.10); --red-line:rgba(224,59,48,.32);
+  --neutral:var(--ink-3); --neutral-solid:var(--surface-3);
+  --neutral-tint:var(--surface-2); --neutral-line:var(--line);
   --violet:#5c33bd; --blue:#1a63bd; --gold:#7d5700;
   --grid:rgba(15,23,42,.05);
   --wash: radial-gradient(ellipse 70% 60% at 0% 0%, rgba(0,184,148,.16), transparent 60%);

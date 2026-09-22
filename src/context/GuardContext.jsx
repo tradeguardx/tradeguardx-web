@@ -107,7 +107,10 @@ export function GuardProvider({ children }) {
     (accountId) => {
       const account = accounts.find((a) => a.id === accountId) ?? null;
       const slice = perAccount[accountId] ?? { connection: null, rules: null, loaded: false };
-      const input = { account, connection: slice.connection, rules: slice.rules, notifications };
+      // `loaded` rides along so nothing downstream mistakes "not fetched yet"
+      // for "not connected" — see guard.js.
+      const isLoaded = slice.loaded && loaded;
+      const input = { account, connection: slice.connection, rules: slice.rules, notifications, loaded: isLoaded };
       const enforcement = enforcementOf(input);
       const guard = guardOf(input, now);
       const gaps = gapsOf(input);
@@ -117,7 +120,7 @@ export function GuardProvider({ children }) {
       return {
         account,
         accountId,
-        loaded: slice.loaded && loaded,
+        loaded: isLoaded,
         connection: slice.connection,
         rules: slice.rules,
         enforcement,
@@ -144,7 +147,7 @@ export function GuardProvider({ children }) {
       now,
       notifications,
       unreadBreaches,
-      hasAlertChannel: gapsOf({ account: null, connection: null, rules: null, notifications }).every(
+      hasAlertChannel: gapsOf({ account: null, connection: null, rules: null, notifications, loaded }).every(
         (g) => g.key !== 'alerts',
       ),
       selected: stateFor(selectedTradingAccountId),
