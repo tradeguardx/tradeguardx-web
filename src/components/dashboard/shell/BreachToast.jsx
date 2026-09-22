@@ -1,17 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useTradingAccounts } from '../../../context/TradingAccountContext';
-import { fetchBreaches, acknowledgeBreaches } from '../../../api/breachesApi';
+import { useGuard } from '../../../context/GuardContext';
+import { acknowledgeBreaches } from '../../../api/breachesApi';
 import { sx } from './sx';
 
 /**
  * Breach toast — reference lines 394–415. Shows the newest unacknowledged
  * breach for the selected account, once, while the dashboard is open.
  * Auto-dismisses after 9s; "See what happened" goes to Live guard.
- * Replaces the old BreachBanner. Reads the same /breaches endpoint.
+ *
+ * Reads the unread list GuardContext already polls rather than polling
+ * /breaches itself: it was the third consumer of that endpoint on a 30s
+ * timer, asking for rows the context had fetched seconds earlier.
  */
-const POLL_MS = 30_000;
 const AUTO_MS = 9_000;
 
 function timeOf(iso) {
@@ -21,25 +24,21 @@ function timeOf(iso) {
 export default function BreachToast() {
   const { session } = useAuth();
   const { selectedTradingAccountId, selectedAccount } = useTradingAccounts();
+  const { unreadList } = useGuard();
   const navigate = useNavigate();
   const [breach, setBreach] = useState(null);
   const [seen, setSeen] = useState(() => new Set());
   const accessToken = session?.access_token;
 
+  // Newest unread breach on this account that has not been shown yet.
+  const candidate = useMemo(() => {
+    if (!selectedTradingAccountId) return null;
+    return (unreadList ?? []).find((b) => b.tradingAccountId === selectedTradingAccountId && !seen.has(b.id)) ?? null;
+  }, [unreadList, selectedTradingAccountId, seen]);
+
   useEffect(() => {
-    if (!accessToken || !selectedTradingAccountId) return undefined;
-    const ctrl = new AbortController();
-    const load = async () => {
-      try {
-        const list = await fetchBreaches({ accessToken, tradingAccountId: selectedTradingAccountId, unreadOnly: true, limit: 5, signal: ctrl.signal });
-        const next = (list || []).find((b) => !seen.has(b.id));
-        if (next && !ctrl.signal.aborted) setBreach(next);
-      } catch { /* quiet */ }
-    };
-    load();
-    const id = setInterval(load, POLL_MS);
-    return () => { ctrl.abort(); clearInterval(id); };
-  }, [accessToken, selectedTradingAccountId, seen]);
+    if (candidate) setBreach(candidate);
+  }, [candidate]);
 
   const dismiss = () => {
     if (!breach) return;

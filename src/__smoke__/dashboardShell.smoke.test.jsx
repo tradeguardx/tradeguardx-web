@@ -21,7 +21,6 @@ vi.mock('../lib/supabaseClient', () => ({
 }));
 vi.mock('../api/tradingAccountsApi', () => ({
   fetchTradingAccounts: vi.fn(async () => [account]),
-  fetchRuleLock: vi.fn(async () => ({ locked: false, days: 7 })),
   setRuleLockDays: vi.fn(),
 }));
 vi.mock('../api/exchangeCredentialsApi', () => ({
@@ -63,7 +62,7 @@ vi.mock('../api/tradesApi', () => ({
   fetchJournalTrades: vi.fn(async () => closedTrades),
   fetchBehaviorTags: vi.fn(async () => ({ behaviorTags: [{ tag: 'OVERTRADER', severity: 'HIGH', matchCount: 2, tradeCount: 3, description: 'You take too many trades.' }], disciplineScore: { overall: 72 } })),
 }));
-vi.mock('../api/userApi', () => ({ armLockout: vi.fn(), fetchLockout: vi.fn(async () => ({ lockedUntil: null })), LOCKOUT_HOUR_OPTIONS: [3, 6, 12] }));
+vi.mock('../api/userApi', () => ({ armLockout: vi.fn(), LOCKOUT_HOUR_OPTIONS: [3, 6, 12] }));
 vi.mock('../components/support/SupportChat', () => ({ default: () => null }));
 vi.mock('../components/dashboard/WelcomeCelebration', () => ({ default: () => null }));
 vi.mock('../components/dashboard/PhonePrompt', () => ({ default: () => null }));

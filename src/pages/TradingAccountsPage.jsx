@@ -519,23 +519,6 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
         </div>
 
         <ExchangeConnectionPanel account={account} accessToken={accessToken} toast={toast} />
-
-        {!isDelta && (
-          <div className="pt-4 mt-4 border-t" style={{ borderColor: 'var(--dash-border)' }}>
-            <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--dash-text-muted)' }}>
-              Extension pairing
-            </p>
-            <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-              Generate one-time pairing codes from the dedicated Pairing page for the account selected in the header.
-            </p>
-            <Link
-              to="/dashboard/pairing"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-accent/30 text-accent hover:bg-accent/10 transition-colors"
-            >
-              Open Pairing
-            </Link>
-          </div>
-        )}
             </div>
           </motion.div>
         )}

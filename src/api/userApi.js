@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './httpClient';
+import { apiPost } from './httpClient';
 
 export async function initUserProfile({ accessToken, fullName, email, attribution, signal } = {}) {
   if (!accessToken) {
@@ -41,14 +41,4 @@ export async function armLockout({ accessToken, tradingAccountId, hours, signal 
     { hours },
     { signal, headers: { Authorization: `Bearer ${accessToken}` } },
   );
-}
-
-export async function fetchLockout({ accessToken, tradingAccountId, signal } = {}) {
-  if (!accessToken) throw new Error('Missing access token');
-  if (!tradingAccountId) throw new Error('Missing trading account');
-
-  return apiGet(`/trading-accounts/${encodeURIComponent(tradingAccountId)}/lockout`, {
-    signal,
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
 }

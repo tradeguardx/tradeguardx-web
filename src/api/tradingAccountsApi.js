@@ -13,22 +13,6 @@ export async function fetchPairingStatus({ accessToken, tradingAccountId, signal
   return unwrap(payload);
 }
 
-/**
- * POST /user/pairing/revoke — disconnect extension session(s) for this trading account.
- */
-export async function revokePairingSessions({ accessToken, tradingAccountId, signal } = {}) {
-  if (!accessToken || !tradingAccountId) throw new Error('Missing access token or tradingAccountId');
-  const payload = await apiPost(
-    '/pairing/revoke',
-    { tradingAccountId },
-    {
-      signal,
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }
-  );
-  return unwrap(payload);
-}
-
 function unwrap(payload) {
   if (payload?.success && payload.data !== undefined) return payload.data;
   return payload;
@@ -185,32 +169,6 @@ export async function reconcileTradingAccount({
   );
   const data = unwrap(payload);
   return data?.account;
-}
-
-/**
- * POST /user/trading-accounts/:accountId/pairing-codes
- */
-export async function createPairingCode({ accessToken, accountId, signal } = {}) {
-  if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
-  const payload = await apiPost(
-    `/trading-accounts/${encodeURIComponent(accountId)}/pairing-codes`,
-    {},
-    {
-      signal,
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }
-  );
-  return unwrap(payload);
-}
-
-/** GET /trading-accounts/{id}/rule-lock — { days, locked, settling, lockedUntil, locksAt }. */
-export async function fetchRuleLock({ accessToken, accountId, signal } = {}) {
-  if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
-  const payload = await apiGet(`/trading-accounts/${encodeURIComponent(accountId)}/rule-lock`, {
-    signal,
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  return unwrap(payload);
 }
 
 /**

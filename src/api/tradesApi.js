@@ -104,24 +104,6 @@ function mergeTradeRecords(a, b) {
 }
 
 /**
- * GET /trades?tradingAccountId=&limit= (trade-service; Bearer Supabase or extension token).
- */
-export async function fetchTrades({ accessToken, tradingAccountId, limit = 100, signal } = {}) {
-  if (!accessToken) throw new Error('Missing access token');
-  if (!tradingAccountId) throw new Error('Missing tradingAccountId');
-  const q = new URLSearchParams();
-  q.set('tradingAccountId', tradingAccountId);
-  if (limit) q.set('limit', String(limit));
-  const payload = await apiGet(`/trades?${q.toString()}`, {
-    signal,
-    baseUrl: TRADE_API_BASE_URL,
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  const data = unwrap(payload);
-  return data?.trades ?? [];
-}
-
-/**
  * GET /journal/trades?tradingAccountId=&limit=
  * New journal endpoint with richer lifecycle projection.
  */
@@ -194,22 +176,6 @@ export async function fetchUnifiedTrades({ accessToken, tradingAccountId, limit 
     byBridge.set(bridgeKey, mergeTradeRecords(byBridge.get(bridgeKey), row));
   }
   return [...byBridge.values()];
-}
-
-export async function fetchJournalInsights({ accessToken, tradingAccountId, tradeUid, signal } = {}) {
-  if (!accessToken) throw new Error('Missing access token');
-  if (!tradingAccountId) throw new Error('Missing tradingAccountId');
-  if (!tradeUid) throw new Error('Missing tradeUid');
-  const q = new URLSearchParams();
-  q.set('tradingAccountId', tradingAccountId);
-  q.set('tradeUid', tradeUid);
-  const payload = await apiGet(`/journal/insights?${q.toString()}`, {
-    signal,
-    baseUrl: TRADE_API_BASE_URL,
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  const data = unwrap(payload);
-  return data?.insights ?? [];
 }
 
 export async function fetchJournalEvents({ accessToken, tradingAccountId, tradeUid, signal } = {}) {

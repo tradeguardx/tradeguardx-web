@@ -44,6 +44,9 @@ export function GuardProvider({ children }) {
   const [perAccount, setPerAccount] = useState({}); // id → { connection, rules, loaded }
   const [notifications, setNotifications] = useState(null);
   const [unreadBreaches, setUnreadBreaches] = useState(0);
+  // The unread rows themselves, so the toast doesn't poll /breaches a second
+  // time for data this context already has.
+  const [unreadList, setUnreadList] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   // Screens with their own countdowns (economic calendar) subscribe to the
@@ -52,11 +55,24 @@ export function GuardProvider({ children }) {
   const subscribeTick = useCallback(() => { setTickSubscribers((n) => n + 1); return () => setTickSubscribers((n) => Math.max(0, n - 1)); }, []);
   const inflight = useRef(0);
 
+  /**
+   * One pass of the guard fetch.
+   *
+   * `scope` is what makes the idle cost bounded: a poll only needs the account
+   * the user is looking at, while the switcher's per-account states barely
+   * change and are refreshed when the account list changes, on switch, and on
+   * any explicit refresh() after a mutation. Polling every account was 2+2N
+   * requests every 20s — 126/min for someone at the 20-account ceiling, to
+   * re-learn facts that had not moved.
+   */
   const load = useCallback(
-    async (signal) => {
+    async (signal, { scope = 'all' } = {}) => {
       if (!accessToken || accountsLoading) return;
       const myRun = ++inflight.current;
-      const ids = accounts.map((a) => a.id);
+      const all = accounts.map((a) => a.id);
+      const ids = scope === 'selected' && selectedTradingAccountId && all.includes(selectedTradingAccountId)
+        ? [selectedTradingAccountId]
+        : all;
 
       const [notif, breaches, ...pairs] = await Promise.all([
         settle(fetchNotificationSettings({ accessToken, signal })),
@@ -68,25 +84,45 @@ export function GuardProvider({ children }) {
       ]);
       if (signal?.aborted || myRun !== inflight.current) return;
 
-      const next = {};
+      const fetched = {};
       ids.forEach((id, i) => {
-        next[id] = { connection: pairs[i * 2].v, rules: pairs[i * 2 + 1].v, loaded: true };
+        fetched[id] = { connection: pairs[i * 2].v, rules: pairs[i * 2 + 1].v, loaded: true };
       });
-      setPerAccount(next);
+      // Merge rather than replace: a scoped pass must not wipe the states the
+      // switcher is still showing for the other accounts.
+      setPerAccount((prev) => {
+        const next = { ...fetched };
+        for (const id of all) if (!next[id] && prev[id]) next[id] = prev[id];
+        return next;
+      });
       if (notif.ok) setNotifications(notif.v);
       if (breaches.ok) setUnreadBreaches(Array.isArray(breaches.v) ? breaches.v.length : 0);
+      if (breaches.ok) setUnreadList(Array.isArray(breaches.v) ? breaches.v : []);
       setLoaded(true);
     },
-    [accessToken, accounts, accountsLoading],
+    [accessToken, accounts, accountsLoading, selectedTradingAccountId],
   );
 
   useEffect(() => {
     const ctrl = new AbortController();
-    load(ctrl.signal);
-    const poll = setInterval(() => load(ctrl.signal), POLL_MS);
+    // Full pass when the account set or the selection changes; polls after
+    // that are scoped to the selected account.
+    load(ctrl.signal, { scope: 'all' });
+    const poll = setInterval(() => {
+      // A hidden tab is not watching anything. The engine enforces server-side
+      // regardless, so polling a background tab buys nothing and costs a
+      // Lambda invocation every 20 seconds for as long as it stays open.
+      if (typeof document !== 'undefined' && document.hidden) return;
+      load(ctrl.signal, { scope: 'selected' });
+    }, POLL_MS);
+    // Catch up immediately on return, so the first thing a returning user sees
+    // is current rather than up to 20s stale.
+    const onVisible = () => { if (!document.hidden) load(ctrl.signal, { scope: 'selected' }); };
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
       ctrl.abort();
       clearInterval(poll);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, [load]);
 
@@ -147,6 +183,7 @@ export function GuardProvider({ children }) {
       now,
       notifications,
       unreadBreaches,
+      unreadList,
       hasAlertChannel: gapsOf({ account: null, connection: null, rules: null, notifications, loaded }).every(
         (g) => g.key !== 'alerts',
       ),
@@ -157,7 +194,7 @@ export function GuardProvider({ children }) {
       user,
       subscribeTick,
     }),
-    [loaded, now, notifications, unreadBreaches, stateFor, selectedTradingAccountId, accounts, refresh, user, subscribeTick],
+    [loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedTradingAccountId, accounts, refresh, user, subscribeTick],
   );
 
   return <GuardContext.Provider value={value}>{children}</GuardContext.Provider>;

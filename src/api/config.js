@@ -161,22 +161,3 @@ export function deltaApiKeysUrl(exchangeSlug) {
     ? 'https://global.delta.exchange/app/account/manageapikeys'
     : 'https://www.delta.exchange/app/account/manageapikeys';
 }
-
-/**
- * Resolved bases + which overrides are active (useful for debugging env mismatches).
- */
-export function getApiConfigSnapshot() {
-  return {
-    appEnv: resolveApiEnv(),
-    user: resolveApiBaseUrl(),
-    subscription: resolveSubscriptionApiBaseUrl(),
-    payments: resolvePaymentsApiBaseUrl(),
-    trades: resolveTradeApiBaseUrl(),
-    overrides: {
-      VITE_API_BASE_URL: Boolean(readOverride('VITE_API_BASE_URL')),
-      VITE_SUBSCRIPTION_API_BASE_URL: Boolean(readOverride('VITE_SUBSCRIPTION_API_BASE_URL')),
-      VITE_PAYMENTS_API_BASE_URL: Boolean(readOverride('VITE_PAYMENTS_API_BASE_URL')),
-      VITE_TRADE_API_BASE_URL: Boolean(readOverride('VITE_TRADE_API_BASE_URL')),
-    },
-  };
-}
