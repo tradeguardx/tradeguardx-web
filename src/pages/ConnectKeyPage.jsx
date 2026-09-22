@@ -5,8 +5,8 @@ import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useGuard } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
 import { connectExchangeCredentials, exchangeFromBrokerSlug } from '../api/exchangeCredentialsApi';
-import { DELTA_EGRESS_IP, deltaApiKeysUrl } from '../api/config';
 import { trySplitPastedCredentials } from '../components/dashboard/deltaConnectShared';
+import { ENGINE_EGRESS_IP, venueFor } from '../lib/venues';
 import { brokerLabel } from '../lib/labels';
 import { sx } from '../components/dashboard/shell/sx';
 
@@ -34,9 +34,10 @@ export default function ConnectKeyPage() {
   const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'Delta Exchange';
   const tag = (selectedAccount?.name || 'acct').replace(/[^A-Za-z0-9]+/g, '').slice(0, 8) || 'acct';
   const keyName = `TradeGuardX-${tag}-guard`;
-  const ip = DELTA_EGRESS_IP || '13.205.214.83';
+  const ip = ENGINE_EGRESS_IP || '13.205.214.83';
   const cooled = g.guard === 'locked';
   const exchangeSlug = selectedAccount ? exchangeFromBrokerSlug(selectedAccount.propFirmSlug) : null;
+  const v = venueFor(exchangeSlug) ?? venueFor('delta_india');
   const ready = !cooled && keyVal.trim().length > 4 && secretVal.trim().length > 4 && !!exchangeSlug;
 
   // Current step for the dot rail: 4 while pasting, 1 until a key exists.
@@ -65,8 +66,8 @@ export default function ConnectKeyPage() {
 
   const steps = [
     { n: 1, title: `Open your key page on ${venue}`, body: 'We link straight to it. Keep both tabs open — you will paste in each direction.', kind: 'link' },
-    { n: 2, title: 'Paste our IP into Allowed IPs', body: 'The exchange will only accept requests from this one address. It is the same address for everyone, and it is ours.', kind: 'ip' },
-    { n: 3, title: 'Give the key trading scope', body: 'Read-only will connect and look fine, and nothing will ever be enforced. Withdrawals are never needed — do not grant them.', kind: 'scope' },
+    { n: 2, title: `Paste our IP into ${v.ipField}`, body: v.ipRequired ? 'The exchange will only accept requests from this one address. It is the same address for everyone, and it is ours.' : `${v.name} lets you leave a key unbound; binding it to our address means the key works from our engine and nowhere else. Same address for everyone, and it is ours.`, kind: 'ip' },
+    { n: 3, title: `Give the key ${v.scopeLabel.toLowerCase()} permission`, body: 'Read-only will connect and look fine, and nothing will ever be enforced. Withdrawals are never needed — do not grant them.', kind: 'scope' },
     { n: 4, title: 'Name it and paste it back here', body: 'Paste key and secret. If you copied both together we will split them for you.', kind: 'paste' },
   ];
 
@@ -131,7 +132,7 @@ export default function ConnectKeyPage() {
               <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:74ch')}>{st.body}</p>
 
               {st.kind === 'link' && (
-                <a href={deltaApiKeysUrl()} target="_blank" rel="noreferrer" className="cx-link" style={sx('display:inline-flex;align-items:center;gap:7px;margin-top:12px;padding:9px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700;text-decoration:none')}>
+                <a href={v.keysUrl(exchangeSlug)} target="_blank" rel="noreferrer" className="cx-link" style={sx('display:inline-flex;align-items:center;gap:7px;margin-top:12px;padding:9px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700;text-decoration:none')}>
                   Open the key page
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 17L17 7M9 7h8v8" /></svg>
                 </a>
@@ -148,7 +149,7 @@ export default function ConnectKeyPage() {
               {st.kind === 'scope' && (
                 <div style={sx('margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px')}>
                   <div style={sx('padding:12px 14px;border:1px solid var(--mint-line);border-radius:10px;background:var(--mint-tint)')}>
-                    <div style={sx('font-size:12px;font-weight:700;color:var(--mint)')}>Trading — required</div>
+                    <div style={sx('font-size:12px;font-weight:700;color:var(--mint)')}>{v.scopeLabel} — required</div>
                     <p style={sx('margin:4px 0 0;font-size:12px;line-height:1.5;color:var(--ink-2)')}>Lets us cancel orders and close positions. Nothing else works without it.</p>
                   </div>
                   <div style={sx('padding:12px 14px;border:1px solid var(--amber-line);border-radius:10px;background:var(--amber-tint)')}>
@@ -157,7 +158,7 @@ export default function ConnectKeyPage() {
                   </div>
                   <div style={sx('padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)')}>
                     <div style={sx('font-size:12px;font-weight:700;color:var(--ink)')}>Withdrawal — never</div>
-                    <p style={sx('margin:4px 0 0;font-size:12px;line-height:1.5;color:var(--ink-2)')}>We never need it and will refuse a key that has it. Your funds cannot leave through us.</p>
+                    <p style={sx('margin:4px 0 0;font-size:12px;line-height:1.5;color:var(--ink-2)')}>{v.withdrawalNote} Your funds cannot leave through us.</p>
                   </div>
                 </div>
               )}

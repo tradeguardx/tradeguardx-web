@@ -22,7 +22,8 @@ import DeltaAppGuide from '../components/dashboard/DeltaAppGuide';
 import SecretInput from '../components/common/SecretInput';
 import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPanel } from '../components/dashboard/deltaConnectShared';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { DELTA_EGRESS_IP, deltaApiKeysUrl } from '../api/config';
+import { DELTA_EGRESS_IP } from '../api/config';
+import { venueFor } from '../lib/venues';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel, equityModeLabel } from '../lib/labels';
 
@@ -573,6 +574,9 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
   const isFunded = selected?.equityMode === 'funded';
   const exchangeSlug = exchangeFromBrokerSlug(selected?.brokerId);
   const isDelta = Boolean(exchangeSlug);
+  // Venue-specific words for the same four steps ("Delta" vs "CoinDCX", the
+  // name of their IP field, their permission label).
+  const v = venueFor(exchangeSlug) ?? venueFor('delta_india');
 
   useEffect(() => {
     if (!selected) return;
@@ -641,7 +645,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
         });
         setConnectOutcome({ ok: true, summary });
       } catch (credErr) {
-        setConnectOutcome({ ok: false, message: credErr?.message || 'Delta rejected the connection. Try again.' });
+        setConnectOutcome({ ok: false, message: credErr?.message || `${v.name} rejected the connection. Try again.` });
       }
     } catch (e) {
       toast.error('Could not create', e?.message || 'Try again.');
@@ -665,7 +669,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
       });
       setConnectOutcome({ ok: true, summary });
     } catch (credErr) {
-      setConnectOutcome({ ok: false, message: credErr?.message || 'Delta rejected the connection. Try again.' });
+      setConnectOutcome({ ok: false, message: credErr?.message || `${v.name} rejected the connection. Try again.` });
     } finally {
       setRetrying(false);
     }
@@ -885,7 +889,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 className="text-[11px] font-semibold uppercase tracking-wider mb-3"
                 style={{ color: 'var(--dash-text-muted)' }}
               >
-                {isFunded ? '5.' : '3.'} Connect Delta API key
+                {isFunded ? '5.' : '3.'} Connect {v.name} API key
               </p>
               <ConnectResultPanel
                 outcome={connectOutcome}
@@ -906,7 +910,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 className="text-[11px] font-semibold uppercase tracking-wider mb-3"
                 style={{ color: 'var(--dash-text-muted)' }}
               >
-                {isFunded ? '5.' : '3.'} Connect Delta API key{' '}
+                {isFunded ? '5.' : '3.'} Connect {v.name} API key{' '}
                 <span style={{ color: '#f59e0b' }}>(required)</span>
               </p>
               <div
@@ -916,17 +920,17 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   backgroundColor: 'rgba(0,212,170,0.04)',
                 }}
               >
-                {isMobile ? (
+                {isMobile && v.hasAppGuide ? (
                   // Mobile: users are in the Delta app. Guide them through Algo Hub
                   // → APIs with the screenshot walkthrough instead of the web link.
                   <>
                     <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--dash-text-primary)' }}>
-                      Create your key in the Delta app (~2 min):
+                      Create your key in the {v.name} app (~2 min):
                     </p>
                     <ol className="space-y-1.5 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                      <li><strong>1.</strong> Open the Delta app → tap <strong>Algo Hub</strong> → <strong>APIs</strong>.</li>
+                      <li><strong>1.</strong> Open the {v.name} app → tap <strong>{v.mobilePath}</strong>.</li>
                       <li>
-                        <strong>2. Whitelisted IP:</strong> paste our IP
+                        <strong>2. {v.ipField}:</strong> paste our IP
                         {DELTA_EGRESS_IP ? (
                           <button
                             type="button"
@@ -941,7 +945,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                           <span> (shown after you select a live environment)</span>
                         )}
                       </li>
-                      <li><strong>3.</strong> Tick <strong>Trading</strong>, create the key, then paste it below.</li>
+                      <li><strong>3.</strong> Tick <strong>{v.scopeLabel}</strong>, create the key, then paste it below.</li>
                     </ol>
                     <button
                       type="button"
@@ -959,25 +963,25 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 ) : (
                   <>
                     <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--dash-text-primary)' }}>
-                      Create your key on Delta (takes ~2 min):
+                      Create your key on {v.name} (takes ~2 min):
                     </p>
                     <div className="space-y-3">
                       <StepRow n={1}>
                         <a
-                          href={deltaApiKeysUrl(exchangeSlug)}
+                          href={v.keysUrl(exchangeSlug)}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold text-surface-950"
                           style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
                         >
-                          Open Delta &amp; create key
+                          Open {v.name} &amp; create key
                           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" aria-hidden>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                           </svg>
                         </a>
                       </StepRow>
 
-                      <StepRow n={2} label="Copy these into Delta's form">
+                      <StepRow n={2} label={`Copy these into ${v.name}'s form`}>
                         <div className="space-y-2">
                           <div
                             className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
@@ -1003,7 +1007,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                             className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
                             style={{ backgroundColor: 'var(--dash-bg-input)' }}
                           >
-                            <span className="text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>Whitelisted IP</span>
+                            <span className="text-[12px]" style={{ color: 'var(--dash-text-secondary)' }}>{v.ipField}</span>
                             {DELTA_EGRESS_IP ? (
                               <button
                                 type="button"
@@ -1034,7 +1038,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 12l3 3 5-6" />
                           </svg>
                           <span className="text-[12.5px]" style={{ color: 'var(--dash-text-primary)' }}>
-                            <strong>Trading</strong> — without this the kill switch can only alert, never act.
+                            <strong>{v.scopeLabel}</strong> — without this the kill switch can only alert, never act.
                           </span>
                         </div>
                       </StepRow>
@@ -1048,7 +1052,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   </>
                 )}
                 <p className="mt-3 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
-                  Secret shown once — copy it now. Stored encrypted (KMS); Delta never offers a withdrawal permission on API keys.
+                  Secret shown once — copy it now. Stored encrypted (KMS). {v.withdrawalNote}
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -1106,7 +1110,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
               </div>
               {(!apiKey.trim() || !apiSecret.trim()) && (
                 <p className="text-[11px] mt-2" style={{ color: 'rgb(251, 191, 36)' }}>
-                  Both the API Key and Secret are required to create a Delta account.
+                  Both the API Key and Secret are required to create a {v.name} account.
                 </p>
               )}
             </div>
