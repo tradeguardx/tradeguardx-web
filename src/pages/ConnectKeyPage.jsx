@@ -40,9 +40,6 @@ export default function ConnectKeyPage() {
   const v = venueFor(exchangeSlug) ?? venueFor('delta_india');
   const ready = !cooled && keyVal.trim().length > 4 && secretVal.trim().length > 4 && !!exchangeSlug;
 
-  // Current step for the dot rail: 4 while pasting, 1 until a key exists.
-  const step = result?.ok ? 5 : keyVal || secretVal ? 4 : g.connection?.status === 'active' ? 5 : 1;
-
   const copy = async (text) => {
     try { await navigator.clipboard.writeText(text); setCopied(text); setTimeout(() => setCopied(''), 1500); } catch { /* ignore */ }
   };
@@ -64,12 +61,22 @@ export default function ConnectKeyPage() {
     } finally { setBusy(false); }
   };
 
+  // Numbered AFTER filtering: a venue whose key form has no permission choice
+  // (CoinDCX — label, IP bind, OTP, done) would otherwise read 1, 2, 4.
   const steps = [
-    { n: 1, title: `Open your key page on ${venue}`, body: 'We link straight to it. Keep both tabs open — you will paste in each direction.', kind: 'link' },
-    { n: 2, title: `Paste our IP into ${v.ipField}`, body: v.ipRequired ? 'The exchange will only accept requests from this one address. It is the same address for everyone, and it is ours.' : `${v.name} lets you leave a key unbound; binding it to our address means the key works from our engine and nowhere else. Same address for everyone, and it is ours.`, kind: 'ip' },
-    { n: 3, title: `Give the key ${v.scopeLabel.toLowerCase()} permission`, body: 'Read-only will connect and look fine, and nothing will ever be enforced. Withdrawals are never needed — do not grant them.', kind: 'scope' },
-    { n: 4, title: 'Name it and paste it back here', body: 'Paste key and secret. If you copied both together we will split them for you.', kind: 'paste' },
-  ];
+    { title: `Open your key page on ${venue}`, body: 'We link straight to it. Keep both tabs open — you will paste in each direction.', kind: 'link' },
+    { title: `Paste our IP into ${v.ipField}`, body: v.ipRequired ? 'The exchange will only accept requests from this one address. It is the same address for everyone, and it is ours.' : `${v.name} lets you leave a key unbound; binding it to our address means the key works from our engine and nowhere else. Same address for everyone, and it is ours.`, kind: 'ip' },
+    { title: `Give the key ${v.scopeLabel.toLowerCase()} permission`, body: 'Read-only will connect and look fine, and nothing will ever be enforced. Withdrawals are never needed — do not grant them.', kind: 'scope' },
+    { title: 'Name it and paste it back here', body: 'Paste key and secret. If you copied both together we will split them for you.', kind: 'paste' },
+  ]
+    .filter((s) => s.kind !== 'scope' || v.scopeChoice !== false)
+    .map((s, i) => ({ ...s, n: i + 1 }));
+  const pasteStep = steps.find((s) => s.kind === 'paste')?.n ?? steps.length;
+
+  // Dot rail: the paste step while pasting, one past the last step when the
+  // key is in, 1 until a key exists. Derived from the list so a venue with
+  // one step fewer doesn't leave the rail stuck.
+  const step = result?.ok ? pasteStep + 1 : keyVal || secretVal ? pasteStep : g.connection?.status === 'active' ? pasteStep + 1 : 1;
 
   if (!selectedAccount) {
     return (
@@ -87,7 +94,7 @@ export default function ConnectKeyPage() {
     <div style={sx('max-width:900px')}>
       <div style={sx('margin-bottom:16px;max-width:76ch')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Connect enforcement</h1>
-        <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>This is the step that turns your rules from a note into something that acts. Four short moves, two tabs, about three minutes.</p>
+        <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>This is the step that turns your rules from a note into something that acts. {steps.length === 3 ? 'Three' : 'Four'} short moves, two tabs, about three minutes.</p>
       </div>
 
       <div style={sx('display:inline-flex;gap:3px;margin-bottom:20px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);box-shadow:inset 0 1px 2px rgba(0,0,0,.35)')}>

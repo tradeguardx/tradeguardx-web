@@ -54,6 +54,11 @@ const VENUES = {
     // works from our engine, which is the point — but it is their toggle.
     ipRequired: false,
     scopeLabel: 'Trade',
+    // CoinDCX's Create API key form has no permission choice — label, IP bind,
+    // OTP, done. Telling someone to "give the key trade permission" sends them
+    // looking for a control that isn't on the page. Connect verifies the scope
+    // afterwards anyway, and says so if the key can't act.
+    scopeChoice: false,
     mobilePath: 'Profile → API Management',
     withdrawalNote: 'Do not grant Withdraw. We never ask for it and refuse a key that has it.',
     suggestsKeyName: true,
