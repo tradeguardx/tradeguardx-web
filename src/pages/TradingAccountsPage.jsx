@@ -1156,7 +1156,9 @@ export default function TradingAccountsPage() {
   const [propsError, setPropsError] = useState('');
   const [propsQueried, setPropsQueried] = useState(false);
 
-  const accountCap = maxTradingAccountsForPlan(user?.plan);
+  // Unknown plan is not the free plan — don't block "Add account" on a guess
+  // while the subscription resolves. The server enforces the real cap.
+  const accountCap = user?.planKnown ? maxTradingAccountsForPlan(user?.plan) : null;
   const atAccountLimit = accountCap != null && accounts.length >= accountCap;
 
   const loading = accountsLoading;

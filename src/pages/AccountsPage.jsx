@@ -59,10 +59,18 @@ export default function AccountsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showAdd, accessToken]);
 
-  const maxAccounts = maxTradingAccountsForPlan(user?.plan);
-  const planName = user?.planLabel || 'Free';
-  const capLine = maxAccounts == null ? `Your ${planName} plan has no account limit.` : `Your ${planName} plan covers ${maxAccounts === 1 ? 'one' : maxAccounts === 5 ? 'five' : maxAccounts}.`;
-  const atCap = maxAccounts != null && accounts.length >= maxAccounts;
+  // Before the subscription answers the plan is unknown, not free. Capping a
+  // paying user at the free limit for that second disabled the one button
+  // they came to press; the server enforces the real limit either way.
+  const planKnown = Boolean(user?.planKnown);
+  const maxAccounts = planKnown ? maxTradingAccountsForPlan(user?.plan) : null;
+  const planName = planKnown ? user.planLabel || 'Free' : '';
+  const capLine = !planKnown
+    ? 'Checking your plan…'
+    : maxAccounts == null
+      ? `Your ${planName} plan has no account limit.`
+      : `Your ${planName} plan covers ${maxAccounts === 1 ? 'one' : maxAccounts === 5 ? 'five' : maxAccounts}.`;
+  const atCap = planKnown && maxAccounts != null && accounts.length >= maxAccounts;
 
   const go = (id, to) => { setSelectedTradingAccountId(id); navigate(to); };
 

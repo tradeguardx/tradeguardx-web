@@ -30,6 +30,12 @@ export function AuthProvider({ children }) {
       id: authUser.id,
       email: authUser.email || '',
       name: fullName || (authUser.email ? authUser.email.split('@')[0] : 'User'),
+      // False until the subscription call answers. "Free" and "we have not
+      // asked yet" are not the same thing, and showing the first while the
+      // second is true told paying users they were on the free plan for the
+      // second after login. Anything that renders a plan name or a plan limit
+      // waits on this.
+      planKnown: false,
       // `plan` is the EFFECTIVE plan used for feature gating across the app.
       // Mirrors user-service's strict policy: anything other than `status='active'`
       // collapses to `free` regardless of which plan was originally subscribed to.
@@ -99,6 +105,7 @@ export function AuthProvider({ children }) {
         return {
           ...base,
           ...accessFields,
+          planKnown: true,
           plan: 'free',
           planLabel: 'Free',
           billingPlan: 'free',
@@ -122,6 +129,7 @@ export function AuthProvider({ children }) {
       return {
         ...base,
         ...accessFields,
+        planKnown: true,
         // `plan` drives FEATURE GATING, so during a trial it must be the
         // entitlement (Pro+) — that's what "everything free for the trial" means.
         // When expired/free the app gates to free (the upgrade wall enforces the

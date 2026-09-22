@@ -47,7 +47,7 @@ export default function AvatarMenu() {
       ? `Your rules keep running. ${armedN}${armedN === 1 ? ' account stays' : ' accounts stay'} protected while you are signed out — enforcement is server-side, not browser-side.`
       : 'Nothing is being enforced on any account right now, so signing out changes nothing.';
 
-  const planNote = user?.planLabel ? `${user.planLabel} · billed monthly` : 'Free';
+  const planNote = user?.planKnown ? (user.planLabel ? `${user.planLabel} · billed monthly` : 'Free') : '';
   const initials = initialsOf(user?.name, user?.email);
   const go = (to) => { setOpen(false); navigate(to); };
 

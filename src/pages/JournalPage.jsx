@@ -98,7 +98,10 @@ export default function JournalPage() {
   const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [day, setDay] = useState(null);
 
-  const planDays = journalHistoryDaysForPlan(user?.plan);
+  // While the plan is unknown, ask for the full window rather than the free
+  // tier's 7 days — a paid user would otherwise see a truncated journal that
+  // silently fills in a second later.
+  const planDays = user?.planKnown ? journalHistoryDaysForPlan(user?.plan) : 90;
   const days = Math.min(planDays, 90);
   const cur = selectedAccount?.accountCurrency || 'USD';
 

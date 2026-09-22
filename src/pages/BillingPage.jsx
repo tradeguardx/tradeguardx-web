@@ -47,7 +47,7 @@ export default function BillingPage() {
 
   const status = user?.subscriptionStatus;
   const info = user?.isExpired ? STATUS_INFO.expired : STATUS_INFO[status];
-  const subscribedLabel = user?.subscribedPlanLabel || 'Free';
+  const subscribedLabel = user?.planKnown ? user.subscribedPlanLabel || 'Free' : '—';
   const source = user?.subscriptionSource || 'free';
   const hasBillingRecord = isPaidPlan(user?.subscribedPlanSlug) && source === 'payment';
   const isAdminComp = source === 'admin';
@@ -98,11 +98,14 @@ export default function BillingPage() {
     }
   }, [session, status, user?.isExpired, navigate, toast]);
 
-  const maxAccounts = maxTradingAccountsForPlan(user?.plan);
+  // Plan-derived figures are blank until the subscription answers: showing a
+  // paying user the free tier's limits, even for a second, is worse than a dash.
+  const planKnown = Boolean(user?.planKnown);
+  const maxAccounts = planKnown ? maxTradingAccountsForPlan(user?.plan) : null;
   const usage = [
     { k: 'Rules on', v: `${g.rulesOn} of ${g.rulesTotal || '—'}`, bar: g.rulesTotal ? `${Math.round((g.rulesOn / g.rulesTotal) * 100)}%` : '0%', fg: 'var(--ink)' },
-    { k: 'Trading accounts', v: maxAccounts == null ? `${accounts.length}` : `${accounts.length} of ${maxAccounts}`, bar: maxAccounts == null ? '20%' : `${Math.min(100, (accounts.length / maxAccounts) * 100)}%`, fg: maxAccounts != null && accounts.length >= maxAccounts ? 'var(--amber)' : 'var(--ink)' },
-    { k: 'Journal history', v: journalPeriodBadgeLabel(user?.plan), bar: '100%', fg: 'var(--mint)' },
+    { k: 'Trading accounts', v: !planKnown ? `${accounts.length}` : maxAccounts == null ? `${accounts.length}` : `${accounts.length} of ${maxAccounts}`, bar: maxAccounts == null ? '20%' : `${Math.min(100, (accounts.length / maxAccounts) * 100)}%`, fg: maxAccounts != null && accounts.length >= maxAccounts ? 'var(--amber)' : 'var(--ink)' },
+    { k: 'Journal history', v: planKnown ? journalPeriodBadgeLabel(user?.plan) : '—', bar: '100%', fg: 'var(--mint)' },
   ];
 
   const myRank = planTierRank(user?.billingPlan ?? user?.subscribedPlanSlug);

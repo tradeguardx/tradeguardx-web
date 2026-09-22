@@ -54,7 +54,12 @@ export default function Sidebar({ onNavigate }) {
   const upcoming = useUpcomingCalendar();
   const upcomingHigh = (upcoming.data?.days ?? []).reduce((n, d) => n + d.events.filter((e) => e.impact === 3 && e.time_status === 'exact' && new Date(e.event_time_utc).getTime() > guard.now).length, 0);
   // "Pro plan" with one account; the count only earns its place once there are several.
-  const planLine = accounts.length > 1 ? `${user?.planLabel || 'Free'} · ${accounts.length} accounts` : `${user?.planLabel || 'Free'} plan`;
+  // Until the subscription answers, say nothing about the plan rather than
+  // "Free" — a paying user reading that on every login is a small betrayal.
+  const planWord = user?.planKnown ? user.planLabel || 'Free' : '';
+  const planLine = planWord
+    ? (accounts.length > 1 ? `${planWord} · ${accounts.length} accounts` : `${planWord} plan`)
+    : (accounts.length > 1 ? `${accounts.length} accounts` : '');
 
   const protect = [
     { id: 'overview', to: '/dashboard/overview', label: 'Overview', end: true },
