@@ -12,6 +12,8 @@ const BROKER_LABELS = {
   delta_india: 'Delta Exchange',
   delta_global: 'Delta Exchange (Global)',
   coindcx: 'CoinDCX',
+  coindcx_inr: 'CoinDCX Futures (INR)',
+  coindcx_usdt: 'CoinDCX Futures (USDT)',
 };
 
 const EQUITY_MODE_LABELS = { funded: 'Funded', live: 'Live', demo: 'Demo' };

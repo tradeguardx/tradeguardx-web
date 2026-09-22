@@ -128,14 +128,14 @@ export default function AccountsPage() {
 
             <div style={sx('padding:16px 19px;border-top:1px solid var(--line);background:var(--surface-2)')}>
               <div style={sx('display:flex;align-items:center;gap:10px;margin-bottom:11px;flex-wrap:wrap')}>
-                <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)")}>Delta India API connection</span>
+                <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)")}>{venue} API connection</span>
                 <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;padding:4px 8px;border-radius:999px", { background: key.bg, color: key.fg })}>{key.badge}</span>
               </div>
 
               {key.has ? (
                 <div style={sx('padding:14px 15px;border:1px solid var(--line);border-radius:13px;background:var(--surface)')}>
                   <div style={sx('display:grid;gap:5px;font-size:12.5px;color:var(--ink-2)')}>
-                    <span>Delta user: <strong style={sx('color:var(--ink);font-weight:600')}>{user?.email ?? '—'}</strong></span>
+                    <span>Exchange user: <strong style={sx('color:var(--ink);font-weight:600')}>{user?.email ?? '—'}</strong></span>
                     <span>Account ID: <strong style={sx('color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums')}>{conn.exchangeAccountId ?? '—'}</strong></span>
                     <span>Last verified: <strong style={sx('color:var(--ink);font-weight:600')}>{fmtVerified(conn.lastValidatedAt)}</strong></span>
                     <span style={sx('color:var(--ink-3);margin-top:2px')}>{key.scope}</span>
@@ -176,7 +176,7 @@ export default function AccountsPage() {
       ) : (
         <section style={sx('padding:19px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface-2)')}>
           <div style={sx('font-size:14px;font-weight:600')}>Add another account</div>
-          <p style={sx('margin:5px 0 12px;font-size:12.5px;color:var(--ink-2);max-width:70ch')}>{capLine} Delta Exchange is the only venue we support today — CoinDCX and prop-firm support are in progress, and we will say so plainly rather than list them as if they work.</p>
+          <p style={sx('margin:5px 0 12px;font-size:12.5px;color:var(--ink-2);max-width:70ch')}>{capLine} Delta Exchange and CoinDCX Futures are the venues we enforce on today — prop-firm support is in progress, and we will say so plainly rather than list it as if it works.</p>
           <button type="button" disabled={atCap} onClick={() => setShowAdd(true)} style={sx('padding:9px 14px;border-radius:9px;font-size:12.5px;font-weight:700', atCap ? { border: '1px solid var(--surface-3)', background: 'var(--surface-3)', color: 'var(--ink-3)', cursor: 'not-allowed' } : { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' })}>{atCap ? `Plan limit reached (${maxAccounts})` : 'Choose a venue'}</button>
         </section>
       )}
