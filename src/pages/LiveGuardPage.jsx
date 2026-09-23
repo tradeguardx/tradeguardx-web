@@ -440,7 +440,7 @@ export default function LiveGuardPage() {
       <section id="positions" style={sx('margin-bottom:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
         <div style={sx('padding:15px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px')}>
           <h3 style={sx(H3)}>Open positions</h3>
-          <span style={sx('font-size:11.5px;color:var(--ink-3)')}>{posOpen ? `${positions.length} open · unrealised counts toward the loss budget` : 'flat'}</span>
+          <span style={sx('font-size:11.5px;color:var(--ink-3)')}>{posOpen ? `${positions.length} open · unrealised counts toward your loss budget` : 'flat'}</span>
         </div>
         {posOpen ? (
           <div>
@@ -451,7 +451,17 @@ export default function LiveGuardPage() {
               const side = String(pick(p, 'side') || '').toUpperCase();
               const long = side === 'BUY' || side === 'LONG';
               const stop = pick(p, 'stopLoss', 'stop_loss', 'stopPrice');
-              const upnl = Number(pick(p, 'unrealizedPnl', 'unrealisedPnl', 'pnl'));
+              /**
+               * `pnl` on an OPEN journal row is the realised result, which is
+               * null until the position closes — Number(null) is 0, so every
+               * open position rendered a confident "$0.00" that was not a
+               * reading at all. The engine does track unrealised P&L (it is
+               * inside currentEquity, which is how the loss budget sees it),
+               * but nothing persists it per position, so the row genuinely
+               * does not know. Say so instead of inventing a zero.
+               */
+              const upnlRaw = pick(p, 'unrealizedPnl', 'unrealisedPnl');
+              const upnl = upnlRaw == null || upnlRaw === '' ? NaN : Number(upnlRaw);
               return (
                 <div key={pick(p, 'tradeUid', 'trade_uid') || p.id} style={sx('display:grid;grid-template-columns:1.1fr .7fr .8fr .8fr .9fr .9fr;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);font-size:13px;align-items:center;font-variant-numeric:tabular-nums')}>
                   <span style={sx('font-weight:600')}>{pick(p, 'symbol') || '—'}</span>

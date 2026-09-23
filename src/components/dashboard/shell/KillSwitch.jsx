@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useGuard } from '../../../context/GuardContext';
 import { useToast } from '../../common/ToastProvider';
 import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../../../api/userApi';
+import { fetchJournalTrades } from '../../../api/tradesApi';
 import { sx } from './sx';
 import { formatRemaining } from './format';
 
@@ -50,6 +51,14 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   const [stage, setStage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [blocked, setBlocked] = useState(null); // server POSITION_OPEN message
+  /**
+   * The server refuses a lockout while a position is open, and Live guard
+   * says so BEFORE you commit. This modal — the same action, reached from
+   * the top bar — only found out by submitting and catching the 409, so the
+   * two entry points disagreed about whether the button was usable. Ask the
+   * same question Live guard asks, from the same source, before arming.
+   */
+  const [openPositions, setOpenPositions] = useState(null);
   const cardRef = useRef(null);
   const firstRef = useRef(null);
 
@@ -59,8 +68,31 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   // product and have nothing to do with a user deciding to stop: the engine's
   // cooldown watchdog closes whatever is opened during the lock either way.
   const noEnforce = !armed && !canLockOut;
-  const armable = !armed && !noEnforce && !blocked;
+  const posOpen = (openPositions?.length ?? 0) > 0;
+  const armable = !armed && !noEnforce && !blocked && !posOpen;
   const ksGap = gap && gap.key !== 'alerts' ? gap : null;
+
+  // Same source Live guard reads, so the two screens cannot disagree.
+  useEffect(() => {
+    if (!open || !session?.access_token || !account?.id) return undefined;
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const rows = await fetchJournalTrades({
+          accessToken: session.access_token,
+          tradingAccountId: account.id,
+          limit: 50,
+          signal: ctrl.signal,
+        });
+        setOpenPositions((Array.isArray(rows) ? rows : []).filter((r) => String(r?.status ?? '').toUpperCase() === 'OPEN'));
+      } catch {
+        // Unknown, not zero. Leaving it null keeps the arm path open and lets
+        // the server's 409 be the backstop rather than blocking on a failed
+        // fetch — the same call the page makes, with the same tolerance.
+      }
+    })();
+    return () => ctrl.abort();
+  }, [open, session?.access_token, account?.id]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -137,10 +169,11 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
             </div>
           )}
 
-          {!armed && blocked && (
+          {!armed && !noEnforce && (blocked || posOpen) && (
             <div style={sx('padding:15px 16px;border:1px solid var(--amber-line);border-radius:13px;background:var(--amber-tint)')}>
               <div style={sx('font-size:12.5px;font-weight:700;color:var(--amber)')}>Can&rsquo;t arm while a position is open</div>
-              <p style={sx('margin:6px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>Locking you out now would leave you holding a position you could neither manage nor close through us. Flatten first, then arm.</p>
+              <p style={sx('margin:6px 0 10px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>Locking you out now would leave you holding {openPositions?.length === 1 ? 'a position' : `${openPositions?.length ?? ''} positions`} you could neither manage nor close through us. Flatten first, then arm.</p>
+              <button type="button" onClick={() => { onClose(); navigate('/dashboard/live'); }} style={sx('padding:7px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700')}>View open positions</button>
             </div>
           )}
 
