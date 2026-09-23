@@ -17,6 +17,8 @@ import { sx } from './shell/sx';
 const VENUES = {
   delta: { logo: '/brokers/delta-exchange.svg', accent: '#FD7D02', short: 'DX' },
   coindcx: { logo: null, accent: '#EF7A18', short: 'CD' },
+  bitget: { logo: '/brokers/bitget.svg', accent: '#00F0FF', short: 'BG' },
+  bybit: { logo: null, accent: '#F7A600', short: 'BY' },
 };
 
 function familyOf(slug) {
