@@ -361,7 +361,7 @@ export default function LiveGuardPage() {
         <div style={sx('padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px;flex-wrap:wrap')}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round"><path d="M12 3v7" /><path d="M6.4 6.8a8 8 0 1011.2 0" /></svg>
           <h3 style={sx("margin:0;font:600 16px/1.2 'Space Grotesk',sans-serif")}>Commitment controls</h3>
-          <span style={sx('font-size:11.5px;color:var(--ink-3)')}>Separate from your rules. Both are switches you throw while calm, and neither has an undo.</span>
+          <span style={sx('font-size:11.5px;color:var(--ink-3)')}>{armed && !manual ? 'A rule locked this account — the details are below. These two controls are the ones you throw yourself.' : 'Separate from your rules. Both are switches you throw while calm, and neither has an undo.'}</span>
         </div>
         <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))')}>
 
@@ -370,7 +370,10 @@ export default function LiveGuardPage() {
               <span style={sx('width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--red-tint);color:var(--red)')}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
               </span>
-              <h4 style={sx("margin:0;font:600 14.5px/1.2 'Space Grotesk',sans-serif")}>Manual killswitch</h4>
+              {/* A rule-armed lockout renders in this panel too. Calling it
+                  "Manual killswitch" while it is showing a lock the engine
+                  armed is how a user ends up asking why THEY set 7 hours. */}
+              <h4 style={sx("margin:0;font:600 14.5px/1.2 'Space Grotesk',sans-serif")}>{armed && !manual ? 'Locked by a rule' : 'Manual killswitch'}</h4>
             </div>
             {!armed && (
               <p style={sx('margin:0 0 13px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>Lock yourself out of this account for a window you choose. <strong style={sx('color:var(--ink);font-weight:700')}>You can&rsquo;t call it off yourself</strong> — there is no off button, only the clock. Support can lift it if something real happens.</p>
@@ -413,6 +416,10 @@ export default function LiveGuardPage() {
                   </div>
                 )}
               </div>
+            )}
+
+            {armed && !manual && (
+              <p style={sx('margin:0 0 13px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>You did not arm this one — a rule did. The manual switch returns here once it lifts.</p>
             )}
 
             {armed && (
