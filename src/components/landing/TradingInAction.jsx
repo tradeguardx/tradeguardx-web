@@ -7,7 +7,7 @@ import { DAYS } from '../../content/thirtyDays';
  * Shorts already wired for /30-days (single source of truth: src/content/
  * thirtyDays.js, so a new day added there shows up here automatically). The
  * point of the section is proof, not a demo reel — these are real sessions on
- * the founder's own Delta Exchange account.
+ * the founder's own Delta account.
  *
  * Deliberately a native horizontal scroll-snap row (touch/trackpad/arrow-key
  * scrollable) rather than a JS-driven carousel or scroll-jacked pinned
@@ -73,7 +73,7 @@ function ClipCard({ day, index }) {
         <iframe
           className="absolute inset-0 h-full w-full"
           src={`https://www.youtube-nocookie.com/embed/${day.video}?autoplay=1&rel=0&playsinline=1`}
-          title={`Day ${day.n} — TradeGuardX enforcing on Delta Exchange`}
+          title={`Day ${day.n} — TradeGuardX enforcing on Delta`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
           frameBorder="0"
@@ -82,7 +82,7 @@ function ClipCard({ day, index }) {
         <button
           type="button"
           onClick={play}
-          aria-label={`Play Day ${day.n} — TradeGuardX enforcing on Delta Exchange`}
+          aria-label={`Play Day ${day.n} — TradeGuardX enforcing on Delta`}
           className="group absolute inset-0 block h-full w-full text-left"
         >
           <img
@@ -159,7 +159,7 @@ export default function TradingInAction() {
           Watch it <span style={{ color: 'var(--accent, #00d4aa)' }}>enforce</span>, live.
         </h2>
         <p className="mt-4 max-w-[54ch] text-[15px] leading-relaxed text-slate-400">
-          Real sessions on a live Delta Exchange account, green days and red ones — including the days the account got locked. Scroll to watch a few.
+          Real sessions on a live Delta account, green days and red ones — including the days the account got locked. Scroll to watch a few.
         </p>
       </div>
 

@@ -24,6 +24,9 @@
     --accent-rgb: 0,212,170;
     --veil: 255,255,255;
     --shade: 0,0,0;
+    /* The page gutter, as a token: a full-bleed mobile rail has to put it
+       back inside itself so its first card still lines up with the headline. */
+    --gutter: 28px;
     --serif: "Space Grotesk", system-ui, sans-serif;
     --sans: "Inter", system-ui, sans-serif;
     --mono: "Space Grotesk", ui-monospace, monospace;
@@ -49,7 +52,7 @@
   }
 
   /* ---------- layout primitives ---------- */
-  .tgx-home .wrap{ max-width: 1240px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
+  .tgx-home .wrap{ max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter); position: relative; z-index: 1; }
   .tgx-home .eyebrow{
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
     text-transform: uppercase; color: var(--accent); font-weight: 500;
@@ -422,10 +425,31 @@
     text-transform: uppercase; color: var(--text-3);
   }
 
+  /* On a phone, three stacked quote cards is a screen and a half of scrolling
+     past near-identical boxes — you read the first and thumb past the rest.
+     Side-by-side on a snap rail they read as a set again, one at a time.
+     The rail bleeds to the viewport edges and puts the gutter back inside
+     itself, so the first card still lines up with the headline above while
+     the next one peeks in at the right edge. That peek is the only affordance
+     a horizontal scroll gets, so the cards stop short of full width. */
   @media (max-width: 760px){
-    .tgx-home .reviews{ grid-template-columns: 1fr; }
+    .tgx-home .reviews{
+      display: flex; grid-template-columns: none;
+      gap: 12px; overflow-x: auto; overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      margin-inline: calc(var(--gutter) * -1);
+      padding-inline: var(--gutter);
+      scroll-padding-inline: var(--gutter);
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tgx-home .reviews::-webkit-scrollbar{ display: none; }
+    .tgx-home .rv-card{
+      flex: 0 0 82%; scroll-snap-align: start;
+      padding: 20px 21px;
+    }
+    /* Leftover from the 2-column layout; means nothing once this is a flex rail. */
     .tgx-home .reviews .rv-card:last-child{ grid-column: auto; }
-    .tgx-home .rv-card{ padding: 20px 21px; }
   }
 
   /* ── Tax centre ──────────────────────────────────────────────────────
@@ -2290,7 +2314,7 @@
     .tgx-home .promo-close{ width: 28px; height: 28px; }
   }
   @media (max-width: 560px) {
-    .tgx-home .wrap{ padding: 0 18px; }
+    .tgx-home{ --gutter: 18px; }
     /* 3 stats stay in a compact centered row; just shrink so they fit */
     .tgx-home .trust-grid{ gap: 22px 8px; }
     .tgx-home .trust-stat .num-big{ font-size: 26px; }
@@ -2364,7 +2388,27 @@
 .tgx-home .ex-lockup-badge.live{
   color: var(--accent); background: rgba(var(--accent-rgb), 0.12); border-color: rgba(var(--accent-rgb), 0.28);
 }
+/* Same treatment as the reviews: four venue cards stacked into a column was a
+   full phone screen spent on a list of four names. As a rail it's one glance. */
 @media (max-width: 560px){
-  .tgx-home .exchange-lockup{ flex-direction: column; align-items: stretch; gap: 10px; }
-  .tgx-home .ex-lockup-card{ justify-content: center; }
+  .tgx-home .exchange-lockup{
+    flex-wrap: nowrap; justify-content: flex-start;
+    gap: 10px; overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    margin-inline: calc(var(--gutter) * -1);
+    padding-inline: var(--gutter);
+    scroll-padding-inline: var(--gutter);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tgx-home .exchange-lockup::-webkit-scrollbar{ display: none; }
+  .tgx-home .ex-lockup-card{
+    flex: 0 0 auto; scroll-snap-align: start;
+    padding: 14px 18px; gap: 10px;
+  }
+  /* A card lifting under a thumb mid-swipe just reads as jitter. */
+  .tgx-home .ex-lockup-card:hover{ transform: none; }
+  .tgx-home .ex-lockup-logo{ height: 20px; }
+  .tgx-home .ex-lockup-name,
+  .tgx-home .ex-lockup-word{ font-size: 16px; }
 }

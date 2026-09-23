@@ -36,7 +36,7 @@ const CITIES = [
   'Kolkata', 'Jaipur', 'Surat', 'Indore', 'Lucknow', 'Chandigarh', 'Kochi', 'Nagpur',
 ];
 
-const ACTIONS = ['claimed a founding spot', 'started a free trial', 'connected Delta Exchange'];
+const ACTIONS = ['claimed a founding spot', 'started a free trial', 'connected Delta'];
 
 // A stable-ish shuffle without Math.random (blocked in some render paths) — seed
 // off the mount time so each page load differs, then walk the list.

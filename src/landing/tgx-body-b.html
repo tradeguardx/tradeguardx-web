@@ -5,12 +5,12 @@
     <div class="section-head" style="margin-bottom:0;">
       <span class="eyebrow">Available on</span>
       <h2 class="display h2" style="font-size:clamp(26px,3.4vw,40px);">Your exchange, covered.</h2>
-      <p>Live on Delta Exchange and CoinDCX today &mdash; Bybit and Bitget are landing next.</p>
+      <p>Live on Delta and CoinDCX today &mdash; Bybit and Bitget are landing next.</p>
     </div>
     <div class="exchange-lockup">
       <div class="ex-lockup-card live">
         <img src="/brokers/delta-exchange.svg" alt="Delta Exchange" class="ex-lockup-logo">
-        <span class="ex-lockup-name">Delta Exchange</span>
+        <span class="ex-lockup-name">Delta</span>
         <span class="ex-lockup-badge live">Live now</span>
       </div>
       <div class="ex-lockup-card live">
@@ -83,15 +83,15 @@
       </details>
       <details class="faq-item">
         <summary>Will TradeGuardX have access to my funds?</summary>
-        <p>No. Your Delta Exchange API key only has trade and balance-read scope &mdash; it can never withdraw, and your funds never leave your own Delta wallet. During a cooldown we don't move anything: we cancel your orders, close your positions, and block new trades until the lock lifts.</p>
+        <p>No. Your Delta API key only has trade and balance-read scope &mdash; it can never withdraw, and your funds never leave your own Delta wallet. During a cooldown we don't move anything: we cancel your orders, close your positions, and block new trades until the lock lifts.</p>
       </details>
       <details class="faq-item">
         <summary>How are my API keys stored and secured?</summary>
         <p>Your keys are <b>encrypted at rest</b> and used only from our single fixed, <b>IP-whitelisted</b> server &mdash; so even in the unlikely event of a leak, they'd be useless from anywhere else. Combined with the trade-only scope (never withdrawal), TradeGuardX is designed to enforce your rules and nothing else.</p>
       </details>
       <details class="faq-item">
-        <summary>What happens if the Delta Exchange API goes down?</summary>
-        <p>If we lose connection to Delta Exchange, you're notified immediately on Telegram and email. Existing positions remain on Delta Exchange &mdash; we don't hold them. When the API is restored, we resume monitoring exactly where we left off. We also run a backup heartbeat that triggers a "full close" if connection is lost for &gt;60 seconds during an active session, configurable per account.</p>
+        <summary>What happens if the Delta API goes down?</summary>
+        <p>If we lose connection to Delta, you're notified immediately on Telegram and email. Existing positions remain on Delta &mdash; we don't hold them. When the API is restored, we resume monitoring exactly where we left off. We also run a backup heartbeat that triggers a "full close" if connection is lost for &gt;60 seconds during an active session, configurable per account.</p>
       </details>
       <details class="faq-item">
         <summary>Can I just disable the rules when I want to trade more?</summary>
@@ -99,15 +99,15 @@
       </details>
       <details class="faq-item">
         <summary>Which exchanges can I connect?</summary>
-        <p>Delta Exchange and CoinDCX futures are both live, and one Pro subscription covers both &mdash; connect either or both, no upgrade required. Delta came first because it has the best perp API in India for what we need: granular, fast, and stable. CoinDCX followed.</p>
+        <p>Delta and CoinDCX futures are both live, and one Pro subscription covers both &mdash; connect either or both, no upgrade required. Delta came first because it has the best perp API in India for what we need: granular, fast, and stable. CoinDCX followed.</p>
       </details>
       <details class="faq-item">
         <summary>Is this regulated? Is it safe to give you API access?</summary>
-        <p>API keys are scoped (no withdrawal), encrypted at rest, and tied to whitelisted IPs only. We're not a financial advisor and don't custody funds &mdash; we're a risk-enforcement layer that talks to Delta Exchange on your behalf. Read our docs for the full security posture.</p>
+        <p>API keys are scoped (no withdrawal), encrypted at rest, and tied to whitelisted IPs only. We're not a financial advisor and don't custody funds &mdash; we're a risk-enforcement layer that talks to Delta on your behalf. Read our docs for the full security posture.</p>
       </details>
       <details class="faq-item">
-        <summary>Does this work on the Delta Exchange mobile app?</summary>
-        <p>Yes. Enforcement is server-side via Delta Exchange's API, so it doesn't matter whether you place the trade from web, mobile, or any third-party client. If a trade hits your account, we see it within ~120ms and act if it breaks a rule. Alerts go to your choice of Telegram or email &mdash; you don't need to keep anything open.</p>
+        <summary>Does this work on the Delta mobile app?</summary>
+        <p>Yes. Enforcement is server-side via Delta's API, so it doesn't matter whether you place the trade from web, mobile, or any third-party client. If a trade hits your account, we see it within ~120ms and act if it breaks a rule. Alerts go to your choice of Telegram or email &mdash; you don't need to keep anything open.</p>
       </details>
     </div>
   </div>
