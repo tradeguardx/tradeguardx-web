@@ -13,7 +13,7 @@ export const HELP_ARTICLES = [
     slug: 'getting-started',
     title: 'Getting started',
     intro:
-      'TradeGuardX protects a Delta Exchange account in four steps, all on the dashboard: create the account, connect an enforcement key, switch on rules, turn on alerts. Until all four are done your rules are written down but nothing enforces them.',
+      'TradeGuardX protects a Delta Exchange or CoinDCX futures account in four steps, all on the dashboard: create the account, connect an enforcement key, switch on rules, turn on alerts. Until all four are done your rules are written down but nothing enforces them.',
     sections: [
       {
         heading: '1. Create your TradeGuardX account',
@@ -23,12 +23,12 @@ export const HELP_ARTICLES = [
       {
         heading: '2. Add a trading account',
         body:
-          'On the dashboard go to Accounts → Add another account → Choose a venue. Delta Exchange is the venue we support today. Give it a name; that name is what the account switcher in the top bar shows.',
+          'On the dashboard go to Accounts → Add another account → Choose a venue. Delta Exchange and CoinDCX futures are both live, and one subscription covers both — connect either or both. Give the account a name; that name is what the account switcher in the top bar shows.',
       },
       {
         heading: '3. Connect the enforcement key',
         body:
-          'Go to Connect key. Create an API key on Delta with Trading scope (withdrawals NOT permitted), whitelist the TradeGuardX IP shown on the page, paste the key and secret, and verify. This is the step that lets us cancel orders and close positions for you. A read-only key is accepted but leaves the account in WATCHING — we can see fills but cannot act.',
+          'Go to Connect key. Create an API key on your exchange, pin it to the TradeGuardX IP shown on the page, then paste the key and secret and verify. Never grant withdrawals — we do not need them and refuse a key that has them. This is the step that lets us cancel orders and close positions for you. A key that cannot trade is accepted but leaves the account in WATCHING — we see fills but cannot act. The Connect key page walks through your venue\'s own form field by field.',
       },
       {
         heading: '4. Switch on your rules',
@@ -55,9 +55,9 @@ export const HELP_ARTICLES = [
   },
   {
     slug: 'connecting-your-key',
-    title: 'Connecting your Delta key',
+    title: 'Connecting your exchange key',
     intro:
-      'TradeGuardX enforces server-side: our risk engine holds a live connection to Delta and acts on your account 24/7, dashboard open or not. That needs an API key with trading scope.',
+      'TradeGuardX enforces server-side: our risk engine holds a live connection to your exchange and acts on your account 24/7, dashboard open or not. That needs an API key that is allowed to trade. The steps are the same on Delta and CoinDCX — each venue just names the fields differently.',
     sections: [
       {
         heading: 'Create the key on Delta',
@@ -65,9 +65,15 @@ export const HELP_ARTICLES = [
           'Delta → Account → API keys → Create. Tick Trading. Do NOT tick withdrawals — TradeGuardX never needs them and refuses keys that have them. Add the IP address shown on the Connect key page to the key\'s whitelist; without it Delta rejects every request we make.',
       },
       {
+        heading: 'Create the key on CoinDCX',
+        body:
+          'CoinDCX → coindcx.com/create-api. Give the key a label, tick Bind IP Address to API key and paste the IP shown on our Connect key page, then confirm with the two one-time codes CoinDCX sends — one by email, one by SMS. There is no permission checkbox on that form, so there is nothing to tick for trading; we verify the key can act as soon as you connect it and say so if it cannot. The key and secret appear once, on that screen — copy both before you leave it.',
+        note: 'CoinDCX is futures only. Spot trades are not enforced and do not appear in the tax centre.',
+      },
+      {
         heading: 'Paste and verify',
         body:
-          'Back on Connect key, paste the key and secret (pasting both in one box works — we split them) and press Connect. We verify against Delta immediately and show the Delta user, account id and time verified on the Accounts card.',
+          'Back on Connect key, paste the key and secret (pasting both in one box works — we split them) and press Connect. We verify against the exchange immediately and show the account id and time verified on the Accounts card.',
       },
       {
         heading: 'Trading scope vs read-only',
@@ -79,7 +85,8 @@ export const HELP_ARTICLES = [
       {
         heading: 'Key failed / Unprotected',
         body:
-          'Delta rejected the key — it was deleted, rotated, or the IP whitelist is missing. The engine retries a failed key every 15 minutes, so a transient rejection usually recovers on its own; otherwise reconnect from Accounts.',
+          'The exchange rejected the key — it was deleted, rotated, or the IP it is pinned to no longer matches ours. The engine retries a failed key every 15 minutes, so a transient rejection usually recovers on its own; otherwise reconnect from Accounts.',
+        note: 'A Delta or CoinDCX key created without an IP binding can also simply expire. If enforcement stops with no other change, that is the first thing to check.',
       },
       {
         heading: 'Keys cannot be changed during a lock',
@@ -161,6 +168,43 @@ export const HELP_ARTICLES = [
     ],
   },
   {
+    slug: 'tax-centre',
+    title: 'Tax centre',
+    intro:
+      'Your Indian financial-year result, rebuilt from exchange fills and reconciled against your wallet, then shown under each treatment a CA might apply. TradeGuardX reports the numbers; it does not file anything and does not decide your treatment.',
+    sections: [
+      {
+        heading: 'One account at a time',
+        body:
+          'The figures always cover the account selected in the top bar, never every account at once. We have no way to know whose account an account is — if you added a family member\'s key to run the kill switch on it, merging the two would put two people\'s trades under one PAN. Switch accounts to see each one.',
+        note: 'If every account is yours they belong on one return, because F&O results net across accounts under a single PAN. Add the figures together until the combined CA report ships.',
+      },
+      {
+        heading: 'F&O and VDA are separate, deliberately',
+        list: [
+          { bold: 'F&O / Business:', text: 'futures and options. Gains and losses net against each other, and fees are part of the trading result.' },
+          { bold: 'VDA / 115BBH:', text: 'flat 30%, no set-off, no deductions beyond cost of acquisition.' },
+        ],
+        note: 'They are never added into one total, because a combined figure across two tax regimes would mean nothing. Which treatment applies is a question for your CA.',
+      },
+      {
+        heading: 'Currency and the FX rate',
+        body:
+          'Delta settles in USD and CoinDCX futures in USDT, so an Indian figure has to be converted. We derive the rate from your own capital movements rather than a market feed, show it on the page, and label it a disclosed assumption. It is not a statutory rate, and your CA may apply a different one under Rule 115.',
+      },
+      {
+        heading: 'Which trades are included',
+        body:
+          'Closed positions only, dated by when the position went flat, inside the selected financial year (1 April to 31 March, IST). Open positions are not income yet and are excluded. CoinDCX spot is not carried at all — we only read futures.',
+      },
+      {
+        heading: 'Where the numbers come from',
+        body:
+          'Every figure is rebuilt from raw exchange fills using FIFO lot matching, then reconciled against your wallet ledger. The Tax transactions tab lists it position by position so any total can be traced back to the trades behind it, and the CA report tab exports the working.',
+      },
+    ],
+  },
+  {
     slug: 'common-issues',
     title: 'Common issues',
     intro: 'Most questions come down to the pill: what it says, and why.',
@@ -173,7 +217,7 @@ export const HELP_ARTICLES = [
       {
         heading: 'The pill says WATCHING',
         body:
-          'Your key is read-only. Create a new key on Delta with Trading scope and use Accounts → Replace key.',
+          'Your key cannot trade, so we can see fills but never close anything. Create a new key that is allowed to trade and use Accounts → Replace key.',
       },
       {
         heading: 'I cannot edit a rule',
@@ -193,7 +237,7 @@ export const HELP_ARTICLES = [
       {
         heading: 'Trade missing from the journal',
         body:
-          'Trades arrive from Delta over the live connection. If one is missing after a minute, check the key is still ARMED on Accounts — a failed key stops the feed until it recovers (we retry every 15 minutes).',
+          'Trades arrive from the exchange over the live connection. If one is missing after a minute, check the key is still ARMED on Accounts — a failed key stops the feed until it recovers (we retry every 15 minutes). On CoinDCX, only futures are carried; spot trades never appear.',
       },
       {
         heading: 'Subscription past due',
@@ -221,20 +265,19 @@ export const HELP_ARTICLES = [
         heading: 'Plans',
         list: [
           { bold: 'Free:', text: '1 trading account, 7 days of journal history.' },
-          { bold: 'Pro (₹1,299/mo):', text: 'up to 5 accounts, 90 days of history.' },
-          { bold: 'Pro+ (₹2,999/mo):', text: 'unlimited accounts, all history, priority support.' },
+          { bold: 'Pro:', text: 'unlimited trading accounts, 3 financial years of history, tax centre, priority support. ₹1,299/month, ₹3,299/quarter or ₹8,999/year — the longer intervals are the discount.' },
         ],
-        note: 'Prices include 18% GST, billed monthly, cancel anytime. Every rule is on every plan.',
+        note: 'Prices include 18% GST, cancel anytime. Every rule is on every plan, on every account — Pro is about how many accounts and how much history, never which rules. Pro+ was retired in September 2026; anyone already on it keeps it.',
       },
       {
         heading: 'Switching or cancelling',
         body:
-          'Plan & billing → Upgrade takes you to Pricing; Manage billing opens the Dodo customer portal where you can change card or cancel. Paid features stay until the end of the period.',
+          'Plan & billing → Upgrade takes you to Pricing, where you pick monthly, quarterly or yearly; Manage billing opens the Dodo customer portal where you can change card or cancel. Paid features stay until the end of the period you have paid for.',
       },
       {
         heading: 'Refund policy',
         body:
-          '7-day money-back on the first paid month. After that, cancel anytime to stop future charges. See the Refund Policy page.',
+          'Full refund if you ask within 14 days of your first payment or a renewal, provided you have not already been refunded for the same plan in the past 12 months. After that, cancel anytime to stop future charges. See the Refund Policy page.',
       },
       {
         heading: 'Deleting your account',
