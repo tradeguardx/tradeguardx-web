@@ -105,6 +105,21 @@ export default function LiveGuardPage() {
     ? 'Clears on its own, then the account trades again. Rule and key changes are blocked so you cannot undo it — but the key here is read-only, so we cannot close anything you open in the meantime. This one holds because you decided it does.'
     : 'Clears on its own, then the account trades again. Support can lift it early if something real happens — you cannot.';
   const manual = g.lockReason === 'manual';
+  /**
+   * Which rule locked you out, and why the clock reads what it does.
+   *
+   * A max-trades lockout runs to your next daily reset, so at 17:09 it shows
+   * "6h 51m" — which looks like an arbitrary seven-hour penalty unless the
+   * screen says it is the rest of the day. It didn't, and that is exactly
+   * the question it produced.
+   */
+  const LOCK_REASON = {
+    max_trades_day: { name: 'Max trades per day', why: 'You used the day\u2019s trades, so the day is done. This is not a fixed penalty — it runs to your next daily reset.', daily: true },
+    daily_loss: { name: 'Daily loss protection', why: 'You hit the day\u2019s loss limit. The lock runs to your next daily reset, not a fixed number of hours.', daily: true },
+    daily_target: { name: 'Daily profit target', why: 'You booked the target and went flat, so the day locks to keep the gain. It runs to your next daily reset.', daily: true },
+    consecutive_losses: { name: 'Close after N losses', why: 'A losing streak tripped the cooldown. This one IS a fixed window, and it lifts on the clock.', daily: false },
+  };
+  const lockInfo = manual ? null : LOCK_REASON[g.lockReason] ?? null;
   // TODO(api): the lockout carries no armed-at; elapsed is estimated from the longest window.
   const lockPct = g.lockUntil ? `${Math.max(0, Math.min(100, (1 - g.lockRemainingMs / (12 * 3600_000)) * 100)).toFixed(1)}%` : '0%';
 
@@ -404,17 +419,18 @@ export default function LiveGuardPage() {
               <div style={sx('padding:16px 17px;border:1px solid var(--red-line);border-radius:12px;background:var(--red-tint)')}>
                 <div style={sx('display:flex;align-items:center;gap:8px')}>
                   <span style={sx('width:7px;height:7px;border-radius:50%;background:var(--red-solid);animation:tgxPulse 2s ease-in-out infinite')} />
-                  <span style={sx('font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--red);font-weight:700')}>{manual ? 'Manual lockout — armed by you' : 'Lockout — armed by a rule'}</span>
+                  <span style={sx('font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--red);font-weight:700')}>{manual ? 'Manual lockout — armed by you' : lockInfo ? `Lockout — ${lockInfo.name}` : 'Lockout — armed by a rule'}</span>
                 </div>
                 <div style={sx('display:flex;align-items:baseline;gap:12px;margin-top:11px;flex-wrap:wrap')}>
                   <span style={sx("font:700 38px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.035em;color:var(--ink)")}>{formatRemaining(g.lockRemainingMs)}</span>
-                  <span style={sx('font-size:12.5px;color:var(--ink-2)')}>until release</span>
+                  <span style={sx('font-size:12.5px;color:var(--ink-2)')}>{lockInfo?.daily ? 'until your daily reset' : 'until release'}</span>
                 </div>
                 <div style={sx('margin-top:13px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}><div style={sx('height:100%;border-radius:999px;background:var(--red-solid)', { width: lockPct })} /></div>
                 <div style={sx('display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap')}>
-                  <span>{manual ? 'Armed by you' : 'Armed by a rule'}</span>
+                  <span>{manual ? 'Armed by you' : lockInfo ? lockInfo.name : 'Armed by a rule'}</span>
                   <span style={sx('text-align:right;white-space:nowrap')}>Trading resumes {dayAt(g.lockUntil, tz)} at <strong style={sx('color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums')}>{clockAt(g.lockUntil, tz)}</strong></span>
                 </div>
+                {lockInfo && <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--red-line);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{lockInfo.why}</p>}
                 <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--red-line);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{armedBody}</p>
               </div>
             )}
