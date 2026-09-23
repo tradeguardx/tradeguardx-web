@@ -338,20 +338,37 @@ export default function TaxPage() {
             Your {fyLabelFor(fy)} economic result, rebuilt from exchange fills and reconciled against your
             wallet — then shown under each treatment your CA may apply.
           </p>
+          {/* Per account, not per user.
+              These figures used to cover every account under the login at once,
+              because tax is assessed per PERSON. But we never ask whose account
+              an account is — someone running the kill switch on a spouse's or a
+              friend's Delta key had two taxpayers' trades added into one figure.
+              One account at a time can't do that. The trade-off is real and is
+              stated rather than hidden: a user who owns several accounts must
+              combine them, since F&O losses do net across accounts on one PAN. */}
           {accounts.length > 1 && (
             <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs" style={{ color: MUTED }}>
               <span>
-                Covers <strong style={{ color: PRIMARY }}>all {accounts.length} of your accounts</strong> together — tax is assessed on you, not per exchange account:
+                Figures below are for{' '}
+                <strong style={{ color: PRIMARY }}>{selectedAccount?.name ?? 'this account'}</strong> only. Your
+                other {accounts.length - 1 === 1 ? 'account is' : `${accounts.length - 1} accounts are`} reported
+                separately — switch accounts to see {accounts.length - 1 === 1 ? 'it' : 'them'}:
               </span>
-              {accounts.map((a) => (
-                <span
-                  key={a.id}
-                  className="rounded-md px-1.5 py-0.5 text-[11px] font-semibold"
-                  style={{ backgroundColor: RAISED, border: `1px solid ${BORDER}`, color: PRIMARY }}
-                >
-                  {a.name}
-                </span>
-              ))}
+              {accounts
+                .filter((a) => a.id !== selectedAccount?.id)
+                .map((a) => (
+                  <span
+                    key={a.id}
+                    className="rounded-md px-1.5 py-0.5 text-[11px] font-semibold"
+                    style={{ backgroundColor: RAISED, border: `1px solid ${BORDER}`, color: PRIMARY }}
+                  >
+                    {a.name}
+                  </span>
+                ))}
+              <span className="basis-full" style={{ color: FAINT }}>
+                If every account is yours, they belong on one return — F&amp;O results net across accounts under a
+                single PAN, so add the figures together. Accounts held by someone else are taxed on them, not on you.
+              </span>
             </p>
           )}
         </div>

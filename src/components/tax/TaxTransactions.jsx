@@ -300,8 +300,11 @@ export default function TaxTransactions({ accessToken, tradingAccountId, fy }) {
           <span className="text-[11px] font-bold" style={{ color: AMBER }}>
             Converted at ₹{data.conversion.rate}/{data.conversion.from}
           </span>
+          {/* Names no venue. This said "Delta settles in…" while listing
+              B-XRP_USDT rows from a CoinDCX account — and the page is now
+              scoped to one account anyway, so "this account" is exact. */}
           <span className="text-[11px] leading-relaxed" style={{ color: MUTED }}>
-            Delta settles in {data.conversion.from}; a disclosed assumption, not a statutory rate.
+            This account settles in {data.conversion.from}; a disclosed assumption, not a statutory rate.
           </span>
         </div>
       )}
