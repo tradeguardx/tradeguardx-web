@@ -28,6 +28,10 @@ const PRERENDER_ROUTES = [
   '/help/troubleshooting',
   '/security',
   '/crypto-kill-switch',
+  // An SEO landing page that is not prerendered is an empty shell to a
+  // crawler — the one failure mode that makes the whole page pointless.
+  // Add every new public content route here at the same time as the route.
+  '/crypto-tax-india',
   '/roadmap',
 ];
 
