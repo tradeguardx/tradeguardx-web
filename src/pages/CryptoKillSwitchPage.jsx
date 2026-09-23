@@ -24,7 +24,7 @@ const FAQ = [
   },
   {
     q: 'Which exchanges does a crypto kill switch work with in India?',
-    a: 'TradeGuardX enforces server-side through the exchange API, so it works with Delta Exchange today and CoinDCX next. Because enforcement is server-side rather than in the browser, it applies whether you trade from web, the mobile app, or a third-party client.',
+    a: 'TradeGuardX enforces server-side through the exchange API, so it works with Delta Exchange and CoinDCX today. Because enforcement is server-side rather than in the browser, it applies whether you trade from web, the mobile app, or a third-party client.',
   },
   {
     q: 'Does a kill switch need access to my funds?',
@@ -64,7 +64,7 @@ const SECTIONS = [
   {
     h: 'Built for Indian crypto traders',
     p: [
-      "TradeGuardX is built for traders on Indian crypto exchanges, starting with Delta Exchange perpetuals and CoinDCX next. Pricing is in rupees, support runs on Telegram in your timezone, and the rules are shaped around the leverage and volatility profile of INR-margined perps rather than transplanted from an equities tool.",
+      "TradeGuardX is built for traders on Indian crypto exchanges — Delta Exchange and CoinDCX perpetuals, both live. Pricing is in rupees, support runs on Telegram in your timezone, and the rules are shaped around the leverage and volatility profile of INR-margined perps rather than transplanted from an equities tool.",
     ],
   },
 ];

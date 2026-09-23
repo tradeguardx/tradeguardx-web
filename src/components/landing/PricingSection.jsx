@@ -20,7 +20,7 @@ const PRO = [
   <>Cooldown after consecutive losses</>,
   <>Leverage & risk-per-trade <b>enforcement</b></>,
   <>AI trade journal + <b>behaviour pattern</b> detection</>,
-  <>CoinDCX access the day it ships</>,
+  <>Delta Exchange <b>and CoinDCX</b> — both included</>,
 ];
 
 export default function PricingSection() {

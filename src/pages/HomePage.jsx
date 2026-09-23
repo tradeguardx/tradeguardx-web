@@ -19,7 +19,7 @@ export default function HomePage() {
   useSEO({
     title: 'TradeGuardX — India’s first risk engine for crypto traders',
     description:
-      'India’s first real-time risk enforcement for crypto. Connect Delta Exchange — the moment you breach a daily-loss, tilt, overtrading, or risk-per-trade limit you set, we auto-close your positions and lock the account. CoinDCX coming soon.',
+      'India’s first real-time risk enforcement for crypto. Connect Delta Exchange or CoinDCX — the moment you breach a daily-loss, tilt, overtrading, or risk-per-trade limit you set, we auto-close your positions and lock the account.',
     url: 'https://tradeguardx.com',
     jsonLd: faqJsonLd,
   });

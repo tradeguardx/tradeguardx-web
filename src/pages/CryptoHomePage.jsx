@@ -71,7 +71,7 @@ const FAQ_LD = {
     ['Will TradeGuardX have access to my funds?', 'No. Your Delta Exchange API key only has trade and balance-read scope — it can never withdraw, and your funds never leave your own Delta wallet. During a cooldown we don’t move funds; we cancel orders, close positions, and block new trades until the lock lifts.'],
     ['Does this work on the Delta Exchange mobile app?', 'Yes. Enforcement is server-side via Delta Exchange’s API, so it works whether you trade from web, mobile, or a third-party client. We detect a trade within ~120ms and act if it breaks a rule. Alerts go to WhatsApp, Telegram, or email.'],
     ['Can I disable the rules when I want to trade more?', 'You can change rules in your dashboard, but loosening any limit goes through a 24-hour cooling-off window — you cannot loosen a rule in the heat of a bad session. You can tighten any rule instantly.'],
-    ['Why Delta Exchange first and when does CoinDCX go live?', 'Delta Exchange has the most granular, stable perp API in India. CoinDCX integration is in active build, targeting public launch within 30 days; Pro subscribers get it at no extra cost.'],
+    ['Which exchanges can I connect?', 'Delta Exchange and CoinDCX futures are both live, and one subscription covers both — connect either or both. Delta came first because it has the most granular, stable perp API in India; CoinDCX followed.'],
   ].map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
 
@@ -87,7 +87,7 @@ export default function CryptoHomePage() {
   useSEO({
     title: "India's First Crypto Trading Kill Switch",
     description:
-      "Never blow another trading account. Set daily-loss, max-trades, position-size and cooldown rules once — TradeGuardX blocks new orders, closes open positions, and locks your account the moment you break a limit. Built for Delta Exchange; CoinDCX next.",
+      "Never blow another trading account. Set daily-loss, max-trades, position-size and cooldown rules once — TradeGuardX blocks new orders, closes open positions, and locks your account the moment you break a limit. Live on Delta Exchange and CoinDCX.",
     url: 'https://tradeguardx.com',
     jsonLd: FAQ_LD,
   });
