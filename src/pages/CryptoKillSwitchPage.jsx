@@ -24,15 +24,27 @@ const FAQ = [
   },
   {
     q: 'Which exchanges does a crypto kill switch work with in India?',
-    a: 'TradeGuardX enforces server-side through the exchange API, so it works with Delta Exchange and CoinDCX today. Because enforcement is server-side rather than in the browser, it applies whether you trade from web, the mobile app, or a third-party client.',
+    a: 'Delta Exchange (India or Global) and CoinDCX futures, both live today, with one subscription covering both. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Bybit and Bitget are next. Spot is not covered on any venue — futures only.',
   },
   {
     q: 'Does a kill switch need access to my funds?',
-    a: 'No, and you should refuse any that asks. TradeGuardX uses a Delta Exchange API key scoped to read and trade only — that scope can cancel orders and close positions, but it can never withdraw or transfer. Your funds never leave your own exchange wallet.',
+    a: 'No, and you should refuse any tool that asks. We use an API key scoped to read and trade only. That is enough to cancel an order and close a position, and it is nowhere near enough to move a rupee — the key cannot withdraw or transfer, and we refuse a key that has been given withdrawal rights. Your funds never leave your own exchange wallet. On Delta there is no withdrawal option on API keys at all; on CoinDCX, simply never tick it.',
   },
   {
     q: 'Can I turn the kill switch off when I want to keep trading?',
     a: "You can change any rule, but loosening one goes through a cooling-off window — you can't raise your loss limit in the middle of a bad session. Tightening applies instantly. A kill switch you can disable in the moment you most want to disable it isn't a kill switch.",
+  },
+  {
+    q: 'Does it work if I trade from the exchange mobile app?',
+    a: "Yes, and that is the main reason it runs on our servers rather than in your browser. We hold a live connection to your account, so it does not matter where the order came from — the exchange website, the phone app, or a bot you wrote yourself. If the trade reaches your account, we see it in roughly 120 milliseconds and act if it breaks a rule.",
+  },
+  {
+    q: 'What happens to my open positions when it fires?',
+    a: "They get market-closed, then checked. We cancel every resting order first, close each position, and then verify you are actually flat rather than assuming the instruction landed — if the exchange is briefly slow or a close silently fails, it retries. After that the account is locked, and anything you open during the lock is closed on sight without counting toward your trade limit or losing streak.",
+  },
+  {
+    q: 'Can I lock myself out before a rule fires?',
+    a: "Yes. Pick three, six or twelve hours and confirm, and the account is shut to you for that window. There is no cancel button — it does not exist, not in settings and not behind a confirmation. You can extend it, never shorten it. You do have to be flat to arm it, so it is a decision between trades rather than mid-position.",
   },
   {
     q: 'Do I need a kill switch if I already have discipline?',
@@ -44,27 +56,68 @@ const SECTIONS = [
   {
     h: 'What a crypto kill switch actually does',
     p: [
-      "Most account blowups aren't one catastrophic trade. They're a normal loss, followed by a fast re-entry to make it back, followed by a bigger position because the first re-entry failed. By the time the day ends the account is down far more than any single trade risked.",
-      'A crypto kill switch breaks that chain mechanically. You set the limits once — daily loss cap, maximum trades per session, risk per trade, cooldown after consecutive losses, leverage cap, liquidation distance. When you cross one, enforcement is automatic: open orders cancelled, positions closed, new entries blocked until the cooldown lifts.',
+      "Most blown accounts don't die from one bad trade. They die from the one after it. You take a normal loss, you're annoyed, you re-enter within ninety seconds to get it back, that one fails too, so the third is double size. Nobody plans that sequence. It takes about forty minutes.",
+      'A kill switch breaks the chain mechanically. You decide the limits on a calm morning — how much you can lose in a day, how many trades you get, how much risk per position, how long you sit out after a losing streak. When you cross one, nothing is negotiated: your open orders are cancelled, your positions are market-closed, and new entries are shut off until the clock says otherwise.',
+      "The whole design rests on one idea. The version of you who sets the limit and the version who wants to override it are not the same person, and the first one should win.",
+    ],
+  },
+  {
+    h: 'The rules you can actually set',
+    p: [
+      'Seven of them, and every one is on every plan — the paid tier buys more accounts and more history, never more protection.',
+      'Four will close your positions and lock the account: a daily loss cap, a maximum trade count, a daily profit target (so a good day survives contact with a bad afternoon), and a losing-streak cooldown that escalates — three losses in a row buys you three hours off, five buys twelve.',
+      'Risk per trade works differently: it closes the single position whose stop sits too far away, and leaves everything else alone. Two more only warn you — one when a position has been sitting open without a stop attached, one when the account is deep in drawdown. We would rather say that plainly than let you believe something is watching when it is only talking.',
+    ],
+  },
+  {
+    h: 'The lockout you pull yourself',
+    p: [
+      "Some days you can feel it coming before any rule has fired. There's a red button for that. Pick three, six or twelve hours, confirm, and the account is shut to you for that long.",
+      "There is no cancel. Not hidden in settings, not behind a confirmation — it does not exist. The clock is the only thing that lifts it, and you can extend it but never shorten it, because a lock you can shorten by re-arming for one hour was never a lock. You have to be flat to arm it, so it's a decision you make between trades rather than in the middle of one.",
     ],
   },
   {
     h: 'Why server-side enforcement matters',
     p: [
-      "Browser extensions can only act on what's in the tab, and only while the tab is open. Close the laptop, switch to the exchange app on your phone, or place an order through a third-party client, and a browser-based tool sees nothing.",
-      'TradeGuardX runs server-side against the Delta Exchange API. It watches your account continuously — screen off, phone in your pocket, laptop shut — and typically detects and acts on a rule breach within about 120 milliseconds. That is the difference between a kill switch and a reminder.',
+      "A browser extension can only see the tab it's in, and only while that tab is open. Shut the laptop, pick up your phone, place an order through a third-party client, and it sees nothing at all. It is a reminder wearing the costume of a safety system.",
+      'TradeGuardX holds a live connection to your exchange from our own servers. Screen off, phone in your pocket, laptop shut in a bag — a breach is typically detected and acted on inside about 120 milliseconds. If you open a position while a lock is running, it gets closed on sight, and it does not count toward your trade limit or your losing streak.',
     ],
   },
   {
-    h: 'What to look for in a crypto killswitch app',
+    h: 'You cannot loosen a rule in the moment you want to',
     p: [
-      'Four things separate a real enforcement tool from a dashboard with alerts. First, does it act, or only notify? An alert that you can ignore is not protection. Second, is enforcement server-side, so it covers mobile and third-party clients? Third, is the API scope trade-only, never withdrawal? Fourth — the one people skip — can you loosen your own limits instantly? If you can, the tool fails exactly when it matters.',
+      'This is the part people argue with, and it is the part that does the work.',
+      'Tightening a limit applies immediately. Loosening one — raising your loss cap, allowing more trades, shortening a cooldown, switching a rule off — is staged for twenty-four hours. You can still make the change; you just cannot make it at 2pm on the day you are down and certain the next one comes back. While a lock is active your API key is frozen too, so pulling the key is not the exit either.',
     ],
   },
   {
-    h: 'Built for Indian crypto traders',
+    h: 'What it can\'t do, plainly',
     p: [
-      "TradeGuardX is built for traders on Indian crypto exchanges — Delta Exchange and CoinDCX perpetuals, both live. Pricing is in rupees, support runs on Telegram in your timezone, and the rules are shaped around the leverage and volatility profile of INR-margined perps rather than transplanted from an equities tool.",
+      "We cannot stop an order from reaching the exchange. No exchange in the world hands a third party that switch, and anyone who tells you otherwise is selling something. What we do is close the position immediately after it opens and then verify you are actually flat.",
+      'That has a real cost worth knowing: a forced close can book a small loss on fees alone, and that loss counts toward your losing-streak rule. One rule tripping another is a thing that happens.',
+      'And on a retail exchange this is a cooperative tool, not a cage. You own your exchange login and you can always revoke the key. It is built for the trader who wants to be protected from themselves, not for one trying to beat it.',
+    ],
+  },
+  {
+    h: 'What you get besides the switch',
+    p: [
+      'Breach alerts arrive on Telegram or email within seconds, because the engine acting while you are away is only useful if you find out it did.',
+      'Every trade lands in a journal with the rules that fired on it, so a bad week has an actual record instead of a feeling. And there is a tax centre that rebuilds your Indian financial-year result from raw exchange fills — F&O treated as business income, VDA under 115BBH, kept separate because they are different regimes and adding them produces a number that means nothing. It exports the working for your CA.',
+    ],
+  },
+  {
+    h: 'Which Indian exchanges we support',
+    p: [
+      'Two, both live today, both futures.',
+      'Delta Exchange came first — India or Global, whichever account you hold. It has the most granular and stable perpetuals API in the country, which matters when your protection is only as fast as the data feed behind it.',
+      'CoinDCX futures went live in September 2026. Their INR and USDT margin modes are the same instruments with a different wallet posting margin, so one key covers both and your rules apply across the pair. Spot is not covered on either venue: we read futures, enforce futures, and say so rather than letting you assume.',
+      'One subscription covers every exchange you connect. Bybit and Bitget are next.',
+    ],
+  },
+  {
+    h: 'When you don\'t need this',
+    p: [
+      "If you stop at your daily limit without help, you do not need us and we would rather say so than take the money. This exists for one specific gap — between what a trader writes down on a calm Sunday and what they actually do on a Wednesday afternoon, three trades down, convinced the fourth is the one.",
     ],
   },
 ];
@@ -103,8 +156,8 @@ export default function CryptoKillSwitchPage() {
           </h1>
           <p className="mt-5 text-lg leading-relaxed text-slate-400">
             A kill switch caps the day, not the trade. Set your daily loss limit once — TradeGuardX
-            cancels your orders, closes your positions, and locks new entries the moment you cross it,
-            enforced server-side on Delta Exchange whether your screen is on or not.
+            cancels your orders, closes your positions, and locks new entries the moment you cross it.
+            Enforced from our servers on Delta Exchange and CoinDCX, whether your screen is on or not.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
@@ -176,7 +229,7 @@ export default function CryptoKillSwitchPage() {
             </li>
             <li>
               <Link to="/security" className="text-accent hover:underline">
-                Security: how your Delta API key is stored and scoped
+                Security: how your API key is stored and scoped
               </Link>
             </li>
             <li>
