@@ -50,7 +50,7 @@ const MODES = [
   {
     level: 'Level 01 · Soft', name: 'Alert', accent: 'amber', icon: <BellIcon />,
     trigger: <>Triggers when you&apos;re <b>approaching a limit</b></>,
-    body: <>We ping you instantly on <b>WhatsApp, Telegram, and email</b>. No spam — only when you&apos;re about to cross a line. You decide whether to slow down.</>,
+    body: <>We ping you instantly on <b>Telegram and email</b>. No spam — only when you&apos;re about to cross a line. You decide whether to slow down.</>,
     footer: <Channels />,
   },
   {

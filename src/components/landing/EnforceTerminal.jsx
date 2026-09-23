@@ -23,7 +23,7 @@ const ShieldIcon = () => (
 
 const ACTIONS = [
   { icon: <EyeIcon />, t: 'We watch — wherever you trade', d: 'Enforcement runs on our servers via the Delta API. Mobile app, web, third-party clients — all covered. Nothing to keep open.' },
-  { icon: <BellIcon />, t: 'We notify — only what matters', d: 'Instant alerts to Telegram, WhatsApp, and email. You choose which channels, which rules, which severity. No noise, no daily summary spam.' },
+  { icon: <BellIcon />, t: 'We notify — only what matters', d: 'Instant alerts to Telegram and email. You choose which channels, which rules, which severity. No noise, no daily summary spam.' },
   { icon: <ShieldIcon />, t: 'We enforce — automatically', d: "Cross a hard limit and we cancel your orders, close your positions, and lock the account until your cooldown ends — any new trade is closed on sight. Discipline that doesn't depend on willpower." },
 ];
 

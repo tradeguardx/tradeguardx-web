@@ -7,20 +7,28 @@ const Check = () => (
   </svg>
 );
 
+/**
+ * Mirrors plans.features.cardFeatures in the database, which is what /pricing
+ * renders. This section is hardcoded, so it had drifted: it sold Free as
+ * alerts-only while /pricing said Free includes the kill switch, and it
+ * advertised WhatsApp alerts, which the Alerts page has never offered.
+ * Every rule is on every plan — Pro buys accounts and history, not rules.
+ */
 const FREE = [
-  <>Real-time <b>monitoring</b> of your Delta account</>,
-  <>Daily-loss & risk-per-trade <b>alerts</b></>,
-  <>Alerts on <b>Telegram, WhatsApp & email</b></>,
-  <>Basic trade journal</>,
+  <>Automatic <b>kill switch</b> — cancels orders & closes positions</>,
+  <><b>Every rule</b>, on one trading account</>,
+  <>Alerts on <b>Telegram & email</b></>,
+  <>7 days of trade history</>,
+  <>Tax centre and economic calendar</>,
 ];
 
 const PRO = [
   <>Everything in Free, plus:</>,
-  <>Server-side <b>kill switch</b> — auto cancel, close & lock</>,
-  <>Cooldown after consecutive losses</>,
-  <>Leverage & risk-per-trade <b>enforcement</b></>,
-  <>AI trade journal + <b>behaviour pattern</b> detection</>,
+  <><b>Unlimited</b> trading accounts</>,
+  <><b>3 financial years</b> of trade history</>,
+  <>Journal, performance analytics & <b>behaviour ledger</b></>,
   <>Delta Exchange <b>and CoinDCX</b> — both included</>,
+  <>Priority support</>,
 ];
 
 export default function PricingSection() {
@@ -46,7 +54,7 @@ export default function PricingSection() {
           >
             <div className="font-mono text-[11px] uppercase tracking-widest text-slate-500">Free</div>
             <h3 className="mt-3 font-display text-3xl font-bold tracking-tight">Watchtower</h3>
-            <p className="mt-1 text-sm text-slate-400">See every breach the moment it happens.</p>
+            <p className="mt-1 text-sm text-slate-400">Real enforcement on one account, free forever.</p>
             <div className="mt-6 flex items-baseline gap-1.5 border-b border-white/[0.06] pb-6">
               <span className="font-mono text-4xl font-medium tracking-tight">₹0</span>
               <span className="font-mono text-[13px] text-slate-500">/forever</span>
@@ -89,7 +97,14 @@ export default function PricingSection() {
                 <span className="font-mono text-4xl font-medium tracking-tight">₹1,299</span>
                 <span className="font-mono text-[13px] text-slate-500">/month</span>
               </div>
-              <p className="mt-1 font-mono text-[11px] text-slate-500">incl. 18% GST</p>
+              {/* Quarterly and yearly are the real offer — a monthly-only price
+                  hid a 42% saving behind a click through to /pricing. */}
+              <p className="mt-2 font-mono text-[11px] text-slate-500">
+                or <span className="text-slate-300">₹3,299</span>/quarter ·{' '}
+                <span className="text-slate-300">₹8,999</span>/year{' '}
+                <span className="text-accent">save 42%</span>
+              </p>
+              <p className="mt-1.5 font-mono text-[11px] text-slate-500">incl. 18% GST · 14-day refund</p>
             </div>
             <ul className="mt-6 space-y-3">
               {PRO.map((f, i) => (

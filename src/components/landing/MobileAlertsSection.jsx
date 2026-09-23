@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 
+// The Alerts page offers Telegram and email. WhatsApp was advertised here and
+// in three other places and has never been built — put it back only when it is.
 const CHANNELS = [
-  { k: 'wa', label: 'WhatsApp', bg: 'bg-[#25D366]' },
   { k: 'tg', label: 'Telegram', bg: 'bg-[#229ED9]' },
   { k: 'em', label: 'Email', bg: 'bg-slate-500' },
 ];
