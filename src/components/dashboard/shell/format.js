@@ -1,11 +1,20 @@
 /** Shared formatting for the shell — one place so countdowns never disagree. */
 
 /** "2h 05m" far out; "05:42" inside the last hour; "0:00" at zero. Fixed width so nothing shifts as it ticks. */
+/**
+ * Units that match how the window was set.
+ *
+ * The rule lock is chosen in DAYS — 3, 7 or 30 — so rendering it as
+ * "149h 55m" makes the reader divide by 24 to find out whether their
+ * seven days is nearly up. Past a day, say days.
+ */
 export function formatRemaining(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(total / 3600);
+  const d = Math.floor(total / 86400);
+  const h = Math.floor((total % 86400) / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
+  if (d > 0) return `${d}d ${h}h`;
   if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
@@ -30,8 +39,16 @@ function viewerZone() {
   }
 }
 
-/** Short zone label for the viewer's own zone, e.g. "IST", "GMT+4". */
+/**
+ * Short zone label for the viewer's own zone.
+ *
+ * Intl returns "GMT+5:30" for Asia/Kolkata, which is correct and which no
+ * Indian trader would ever write. The common abbreviations are worth naming.
+ */
+const ZONE_NAMES = { 'Asia/Kolkata': 'IST', 'Asia/Calcutta': 'IST', UTC: 'UTC', 'Asia/Dubai': 'GST', 'Asia/Singapore': 'SGT' };
+
 export function zoneLabel(tz = viewerZone()) {
+  if (ZONE_NAMES[tz]) return ZONE_NAMES[tz];
   try {
     const parts = new Intl.DateTimeFormat('en-GB', { timeZone: tz, timeZoneName: 'short' }).formatToParts(new Date());
     return parts.find((x) => x.type === 'timeZoneName')?.value ?? '';

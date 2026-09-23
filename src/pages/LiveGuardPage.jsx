@@ -132,10 +132,10 @@ export default function LiveGuardPage() {
    * the question it produced.
    */
   const LOCK_REASON = {
-    max_trades_day: { name: 'Max trades per day', why: 'You used the day\u2019s trades, so the day is done. This is not a fixed penalty — it runs to your next daily reset.', daily: true },
-    daily_loss: { name: 'Daily loss protection', why: 'You hit the day\u2019s loss limit. The lock runs to your next daily reset, not a fixed number of hours.', daily: true },
-    daily_target: { name: 'Daily profit target', why: 'You booked the target and went flat, so the day locks to keep the gain. It runs to your next daily reset.', daily: true },
-    consecutive_losses: { name: 'Close after N losses', why: 'A losing streak tripped the cooldown. This one IS a fixed window, and it lifts on the clock.', daily: false },
+    max_trades_day: { name: 'Max trades per day', why: 'You used the day\u2019s trades. Not a fixed penalty — the rest of the day.', daily: true },
+    daily_loss: { name: 'Daily loss protection', why: 'You hit the day\u2019s loss limit. Not a fixed penalty — the rest of the day.', daily: true },
+    daily_target: { name: 'Daily profit target', why: 'Target booked and flat, so the day locks to keep the gain.', daily: true },
+    consecutive_losses: { name: 'Close after N losses', why: 'A losing streak tripped the cooldown. This one is a fixed window.', daily: false },
   };
   const lockInfo = manual ? null : LOCK_REASON[g.lockReason] ?? null;
   // TODO(api): the lockout carries no armed-at; elapsed is estimated from the longest window.
@@ -442,10 +442,6 @@ export default function LiveGuardPage() {
               </div>
             )}
 
-            {armed && !manual && (
-              <p style={sx('margin:0 0 13px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>You did not arm this one — a rule did. The manual switch returns here once it lifts.</p>
-            )}
-
             {armed && (
               <div style={sx('padding:16px 17px;border:1px solid var(--red-line);border-radius:12px;background:var(--red-tint)')}>
                 <div style={sx('display:flex;align-items:center;gap:8px')}>
@@ -458,11 +454,10 @@ export default function LiveGuardPage() {
                 </div>
                 <div style={sx('margin-top:13px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}><div style={sx('height:100%;border-radius:999px;background:var(--red-solid)', { width: lockPct })} /></div>
                 <div style={sx('display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap')}>
-                  <span>{manual ? 'Armed by you' : lockInfo ? lockInfo.name : 'Armed by a rule'}</span>
+                  <span>{manual ? 'Armed by you' : 'No early exit'}</span>
                   <span style={sx('text-align:right;white-space:nowrap')}>Trading resumes {dayAt(g.lockUntil)} at <strong style={sx('color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums')}>{clockAt(g.lockUntil)}</strong></span>
                 </div>
-                {lockInfo && <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--red-line);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{lockInfo.why}</p>}
-                <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--red-line);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{armedBody}</p>
+                <p style={sx('margin:11px 0 0;padding-top:11px;border-top:1px solid var(--red-line);font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>{lockInfo ? lockInfo.why : armedBody}</p>
               </div>
             )}
           </div>
