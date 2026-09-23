@@ -6,6 +6,7 @@ const links = {
     { label: 'For crypto traders', to: '/' },
     { label: 'How it Works', to: { pathname: '/', hash: 'scenarios' } },
     { label: 'Pricing', to: '/pricing' },
+    { label: 'Crypto tax India', to: '/crypto-tax-india' },
     { label: 'Roadmap', to: '/roadmap' },
     { label: 'FAQ', to: { pathname: '/', hash: 'faq' } },
   ],

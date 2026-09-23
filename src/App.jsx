@@ -15,6 +15,7 @@ import PartnerApplyPage from './pages/PartnerApplyPage';
 import DocsPage from './pages/DocsPage';
 import SecurityPage from './pages/SecurityPage';
 import RoadmapPage from './pages/RoadmapPage';
+import CryptoTaxIndiaPage from './pages/CryptoTaxIndiaPage';
 import RiskDisclosurePage from './pages/RiskDisclosurePage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardLayout from './components/dashboard/DashboardLayout';
@@ -93,6 +94,7 @@ function App() {
                   <Route path="security" element={<SecurityPage />} />
                   {/* Head-term landing page: "crypto kill switch", "killswitch app". */}
                   <Route path="crypto-kill-switch" element={<CryptoKillSwitchPage />} />
+                  <Route path="crypto-tax-india" element={<CryptoTaxIndiaPage />} />
                   <Route path="roadmap" element={<RoadmapPage />} />
                   {/* Catch-all 404 inside Layout so the page keeps nav + footer.
                       Replaces the previous redirect-to-home that produced soft-404s. */}
