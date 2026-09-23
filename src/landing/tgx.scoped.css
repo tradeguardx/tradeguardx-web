@@ -207,24 +207,15 @@
      the field, rather than one sitting on the other's background. */
   .tgx-home .xbanner{
     position: relative; overflow: hidden;
-    width: 100%; margin: 0 0 44px; padding: 22px 24px 18px;
-    border-radius: 20px; text-align: center;
-    background:
-      radial-gradient(80% 140% at 0% 50%, rgba(var(--accent-rgb), 0.09) 0%, transparent 60%),
-      radial-gradient(80% 140% at 100% 50%, rgba(249,115,22,0.07) 0%, transparent 60%),
-      linear-gradient(180deg, rgba(var(--veil), 0.045), rgba(var(--veil), 0.015));
-    border: 1px solid rgba(var(--veil), 0.08);
-  }
-  /* Faint diagonal sheen, the light-streak the reference banners use. */
-  .tgx-home .xbanner::after{
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: repeating-linear-gradient(112deg, rgba(var(--veil), 0.025) 0 1px, transparent 1px 90px);
-    opacity: 0.5;
+    width: 100%; margin: 0 0 44px; padding: 22px 0 18px;
+    text-align: left;
+    background: none;
+    border: 0;
   }
 
   .tgx-home .xbanner-eyebrow{
     position: relative; z-index: 1;
-    display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 10px;
+    display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-start; gap: 10px;
     font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;
     color: var(--text-2);
   }
@@ -239,20 +230,20 @@
 
   .tgx-home .xbanner-lockup{
     position: relative; z-index: 1;
-    display: flex; align-items: center; flex-wrap: wrap; justify-content: center;
+    display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-start;
     gap: 12px 18px; margin-top: 14px;
   }
   .tgx-home .xb-brand,
   .tgx-home .xb-partner{
-    display: inline-flex; align-items: center; gap: 10px;
-    padding: 10px 18px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 999px;
     background: rgba(var(--veil), 0.06);
     border: 1px solid rgba(var(--veil), 0.08);
-    font-family: var(--sans); font-weight: 800; letter-spacing: -0.02em;
-    font-size: clamp(18px, 1.2vw + 12px, 26px); color: var(--text);
+    font-family: var(--sans); font-weight: 800; letter-spacing: -0.01em;
+    font-size: clamp(15px, 0.7vw + 11px, 19px); color: var(--text);
   }
-  .tgx-home .xb-brand img{ height: 26px; width: auto; }
-  .tgx-home .xb-partner img{ height: 24px; width: auto; }
+  .tgx-home .xb-brand img,
+  .tgx-home .xb-partner img{ height: 22px; width: auto; }
   .tgx-home .xb-plus{ font-size: 22px; font-weight: 700; color: var(--text-3); }
 
   /* CoinDCX went live 23 Sep 2026. It was dashed and dimmed to read as "next";
@@ -266,7 +257,7 @@
   }
   .tgx-home .xb-coindcx{
     font-family: var(--sans); font-weight: 800; letter-spacing: -0.01em;
-    font-size: clamp(15px, 0.7vw + 11px, 19px); color: var(--text-2);
+    font-size: clamp(15px, 0.7vw + 11px, 19px); color: var(--text);
   }
   .tgx-home .xb-coindcx b{ color: #f97316; font-weight: 800; }
   .tgx-home .xbanner .xb-short{ display: none; }
@@ -293,7 +284,7 @@
 
   .tgx-home .xbanner-feats{
     position: relative; z-index: 1;
-    display: flex; align-items: center; flex-wrap: wrap; justify-content: center;
+    display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-start;
     gap: 8px 14px; margin-top: 16px;
     font-size: 12px; color: var(--text-2);
   }
@@ -323,7 +314,9 @@
   /* Phone: three lines, in order — the claim, the three brands, the guarantees.
      Each holds ONE row; "Now live on" goes because the brands below say it. */
   @media (max-width: 640px){
-    .tgx-home .xbanner{ padding: 14px 10px 13px; margin-bottom: 26px; border-radius: 16px; }
+    .tgx-home .xbanner{ padding: 14px 0 13px; margin-bottom: 26px; border-radius: 16px; text-align: center; }
+    .tgx-home .xbanner-eyebrow,
+    .tgx-home .xbanner-feats{ justify-content: center; }
 
     .tgx-home .xbanner .xb-long{ display: none; }
     .tgx-home .xbanner .xb-short{ display: inline-flex; }
@@ -339,6 +332,9 @@
     .tgx-home .xbanner-lockup{
       flex-wrap: wrap; gap: 7px; margin-top: 11px;
       justify-content: center; align-items: stretch;
+      /* four venues break 3+1 at this width, which reads as a stray. Cap the
+         row so they land two-up. */
+      max-width: 250px; margin-left: auto; margin-right: auto;
     }
     .tgx-home .xb-brand,
     .tgx-home .xb-partner,
