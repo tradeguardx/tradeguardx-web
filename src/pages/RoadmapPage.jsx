@@ -13,24 +13,26 @@ import { useSEO } from '../hooks/useSEO';
  */
 const ROADMAP = {
   shipped: [
-    { title: 'Real-time risk rule engine', body: "Block trades at the click in your broker tab — daily loss limit, max drawdown, risk per trade, hedging prevention, and more." },
-    { title: 'AI trade journal', body: "Anthropic-powered narratives, behavior tags, and pattern detection on your trade history." },
-    { title: 'Multi-broker support', body: "Pair the extension with a curated list of prop firms and brokers via simple selectors." },
-    { title: 'Pro & Pro+ subscriptions', body: "Free tier with core protection; paid plans for extended history, more accounts, and advanced rule templates." },
-    { title: 'Partner program', body: "Trading creators and educators can apply to refer customers and earn commission." },
-    { title: 'Self-serve cancellation & billing portal', body: "Manage your subscription, update payment method, and view invoices via Dodo's customer portal — accessible directly from the dashboard." },
+    { title: 'Server-side kill switch', body: "Breach a rule and we cancel your orders, close your positions at market, and lock the account — from our servers, typically inside 120ms, whether you traded from the web, the exchange app or a third-party client." },
+    { title: 'Delta Exchange and CoinDCX', body: "Both live, both futures, one subscription covering both. Delta India or Global; CoinDCX futures across INR and USDT margin from a single key." },
+    { title: 'Seven risk rules', body: "Daily loss, daily profit target, max trades per day, close after N losses with escalating cooldowns, risk per trade, max drawdown and stop-loss protection. Every rule on every plan." },
+    { title: 'Manual lockout', body: "Shut yourself out for 3, 6 or 12 hours when you can feel the tilt coming. No cancel button — you can extend it, never shorten it." },
+    { title: 'Rule lock and cooling-off', body: "Tightening a limit applies instantly; loosening waits 24 hours. Your API key is frozen while a lock runs, so pulling the key is not an exit either." },
+    { title: 'Tax centre for Indian traders', body: "Your financial-year result rebuilt from raw exchange fills with FIFO lot matching, F&O and VDA kept separate, reconciled against your wallet and exported for your CA." },
+    { title: 'Journal, behaviour ledger and alerts', body: "Every trade recorded with the rules that fired on it, AI-written narratives and pattern detection, breach alerts on Telegram and email within seconds." },
   ],
   inProgress: [
-    { title: 'More broker integrations', body: "Adding selectors for additional prop firms based on user demand. Email us with your broker if it's not yet supported." },
-    { title: 'Multi-account analytics on Pro+', body: "Cross-account performance views and aggregated risk reporting." },
-    { title: 'Improved pairing flow', body: "Faster onboarding with guided pairing checks and clearer error states." },
+    { title: 'Bybit and Bitget', body: "Both integrations are built and being tested against live accounts before release. Same engine, same rules, same subscription — no regional pricing and nothing to re-learn." },
+    { title: 'Combined CA report', body: "Tax figures are reported per account today, because two accounts under one login are not always the same taxpayer. The CA report will let you pick which accounts are yours and produce one combined summary." },
+    { title: 'Max drawdown enforcement', body: "Max Drawdown Lock alerts today but does not close or lock, which the name oversells. We are working out what a lifetime-drawdown lock should release on before wiring it to the kill switch." },
   ],
   planned: [
-    { title: 'Mobile companion app', body: "Read-only view of your account state, recent trades, and rule status from your phone." },
-    { title: 'Automated trade replay', body: "Step through your day's trades with synced rule context — what fired, what almost fired, what passed." },
-    { title: 'Custom rule builder', body: "Compose your own rules from primitive conditions without waiting for us to add a template." },
-    { title: 'Team / firm accounts', body: "Prop firms and trading desks can manage rules across multiple traders from one console." },
-    { title: 'Public API', body: "Programmatic access to your trades and rules for power users and integrations." },
+    { title: 'Calendar auto-lock', body: "Lock the account automatically around high-impact macro releases — CPI, FOMC, NFP — for a window you choose either side of the print." },
+    { title: 'WhatsApp and SMS alerts', body: "Breach alerts on the channels people actually read. Telegram and email work today." },
+    { title: 'Custom rule builder', body: "Compose your own rule from primitive conditions instead of waiting for us to add a template." },
+    { title: 'Mobile companion app', body: "Read-only view of account state, live rule status and recent trades from your phone. Enforcement already runs without it." },
+    { title: 'Spot and options coverage', body: "We enforce futures only. Options follow once the exchanges expose them properly; spot is a harder question under VDA rules and we will not pretend otherwise." },
+    { title: 'Public API', body: "Programmatic access to your trades, rules and breach history." },
   ],
 };
 
