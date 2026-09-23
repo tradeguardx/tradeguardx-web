@@ -19,18 +19,31 @@
       </div>
 
       <div class="xbanner-lockup">
-        <span class="xb-brand">
-          <img src="/favicon.svg" alt="">
-          <span>TradeGuardX</span>
-        </span>
-        <span class="xb-plus">+</span>
+        <!-- Our own name is the logo top-left and the whole page; "now live
+             on TradeGuardX" reads as though we were a venue. The lockup
+             lists the exchanges only, so the "+" goes with it. -->
         <span class="xb-partner">
           <img src="/brokers/delta-exchange.svg" alt="Delta Exchange">
           <span class="xb-long">Delta Exchange</span><span class="xb-short">Delta</span>
+          <!-- Delta carried no tag while CoinDCX said LIVE, so the row read
+               as one live venue next to a logo. Both are live; both say so. -->
+          <span class="xb-next-tag">Live</span>
         </span>
         <span class="xb-next">
           <span class="xb-coindcx"><b>Coin</b>DCX</span>
           <span class="xb-next-tag">Live</span>
+        </span>
+        <span class="xb-next xb-soon">
+          <!-- Bybit's logo IS the wordmark with a gold "i" — there is no icon
+               mark. Set as type so it reads at the same size as its
+               neighbours; as an image it shrank to ~9px letters. -->
+          <span class="xb-wordmark xb-bybit">Byb<b>i</b>t</span>
+          <span class="xb-next-tag soon">Soon</span>
+        </span>
+        <span class="xb-next xb-soon">
+          <img src="/brokers/bitget.svg" alt="Bitget" class="xb-logo">
+          <span class="xb-wordmark">Bitget</span>
+          <span class="xb-next-tag soon">Soon</span>
         </span>
       </div>
 
@@ -59,8 +72,8 @@
             Create free account
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </a>
-          <!-- Goes straight to the walkthrough on YouTube (new tab). The on-page
-               lightbox below covers visitors who'd rather not leave the site. -->
+          <!-- Goes straight to the walkthrough on YouTube (new tab). This is
+               now the only route to it; the on-page lightbox was removed. -->
           <a href="https://www.youtube.com/watch?v=rHXl3EWuO6E" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-lg">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#FF0000" aria-hidden><path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 0 0 .5 6.19C0 8.08 0 12 0 12s0 3.92.5 5.81a3.02 3.02 0 0 0 2.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 0 0 2.12-2.14C24 15.92 24 12 24 12s0-3.92-.5-5.81z"/><path d="M9.55 15.57V8.43L15.82 12l-6.27 3.57z" fill="#fff"/></svg>
             How to set up
@@ -289,47 +302,71 @@
 </section>
 
 <!-- TRADING IN ACTION SPLIT -->
-<!-- RULES -->
-<section class="block" id="rules">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Your guardrails</span>
-      <h2 class="display h2">Seven rules. Pick yours.</h2>
-      <p>Every one enforced server-side, in real time, on every entry.</p>
-    </div>
-
-    <div class="rules-simple">
-      <div class="rs-item"><b>Daily loss cap</b><span>Bleeding past your limit in one session.</span></div>
-      <div class="rs-item"><b>Daily profit target</b><span>Giving back a good day.</span></div>
-      <div class="rs-item"><b>Max trades per day</b><span>Overtrading after a losing morning.</span></div>
-      <div class="rs-item"><b>Risk per trade</b><span>The oversized, impulsive entry.</span></div>
-      <div class="rs-item"><b>Cooldown after losses</b><span>The emotional spiral.</span></div>
-      <div class="rs-item"><b>Leverage cap</b><span>The 50&times; revenge entry.</span></div>
-      <div class="rs-item"><b>Liquidation distance</b><span>The slow walk to zero.</span></div>
-    </div>
-
-    <p class="rules-note">
-      Set them once while you&rsquo;re calm. Loosening any limit goes through a cooling-off window &mdash; tightening applies instantly.
-    </p>
-  </div>
-</section>
-
 <!-- TAX CENTRE -->
 <section class="block" id="tax">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow">Come March</span>
-      <h2 class="display h2">Don&rsquo;t pay 30% on a losing year.</h2>
-      <p>Most crypto tax tools apply one rule to everything: flat 30%, losses ignored. That is right for spot and wrong for futures &mdash; and on a real account it charged <strong>&#8377;4,348 of tax on a year that lost &#8377;8,561</strong>, while hiding a business loss that could have been carried forward.</p>
+      <span class="eyebrow">Risk and tax, one connection</span>
+      <h2 class="display h2">You trade. We keep the tax straight.</h2>
+      <p>Connect your exchange once. The same key that enforces your rules also rebuilds your financial year as the fills land &mdash; so come March there is nothing to reconstruct. No separate tax tool, no second subscription.</p>
     </div>
 
-    <div class="rules-simple">
-      <div class="rs-item"><b>Futures kept separate</b><span>Business income &mdash; gains and losses net.</span></div>
-      <div class="rs-item"><b>Spot under 115BBH</b><span>Flat 30%, no set-off. Never mixed in.</span></div>
-      <div class="rs-item"><b>Rebuilt from fills</b><span>FIFO lot matching, not the exchange&rsquo;s summary.</span></div>
-      <div class="rs-item"><b>Wallet reconciled</b><span>Trading result and money moved must agree.</span></div>
-      <div class="rs-item"><b>1% TDS tracked</b><span>Credit against what you owe. Claim it.</span></div>
-      <div class="rs-item"><b>CA report exported</b><span>A worked statement, not a CSV of fills.</span></div>
+    <!-- Two panels: the number that moves while you trade, and the document
+         your accountant actually wants. Drawn rather than described. -->
+    <div class="tax-panels">
+
+      <div class="tax-panel">
+        <div class="tp-head">
+          <span class="tp-dot"></span>
+          <span class="tp-label">Live &mdash; updates as fills land</span>
+        </div>
+        <div class="tp-body">
+          <div class="tp-fy">FY 2026&ndash;27 &middot; to date</div>
+          <div class="tp-rows">
+            <div class="tp-row"><span>F&amp;O &middot; business income</span><b class="pos">&#8377;1,24,900</b></div>
+            <div class="tp-row"><span>Spot &middot; VDA 115BBH</span><b>&#8377;0</b></div>
+            <div class="tp-row"><span>1% TDS withheld</span><b class="dim">&#8377;3,180 credit</b></div>
+          </div>
+          <div class="tp-foot">
+            <span>Closed positions</span><b>313</b>
+          </div>
+        </div>
+        <div class="tp-cap">Your figure moves with every close. You are never finding out in March.</div>
+      </div>
+
+      <div class="tax-panel">
+        <div class="tp-head">
+          <span class="tp-doc"></span>
+          <span class="tp-label">Download for your CA</span>
+        </div>
+        <div class="tp-body tp-files">
+          <!-- The four exports the tax centre actually produces. Grey
+               placeholder rules read as a page still loading; real filenames
+               say what you get. -->
+          <div class="tp-file">
+            <span class="tp-ext tp-pdf">PDF</span>
+            <span class="tp-file-txt"><b>CA report</b><span>Summary, workings, assumptions, both treatments</span></span>
+            <span class="tp-dl"></span>
+          </div>
+          <div class="tp-file">
+            <span class="tp-ext tp-xls">XLSX</span>
+            <span class="tp-file-txt"><b>Transaction schedule</b><span>Positions, FIFO lots, fees, funding, classification</span></span>
+            <span class="tp-dl"></span>
+          </div>
+          <div class="tp-file">
+            <span class="tp-ext tp-csv">CSV</span>
+            <span class="tp-file-txt"><b>Raw exchange data</b><span>Original fills and wallet transactions</span></span>
+            <span class="tp-dl"></span>
+          </div>
+          <div class="tp-file">
+            <span class="tp-ext tp-zip">ZIP</span>
+            <span class="tp-file-txt"><b>Reconciliation pack</b><span>Fill &rarr; position &rarr; wallet &rarr; tax</span></span>
+            <span class="tp-dl"></span>
+          </div>
+        </div>
+        <div class="tp-cap">A worked statement your accountant can review &mdash; not a CSV of fills to interpret.</div>
+      </div>
+
     </div>
 
     <p class="rules-note">
@@ -376,5 +413,64 @@
     <p class="rules-note">
       <a href="/security">How we handle your data &amp; keys &rarr;</a>
     </p>
+  </div>
+</section>
+
+<!-- REVIEWS — real customer reviews, reproduced verbatim. Do not edit the
+     quotes or invent new ones; if a review is removed at source, remove it
+     here too. -->
+<section class="block" id="reviews">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">What traders say</span>
+      <h2 class="display h2">From people who stopped blowing up.</h2>
+      <p>Their words, not ours &mdash; only the spelling is tidied.</p>
+    </div>
+
+    <div class="reviews">
+
+      <figure class="rv-card">
+        <div class="rv-stars" role="img" aria-label="Rated 4 out of 5">
+          <span class="rv-star on"></span><span class="rv-star on"></span><span class="rv-star on"></span><span class="rv-star on"></span><span class="rv-star"></span>
+        </div>
+        <blockquote>
+          <b class="rv-title">Very good Tradeguardx I got addicted to&hellip;</b>
+          <p>Very good Tradeguardx I got addicted to using it. I recommend you to use this software once.</p>
+        </blockquote>
+        <figcaption class="rv-by">
+          <span class="rv-av">I</span>
+          <span class="rv-who"><b>Ishvar</b><span>India</span></span>
+        </figcaption>
+      </figure>
+
+      <figure class="rv-card">
+        <div class="rv-stars" role="img" aria-label="Rated 5 out of 5">
+          <span class="rv-star on"></span><span class="rv-star on"></span><span class="rv-star on"></span><span class="rv-star on"></span><span class="rv-star on"></span>
+        </div>
+        <blockquote>
+          <b class="rv-title">The essential safeguard for disciplined, consistent trading.</b>
+          <p><b>Discipline &amp; Emotional Control:</b> The Kill Switch has completely eliminated emotional pitfalls and impulse decisions from my routine. Having an automated safety net to cap daily drawdowns prevents revenge trading and enforces strict consistency.</p>
+        </blockquote>
+        <figcaption class="rv-by">
+          <span class="rv-av">A</span>
+          <span class="rv-who"><b>Akhil Suresh</b><span>India</span></span>
+        </figcaption>
+      </figure>
+
+      <figure class="rv-card">
+        <div class="rv-stars" role="img" aria-label="Rated 5 out of 5">
+          <span class="rv-star on"></span><span class="rv-star on"></span><span class="rv-star on"></span><span class="rv-star on"></span><span class="rv-star on"></span>
+        </div>
+        <blockquote>
+          <b class="rv-title">Peace of mind while trading.</b>
+          <p>TradeGuardX killswitch is an excellent feature that gives me peace of mind while trading. It&rsquo;s easy to use, reliable and works smoothly when needed. I really appreciate the added security and control it provides. Overall good experience.</p>
+        </blockquote>
+        <figcaption class="rv-by">
+          <span class="rv-av">I</span>
+          <span class="rv-who"><b>Indra</b><span>India</span></span>
+        </figcaption>
+      </figure>
+
+    </div>
   </div>
 </section>

@@ -4,7 +4,6 @@ import { useSEO } from '../hooks/useSEO';
 import { useAuth } from '../context/AuthContext';
 import StoryAIJournal from '../components/landing/story/StoryAIJournal';
 import RecentJoinsToast from '../components/landing/RecentJoinsToast';
-import DemoVideoSection from '../components/landing/DemoVideoSection';
 import TradingInAction from '../components/landing/TradingInAction';
 import HeroLiveDemo from '../components/landing/HeroLiveDemo';
 import '../landing/tgx.scoped.css';
@@ -233,22 +232,8 @@ export default function CryptoHomePage() {
   return (
     <>
       {heroDemoNode && createPortal(<HeroLiveDemo />, heroDemoNode)}
-
-      {/* Same star-scatter background as /prop-firm */}
-      <div className="landing-bg" aria-hidden>
-        <span className="star star-sm" style={{ top: '17%', left: '88%' }} />
-        <span className="star star-sm" style={{ top: '44%', left: '76%' }} />
-        <span className="star star-sm" style={{ top: '63%', left: '6%' }} />
-        <span className="star star-sm" style={{ top: '83%', left: '24%' }} />
-        <span className="star star-md star-blink" style={{ top: '14%', left: '20%', animationDelay: '0s' }} />
-        <span className="star star-md star-blink-slow" style={{ top: '36%', left: '60%', animationDelay: '0.6s' }} />
-        <span className="star star-md star-blink" style={{ top: '54%', left: '12%', animationDelay: '1.4s' }} />
-        <span className="star star-md star-blink-slow" style={{ top: '74%', left: '82%', animationDelay: '0.9s' }} />
-        <span className="star star-lg star-blink-slow" style={{ top: '26%', left: '46%', animationDelay: '0.5s' }} />
-        <span className="star star-lg star-blink-slow" style={{ top: '90%', left: '70%', animationDelay: '2.1s' }} />
-        <span className="star star-md star-accent star-blink-slow" style={{ top: '48%', left: '90%', animationDelay: '1.0s' }} />
-        <span className="star star-lg star-accent star-blink-slow" style={{ top: '66%', left: '34%', animationDelay: '0.8s' }} />
-      </div>
+      {/* Flat background: base colour and depth glows, no stars. */}
+      <div className="landing-bg" aria-hidden />
 
       <RawHtml className="tgx-home" innerRef={aRef} html={rawBodyAHero} />
       {/* A day in the life — straight after the hero. */}
@@ -260,9 +245,6 @@ export default function CryptoHomePage() {
       <StoryAIJournal />
       {/* Available on. */}
       <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyBHead} />
-      <LandingDivider />
-      {/* How to set up — the last proof before the price. Plays in a lightbox. */}
-      <DemoVideoSection />
       <LandingDivider />
       {/* Pricing + FAQ. */}
       <RawHtml className="tgx-home" innerRef={bTailRef} html={rawBodyBTail} />

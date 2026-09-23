@@ -1,3 +1,10 @@
+  /* Dark surface. These tokens are LANDING-ONLY — .tgx-home exists nowhere
+     but this stylesheet and CryptoHomePage, and the dashboard runs on a
+     separate set under [data-dash-theme].
+
+     --veil and --shade are the bases for every rgba() tint in this sheet:
+     --veil lifts a surface off the background, --shade sinks it. On this
+     dark surface that is white and black respectively. */
   .tgx-home{
     --bg: #0d0f14;
     --bg-2: #11141a;
@@ -14,6 +21,9 @@
     --danger: #ef4444;
     --danger-glow: rgba(239, 68, 68, 0.14);
     --warn: #f0b429;
+    --accent-rgb: 0,212,170;
+    --veil: 255,255,255;
+    --shade: 0,0,0;
     --serif: "Space Grotesk", system-ui, sans-serif;
     --sans: "Inter", system-ui, sans-serif;
     --mono: "Space Grotesk", ui-monospace, monospace;
@@ -30,10 +40,10 @@
   .tgx-home .bg-grid{
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 212, 170, 0.08), transparent 60%),
-      radial-gradient(ellipse 60% 40% at 80% 30%, rgba(0, 212, 170, 0.04), transparent 60%),
-      linear-gradient(to right, rgba(255,255,255,0.025) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.025) 1px, transparent 1px);
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(var(--accent-rgb), 0.08), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 30%, rgba(var(--accent-rgb), 0.04), transparent 60%),
+      linear-gradient(to right, rgba(var(--veil), 0.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(var(--veil), 0.025) 1px, transparent 1px);
     background-size: auto, auto, 64px 64px, 64px 64px;
     mask-image: radial-gradient(ellipse 100% 80% at 50% 0%, black, transparent 70%);
   }
@@ -64,13 +74,13 @@
       #A93860 80%,
       #C8453A 100%);
     position: relative; z-index: 2;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(var(--veil), 0.06);
     overflow: hidden;
   }
   .tgx-home .promo::before{
     content: ""; position: absolute; inset: 0;
     background:
-      radial-gradient(ellipse 40% 100% at 20% 50%, rgba(0,212,170,0.08), transparent 70%),
+      radial-gradient(ellipse 40% 100% at 20% 50%, rgba(var(--accent-rgb), 0.08), transparent 70%),
       radial-gradient(ellipse 40% 100% at 80% 50%, rgba(255,200,100,0.08), transparent 70%);
     pointer-events: none;
   }
@@ -98,7 +108,7 @@
   .tgx-home .promo-content{ display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .tgx-home .promo-eyebrow{
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em;
-    text-transform: uppercase; color: rgba(255,255,255,0.95);
+    text-transform: uppercase; color: rgba(var(--veil), 0.95);
     font-weight: 500;
   }
   .tgx-home .promo-eyebrow .divider{ opacity: 0.5; margin: 0 6px; }
@@ -114,10 +124,10 @@
     display: inline-flex; align-items: center; gap: 6px;
     margin-left: 10px;
     font-family: var(--mono); font-size: 11px;
-    color: rgba(255,255,255,0.7);
+    color: rgba(var(--veil), 0.7);
     padding: 3px 9px; border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(0,0,0,0.15);
+    border: 1px solid rgba(var(--veil), 0.2);
+    background: rgba(var(--shade), 0.15);
     vertical-align: middle;
   }
   .tgx-home .promo-spots .live-dot{
@@ -131,27 +141,27 @@
     font-weight: 600; font-size: 14px;
     flex-shrink: 0;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 16px rgba(var(--shade), 0.2);
   }
   .tgx-home .promo-btn:hover{
     transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 24px rgba(var(--shade), 0.3);
   }
   .tgx-home .promo-close{
-    background: transparent; color: rgba(255,255,255,0.6);
+    background: transparent; color: rgba(var(--veil), 0.6);
     width: 32px; height: 32px; border-radius: 8px;
     display: grid; place-items: center;
     cursor: pointer; flex-shrink: 0;
     transition: background 0.15s ease, color 0.15s ease;
   }
   .tgx-home .promo-close:hover{
-    background: rgba(255,255,255,0.12); color: white;
+    background: rgba(var(--veil), 0.12); color: white;
   }
 
   /* ---------- nav ---------- */
   .tgx-home nav{
     position: sticky; top: 0; z-index: 100;
-    background: rgba(5, 8, 16, 0.7); backdrop-filter: blur(20px);
+    background: rgba(255,255,255,0.82); backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
   }
   .tgx-home .nav-row{
@@ -180,7 +190,7 @@
   .tgx-home .btn:hover{ transform: translateY(-1px); }
   .tgx-home .btn-primary{
     background: var(--accent); color: #052418;
-    box-shadow: 0 0 0 1px rgba(0,212,170,0.4), 0 8px 24px -8px var(--accent-glow);
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.4), 0 8px 24px -8px var(--accent-glow);
     font-weight: 600;
   }
   .tgx-home .btn-primary:hover{ background: #00e4b8; }
@@ -200,16 +210,15 @@
     width: 100%; margin: 0 0 44px; padding: 22px 24px 18px;
     border-radius: 20px; text-align: center;
     background:
-      radial-gradient(80% 140% at 0% 50%, rgba(0,212,170,0.20) 0%, transparent 60%),
-      radial-gradient(80% 140% at 100% 50%, rgba(249,115,22,0.16) 0%, transparent 60%),
-      linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
-    border: 1px solid rgba(255,255,255,0.10);
-    box-shadow: 0 24px 60px -34px rgba(0,0,0,0.9);
+      radial-gradient(80% 140% at 0% 50%, rgba(var(--accent-rgb), 0.09) 0%, transparent 60%),
+      radial-gradient(80% 140% at 100% 50%, rgba(249,115,22,0.07) 0%, transparent 60%),
+      linear-gradient(180deg, rgba(var(--veil), 0.045), rgba(var(--veil), 0.015));
+    border: 1px solid rgba(var(--veil), 0.08);
   }
   /* Faint diagonal sheen, the light-streak the reference banners use. */
   .tgx-home .xbanner::after{
     content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: repeating-linear-gradient(112deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 90px);
+    background: repeating-linear-gradient(112deg, rgba(var(--veil), 0.025) 0 1px, transparent 1px 90px);
     opacity: 0.5;
   }
 
@@ -219,10 +228,13 @@
     font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;
     color: var(--text-2);
   }
-  .tgx-home .xb-flag{ height: 12px; width: auto; border-radius: 2px; }
+  .tgx-home .xb-flag{
+    height: 16px; width: auto; border-radius: 2.5px;
+    box-shadow: 0 0 0 1px rgba(var(--veil), 0.22);
+  }
   .tgx-home .xb-accent{ color: var(--accent); }
   .tgx-home .xb-div{
-    display: inline-block; width: 1px; height: 12px; background: rgba(255,255,255,0.20);
+    display: inline-block; width: 1px; height: 12px; background: rgba(var(--veil), 0.20);
   }
 
   .tgx-home .xbanner-lockup{
@@ -234,10 +246,10 @@
   .tgx-home .xb-partner{
     display: inline-flex; align-items: center; gap: 10px;
     padding: 10px 18px; border-radius: 999px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(var(--veil), 0.06);
+    border: 1px solid rgba(var(--veil), 0.08);
     font-family: var(--sans); font-weight: 800; letter-spacing: -0.02em;
-    font-size: clamp(18px, 1.2vw + 12px, 26px); color: #fff;
+    font-size: clamp(18px, 1.2vw + 12px, 26px); color: var(--text);
   }
   .tgx-home .xb-brand img{ height: 26px; width: auto; }
   .tgx-home .xb-partner img{ height: 24px; width: auto; }
@@ -249,8 +261,8 @@
   .tgx-home .xb-next{
     display: inline-flex; align-items: center; gap: 8px;
     padding: 8px 14px; border-radius: 999px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(var(--veil), 0.06);
+    border: 1px solid rgba(var(--veil), 0.08);
   }
   .tgx-home .xb-coindcx{
     font-family: var(--sans); font-weight: 800; letter-spacing: -0.01em;
@@ -260,9 +272,23 @@
   .tgx-home .xbanner .xb-short{ display: none; }
   .tgx-home .xb-next-tag{
     padding: 3px 8px; border-radius: 999px;
-    background: rgba(0,212,170,0.12); color: var(--accent);
-    border: 1px solid rgba(0,212,170,0.28);
+    background: rgba(var(--accent-rgb), 0.12); color: var(--accent);
+    border: 1px solid rgba(var(--accent-rgb), 0.28);
     font-size: 9.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  /* Not shipped yet: a dashed edge and a quieter tag carry that. Opacity
+     does NOT — it dimmed the brand colours until Bybit and Bitget looked
+     broken rather than upcoming. The border and the word do the work. */
+  .tgx-home .xb-soon{ border-style: dashed; }
+  .tgx-home .xb-next-tag.soon{
+    background: rgba(var(--veil), 0.07); color: var(--text-2);
+    border-color: rgba(var(--veil), 0.20);
+  }
+  .tgx-home .xb-logo{ height: 22px; width: auto; display: block; }
+  .tgx-home .xb-bybit b{ color: #f7a600; font-weight: 800; }
+  .tgx-home .xb-wordmark{
+    font-family: var(--sans); font-weight: 800; letter-spacing: -0.01em;
+    font-size: clamp(15px, 0.7vw + 11px, 19px); color: var(--text-2);
   }
 
   .tgx-home .xbanner-feats{
@@ -273,7 +299,7 @@
   }
   .tgx-home .xbanner-feats span{ display: inline-flex; align-items: center; gap: 7px; }
   .tgx-home .xb-dot{ width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
-  .tgx-home .xb-dot-teal{ background: var(--accent); box-shadow: 0 0 8px rgba(0,212,170,0.7); }
+  .tgx-home .xb-dot-teal{ background: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18); }
   .tgx-home .xb-dot-amber{ background: #fbbf24; }
   .tgx-home .xb-dot-slate{ background: #94a3b8; }
   .tgx-home .xb-soon{ color: var(--text-3); }
@@ -304,18 +330,20 @@
 
     /* Line 1 — flag + claim only. */
     .tgx-home .xbanner-eyebrow{ font-size: 10px; letter-spacing: 0.08em; gap: 7px; }
+    .tgx-home .xb-flag{ height: 14px; }
     .tgx-home .xbanner-eyebrow .xb-div,
     .tgx-home .xbanner-eyebrow .xb-accent{ display: none; }
 
-    /* Line 2 — TradeGuardX + Delta + CoinDCX, one row, no wrapping. */
+    /* Line 2 — four venues now, so they wrap two-up rather than being
+       squeezed onto one line against the card's rounded edge. */
     .tgx-home .xbanner-lockup{
-      flex-wrap: nowrap; gap: 5px; margin-top: 11px;
+      flex-wrap: wrap; gap: 7px; margin-top: 11px;
       justify-content: center; align-items: stretch;
     }
     .tgx-home .xb-brand,
     .tgx-home .xb-partner,
     .tgx-home .xb-next{
-      padding: 6px 8px; gap: 5px; border-radius: 12px; white-space: nowrap; min-width: 0;
+      padding: 7px 10px; gap: 6px; border-radius: 12px; white-space: nowrap; min-width: 0;
     }
     .tgx-home .xb-brand,
     .tgx-home .xb-partner{ font-size: 12.5px; letter-spacing: -0.01em; }
@@ -323,11 +351,13 @@
     .tgx-home .xb-partner img{ height: 14px; }
     .tgx-home .xb-plus{ font-size: 13px; align-self: center; }
     .tgx-home .xb-coindcx{ font-size: 12.5px; }
+    .tgx-home .xb-wordmark{ font-size: 12.5px; }
+    .tgx-home .xb-logo{ height: 13px; }
     .tgx-home .xb-next-tag{ padding: 2px 5px; font-size: 8px; letter-spacing: 0.08em; }
 
     /* Line 3 — the guarantees, one row. */
     .tgx-home .xbanner-feats{
-      flex-wrap: nowrap; gap: 8px; margin-top: 11px; font-size: 9.5px; white-space: nowrap;
+      flex-wrap: wrap; gap: 6px 10px; margin-top: 12px; font-size: 10.5px; white-space: nowrap;
     }
     .tgx-home .xbanner-feats span{ gap: 5px; }
     .tgx-home .xbanner-feats .xb-dot{ display: none; }
@@ -336,17 +366,201 @@
 
   @media (max-width: 360px){
     .tgx-home .xb-brand, .tgx-home .xb-partner{ font-size: 11.5px; }
-    .tgx-home .xbanner-feats{ font-size: 9px; gap: 6px; }
+    .tgx-home .xbanner-feats{ font-size: 10px; gap: 6px 8px; }
   }
 
   /* Rules, stated plainly. The old six-card showcase spent a screen and a half
      illustrating limits whose value is obvious from their name — the hero demo
      already shows one actually firing, so this only needs to say what's on
      offer. */
+  /* ── Reviews ─────────────────────────────────────────────────────────
+     Two real reviews. Cards are equal height so the pair reads as a set
+     rather than a ragged column, and the quote grows so the attribution
+     sits on the same line in both. */
+  .tgx-home .reviews{
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 16px; margin-top: 30px;
+  }
+  @media (max-width: 1080px){
+    .tgx-home .reviews{ grid-template-columns: repeat(2, 1fr); }
+    /* Three into two columns leaves a hole; the last one spans it. */
+    .tgx-home .reviews .rv-card:last-child{ grid-column: span 2; }
+  }
+  .tgx-home .rv-card{
+    display: flex; flex-direction: column; gap: 14px; margin: 0;
+    padding: 24px 26px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--bg-2);
+  }
+  .tgx-home .rv-stars{ display: flex; gap: 3px; }
+  /* Star drawn in CSS — five per card, ten on the page, and not one of them
+     worth a network request. */
+  .tgx-home .rv-star{
+    width: 15px; height: 15px; background: var(--surface-2);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+  .tgx-home .rv-star.on{ background: #f0b429; }
+  .tgx-home .rv-card blockquote{ margin: 0; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .tgx-home .rv-title{
+    font-family: var(--serif); font-size: 16.5px; font-weight: 700;
+    color: var(--text); letter-spacing: -0.015em; line-height: 1.35;
+  }
+  .tgx-home .rv-card blockquote p{
+    margin: 0; font-size: 14px; line-height: 1.6; color: var(--text-2);
+  }
+  .tgx-home .rv-card blockquote p b{ color: var(--text); font-weight: 700; }
+  .tgx-home .rv-by{
+    display: flex; align-items: center; gap: 11px;
+    padding-top: 15px; border-top: 1px solid var(--border);
+  }
+  .tgx-home .rv-av{
+    flex: none; width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: var(--serif); font-size: 14px; font-weight: 700;
+    color: var(--accent); background: var(--accent-glow);
+    border: 1px solid rgba(var(--accent-rgb), 0.24);
+  }
+  .tgx-home .rv-who{ display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .tgx-home .rv-who b{ font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+  .tgx-home .rv-who span{
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-3);
+  }
+
+  @media (max-width: 760px){
+    .tgx-home .reviews{ grid-template-columns: 1fr; }
+    .tgx-home .reviews .rv-card:last-child{ grid-column: auto; }
+    .tgx-home .rv-card{ padding: 20px 21px; }
+  }
+
+  /* ── Tax centre ──────────────────────────────────────────────────────
+     Two drawings rather than six cards of copy: the number that moves while
+     you trade, and the document your accountant actually wants. */
+  .tgx-home .tax-panels{
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 16px; margin-top: 30px;
+  }
+  .tgx-home .tax-panel{
+    display: flex; flex-direction: column;
+    border: 1px solid var(--border); border-radius: 20px;
+    background: var(--bg-2); overflow: hidden;
+  }
+  .tgx-home .tp-head{
+    display: flex; align-items: center; gap: 9px;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    background: rgba(var(--veil), 0.02);
+  }
+  .tgx-home .tp-label{
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);
+  }
+  /* Both header glyphs occupy the same 14px box so the two labels start at
+     the same x and sit on the same optical line across the pair. */
+  .tgx-home .tp-dot,
+  .tgx-home .tp-doc{ flex: none; width: 14px; height: 14px; display: grid; place-items: center; }
+  .tgx-home .tp-dot::before{
+    content: ''; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow);
+  }
+  .tgx-home .tp-doc::before{
+    content: ''; width: 9px; height: 12px; border-radius: 2px;
+    border: 1.5px solid var(--text-3);
+  }
+  /* Both bodies fill the shared row height, so the panel with fewer rows
+     distributes them instead of stacking at the top over a dead zone. */
+  .tgx-home .tp-body{ padding: 20px; flex: 1; display: flex; flex-direction: column; }
+  .tgx-home .tp-fy{
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-3); margin-bottom: 14px;
+  }
+  .tgx-home .tp-rows{ display: flex; flex-direction: column; justify-content: space-evenly; flex: 1; gap: 11px; }
+  .tgx-home .tp-row{
+    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    font-size: 13.5px; color: var(--text-2);
+  }
+  .tgx-home .tp-row b{
+    font-family: var(--serif); font-size: 17px; font-weight: 700;
+    letter-spacing: -0.02em; color: var(--text); font-variant-numeric: tabular-nums;
+  }
+  .tgx-home .tp-row b.pos{ color: var(--accent); font-size: 20px; }
+  .tgx-home .tp-row b.dim{ color: var(--text-2); font-size: 14px; font-weight: 600; }
+  .tgx-home .tp-foot{
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-top: auto; padding-top: 13px; border-top: 1px solid var(--border);
+    font-size: 12.5px; color: var(--text-3);
+  }
+  .tgx-home .tp-foot b{ color: var(--text-2); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* The four exports, as files. Grey rules read as a skeleton; a format
+     badge and a name say what lands in your accountant's inbox. */
+  .tgx-home .tp-files{ display: flex; flex-direction: column; justify-content: space-evenly; flex: 1; gap: 8px; }
+  .tgx-home .tp-file{
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 13px; border-radius: 12px;
+    border: 1px solid var(--border); background: rgba(var(--veil), 0.02);
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .tgx-home .tp-file:hover{ border-color: var(--border-bright); background: rgba(var(--veil), 0.04); }
+  .tgx-home .tp-ext{
+    flex: none; width: 42px; text-align: center;
+    font-family: var(--mono); font-size: 9px; font-weight: 800;
+    letter-spacing: 0.08em; padding: 5px 0; border-radius: 6px;
+  }
+  .tgx-home .tp-pdf{ color: #f87171; background: rgba(220,38,38,0.12); }
+  .tgx-home .tp-xls{ color: var(--accent); background: var(--accent-glow); }
+  .tgx-home .tp-csv{ color: #60a5fa; background: rgba(96,165,250,0.12); }
+  .tgx-home .tp-zip{ color: #a78bfa; background: rgba(167,139,250,0.14); }
+  .tgx-home .tp-file-txt{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .tgx-home .tp-file-txt b{ font-size: 13.5px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+  .tgx-home .tp-file-txt span{
+    font-size: 11.5px; line-height: 1.4; color: var(--text-3);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* Download arrow, drawn in CSS so the panel carries no extra asset. */
+  .tgx-home .tp-dl{
+    flex: none; position: relative; width: 14px; height: 14px; opacity: .55;
+  }
+  .tgx-home .tp-dl::before{
+    content: ''; position: absolute; left: 6px; top: 0; width: 2px; height: 9px;
+    border-radius: 1px; background: var(--text-2);
+  }
+  .tgx-home .tp-dl::after{
+    content: ''; position: absolute; left: 3px; top: 4px; width: 8px; height: 8px;
+    border-right: 2px solid var(--text-2); border-bottom: 2px solid var(--text-2);
+    transform: rotate(45deg); border-radius: 0 0 2px 0;
+  }
+  .tgx-home .tp-file:hover .tp-dl{ opacity: 1; }
+
+  .tgx-home .tp-cap{
+    padding: 14px 20px; border-top: 1px solid var(--border);
+    font-size: 12.5px; line-height: 1.5; color: var(--text-3);
+  }
+
+  @media (max-width: 760px){
+    .tgx-home .tax-panels{ grid-template-columns: 1fr; }
+  }
+
+  /* Seven items into four columns leaves one cell empty, and because the
+     gaps are painted by the container's border colour that empty cell reads
+     as a hole punched in the block rather than as spare room. The last item
+     spans whatever is left over, so every row ends flush.
+     Explicit columns, not auto-fit, because the span has to know the count. */
   .tgx-home .rules-simple{
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    display: grid; grid-template-columns: repeat(4, 1fr);
     gap: 1px; background: var(--border); border: 1px solid var(--border);
     border-radius: 16px; overflow: hidden;
+  }
+  .tgx-home .rules-simple .rs-item:last-child{ grid-column: span 2; }
+  @media (max-width: 1180px){
+    .tgx-home .rules-simple{ grid-template-columns: repeat(3, 1fr); }
+    .tgx-home .rules-simple .rs-item:last-child{ grid-column: span 3; }
+  }
+  @media (max-width: 860px){
+    .tgx-home .rules-simple{ grid-template-columns: repeat(2, 1fr); }
+    .tgx-home .rules-simple .rs-item:last-child{ grid-column: span 2; }
+  }
+  @media (max-width: 560px){
+    .tgx-home .rules-simple{ grid-template-columns: 1fr; }
+    .tgx-home .rules-simple .rs-item:last-child{ grid-column: auto; }
   }
   .tgx-home .rs-item{
     background: var(--surface); padding: 20px 22px;
@@ -378,7 +592,7 @@
     display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
   }
   .tgx-home .key-ic svg{ width: 21px; height: 21px; }
-  .tgx-home .key-ic-teal{ background: rgba(0,212,170,0.12); color: var(--accent); }
+  .tgx-home .key-ic-teal{ background: rgba(var(--accent-rgb), 0.12); color: var(--accent); }
   .tgx-home .key-ic-blue{ background: rgba(96,165,250,0.12); color: #60a5fa; }
   .tgx-home .key-ic-slate{ background: rgba(148,163,184,0.12); color: #94a3b8; }
   .tgx-home .key-card h4{ font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; margin-bottom: 8px; }
@@ -399,16 +613,16 @@
   }
   .tgx-home .hero-eyebrow .dot{
     width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
-    box-shadow: 0 0 0 4px rgba(0,212,170,0.15);
+    box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.15);
     animation: pulse 2s infinite;
   }
   @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 4px rgba(0,212,170,0.15); }
-    50% { box-shadow: 0 0 0 6px rgba(0,212,170,0.05); }
+    0%, 100% { box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.15); }
+    50% { box-shadow: 0 0 0 6px rgba(var(--accent-rgb), 0.05); }
   }
   .tgx-home .hero-eyebrow span{
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
-    text-transform: uppercase; color: var(--text-2);
+    text-transform: uppercase; color: var(--danger);
   }
   .tgx-home .hero h1{ margin-bottom: 24px; }
   .tgx-home .hero h1 .accent-line{
@@ -431,8 +645,8 @@
   .tgx-home .hero-exchange{
     display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px 14px;
     padding: 12px 16px 12px 18px; border-radius: 16px; margin-bottom: 22px;
-    background: linear-gradient(180deg, rgba(0,212,170,0.07), rgba(0,212,170,0.02));
-    border: 1px solid rgba(0,212,170,0.20);
+    background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.07), rgba(var(--accent-rgb), 0.02));
+    border: 1px solid rgba(var(--accent-rgb), 0.20);
   }
   .tgx-home .hero-exchange .hx-logo{ display: inline-flex; align-items: center; gap: 11px; }
   .tgx-home .hero-exchange .hx-logo img{ height: 34px; width: auto; }
@@ -441,17 +655,17 @@
   }
   .tgx-home .hero-exchange .hx-live{
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.12em; color: var(--accent);
     padding: 4px 9px; border-radius: 999px;
-    background: rgba(0,212,170,0.10); border: 1px solid rgba(0,212,170,0.22);
+    background: rgba(var(--accent-rgb), 0.10); border: 1px solid rgba(var(--accent-rgb), 0.22);
   }
   .tgx-home .hero-exchange .hx-live i{
     width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0,212,170,0.15); animation: pulse 2s infinite;
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15); animation: pulse 2s infinite;
   }
   .tgx-home .hero-exchange .hx-soon{
-    font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.1em; color: var(--text-3);
   }
   .tgx-home .hero-trust{
@@ -483,14 +697,14 @@
     border: 1px solid var(--border-bright);
     border-radius: 16px; padding: 18px;
     box-shadow:
-      0 40px 80px -20px rgba(0,0,0,0.6),
-      0 0 0 1px rgba(255,255,255,0.02);
+      0 40px 80px -20px rgba(var(--shade), 0.6),
+      0 0 0 1px rgba(var(--veil), 0.02);
     position: relative;
   }
   .tgx-home .device::before{
     content: ""; position: absolute; inset: -1px;
     border-radius: 16px; pointer-events: none;
-    background: linear-gradient(180deg, rgba(0,212,170,0.2), transparent 30%);
+    background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.2), transparent 30%);
     mask: linear-gradient(black, black) content-box, linear-gradient(black, black);
     mask-composite: exclude; padding: 1px;
   }
@@ -504,12 +718,12 @@
     font-family: var(--mono); font-size: 13px;
   }
   .tgx-home .device-head .pair .ex{
-    background: rgba(0,212,170,0.1); color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.1); color: var(--accent);
     padding: 3px 8px; border-radius: 4px; font-size: 10px;
     letter-spacing: 0.1em; text-transform: uppercase;
   }
   .tgx-home .device-head .live{
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em;
     color: var(--text-3); text-transform: uppercase;
     display: flex; align-items: center; gap: 6px;
   }
@@ -523,7 +737,7 @@
     padding: 14px;
   }
   .tgx-home .pl-cell .label{
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em;
     color: var(--text-3); text-transform: uppercase; margin-bottom: 8px;
   }
   .tgx-home .pl-cell .val{ font-family: var(--mono); font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
@@ -556,18 +770,18 @@
   .tgx-home .rule-bar .meta .used{ color: var(--danger); }
 
   .tgx-home .alert{
-    background: linear-gradient(180deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02));
-    border: 1px solid rgba(239,68,68,0.25); border-radius: 10px;
+    background: linear-gradient(180deg, rgba(220,38,38,0.08), rgba(220,38,38,0.02));
+    border: 1px solid rgba(220,38,38,0.25); border-radius: 10px;
     padding: 14px; display: flex; gap: 12px; align-items: flex-start;
   }
   .tgx-home .alert-icon{
     width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
-    background: rgba(239,68,68,0.12); display: grid; place-items: center;
+    background: rgba(220,38,38,0.12); display: grid; place-items: center;
     color: var(--danger);
   }
   .tgx-home .alert-body{ font-size: 13px; line-height: 1.5; }
   .tgx-home .alert-body .tag{
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--danger); margin-bottom: 4px;
     display: block;
   }
@@ -579,15 +793,15 @@
   .tgx-home .float-card{
     position: absolute; background: var(--surface); border: 1px solid var(--border-bright);
     border-radius: 10px; padding: 10px 14px;
-    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+    box-shadow: 0 20px 40px -10px rgba(var(--shade), 0.5);
     font-family: var(--mono); font-size: 11px;
     display: flex; align-items: center; gap: 8px;
   }
   .tgx-home .float-card .ico{
     width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center;
-    background: rgba(0,212,170,0.12); color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.12); color: var(--accent);
   }
-  .tgx-home .float-card .ico.warn{ background: rgba(240,180,41,0.12); color: var(--warn); }
+  .tgx-home .float-card .ico.warn{ background: rgba(180,83,9,0.12); color: var(--warn); }
   .tgx-home .float-card-1{ top: -16px; left: -30px; animation: float 6s ease-in-out infinite; }
   .tgx-home .float-card-2{ bottom: 20px; right: -24px; animation: float 6s ease-in-out infinite 2s; }
   @keyframes float {
@@ -599,7 +813,7 @@
   .tgx-home .trust-strip{
     padding: 36px 0; border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, transparent, rgba(0,212,170,0.02));
+    background: linear-gradient(180deg, transparent, rgba(var(--accent-rgb), 0.02));
   }
   .tgx-home .trust-grid{
     display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px;
@@ -620,7 +834,7 @@
     padding: 8px 12px; background: var(--surface); border: 1px solid var(--border);
     border-radius: 8px; font-family: var(--mono); font-size: 12px;
   }
-  .tgx-home .ex-chip.live{ border-color: rgba(0,212,170,0.3); }
+  .tgx-home .ex-chip.live{ border-color: rgba(var(--accent-rgb), 0.3); }
   .tgx-home .ex-chip .ex-dot{ width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
   .tgx-home .ex-chip .ex-dot.soon{ background: var(--warn); }
   .tgx-home .ex-chip .ex-status{
@@ -647,7 +861,7 @@
   .tgx-home .problem .display{ line-height: 1.0; }
   .tgx-home .problem .display .strike{
     color: var(--text-3); text-decoration: line-through;
-    text-decoration-color: rgba(239,68,68,0.5); text-decoration-thickness: 3px;
+    text-decoration-color: rgba(220,38,38,0.5); text-decoration-thickness: 3px;
   }
   .tgx-home .problem .display .accent-line{ color: var(--accent); }
   .tgx-home .pain-grid{
@@ -670,7 +884,7 @@
   .tgx-home .pain-card p{ font-size: 14px; color: var(--text-2); line-height: 1.55; }
   .tgx-home .pain-card::after{
     content: ""; position: absolute; inset: 0;
-    background: radial-gradient(circle at 0% 0%, rgba(239,68,68,0.06), transparent 50%);
+    background: radial-gradient(circle at 0% 0%, rgba(220,38,38,0.06), transparent 50%);
     pointer-events: none;
   }
 
@@ -684,13 +898,13 @@
     padding: 32px; position: relative;
   }
   .tgx-home .step-card .step-num{
-    font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em;
+    font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.16em;
     color: var(--accent); margin-bottom: 28px;
   }
   .tgx-home .step-card h4{ font-size: 22px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.01em; }
   .tgx-home .step-card p{ font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 24px; }
   .tgx-home .step-card .step-meta{
-    font-family: var(--mono); font-size: 11px; color: var(--text-3);
+    font-family: var(--mono); font-size: 11px; color: var(--text-2);
     padding-top: 16px; border-top: 1px solid var(--border);
     letter-spacing: 0.06em;
   }
@@ -716,7 +930,7 @@
   .tgx-home .enforce-item:last-child{ border-bottom: 1px solid var(--border); }
   .tgx-home .enforce-item .ico-wrap{
     width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
-    background: rgba(0,212,170,0.08); display: grid; place-items: center;
+    background: rgba(var(--accent-rgb), 0.08); display: grid; place-items: center;
     color: var(--accent);
   }
   .tgx-home .enforce-item h5{ font-size: 15px; font-weight: 600; margin-bottom: 2px; }
@@ -727,13 +941,13 @@
     background: linear-gradient(180deg, var(--surface), var(--bg-2));
     border: 1px solid var(--border-bright); border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 40px 80px -20px rgba(0,0,0,0.6);
+    box-shadow: 0 40px 80px -20px rgba(var(--shade), 0.6);
   }
   .tgx-home .terminal-bar{
     background: var(--bg-2); padding: 12px 16px;
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center; gap: 10px;
-    font-family: var(--mono); font-size: 11px; color: var(--text-3);
+    font-family: var(--mono); font-size: 11px; color: var(--text-2);
   }
   .tgx-home .terminal-bar .dots{ display: flex; gap: 6px; margin-right: 8px; }
   .tgx-home .terminal-bar .dots span{
@@ -781,19 +995,19 @@
   }
   .tgx-home .blocked-tag{
     padding: 4px 10px; border-radius: 999px;
-    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.25);
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--danger);
   }
   .tgx-home .je-grid{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 22px; }
   .tgx-home .je-cell .lbl{
-    font-family: var(--mono); font-size: 10px; color: var(--text-3);
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: var(--text-3);
     letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px;
   }
   .tgx-home .je-cell .val{ font-family: var(--mono); font-size: 16px; font-weight: 500; }
   .tgx-home .je-cell .val.buy{ color: var(--accent); }
   .tgx-home .je-violation{
-    background: rgba(239,68,68,0.04); border: 1px solid rgba(239,68,68,0.2);
+    background: rgba(220,38,38,0.04); border: 1px solid rgba(220,38,38,0.2);
     border-radius: 10px; padding: 14px 16px; margin-bottom: 18px;
   }
   .tgx-home .je-violation .vh{
@@ -803,12 +1017,12 @@
   }
   .tgx-home .je-violation p{ font-size: 13px; color: var(--text); }
   .tgx-home .je-insight{
-    background: rgba(0,212,170,0.04); border: 1px solid rgba(0,212,170,0.2);
+    background: rgba(var(--accent-rgb), 0.04); border: 1px solid rgba(var(--accent-rgb), 0.2);
     border-radius: 10px; padding: 14px 16px;
   }
   .tgx-home .je-insight .ih{
     display: flex; align-items: center; gap: 6px;
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
   }
   .tgx-home .je-insight p{ font-size: 13px; color: var(--text); line-height: 1.55; }
@@ -820,14 +1034,14 @@
     padding: 12px 4px 0;
   }
   .tgx-home .bar{
-    flex: 1; background: linear-gradient(180deg, rgba(0,212,170,0.6), rgba(0,212,170,0.2));
+    flex: 1; background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.6), rgba(var(--accent-rgb), 0.2));
     border-radius: 4px 4px 0 0; position: relative;
     transition: opacity 0.2s;
   }
-  .tgx-home .bar.hot{ background: linear-gradient(180deg, rgba(239,68,68,0.7), rgba(239,68,68,0.2)); }
+  .tgx-home .bar.hot{ background: linear-gradient(180deg, rgba(220,38,38,0.7), rgba(220,38,38,0.2)); }
   .tgx-home .bar .hour{
     position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
-    font-family: var(--mono); font-size: 10px; color: var(--text-3);
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: var(--text-3);
   }
   .tgx-home .chart-foot{ display: flex; justify-content: space-between; margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--border); }
   .tgx-home .chart-foot .item{ font-family: var(--mono); font-size: 11px; color: var(--text-3); }
@@ -849,7 +1063,7 @@
   }
   .tgx-home .rule-card h4{ font-size: 17px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.01em; }
   .tgx-home .rule-card .meta{
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--text-3); margin-bottom: 14px;
   }
   .tgx-home .rule-card p{ font-size: 13px; color: var(--text-2); line-height: 1.6; }
@@ -883,16 +1097,16 @@
   .tgx-home .preview-hedge .b, .tgx-home .preview-hedge .s{
     padding: 6px 10px; border-radius: 6px; font-size: 11px;
   }
-  .tgx-home .preview-hedge .b{ background: rgba(0,212,170,0.1); color: var(--accent); border: 1px solid rgba(0,212,170,0.3); }
-  .tgx-home .preview-hedge .s{ background: rgba(239,68,68,0.08); color: var(--text-3); border: 1px solid var(--border); text-decoration: line-through; }
+  .tgx-home .preview-hedge .b{ background: rgba(var(--accent-rgb), 0.1); color: var(--accent); border: 1px solid rgba(var(--accent-rgb), 0.3); }
+  .tgx-home .preview-hedge .s{ background: rgba(220,38,38,0.08); color: var(--text-3); border: 1px solid var(--border); text-decoration: line-through; }
   .tgx-home .preview-lev{
     display: flex; gap: 4px; align-items: flex-end; height: 50px;
   }
   .tgx-home .preview-lev .b{
-    width: 14px; background: rgba(0,212,170,0.2); border-radius: 2px 2px 0 0;
+    width: 14px; background: rgba(var(--accent-rgb), 0.2); border-radius: 2px 2px 0 0;
   }
-  .tgx-home .preview-lev .b.warn{ background: rgba(240,180,41,0.4); }
-  .tgx-home .preview-lev .b.over{ background: rgba(239,68,68,0.5); }
+  .tgx-home .preview-lev .b.warn{ background: rgba(180,83,9,0.4); }
+  .tgx-home .preview-lev .b.over{ background: rgba(220,38,38,0.5); }
 
   /* ---------- pricing ---------- */
   .tgx-home .pricing-wrap{ background: linear-gradient(180deg, var(--bg), var(--bg-2)); }
@@ -904,8 +1118,8 @@
     padding: 36px; position: relative; overflow: hidden;
   }
   .tgx-home .price-card.pro{
-    border-color: rgba(0,212,170,0.4);
-    background: linear-gradient(180deg, rgba(0,212,170,0.03), var(--surface));
+    border-color: rgba(var(--accent-rgb), 0.4);
+    background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.03), var(--surface));
   }
   .tgx-home .price-card.pro::before{
     content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
@@ -1062,7 +1276,7 @@
   }
   .tgx-home .rule-bar .fill::after{
     content: ""; position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(var(--veil), 0.3), transparent);
     background-size: 200% 100%;
     animation: shimmerBar 3s linear infinite;
   }
@@ -1108,7 +1322,7 @@
 
   /* ---------- mobile + alerts section ---------- */
   .tgx-home .mobile-section{
-    background: linear-gradient(180deg, transparent, rgba(0,212,170,0.025), transparent);
+    background: linear-gradient(180deg, transparent, rgba(var(--accent-rgb), 0.025), transparent);
     overflow: hidden;
   }
   .tgx-home .mobile-grid{
@@ -1169,9 +1383,9 @@
     border: 8px solid #1A1F2E;
     border-radius: 38px; padding: 18px 14px;
     box-shadow:
-      0 50px 100px -20px rgba(0,0,0,0.7),
-      0 0 0 1px rgba(0,212,170,0.08),
-      inset 0 0 0 1px rgba(255,255,255,0.03);
+      0 50px 100px -20px rgba(var(--shade), 0.7),
+      0 0 0 1px rgba(var(--accent-rgb), 0.08),
+      inset 0 0 0 1px rgba(var(--veil), 0.03);
     position: relative;
     animation: phoneBob 6s ease-in-out infinite;
     flex-shrink: 0;
@@ -1189,7 +1403,7 @@
   }
   .tgx-home .ph-app-bar{
     display: flex; justify-content: space-between; align-items: center;
-    font-family: var(--mono); font-size: 10px;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700;
     padding-bottom: 8px; border-bottom: 1px solid var(--border);
   }
   .tgx-home .ph-app-bar .ph-logo{
@@ -1236,23 +1450,23 @@
     padding: 8px; border-radius: 6px; font-family: var(--mono); font-size: 11px;
     text-align: center; font-weight: 600;
   }
-  .tgx-home .ph-btn.b{ background: rgba(0,212,170,0.15); color: var(--accent); }
-  .tgx-home .ph-btn.s{ background: rgba(239,68,68,0.12); color: var(--danger); }
+  .tgx-home .ph-btn.b{ background: rgba(var(--accent-rgb), 0.15); color: var(--accent); }
+  .tgx-home .ph-btn.s{ background: rgba(220,38,38,0.12); color: var(--danger); }
 
   /* phone overlay: blocked banner */
   .tgx-home .ph-block-banner{
     position: absolute; left: 14px; right: 14px; top: 50%;
     transform: translateY(-50%);
-    background: linear-gradient(180deg, rgba(239,68,68,0.95), rgba(239,68,68,0.85));
+    background: linear-gradient(180deg, rgba(220,38,38,0.95), rgba(220,38,38,0.85));
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(239,68,68,0.4);
+    border: 1px solid rgba(220,38,38,0.4);
     border-radius: 12px; padding: 14px; color: white;
     font-family: var(--sans); z-index: 2;
-    box-shadow: 0 20px 40px rgba(239,68,68,0.3);
+    box-shadow: 0 10px 24px -8px rgba(220,38,38,0.35), 0 2px 6px rgba(var(--shade),0.10);
   }
   .tgx-home .ph-block-banner .head{
     display: flex; align-items: center; gap: 8px;
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.16em;
     text-transform: uppercase; margin-bottom: 6px;
   }
   .tgx-home .ph-block-banner .msg{ font-size: 13px; font-weight: 500; line-height: 1.4; }
@@ -1268,7 +1482,7 @@
     background: var(--surface); border: 1px solid var(--border-bright);
     border-radius: 14px; padding: 14px 16px;
     display: flex; gap: 12px;
-    box-shadow: 0 20px 40px -12px rgba(0,0,0,0.5);
+    box-shadow: 0 20px 40px -12px rgba(var(--shade), 0.5);
     position: relative;
   }
   .tgx-home .alert-card-static .ac-icon{
@@ -1284,11 +1498,11 @@
     margin-bottom: 4px;
   }
   .tgx-home .alert-card-static .ac-source{
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em;
     color: var(--text-3); text-transform: uppercase;
   }
   .tgx-home .alert-card-static .ac-time{
-    font-family: var(--mono); font-size: 10px; color: var(--text-3);
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: var(--text-3);
   }
   .tgx-home .alert-card-static .ac-title{
     font-size: 13px; font-weight: 600; margin-bottom: 2px;
@@ -1306,13 +1520,13 @@
   .tgx-home .phone-stage::before{
     content: ""; position: absolute;
     left: 45%; top: 50%; width: 28%; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0,212,170,0.25), transparent);
+    background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.25), transparent);
     z-index: 0;
   }
 
   /* ---------- scenarios - a day in the life ---------- */
   .tgx-home .scenarios{
-    background: linear-gradient(180deg, transparent, rgba(0,212,170,0.02), transparent);
+    background: linear-gradient(180deg, transparent, rgba(var(--accent-rgb), 0.02), transparent);
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
   }
@@ -1333,20 +1547,20 @@
     content: ""; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
     background: var(--warn);
   }
-  .tgx-home .scenario-card.escalate-2::before{ background: linear-gradient(180deg, var(--warn), #FF7A40); }
-  .tgx-home .scenario-card.escalate-3::before{ background: linear-gradient(180deg, #FF7A40, #B85CFF); }
-  .tgx-home .scenario-card.escalate-4::before{ background: linear-gradient(180deg, #B85CFF, var(--danger)); }
+  .tgx-home .scenario-card.escalate-2::before{ background: linear-gradient(180deg, var(--warn), #ea580c); }
+  .tgx-home .scenario-card.escalate-3::before{ background: linear-gradient(180deg, #ea580c, #7c3aed); }
+  .tgx-home .scenario-card.escalate-4::before{ background: linear-gradient(180deg, #7c3aed, var(--danger)); }
 
   .tgx-home .scenario-time{
     font-family: var(--mono); font-size: 26px; font-weight: 500;
     color: var(--text-3); letter-spacing: -0.02em; line-height: 1;
   }
   .tgx-home .scenario-time .ampm{
-    display: block; font-size: 11px; letter-spacing: 0.16em;
-    text-transform: uppercase; margin-top: 6px; color: var(--text-3);
+    display: block; font-size: 11.5px; letter-spacing: 0.14em; font-weight: 600;
+    text-transform: uppercase; margin-top: 6px; color: var(--text-2);
   }
   .tgx-home .scenario-stage{
-    font-family: var(--mono); font-size: 10px;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700;
     letter-spacing: 0.18em; text-transform: uppercase;
     margin-bottom: 14px; display: inline-flex; align-items: center; gap: 8px;
   }
@@ -1354,13 +1568,13 @@
     content: ""; width: 6px; height: 6px; border-radius: 50%;
   }
   .tgx-home .scenario-card.escalate-1 .scenario-stage{ color: var(--warn); }
-  .tgx-home .scenario-card.escalate-1 .scenario-stage::before{ background: var(--warn); box-shadow: 0 0 0 3px rgba(240,180,41,0.15); }
-  .tgx-home .scenario-card.escalate-2 .scenario-stage{ color: #FF8A50; }
-  .tgx-home .scenario-card.escalate-2 .scenario-stage::before{ background: #FF8A50; box-shadow: 0 0 0 3px rgba(255,138,80,0.15); }
-  .tgx-home .scenario-card.escalate-3 .scenario-stage{ color: #C58BFF; }
-  .tgx-home .scenario-card.escalate-3 .scenario-stage::before{ background: #C58BFF; box-shadow: 0 0 0 3px rgba(197,139,255,0.15); }
+  .tgx-home .scenario-card.escalate-1 .scenario-stage::before{ background: var(--warn); box-shadow: 0 0 0 3px rgba(180,83,9,0.15); }
+  .tgx-home .scenario-card.escalate-2 .scenario-stage{ color: #c2410c; }
+  .tgx-home .scenario-card.escalate-2 .scenario-stage::before{ background: #c2410c; box-shadow: 0 0 0 3px rgba(194,65,12,0.15); }
+  .tgx-home .scenario-card.escalate-3 .scenario-stage{ color: #7c3aed; }
+  .tgx-home .scenario-card.escalate-3 .scenario-stage::before{ background: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
   .tgx-home .scenario-card.escalate-4 .scenario-stage{ color: var(--danger); }
-  .tgx-home .scenario-card.escalate-4 .scenario-stage::before{ background: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.15); animation: liveBlink 1.5s ease-in-out infinite; }
+  .tgx-home .scenario-card.escalate-4 .scenario-stage::before{ background: var(--danger); box-shadow: 0 0 0 3px rgba(220,38,38,0.15); animation: liveBlink 1.5s ease-in-out infinite; }
 
   .tgx-home .scenario-content h3{
     font-family: var(--serif); font-size: 26px; font-weight: 700;
@@ -1372,17 +1586,17 @@
   }
   .tgx-home .scenario-action{
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    font-family: var(--mono); font-size: 12px;
+    font-family: var(--mono); font-size: 12.5px;
   }
   .tgx-home .scenario-action .you-did, .tgx-home .scenario-action .we-did{
     padding: 12px 14px; border-radius: 8px; line-height: 1.5;
   }
   .tgx-home .scenario-action .you-did{
-    background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+    background: rgba(var(--veil), 0.02); border: 1px solid var(--border);
     color: var(--text-2);
   }
   .tgx-home .scenario-action .we-did{
-    background: rgba(0,212,170,0.05); border: 1px solid rgba(0,212,170,0.2);
+    background: rgba(var(--accent-rgb), 0.05); border: 1px solid rgba(var(--accent-rgb), 0.2);
     color: var(--text);
   }
   .tgx-home .scenario-action .micro-lbl{
@@ -1407,7 +1621,7 @@
     opacity: 0;
   }
   .tgx-home .sv1-position .head{
-    font-family: var(--mono); font-size: 11px; color: var(--text-3);
+    font-family: var(--mono); font-size: 11px; color: var(--text-2);
     letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;
     display: flex; justify-content: space-between;
   }
@@ -1419,13 +1633,14 @@
     display: flex; justify-content: space-between; align-items: center;
     font-family: var(--mono); font-size: 13px; padding: 4px 0;
   }
-  .tgx-home .sv1-position .row .lbl{ color: var(--text-3); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .tgx-home .sv1-position .row .lbl{ color: var(--text-2); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; }
   .tgx-home .sv1-position .sl-row{
     padding: 8px 10px; margin-top: 6px; border-radius: 6px;
     background: transparent; transition: background 0.4s ease;
   }
+  .tgx-home .sv1-position .sl-row .lbl{ color: inherit; font-weight: 600; }
   .tgx-home .sv1-position .sl-row .val{
-    color: var(--text-3); font-size: 11px;
+    color: var(--danger); font-size: 11px; font-weight: 700;
   }
   .tgx-home .sv1-alert{
     position: absolute; left: 18px; right: 18px; top: 18px;
@@ -1441,7 +1656,7 @@
   }
   .tgx-home .sv1-alert .bell{
     width: 28px; height: 28px; border-radius: 7px;
-    background: rgba(255,255,255,0.3); display: grid; place-items: center;
+    background: rgba(255,255,255,0.45); display: grid; place-items: center;
     flex-shrink: 0;
   }
   .tgx-home .sv1-alert .msg{ font-size: 12px; line-height: 1.45; }
@@ -1454,7 +1669,7 @@
   }
   @keyframes sv1Sl {
     0%, 16% { background: transparent; color: var(--text-3); }
-    20%, 100% { background: rgba(239,68,68,0.12); color: var(--danger); }
+    20%, 100% { background: rgba(220,38,38,0.12); color: var(--danger); }
   }
   @keyframes sv1AlertIn {
     0%, 28% { opacity: 0; transform: translateY(-110%); }
@@ -1474,7 +1689,7 @@
   }
   .tgx-home .sv2-form .form-row{
     display: flex; justify-content: space-between; align-items: center;
-    font-family: var(--mono); font-size: 12px;
+    font-family: var(--mono); font-size: 12.5px;
   }
   .tgx-home .sv2-form .form-row .lbl{ color: var(--text-3); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
   .tgx-home .sv2-form .form-row .val{ color: var(--text); font-size: 13px; font-weight: 500; }
@@ -1493,33 +1708,33 @@
   }
   .tgx-home .sv2-meta{
     display: flex; justify-content: space-between;
-    font-family: var(--mono); font-size: 10px; margin-top: 2px;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; margin-top: 2px;
   }
   .tgx-home .sv2-meta .now{ color: var(--text-2); }
   .tgx-home .sv2-meta .cap{ color: var(--text-3); }
   .tgx-home .sv2-place-btn{
     margin-top: 6px; padding: 10px;
-    background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3);
+    background: var(--accent); border: 1px solid var(--accent);
     border-radius: 6px; text-align: center;
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--accent); font-weight: 600;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #052418; font-weight: 700;
   }
   .tgx-home .sv2-stamp{
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%) rotate(-12deg) scale(2);
     padding: 10px 22px;
     border: 3px solid var(--danger); border-radius: 6px;
-    background: rgba(5,8,16,0.85); backdrop-filter: blur(4px);
+    background: rgba(255,255,255,0.86); backdrop-filter: blur(4px);
     font-family: var(--serif); font-weight: 800; font-size: 26px;
     color: var(--danger); letter-spacing: 0.08em;
     opacity: 0; z-index: 2;
-    box-shadow: 0 0 40px rgba(239,68,68,0.4);
+    box-shadow: 0 8px 22px -8px rgba(220,38,38,0.40);
     white-space: nowrap;
   }
   .tgx-home .sv2-stamp .stamp-sub{
     display: block; font-family: var(--mono); font-size: 9px;
     font-weight: 400; letter-spacing: 0.14em; margin-top: 2px;
-    text-transform: uppercase; color: var(--text-2);
+    text-transform: uppercase; color: var(--danger);
   }
   @keyframes sv2Fill {
     0%, 4% { width: 28%; }
@@ -1550,14 +1765,14 @@
   }
   .tgx-home .sv3-losses .loss{
     display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 14px; background: var(--surface); border: 1px solid rgba(239,68,68,0.2);
+    padding: 10px 14px; background: var(--surface); border: 1px solid rgba(220,38,38,0.2);
     border-radius: 8px;
-    font-family: var(--mono); font-size: 12px;
+    font-family: var(--mono); font-size: 12.5px;
     opacity: 0;
   }
   .tgx-home .sv3-losses .loss .x{
     width: 18px; height: 18px; border-radius: 4px;
-    background: rgba(239,68,68,0.15); color: var(--danger);
+    background: rgba(220,38,38,0.15); color: var(--danger);
     display: grid; place-items: center; flex-shrink: 0; margin-right: 10px;
     font-weight: 600;
   }
@@ -1567,26 +1782,26 @@
   .tgx-home .sv3-cooldown{
     position: absolute; inset: 22px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: linear-gradient(180deg, rgba(197,139,255,0.08), rgba(5,8,16,0.95));
-    border: 1px solid rgba(197,139,255,0.25);
+    background: linear-gradient(180deg, rgba(124,58,237,0.06), rgba(124,58,237,0.14));
+    border: 1px solid rgba(124,58,237,0.25);
     border-radius: 10px;
     opacity: 0; transform: scale(0.94);
   }
   .tgx-home .sv3-cooldown .lock{
     width: 38px; height: 38px; border-radius: 9px;
-    background: rgba(197,139,255,0.15); color: #C58BFF;
+    background: rgba(124,58,237,0.15); color: #7c3aed;
     display: grid; place-items: center; margin-bottom: 12px;
   }
   .tgx-home .sv3-cooldown .lbl{
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
-    color: #C58BFF; text-transform: uppercase; margin-bottom: 6px;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.16em;
+    color: #7c3aed; text-transform: uppercase; margin-bottom: 6px;
   }
   .tgx-home .sv3-cooldown .timer{
     font-family: var(--mono); font-size: 28px; font-weight: 500;
     color: var(--text); letter-spacing: -0.02em; margin-bottom: 6px;
   }
   .tgx-home .sv3-cooldown .sub{
-    font-family: var(--mono); font-size: 10px; color: var(--text-3);
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: var(--text-3);
     letter-spacing: 0.06em;
   }
 
@@ -1640,12 +1855,12 @@
   }
   .tgx-home .sv4-positions .pos .sym{ color: var(--text); }
   .tgx-home .sv4-positions .pos .status{ color: var(--text-3); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
-  .tgx-home .sv4-positions .pos.closed{ background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.2); }
+  .tgx-home .sv4-positions .pos.closed{ background: rgba(220,38,38,0.04); border-color: rgba(220,38,38,0.2); }
   .tgx-home .sv4-positions .pos.closed .status{ color: var(--danger); }
 
   .tgx-home .sv4-overlay{
     position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(5,8,16,0.6), rgba(239,68,68,0.15));
+    background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(220,38,38,0.12));
     backdrop-filter: blur(6px);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     border-radius: 12px;
@@ -1654,9 +1869,9 @@
   }
   .tgx-home .sv4-overlay .shield{
     width: 48px; height: 48px; border-radius: 12px;
-    background: rgba(239,68,68,0.15); color: var(--danger);
+    background: rgba(220,38,38,0.15); color: var(--danger);
     display: grid; place-items: center; margin-bottom: 14px;
-    border: 1px solid rgba(239,68,68,0.4);
+    border: 1px solid rgba(220,38,38,0.4);
   }
   .tgx-home .sv4-overlay .big{
     font-family: var(--serif); font-weight: 800; font-size: 24px;
@@ -1678,7 +1893,7 @@
   }
   @keyframes sv4PosClose {
     0%, 22% { background: var(--surface); border-color: var(--border); }
-    28%, 100% { background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.2); }
+    28%, 100% { background: rgba(220,38,38,0.04); border-color: rgba(220,38,38,0.2); }
   }
   @keyframes sv4Overlay {
     0%, 50% { opacity: 0; transform: scale(0.96); }
@@ -1693,14 +1908,14 @@
 
   /* ---------- KILL SWITCH ---------- */
   .tgx-home .killswitch-section{
-    background: linear-gradient(180deg, transparent, rgba(239,68,68,0.025), transparent);
+    background: linear-gradient(180deg, transparent, rgba(220,38,38,0.025), transparent);
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
     position: relative;
   }
   .tgx-home .killswitch-section::before{
     content: ""; position: absolute; inset: 0;
-    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(239,68,68,0.06), transparent 70%);
+    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(220,38,38,0.06), transparent 70%);
     pointer-events: none;
   }
   .tgx-home .ks-section-head{ text-align: center; max-width: 760px; margin: 0 auto 56px; position: relative; z-index: 1; }
@@ -1728,19 +1943,19 @@
     content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
   }
   .tgx-home .ks-card.ks-l1::before{ background: linear-gradient(90deg, #f0b429, #FFD166); }
-  .tgx-home .ks-card.ks-l2::before{ background: linear-gradient(90deg, #FF8A50, #FF6B30); }
+  .tgx-home .ks-card.ks-l2::before{ background: linear-gradient(90deg, #c2410c, #FF6B30); }
   .tgx-home .ks-card.ks-l3::before{ background: linear-gradient(90deg, var(--danger), #f87171); }
 
-  .tgx-home .ks-card.ks-l1:hover{ border-color: rgba(240,180,41,0.4); }
-  .tgx-home .ks-card.ks-l2:hover{ border-color: rgba(255,138,80,0.4); }
-  .tgx-home .ks-card.ks-l3:hover{ border-color: rgba(239,68,68,0.4); }
+  .tgx-home .ks-card.ks-l1:hover{ border-color: rgba(180,83,9,0.4); }
+  .tgx-home .ks-card.ks-l2:hover{ border-color: rgba(194,65,12,0.4); }
+  .tgx-home .ks-card.ks-l3:hover{ border-color: rgba(220,38,38,0.4); }
 
   .tgx-home .ks-level-tag{
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.2em;
     text-transform: uppercase; font-weight: 500;
   }
   .tgx-home .ks-l1 .ks-level-tag{ color: #f0b429; }
-  .tgx-home .ks-l2 .ks-level-tag{ color: #FF8A50; }
+  .tgx-home .ks-l2 .ks-level-tag{ color: #c2410c; }
   .tgx-home .ks-l3 .ks-level-tag{ color: var(--danger); }
 
   .tgx-home .ks-icon-large{
@@ -1749,16 +1964,16 @@
     margin-top: 4px;
   }
   .tgx-home .ks-l1 .ks-icon-large{
-    background: rgba(240,180,41,0.1); color: #f0b429;
-    border: 1px solid rgba(240,180,41,0.25);
+    background: rgba(180,83,9,0.1); color: #f0b429;
+    border: 1px solid rgba(180,83,9,0.25);
   }
   .tgx-home .ks-l2 .ks-icon-large{
-    background: rgba(255,138,80,0.1); color: #FF8A50;
-    border: 1px solid rgba(255,138,80,0.25);
+    background: rgba(194,65,12,0.1); color: #c2410c;
+    border: 1px solid rgba(194,65,12,0.25);
   }
   .tgx-home .ks-l3 .ks-icon-large{
-    background: rgba(239,68,68,0.1); color: var(--danger);
-    border: 1px solid rgba(239,68,68,0.25);
+    background: rgba(220,38,38,0.1); color: var(--danger);
+    border: 1px solid rgba(220,38,38,0.25);
   }
 
   .tgx-home .ks-name{
@@ -1838,15 +2053,15 @@
   .tgx-home .ks-mini-2 .pos-bar .qty{ color: var(--accent); }
   .tgx-home .ks-mini-2 .pos-bar .strike{
     position: absolute; top: 50%; left: 0; height: 2px; width: 0;
-    background: #FF7A40; transform: translateY(-50%);
-    box-shadow: 0 0 8px rgba(255,138,80,0.6);
+    background: #ea580c; transform: translateY(-50%);
+    box-shadow: 0 0 0 3px rgba(194,65,12,0.20);
     animation: strikeAcross 3s ease-in-out infinite;
   }
   .tgx-home .ks-mini-2 .closed-stamp{
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%) rotate(-8deg);
-    padding: 4px 12px; border: 2px solid #FF7A40;
-    color: #FF7A40; font-family: var(--mono); font-size: 11px;
+    padding: 4px 12px; border: 2px solid #ea580c;
+    color: #ea580c; font-family: var(--mono); font-size: 11px;
     font-weight: 700; letter-spacing: 0.12em;
     border-radius: 4px; background: rgba(5,8,16,0.9);
     opacity: 0;
@@ -1870,7 +2085,7 @@
   }
   .tgx-home .ks-mini-3 .funds-icon{
     width: 28px; height: 28px; border-radius: 6px;
-    background: rgba(0,212,170,0.1); color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.1); color: var(--accent);
     display: grid; place-items: center;
     animation: fundsSlide 3s ease-in-out infinite;
   }
@@ -1880,9 +2095,9 @@
   }
   .tgx-home .ks-mini-3 .lock-icon{
     width: 40px; height: 40px; border-radius: 8px;
-    background: rgba(239,68,68,0.1); color: var(--danger);
+    background: rgba(220,38,38,0.1); color: var(--danger);
     display: grid; place-items: center;
-    border: 1px solid rgba(239,68,68,0.3);
+    border: 1px solid rgba(220,38,38,0.3);
     position: relative;
   }
   .tgx-home .ks-mini-3 .lock-icon .shackle{
@@ -1948,7 +2163,7 @@
   }
   .tgx-home .ks-why-title::before{
     content: ""; width: 6px; height: 6px; border-radius: 50%;
-    background: var(--accent); box-shadow: 0 0 0 4px rgba(0,212,170,0.15);
+    background: var(--accent); box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.15);
   }
   .tgx-home .ks-why-grid{
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
@@ -1958,7 +2173,7 @@
   }
   .tgx-home .ks-why-item .check{
     width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
-    background: rgba(0,212,170,0.1); color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.1); color: var(--accent);
     display: grid; place-items: center;
     margin-top: 2px;
   }
@@ -1982,8 +2197,10 @@
      illustrating limits whose value is obvious from their name — the hero demo
      already shows one actually firing, so this only needs to say what's on
      offer. */
+  /* Verbatim copy of the top-level block; it only exists to re-state the
+     same values below 960px. The column count is left to the ladder above
+     so this does not undo it. */
   .tgx-home .rules-simple{
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1px; background: var(--border); border: 1px solid var(--border);
     border-radius: 16px; overflow: hidden;
   }
@@ -2017,7 +2234,7 @@
     display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
   }
   .tgx-home .key-ic svg{ width: 21px; height: 21px; }
-  .tgx-home .key-ic-teal{ background: rgba(0,212,170,0.12); color: var(--accent); }
+  .tgx-home .key-ic-teal{ background: rgba(var(--accent-rgb), 0.12); color: var(--accent); }
   .tgx-home .key-ic-blue{ background: rgba(96,165,250,0.12); color: #60a5fa; }
   .tgx-home .key-ic-slate{ background: rgba(148,163,184,0.12); color: #94a3b8; }
   .tgx-home .key-card h4{ font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; margin-bottom: 8px; }
@@ -2109,7 +2326,11 @@
     .tgx-home .scenario-action .we-did{ padding: 14px 16px; }
   }
 
-.tgx-home{background:transparent;color:#f1f5f9;}
+/* This set `color` to a LITERAL rather than var(--text), at the same
+   specificity as .tgx-home but later in the file — so it won the cascade
+   and every inherited piece of text on the landing page stayed dark-theme
+   near-white no matter what the tokens said. Reads from the token now. */
+.tgx-home{background:transparent;color:var(--text);}
 .tgx-home .trust-strip,.tgx-home .problem,.tgx-home .pricing-wrap,.tgx-home .mobile-section{background:transparent !important;}
 /* "Available on" exchange lockup — replaces the old trust strip. */
 .tgx-home .exchange-lockup{
@@ -2124,8 +2345,8 @@
 }
 .tgx-home .ex-lockup-card:hover{ transform: translateY(-2px); }
 .tgx-home .ex-lockup-card.live{
-  border-color: rgba(0,212,170,0.30);
-  background: linear-gradient(180deg, rgba(0,212,170,0.06), rgba(0,212,170,0.02));
+  border-color: rgba(var(--accent-rgb), 0.30);
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.06), rgba(var(--accent-rgb), 0.02));
 }
 .tgx-home .ex-lockup-card.soon{ opacity: 0.9; }
 .tgx-home .ex-lockup-logo{ height: 22px; width: auto; }
@@ -2135,10 +2356,10 @@
   font-family: var(--mono); font-size: 10px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.08em;
   padding: 4px 9px; border-radius: 999px;
-  color: var(--text-3); background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  color: var(--text-3); background: rgba(var(--veil), 0.05); border: 1px solid var(--border);
 }
 .tgx-home .ex-lockup-badge.live{
-  color: var(--accent); background: rgba(0,212,170,0.12); border-color: rgba(0,212,170,0.28);
+  color: var(--accent); background: rgba(var(--accent-rgb), 0.12); border-color: rgba(var(--accent-rgb), 0.28);
 }
 @media (max-width: 560px){
   .tgx-home .exchange-lockup{ flex-direction: column; align-items: stretch; gap: 10px; }

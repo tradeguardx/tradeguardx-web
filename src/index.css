@@ -296,7 +296,6 @@
      Sentry-inspired landing background.
      Drops a fixed full-viewport layer BEHIND the page content with:
        - A slightly enriched base color (cooler than pure surface-950)
-       - Sparse scatter "stars" (tiny dots + the occasional accent dot)
        - A faint horizon glow at the top center
      The layer is pointer-events: none so it never intercepts clicks.
      Apply by rendering <div className="landing-bg" aria-hidden /> once at the
@@ -308,18 +307,13 @@
     z-index: -1;
     pointer-events: none;
     background-color: #060a14;
-    /* Two layers stacked:
-         1. SVG scatter pattern — a 320×320 tile with mixed dots, + crosses,
-            × marks, and a few accent-green dots placed irregularly so the
-            tile doesn't read as a grid.
-         2. Two soft radial glows (top horizon + bottom-right counter) for
-            depth without obvious tiling. */
+    /* Two soft radial glows (top horizon + bottom-right counter) for depth.
+       The SVG scatter tile that used to sit on top of these was removed —
+       the background is flat colour plus glow now. */
     background-image:
-      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='520'><g fill='rgba(255,255,255,0.32)'><circle cx='40' cy='80' r='0.7'/><circle cx='420' cy='60' r='0.9'/><circle cx='260' cy='180' r='0.6'/><circle cx='80' cy='340' r='0.7'/><circle cx='460' cy='420' r='0.7'/></g><g stroke='rgba(255,255,255,0.28)' stroke-width='0.8' stroke-linecap='round' fill='none'><line x1='180' y1='130' x2='184' y2='130'/><line x1='182' y1='128' x2='182' y2='132'/><line x1='360' y1='280' x2='364' y2='284'/><line x1='364' y1='280' x2='360' y2='284'/></g><g fill='rgba(0,212,170,0.4)'><circle cx='320' cy='420' r='0.9'/></g></svg>"),
       radial-gradient(80vmax 40vmax at 50% -10%, rgba(0, 212, 170, 0.10), transparent 70%),
       radial-gradient(60vmax 40vmax at 95% 95%, rgba(56, 189, 248, 0.06), transparent 70%);
     background-size:
-      520px 520px,
       100% 100%,
       100% 100%;
   }
