@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useGuard } from '../../../context/GuardContext';
 import { sx } from './sx';
 
 /** Guard band — reference lines 382–392. Only while something is wrong; never dismissible. */
 export default function GuardBand() {
   const { selected, loaded } = useGuard();
+  const { pathname } = useLocation();
   if (!loaded || !selected.account) return null;
   const d = selected.describe;
   let { showBand, bandTitle, bandBody, cta, to, tone } = d;
@@ -14,6 +15,13 @@ export default function GuardBand() {
     bandTitle = selected.gap.title; bandBody = selected.gap.body; cta = selected.gap.cta; to = selected.gap.to;
   }
   if (!showBand) return null;
+  /**
+   * The band exists to point somewhere. On the page it points AT, it is
+   * just a louder copy of what is already on screen — the lockout band sat
+   * above the Live guard countdown offering to show you the countdown.
+   * If the destination is where you already are, the page is the message.
+   */
+  if (to && pathname.startsWith(to)) return null;
   const fg = `var(--${tone})`;
   return (
     <div data-tgx-band="1" data-tgx-stack="1" role="status" style={sx('display:flex;align-items:flex-start;gap:12px;padding:12px 24px', { borderTop: `1px solid var(--${tone}-line)`, background: `var(--${tone}-tint)` })}>
