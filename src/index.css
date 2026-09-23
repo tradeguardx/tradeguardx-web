@@ -1307,3 +1307,16 @@
 @media (max-width:560px){[data-tgx-rxstatus]{display:none!important}[data-tgx-rxstatus-sm]{display:inline-block!important}[data-tgx-rxpanel]{padding:2px 18px 19px 18px!important}}
 /* Phones: the segmented tabs become a 2×2 grid and stat cards sit two per row. */
 @media (max-width:520px){[data-tgx] .jn-tabs{display:grid!important;grid-template-columns:1fr 1fr;width:100%;border-radius:16px!important}[data-tgx] .jn-tabs > button{text-align:center}[data-tgx] .jn-stats{grid-template-columns:1fr 1fr!important;gap:10px!important}}
+
+/* ── Live guard session card ──────────────────────────────────────────────
+   Motion here is a signal, not decoration: the sweep speed IS the distance
+   to the limit. Numbers never animate — no count-ups, no flashing values. */
+@keyframes tgxSweep   { from { transform:translateX(-120%) } to { transform:translateX(420%) } }
+@keyframes tgxHalo    { 0% { box-shadow:0 0 0 0 var(--halo-c) } 70%,100% { box-shadow:0 0 0 10px transparent } }
+@keyframes tgxStripes { from { background-position:0 0 } to { background-position:40px 0 } }
+@keyframes tgxDraw    { from { stroke-dashoffset:440 } to { stroke-dashoffset:0 } }
+@keyframes tgxShimmer { from { transform:translateX(-100%) } to { transform:translateX(260%) } }
+
+@media (prefers-reduced-motion: reduce) {
+  .live-card * { animation: none !important; transition: none !important; }
+}

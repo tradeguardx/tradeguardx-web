@@ -197,11 +197,6 @@ export default function LiveGuardPage() {
         : pnlSign === 0
           ? `Flat so far. The guard closes the day at ${lossLimit} down, or locks it in at ${target} up.`
           : `Banked so far today. The day locks itself at ${target} so the gain survives the afternoon.`;
-  const pips = [0, 1, 2, 3].map((i) => {
-    const on = usedPct > i * 25;
-    const c = usedPct > 70 ? 'var(--red-solid)' : 'var(--amber-solid)';
-    return { bg: on ? c : 'var(--surface-3)', glow: on ? `0 0 12px -2px ${c}` : 'none' };
-  });
   const fillLeft = pnlSign < 0 ? `${50 - usedPct / 2}%` : '50%';
   const fillWidth = pnlSign < 0 ? `${usedPct / 2}%` : `${towardTarget / 2}%`;
   const fillBg = pnlSign < 0 ? 'var(--red-solid)' : 'var(--mint-solid)';
@@ -239,16 +234,135 @@ export default function LiveGuardPage() {
     return { slug: r.templateSlug, name: t?.name ?? r.templateSlug, d1: gl[0], d2: gl[1], accent: acc.color, tint: acc.tint, ...st };
   });
 
-  /**
-   * The single rule closest to firing. Deliberately one, not a list: the Rule
-   * panel further down already lists all of them, and a second list in the
-   * hero is the same information competing with itself.
-   */
-  const top = [...liveRules].sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0))[0] ?? null;
 
   const tradeCap = Number(ruleConfig(g.rules, 'max-trades-day')?.maxTrades);
   const tradesUsed = live?.tradeCountToday ?? 0;
   const atTradeCap = tradeCap > 0 && tradesUsed >= tradeCap;
+
+
+  // ── session card state (spec §3) — derived, never stored ────────────
+  const cap = tradeCap > 0 ? tradeCap : null;
+  const nearCap = cap != null && cap - tradesUsed <= 1;
+  const rulesOn = onRules.length;
+  const rulesTotal = (g.rules?.templates ?? []).length || rulesOn;
+  const enforcing = rulesOn > 0 && !g.readOnly;
+  const locked = g.guard === 'locked';
+
+  const band = !enforcing
+    ? null
+    : usedPct >= 80 || atTradeCap
+      ? 'danger'
+      : usedPct >= 50 || nearCap
+        ? 'caution'
+        : 'calm';
+
+  // The sweep speed IS the signal. These three numbers are the spec.
+  const SWEEP = { calm: '3.4s', caution: '2.2s', danger: '1.4s' };
+
+  /** HH:MM:SS for the locked countdown. Ticks off the one shared clock. */
+  const hms = (ms) => {
+    const s = Math.max(0, Math.floor((ms ?? 0) / 1000));
+    return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, '0')).join(':');
+  };
+  /**
+   * The spec asks for "{n}% served", which needs the time the lock was
+   * ARMED. trading_accounts stores cooldown_until and cooldown_reason and
+   * no start, and the spec forbids server changes — so served is not a
+   * number we hold. Printing one would be the $0.00 unrealised mistake
+   * again: a measurement-shaped value nobody measured.
+   *
+   * The track instead shows what IS known — how much of a day is left to
+   * sit out — draining rather than filling, and the label says that.
+   * Restore the spec's wording once cooldown_started_at exists.
+   */
+  const DAY_MS = 24 * 3600 * 1000;
+  const remainingPct = `${Math.min(100, Math.max(0, Math.round(((g.lockRemainingMs ?? 0) / DAY_MS) * 100)))}%`;
+
+  /**
+   * §6.2 wants an intraday equity curve. Nothing persists one — the
+   * reference prototype fakes it with two fixed zigzags chosen by pnlSign,
+   * which is a drawing, not a measurement. Wired so the chart appears the
+   * moment a real series exists and stays absent until then.
+   */
+  const equitySeries = null;
+
+  // ── Tiles (§8) ──────────────────────────────────────────────────────
+  const TONE = {
+    neutral: { line: 'var(--line)', bg: 'var(--surface-2)', tagFg: 'var(--ink-3)' },
+    amber: { line: 'var(--amber-line)', bg: 'var(--amber-tint)', tagFg: 'var(--amber)' },
+    red: { line: 'var(--red-line)', bg: 'var(--red-tint)', tagFg: 'var(--red)' },
+  };
+  const tone = (name, extra) => ({ ...TONE[name], ...extra });
+  const releaseAt = clockAt(g.lockUntil);
+  const tradesLeft = cap != null ? Math.max(0, cap - tradesUsed) : null;
+
+  const tiles = [
+    tone(usedPct > 70 ? 'red' : usedPct > 0 ? 'amber' : 'neutral', {
+      k: 'Loss budget left',
+      tag: hasLimits ? `${Math.round(usedPct)}% used` : null,
+      v: budgetLeft,
+      bar: `${Math.min(100, Math.max(0, usedPct))}%`,
+      barBg: usedPct > 70 ? 'var(--red-solid)' : 'var(--amber-solid)',
+      fg: usedPct > 70 ? 'var(--red)' : 'var(--ink)',
+      note: locked ? 'Frozen at the lockout' : 'At 0 the guard closes the day',
+      noteFg: 'var(--ink-3)',
+    }),
+    tone(atTradeCap ? 'red' : nearCap ? 'amber' : 'neutral', {
+      k: 'Trades today',
+      tag: null,
+      v: cap != null ? `${tradesUsed} / ${cap}` : String(tradesUsed),
+      fg: atTradeCap ? 'var(--red)' : 'var(--ink)',
+      pips: cap != null ? Array.from({ length: Math.min(12, cap) }, (_, i) => i < tradesUsed) : null,
+      pipFg: atTradeCap ? 'var(--red-solid)' : 'var(--ink)',
+      bar: '0%',
+      barBg: 'var(--ink)',
+      note: locked
+        ? g.readOnly ? `You committed to no entries until ${releaseAt}` : `No entries until ${releaseAt}`
+        : cap == null ? 'No cap set' : atTradeCap ? 'At your cap — no more entries today' : nearCap ? 'One trade left before the cap' : `${tradesLeft} left before the cap`,
+      noteFg: locked ? (g.readOnly ? 'var(--amber)' : 'var(--red)') : atTradeCap ? 'var(--red)' : nearCap ? 'var(--amber)' : 'var(--ink-3)',
+    }),
+    tone('neutral', {
+      k: 'Toward target',
+      tag: null,
+      v: `${Math.round(towardTarget)}%`,
+      bar: `${Math.min(100, Math.max(0, towardTarget))}%`,
+      barBg: 'var(--mint-solid)',
+      fg: 'var(--ink)',
+      note: locked ? 'Paused while locked' : towardTarget >= 100 ? 'Target hit — the day is locked in' : 'Day locks itself when it lands',
+      noteFg: 'var(--ink-3)',
+    }),
+    tone(g.readOnly || rulesOn === 0 ? 'amber' : 'neutral', {
+      k: 'Rules armed',
+      tag: g.readOnly ? 'alert only' : 'server-side',
+      v: `${rulesOn} / ${rulesTotal}`,
+      bar: `${rulesTotal ? Math.round((rulesOn / rulesTotal) * 100) : 0}%`,
+      barBg: g.readOnly ? 'var(--amber-solid)' : 'var(--mint-solid)',
+      fg: 'var(--ink)',
+      note: g.readOnly ? 'Read-only key — we warn, cannot close' : rulesOn === 0 ? 'Nothing is being enforced' : 'Enforced even with this tab closed',
+      noteFg: g.readOnly || rulesOn === 0 ? 'var(--amber)' : 'var(--ink-3)',
+    }),
+  ];
+
+
+  const cardLine = locked || band === 'danger' ? 'var(--red-line)' : band === 'caution' ? 'var(--amber-line)' : 'var(--line)';
+  const cardWash = locked || band === 'danger'
+    ? 'radial-gradient(90% 140% at 0% 0%, var(--red-tint), transparent 62%)'
+    : band === 'caution'
+      ? 'radial-gradient(80% 130% at 0% 0%, var(--amber-tint), transparent 58%)'
+      : `radial-gradient(80% 130% at 0% 0%, var(--${pnlSign < 0 ? 'red' : 'mint'}-tint), transparent 58%)`;
+
+  const strip = locked
+    ? { label: 'Locked out', meta: g.readOnly ? 'Lockout is a commitment — this key cannot reject orders' : 'New orders are rejected on this account', right: `releases ${clockAt(g.lockUntil)}`, tone: 'var(--red)', bg: 'var(--red-tint)' }
+    : !enforcing
+      ? g.readOnly
+        ? { label: 'Watching', meta: 'Alerts only — the key cannot close positions', right: 'updates as fills land', tone: 'var(--amber)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
+        : { label: 'Not enforcing', meta: 'Switch on a rule to start enforcing', right: 'updates as fills land', tone: 'var(--amber)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
+      : band === 'danger'
+        ? { label: 'Near the limit', meta: atTradeCap ? 'Trade cap reached — the next entry is blocked' : `${Math.round(usedPct)}% of today's loss budget used — the guard is close to closing the day`, right: 'one bad fill from a close', tone: 'var(--red)', bg: 'var(--red-tint)', sweep: SWEEP.danger }
+        : band === 'caution'
+          ? { label: 'Getting close', meta: nearCap ? 'One trade left before your cap' : `${Math.round(usedPct)}% of today's loss budget used`, right: 'slow down here', tone: 'var(--amber)', bg: 'var(--amber-tint)', sweep: SWEEP.caution }
+          : { label: 'Guard live', meta: `${rulesOn} rules armed · positions closed from our servers`, right: 'updates as fills land', tone: 'var(--mint)', bg: 'var(--surface-2)', sweep: SWEEP.calm };
+
 
   if (!accountsLoading && !selectedAccount) {
     return (
@@ -272,74 +386,141 @@ export default function LiveGuardPage() {
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>The screen to keep open while you trade. Everything here updates as fills land.</p>
       </div>
 
-      {/* ── Session ─────────────────────────────────────────────────── */}
-      <section style={sx('position:relative;margin-bottom:18px;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:var(--shadow-lift);overflow:hidden')}>
+      {/* ── Session card (build spec §4–§9) ──────────────────────────────
+          Colour and motion both mean distance to the limit. The sweep gets
+          faster as risk rises; the danger edge breathes. Numbers never
+          animate. An account that cannot act — read-only key, or no rules
+          on — never gets a risk band painted on it. */}
+      <section className="live-card" style={sx('position:relative;margin-bottom:18px;overflow:hidden;border-radius:22px;background:var(--surface);box-shadow:var(--shadow-lift);transition:border-color .4s ease', { border: `1px solid ${cardLine}` })}>
+        <div style={sx('position:absolute;inset:0;transition:background .6s ease', { background: cardWash })} />
         <div style={sx('position:absolute;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:38px 38px;mask-image:radial-gradient(90% 120% at 20% 0%,#000,transparent 70%);-webkit-mask-image:radial-gradient(90% 120% at 20% 0%,#000,transparent 70%);pointer-events:none')} />
-        <div style={sx('position:relative;padding:26px 28px 30px')}>
-          <div style={sx('display:flex;align-items:flex-start;justify-content:space-between;gap:26px;flex-wrap:wrap')}>
-            <div style={sx('min-width:min(280px,100%)')}>
-              <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>Today · session P&amp;L</div>
-              <div style={sx("margin-top:12px;font:700 62px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.05em", { color: fg, textShadow: `0 0 48px ${glow}` })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
-              <div style={sx('margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink-2);max-width:52ch;text-wrap:pretty')}>{summary}</div>
-            </div>
-            {/* ONE limit — the next one you will hit. A list here just
-                repeats the Rule panel below, which is the place for a list. */}
-            <div style={sx('flex:1;min-width:min(280px,100%);max-width:400px')}>
-              {top ? (
-                <div style={sx('padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2)', top.pct >= 100 ? { borderColor: 'var(--red-line)', background: 'var(--red-tint)' } : top.pct >= 70 ? { borderColor: 'var(--amber-line)' } : null)}>
-                  <div style={sx("display:flex;align-items:baseline;justify-content:space-between;gap:10px;font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>
-                    <span>{top.pct >= 100 ? 'Limit reached' : 'Closest limit'}</span>
-                    <span style={sx('letter-spacing:.1em')}>{onRules.length} armed</span>
-                  </div>
-                  <div style={sx('display:flex;align-items:center;gap:9px;margin-top:14px')}>
-                    <span style={sx('flex:none;width:7px;height:7px;border-radius:999px', { background: top.accent })} />
-                    <span style={sx("flex:1;min-width:0;font:600 17px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{top.name}</span>
-                  </div>
-                  <div style={sx('margin-top:13px;height:7px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>
-                    <div style={sx('height:100%;border-radius:999px;transition:width .45s ease', { width: top.bar, background: top.fg, boxShadow: `0 0 14px -3px ${top.fg}` })} />
-                  </div>
-                  {top.live && <div style={sx('margin-top:11px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>{top.live}</div>}
-                </div>
-              ) : (
-                <div style={sx('display:flex;flex-direction:column;justify-content:center;min-height:132px;padding:18px 20px;border:1px dashed var(--line-strong);border-radius:16px;background:var(--surface-2)')}>
-                  <div style={sx('font-size:13px;font-weight:600')}>No rules switched on</div>
-                  <p style={sx('margin:6px 0 12px;font-size:12px;line-height:1.5;color:var(--ink-3)')}>Nothing is watching this session yet.</p>
-                  <button type="button" onClick={() => navigate('/dashboard/rules')} style={sx('align-self:flex-start;padding:7px 12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700')}>Choose rules</button>
-                </div>
-              )}
-            </div>
-          </div>
+        {band === 'danger' && !locked && (
+          <div aria-hidden style={sx('position:absolute;inset:0;border-radius:22px;pointer-events:none;z-index:2;box-shadow:inset 0 0 0 1.5px var(--red-solid),inset 0 0 40px -12px var(--red-solid);animation:tgxBreathe 1.8s ease-in-out infinite')} />
+        )}
 
-          <div style={sx('display:flex;gap:30px;flex-wrap:wrap;margin-top:26px;padding-top:22px;border-top:1px solid var(--line)')}>
-            <div>
-              <div style={sx(MONO_LABEL)}>Loss budget left</div>
-              <div style={sx("margin-top:8px;font:600 22px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.025em")}>{budgetLeft}</div>
-            </div>
-            <div>
-              <div style={sx(MONO_LABEL)}>Trades</div>
-              <div style={sx("margin-top:8px;font:600 22px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.025em", atTradeCap ? { color: 'var(--red)' } : null)}>{tradesUsed}{tradeCap > 0 ? ` / ${tradeCap}` : ''}</div>
-              {atTradeCap && <div style={sx('margin-top:5px;font-size:11px;font-weight:600;color:var(--red)')}>At your cap</div>}
-            </div>
-            <div>
-              <div style={sx(MONO_LABEL)}>Budget used</div>
-              {/* Four empty pips at 0% read as an unloaded skeleton rather than
-                  as "none of it spent". The number says which it is. */}
-              <div style={sx('display:flex;align-items:center;gap:10px;margin-top:8px')}>
-                <span style={sx("font:600 22px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.025em", usedPct > 70 ? { color: 'var(--red)' } : usedPct > 0 ? { color: 'var(--amber)' } : null)}>{Math.round(usedPct)}%</span>
-                <span style={sx('display:flex;gap:4px')}>
-                  {pips.map((p, i) => <span key={i} style={sx('width:18px;height:7px;border-radius:3px', { background: p.bg, boxShadow: p.glow })} />)}
-                </span>
+        {/* Status strip */}
+        <div style={sx('position:relative;overflow:hidden;display:flex;align-items:center;gap:11px;flex-wrap:wrap;padding:13px 28px', { borderBottom: `1px solid ${cardLine}`, background: strip.bg })}>
+          {locked ? (
+            <div aria-hidden style={sx('position:absolute;inset:0;pointer-events:none;background-image:repeating-linear-gradient(-45deg,var(--red-tint) 0 10px,transparent 10px 20px);background-size:40px 40px;animation:tgxStripes 1.6s linear infinite')} />
+          ) : (
+            <div aria-hidden style={sx('position:absolute;top:0;bottom:0;left:0;width:26%;pointer-events:none', { background: `linear-gradient(90deg, transparent, ${strip.tone}22, transparent)`, animation: `tgxSweep ${strip.sweep} linear infinite` })} />
+          )}
+          <span aria-hidden style={sx('position:relative;flex:none;width:8px;height:8px;border-radius:50%;animation:tgxHalo 1.8s ease-out infinite', { background: strip.tone, '--halo-c': strip.tone })} />
+          <span style={sx("position:relative;font:700 10px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase", { color: strip.tone })}>{strip.label}</span>
+          <span style={sx('position:relative;font-size:12.5px;color:var(--ink-2)')}>{strip.meta}</span>
+          <span style={sx('flex:1')} />
+          <span style={sx("position:relative;font:500 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--ink-faint)")}>{strip.right}</span>
+        </div>
+
+        <div style={sx('position:relative;padding:26px 28px 30px')}>
+          {locked ? (
+            /* ── Body: locked (§7) ── */
+            <div style={sx('display:flex;gap:26px;flex-wrap:wrap;align-items:stretch')}>
+              <div style={sx('flex:1.4;min-width:min(300px,100%)')}>
+                <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--red)")}>Trading resumes in</div>
+                <div style={sx("margin-top:12px;font:700 64px/1 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.04em;color:var(--ink)")}>{hms(g.lockRemainingMs)}</div>
+                <div style={sx('margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink-2)')}>
+                  Releases at <strong style={sx('color:var(--ink);font-weight:700')}>{clockAt(g.lockUntil)} {dayAt(g.lockUntil)}</strong> · {manual ? 'Manual lockout — armed by you' : lockInfo ? `Lockout — ${lockInfo.name}` : 'Lockout — armed by a rule'}
+                </div>
+                <div style={sx('margin-top:18px;height:10px;border-radius:999px;background:var(--surface-3);box-shadow:inset 0 1px 2px rgba(0,0,0,.25);overflow:hidden')}>
+                  <div style={sx('position:relative;height:100%;border-radius:999px;overflow:hidden;transition:width .6s ease', { width: remainingPct, background: 'linear-gradient(90deg, var(--red-solid), #f97366)', boxShadow: '0 0 16px -2px var(--red-solid)' })}>
+                    <span aria-hidden style={sx('position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:tgxShimmer 2.2s ease-in-out infinite')} />
+                  </div>
+                </div>
+                <div style={sx("display:flex;justify-content:space-between;gap:12px;margin-top:9px;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)")}>
+                  <span>Locked</span><span>{formatRemaining(g.lockRemainingMs)} left</span><span>Released</span>
+                </div>
+              </div>
+
+              <div style={sx('flex:1;min-width:min(250px,100%);padding:18px 19px;border:1px solid var(--line);border-radius:16px;background:var(--surface)')}>
+                <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>Session closed at</div>
+                <div style={sx("margin-top:10px;font:700 34px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: fg })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
+                <div style={sx('display:flex;flex-direction:column;gap:10px;margin-top:16px')}>
+                  {(g.readOnly
+                    ? [['!', 'var(--amber)', 'var(--amber-tint)', 'New orders not blockable · read-only key']]
+                    : [['✕', 'var(--red)', 'var(--red-tint)', 'New orders rejected']]
+                  ).concat([
+                    ['✕', 'var(--red)', 'var(--red-tint)', 'Rule and key edits blocked'],
+                    ['✓', 'var(--mint)', 'var(--mint-tint)', 'Journal and reviews still open'],
+                  ]).map(([glyph, colour, tint, label]) => (
+                    <div key={label} style={sx('display:flex;align-items:center;gap:10px')}>
+                      <span aria-hidden style={sx('flex:none;width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:700', { background: tint, color: colour })}>{glyph}</span>
+                      <span style={sx('font-size:12.5px;line-height:1.4;color:var(--ink-2)')}>{label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+          ) : (
+            /* ── Body: running (§6) ── */
+            <div style={sx('display:flex;align-items:flex-start;justify-content:space-between;gap:26px;flex-wrap:wrap')}>
+              <div style={sx('min-width:min(280px,100%)')}>
+                <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>Today · session P&amp;L</div>
+                <div style={sx("margin-top:12px;font:700 62px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.05em", { color: fg, textShadow: `0 0 48px ${glow}` })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
+                <div style={sx('margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink-2);max-width:52ch;text-wrap:pretty')}>{summary}</div>
+              </div>
+
+              {/* §6.2 slot. The spec's sparkline needs an intraday equity
+                  series; the reference fakes it with two hardcoded zigzags
+                  picked by pnlSign. Nothing persists that series, so this
+                  renders only once one exists rather than drawing a curve
+                  nobody measured. */}
+              <div style={sx('flex:1;min-width:min(260px,100%);max-width:420px;position:relative')}>
+                {equitySeries ? (
+                  <>
+                    <svg viewBox="0 0 320 96" preserveAspectRatio="none" style={sx('width:100%;height:96px;display:block')}>
+                      <path d={equitySeries.fill} fill={fg} opacity=".10" />
+                      <path d={equitySeries.line} fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 7px ${glow})`, strokeDasharray: 440, animation: 'tgxDraw 1.4s cubic-bezier(.4,0,.2,1) both' }} />
+                    </svg>
+                    {pnlSign !== 0 && (
+                      <span aria-hidden style={sx('position:absolute;width:10px;height:10px;border-radius:50%;right:-5px;animation:tgxHalo 1.6s ease-out infinite', { top: `calc(${equitySeries.endTop} - 5px)`, background: fg, boxShadow: '0 0 0 3px var(--surface)', '--halo-c': fg })} />
+                    )}
+                  </>
+                ) : (
+                  <div style={sx('display:grid;place-items:center;height:96px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface-2)')}>
+                    <span style={sx('font-size:11.5px;color:var(--ink-3);text-align:center;padding:0 14px')}>An equity curve appears here once the session has points to plot.</span>
+                  </div>
+                )}
+                <div style={sx("display:flex;justify-content:space-between;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--ink-faint);margin-top:6px")}>
+                  <span>09:15</span><span>{pnlSign === 0 ? 'no trades today' : 'equity · 5 min'}</span><span>now</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Tiles (§8) ── */}
+          <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,196px),1fr));gap:12px;margin-top:26px')}>
+            {tiles.map((tile) => (
+              <div key={tile.k} style={sx('padding:15px 16px 14px;border-radius:15px', { border: `1px solid ${tile.line}`, background: tile.bg })}>
+                <div style={sx('display:flex;align-items:baseline;justify-content:space-between;gap:8px')}>
+                  <span style={sx("font:600 9px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)")}>{tile.k}</span>
+                  {tile.tag && <span style={sx("font:600 10px/1 'JetBrains Mono',monospace", { color: tile.tagFg })}>{tile.tag}</span>}
+                </div>
+                <div style={sx("margin-top:10px;font:700 23px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: tile.fg })}>{tile.v}</div>
+                {tile.pips ? (
+                  <div style={sx('display:flex;gap:4px;margin-top:11px;flex-wrap:wrap')}>
+                    {tile.pips.map((on, i) => <span key={i} style={sx('width:12px;height:5px;border-radius:999px', { background: on ? tile.pipFg : 'var(--surface-3)' })} />)}
+                  </div>
+                ) : (
+                  <div style={sx('margin-top:11px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>
+                    <div style={sx('height:100%;border-radius:999px;transition:width .5s ease', { width: tile.bar, background: tile.barBg })} />
+                  </div>
+                )}
+                <div style={sx('margin-top:9px;font-size:11.5px;line-height:1.4', { color: tile.noteFg })}>{tile.note}</div>
+              </div>
+            ))}
           </div>
 
-          {!hasLimits ? (
+          {/* ── Loss-to-target gauge (§9). Hidden when locked — it describes
+                a session in progress. ── */}
+          {!locked && !hasLimits && (
             <div style={sx('display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-top:24px;padding:14px 16px;border:1px dashed var(--line-strong);border-radius:13px;background:var(--surface-2)')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="1.8" strokeLinecap="round" style={{ flex: 'none' }}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
               <span style={sx('flex:1;min-width:min(220px,100%);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>No limits yet. Every threshold is a percentage of your account balance, so the loss and target scale appears once setup is finished.</span>
               <button type="button" onClick={() => navigate(g.setupDone ? '/dashboard/rules' : '/dashboard/account/trading')} style={sx('flex:none;padding:8px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700')}>{g.setupDone ? 'Choose rules' : 'Finish setup'}</button>
             </div>
-          ) : (
+          )}
+          {!locked && hasLimits && (
             <div style={sx('margin-top:28px')}>
               <div style={sx('position:relative;height:14px;border-radius:999px;background:var(--surface-3);box-shadow:inset 0 1px 3px rgba(0,0,0,.4);overflow:hidden')}>
                 <div style={sx('position:absolute;top:0;bottom:0;left:0;width:50%;background:var(--red-tint)')} />
@@ -348,17 +529,19 @@ export default function LiveGuardPage() {
                 <div style={sx('position:absolute;top:0;bottom:0;border-radius:999px', { background: fillBg, left: fillLeft, width: fillWidth, boxShadow: `0 0 18px -2px ${fillBg}` })} />
               </div>
               <div style={sx('position:relative;height:20px')}>
-                <div style={sx('position:absolute;top:-7px;transform:translateX(-50%);width:3px;height:22px;border-radius:2px', { left: markerLeft, background: fg, boxShadow: `0 0 0 3px var(--surface),0 0 16px ${glow}` })} />
+                <span aria-hidden style={sx('position:absolute;width:12px;height:12px;border-radius:50%;top:-2px;transform:translateX(-50%);animation:tgxHalo 2s ease-out infinite;transition:left .6s cubic-bezier(.4,0,.2,1)', { left: markerLeft, '--halo-c': fg })} />
+                <div style={sx('position:absolute;top:-7px;transform:translateX(-50%);width:3px;height:22px;border-radius:2px;transition:left .6s cubic-bezier(.4,0,.2,1)', { left: markerLeft, background: fg, boxShadow: `0 0 0 3px var(--surface),0 0 16px ${glow}` })} />
               </div>
               <div style={sx('display:flex;justify-content:space-between;gap:14px;font-size:11.5px;color:var(--ink-3)')}>
                 <span><strong style={sx('color:var(--red);font-weight:700;font-variant-numeric:tabular-nums')}>{lossLimit}</strong> {g.readOnly ? 'loss limit — we alert you, we cannot close' : 'loss limit — guard closes everything'}</span>
-                <span style={sx("font:500 10px/1.6 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)")}>breakeven</span>
+                <span style={sx("font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);align-self:center")}>Breakeven</span>
                 <span style={sx('text-align:right')}><strong style={sx('color:var(--mint);font-weight:700;font-variant-numeric:tabular-nums')}>{target}</strong> {g.readOnly ? 'target — we alert you, nothing locks' : 'target — day locks, gains kept'}</span>
               </div>
             </div>
           )}
         </div>
       </section>
+
 
       {/* ── Cooldown — rule-triggered ─────────────────────────────────── */}
       {cdActive && (
