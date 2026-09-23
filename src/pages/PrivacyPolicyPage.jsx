@@ -1,6 +1,16 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
+/**
+ * A real date, not new Date(). This rendered "Last updated: <today>" on every
+ * page load, so the document claimed to have been revised daily and a reader
+ * could never tell when the terms actually changed. Bump this by hand, only
+ * when the text above it changes.
+ */
+// NOTE: set to the deploy date because the real last-change date was lost
+// to the dynamic value. Correct it if you know when this policy last changed.
+const LAST_UPDATED = 'September 23, 2026';
+
 const sections = [
   {
     title: '1. Introduction',
@@ -128,7 +138,7 @@ export default function PrivacyPolicyPage() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-12">
           <span className="inline-block text-accent text-sm font-semibold tracking-wider uppercase mb-4">Legal</span>
           <h1 className="font-display text-3xl md:text-4xl font-bold text-white mb-3">Privacy Policy</h1>
-          <p className="text-slate-500 text-sm">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="text-slate-500 text-sm">Last updated: {LAST_UPDATED}</p>
         </motion.div>
 
         <div className="space-y-6">

@@ -284,7 +284,7 @@ export const HELP_ARTICLES = [
       {
         heading: 'Refund policy',
         body:
-          'Full refund if you ask within 14 days of your first payment or a renewal, provided you have not already been refunded for the same plan in the past 12 months. After that, cancel anytime to stop future charges. See the Refund Policy page.',
+          'Full refund if you ask within 7 days of your first payment or a renewal, provided you have not already been refunded for the same plan in the past 12 months. After that, cancel anytime to stop future charges. See the Refund Policy page.',
       },
       {
         heading: 'Deleting your account',

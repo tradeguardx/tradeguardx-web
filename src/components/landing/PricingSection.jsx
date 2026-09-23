@@ -133,7 +133,7 @@ export default function PricingSection() {
 
         <div className="mx-auto mt-10 max-w-xl text-center">
           <p className="text-sm leading-relaxed text-slate-400">
-            Free for 7 days, no card. Cancel anytime, and there is a 14-day refund if you change
+            Free for 7 days, no card. Cancel anytime, and there is a 7-day refund if you change
             your mind after paying.{' '}
             <Link to="/pricing" className="text-accent hover:underline">See full plan comparison →</Link>
           </p>

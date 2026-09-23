@@ -1,10 +1,18 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
+/**
+ * A real date, not new Date(). This rendered "Last updated: <today>" on every
+ * page load, so the document claimed to have been revised daily and a reader
+ * could never tell when the terms actually changed. Bump this by hand, only
+ * when the text above it changes.
+ */
+const LAST_UPDATED = 'September 23, 2026';
+
 const sections = [
   {
     title: '1. Overview',
-    content: 'TradeGuardX offers subscription plans (Pro and Pro+). This Refund Policy explains when and how you may request a refund for paid subscriptions. Our goal is to be fair and transparent.',
+    content: 'TradeGuardX offers a paid Pro subscription, billed monthly, quarterly or yearly. This Refund Policy explains when and how you may request a refund. Our goal is to be fair and transparent.',
   },
   {
     title: '2. Free Plan',
@@ -14,7 +22,7 @@ const sections = [
     title: '3. Refund Eligibility',
     content: 'You may be eligible for a full refund if:',
     list: [
-      'You request a refund within 14 days of your initial purchase or renewal.',
+      'You request a refund within 7 days of your initial purchase or renewal.',
       'You have not previously received a refund for the same plan in the past 12 months.',
       'The request is made in good faith (e.g. service did not work as described, technical issues we could not resolve).',
     ],
@@ -24,9 +32,9 @@ const sections = [
     title: '4. Non-Refundable Situations',
     content: 'We generally do not offer refunds in the following cases:',
     list: [
-      'Requests made more than 14 days after the charge',
+      'Requests made more than 7 days after the charge',
       'Partial refunds for unused portions of a subscription period',
-      'Change of mind after the 14-day window',
+      'Change of mind after the 7-day window',
       'Violation of our Terms and Conditions resulting in account termination',
     ],
   },
@@ -68,7 +76,7 @@ export default function RefundPolicyPage() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-12">
           <span className="inline-block text-accent text-sm font-semibold tracking-wider uppercase mb-4">Legal</span>
           <h1 className="font-display text-3xl md:text-4xl font-bold text-white mb-3">Refund Policy</h1>
-          <p className="text-slate-500 text-sm">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="text-slate-500 text-sm">Last updated: {LAST_UPDATED}</p>
         </motion.div>
 
         <div className="space-y-6">
