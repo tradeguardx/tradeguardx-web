@@ -71,10 +71,10 @@ const VENUES = {
       { title: 'Send OTP', body: 'CoinDCX sends a code to your email and another by SMS. Enter both to confirm the key.' },
       { title: 'Copy the key and secret', body: 'Both appear once, on that screen. Copy them now — CoinDCX will not show the secret again — then paste them here.' },
     ],
-    // Live, but no real key has run through it end to end yet — so every
-    // surface that names CoinDCX says so. Cheaper than a user finding out
-    // during a breach.
-    beta: true,
+    // Was beta until a real key ran through it end to end (23 Sep 2026): that
+    // probe found and fixed three request-shape bugs, including the one where
+    // a position WITH a stop attached read as unprotected. Proven now.
+    beta: false,
   },
 };
 
