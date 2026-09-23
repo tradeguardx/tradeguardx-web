@@ -133,7 +133,13 @@ export default function LiveGuardPage() {
   const rl = ruleLockNow(g.rules?.ruleLock ?? null, now);
   const rlSettling = Boolean(rl?.settling);
   // Tick every second while the rule lock or its setup window runs, so the timer moves.
-  useEffect(() => (rl?.locked || rl?.settling ? subscribeTick() : undefined), [rl?.locked, rl?.settling, subscribeTick]);
+  // Tick while EITHER clock runs. This only watched the rule lock, so an
+  // account lockout with no rule lock beside it showed a frozen countdown
+  // that moved on the guard poll instead of once a second.
+  useEffect(
+    () => (rl?.locked || rl?.settling || g.guard === 'locked' ? subscribeTick() : undefined),
+    [rl?.locked, rl?.settling, g.guard, subscribeTick],
+  );
   const [pick_, setPick] = useState(null);
   const rlPick = pick_ ?? rl?.days ?? 7;
   const rlLocked = Boolean(rl?.locked);

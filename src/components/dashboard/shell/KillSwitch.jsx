@@ -18,8 +18,13 @@ import { formatRemaining } from './format';
  */
 
 export function KillSwitchButton({ onOpen }) {
-  const { selected } = useGuard();
+  const { selected, subscribeTick } = useGuard();
   const armed = selected.guard === 'locked';
+  /**
+   * A countdown that only moves when something else re-renders is a
+   * screenshot, not a timer. Subscribe for as long as the lock runs.
+   */
+  useEffect(() => (armed ? subscribeTick() : undefined), [armed, subscribeTick]);
   return (
     <button
       type="button"
@@ -44,7 +49,7 @@ const HOUR_OFF = "flex:1;padding:12px;border-radius:11px;font:600 14px/1 'Space 
 
 export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   const { session } = useAuth();
-  const { selected, refresh } = useGuard();
+  const { selected, refresh, subscribeTick } = useGuard();
   const toast = useToast();
   const navigate = useNavigate();
   const [hours, setHours] = useState(3);
@@ -64,6 +69,7 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
 
   const { account, guard, gap, lockRemainingMs, lockReason, readOnly, canLockOut } = selected;
   const armed = guard === 'locked';
+  useEffect(() => (open && armed ? subscribeTick() : undefined), [open, armed, subscribeTick]);
   // A lockout holds on the key alone. Rules are the automatic half of the
   // product and have nothing to do with a user deciding to stop: the engine's
   // cooldown watchdog closes whatever is opened during the lock either way.
