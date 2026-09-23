@@ -208,15 +208,80 @@ const SHARED_ARTICLES = [
     slug: 'kill-switch',
     title: 'The kill switch',
     intro:
-      'When a hard rule (like your daily loss limit or loss-streak lock) is breached, the kill switch fires. It runs a verify-and-retry sequence so it doesn\'t give up if the exchange is briefly slow.',
+      'There is one kill switch and two ways to fire it: a rule breach fires it for you, or you fire it yourself. What it does is identical either way — only the trigger and the lock length differ.',
     sections: [
       {
+        heading: 'What it does, every time',
+        body: 'Three steps, in this order. It runs a verify-and-retry sequence so it does not give up if the exchange is briefly slow.',
         list: [
-          { bold: 'Cancel:', text: 'all your open orders on the account are cancelled.' },
-          { bold: 'Close:', text: 'all open positions are market-closed (verified, with retries).' },
-          { bold: 'Lock:', text: 'the account enters a cooldown; any new position you open during the lock is force-closed on sight.' },
+          { bold: '1. Cancel:', text: 'every open order on the account is cancelled.' },
+          { bold: '2. Close:', text: 'every open position is market-closed — then verified, and retried if the exchange says otherwise.' },
+          { bold: '3. Lock:', text: 'the account enters a cooldown. Anything you open during that window is force-closed on sight and does not count as a trade.' },
         ],
-        note: 'The lock is persisted, so it survives an engine restart — it can only be lifted by time, never by an error.',
+        note: 'The lock is written to the database before any closing happens, so a crash mid-close cannot leave you unlocked. It survives an engine restart and can only be lifted by the clock — never by an error.',
+      },
+      {
+        heading: 'Rule-based — the engine fires it',
+        body: 'You set the limit once; the engine watches and acts. Four rules fire the full kill switch:',
+        list: [
+          { bold: 'Daily Loss Protection:', text: 'your trading loss for the day hits the limit. Locks until your next daily reset.' },
+          { bold: 'Max Trades Per Day:', text: 'you hit your trade count. Locks until your next daily reset.' },
+          { bold: 'Daily Profit Target:', text: 'you BOOK your target and are flat. Locks until your next daily reset — the win stays a win.' },
+          { bold: 'Close After N Losses:', text: 'a losing streak. Two tiers, each firing once per streak: a soft lock at your chosen count (default 3 losses → 3h) and a hard lock if it continues (default 5 losses → 12h). A hard lock resets the session when it lifts; a win resets the streak before either.' },
+        ],
+        note: 'Deposits are ignored by Daily Loss Protection — it measures trading result, not the balance moving.',
+      },
+      {
+        heading: 'Rules that do NOT fire the kill switch',
+        body: 'Worth knowing precisely, so you are not relying on something that was never going to close a position:',
+        list: [
+          { bold: 'Risk Per Trade:', text: 'closes the ONE position whose stop implies more risk than your limit. It does not cancel your other orders and does not lock the account.' },
+          { bold: 'Stop Loss Protection:', text: 'alert only. It tells you a position is sitting open without a stop attached; it never closes it. Force-closing you for not having set a stop yet would be worse than the problem.' },
+          { bold: 'Max Drawdown Lock:', text: 'alert only today, despite the name. It notifies when your account is down past your threshold from its starting balance; it does not close or lock. Do not rely on it as a floor.' },
+        ],
+      },
+      {
+        heading: 'Manual — you fire it yourself',
+        body: 'On Live guard, "Arm the lockout" closes the account to you for a window you pick: 3, 6 or 12 hours. Use it when you can feel the tilt coming and would rather not test your own discipline. The red Kill switch button in the top bar opens the same dialog from any screen.',
+        list: [
+          { bold: 'You must be flat first:', text: 'it refuses to arm while a position is open — "a lockout can\'t be started mid-trade". Close your position, then arm it. This is the one way the manual switch differs from a rule breach, which closes for you.' },
+          { bold: 'There is no cancel:', text: 'once armed you cannot call it off. Only the clock lifts it. Support can lift it if something real has happened.' },
+          { bold: 'You can extend, never shorten:', text: 'arming again for longer pushes the release out. Arming for less keeps the lock you already have — otherwise re-arming for one hour would be an off button.' },
+          { bold: 'It asks twice:', text: 'a confirm step spells out the window before it arms, because you cannot undo it afterwards.' },
+          { bold: 'It will refuse to arm:', text: 'if nothing could enforce it — no key, or a key that cannot trade. A lockout you can walk around is not a commitment, so we would rather not offer it.' },
+        ],
+        note: 'Once armed, the watchdog closes anything you open for the rest of the window, wherever you placed it.',
+      },
+    ],
+  },
+  {
+    slug: 'cooldowns',
+    title: 'Cooldowns & locks',
+    intro:
+      'Every lock is time-based and self-releasing. Nothing you do on the exchange shortens one, and no error can leave you locked forever.',
+    sections: [
+      {
+        heading: 'How long each one runs',
+        list: [
+          { bold: 'Daily loss / profit target / max trades:', text: 'until your next daily reset, in your account\'s own timezone and reset hour.' },
+          { bold: 'Loss streak, soft tier:', text: 'a fixed window from when it fired — 3 hours by default.' },
+          { bold: 'Loss streak, hard tier:', text: 'a longer fixed window — 12 hours by default. When it lifts, your session resets.' },
+          { bold: 'Manual lockout:', text: 'exactly the 3, 6 or 12 hours you picked.' },
+        ],
+        note: 'Fixed-duration locks are clamped to a maximum of 24 hours, so no configuration can lock you out indefinitely.',
+      },
+      {
+        heading: 'While a lock is running',
+        list: [
+          { bold: 'New trades are closed on sight:', text: 'a watchdog flattens anything that appears, wherever you placed it — web, mobile app or a third-party client.' },
+          { bold: 'Blocked trades are free:', text: 'they do not count toward your daily trade limit and do not extend your losing streak.' },
+          { bold: 'Your key is frozen:', text: 'you cannot disconnect or replace your API key during a lock. Otherwise pulling the key would be the way around it.' },
+          { bold: 'Rules that are ON are frozen too:', text: 'you cannot loosen or disable them mid-lock. Rules that are off can still be turned on.' },
+        ],
+      },
+      {
+        heading: 'Where to watch it',
+        body: 'The Live dashboard shows the countdown to release, and the header carries a "Locked" pill from any page so you can see it without going looking. The activity feed names the rule that fired and the trades it closed.',
       },
     ],
   },
@@ -235,21 +300,6 @@ const SHARED_ARTICLES = [
           { bold: 'Close After N Losses:', text: 'pauses trading after a run of losing trades; a win resets the streak.' },
           { bold: 'Max Drawdown:', text: 'an account-life floor that alerts on deep drawdown (doesn\'t reset daily).' },
           { bold: 'Stop-Loss Protection:', text: 'warns when a position sits open without a stop attached.' },
-        ],
-      },
-    ],
-  },
-  {
-    slug: 'cooldowns',
-    title: 'Cooldowns & locks',
-    intro:
-      'When a rule locks the account, the Live dashboard shows a countdown to when it unlocks, and the header shows a "Locked" pill from any page. Locks are time-based and self-releasing.',
-    sections: [
-      {
-        list: [
-          { bold: 'Soft vs hard:', text: 'a loss streak triggers a shorter cooldown first, then a longer hard lock if it continues.' },
-          { bold: 'Daily locks:', text: 'daily-loss / target / max-trades locks release at your next daily reset.' },
-          { bold: 'Blocked trades:', text: 'trades you open during a lock are auto-closed and shown as "Blocked" — they don\'t count toward your limits or loss streak.' },
         ],
       },
     ],

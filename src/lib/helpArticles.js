@@ -149,14 +149,21 @@ export const HELP_ARTICLES = [
           "Today's P&L on a scale from your loss limit to your target, loss budget left, trades today, open positions, and the Rule panel: each rule that is on with its live status, recomputed on every fill.",
       },
       {
-        heading: 'Manual killswitch',
+        heading: 'Manual killswitch — you fire it',
         body:
-          'Lock yourself out for 3, 6 or 12 hours. Read the confirmation, arm it. There is no off button, only the clock — support can lift it if something real happens. It cannot be armed with a position open (flatten on Delta first). While armed, anything you open is closed on sight, and rule edits and key changes are blocked so the lock cannot be worked around. The red Kill switch button in the top bar opens the same dialog from any screen.',
+          'Lock yourself out for 3, 6 or 12 hours. Read the confirmation, arm it. There is no off button, only the clock — support can lift it if something real happens. It cannot be armed with a position open, so close your position on the exchange first; unlike a rule breach, the manual switch does not close for you. You can re-arm for longer to extend, but never for less — that would be an off button. While armed, anything you open is closed on sight, and rule edits and key changes are blocked so the lock cannot be worked around. The red Kill switch button in the top bar opens the same dialog from any screen.',
+      },
+      {
+        heading: 'Rule-based killswitch — the engine fires it',
+        body:
+          'Same three steps, no confirmation, and it does close your positions for you: cancel every order, close every position, lock the account. Four rules fire it — Daily loss protection, Max trades per day, Daily profit target (all locking until your next daily reset) and Close after N losses (a soft lock at your chosen count, default 3 losses for 3 hours, then a hard lock if the streak continues, default 5 losses for 12 hours).',
+        note:
+          'Three rules never fire it, which is worth knowing before you rely on them: Risk per trade closes only the one oversized position and does not lock; Stop-loss protection is alert-only; and Max drawdown lock, despite its name, alerts today and does not close or lock.',
       },
       {
         heading: 'What we can and cannot do',
         body:
-          'We cannot stop you placing an order inside Delta\'s own app — no exchange gives us that switch. What we do is close the position immediately after it opens, then check you are actually flat. A forced close can register a small loss from fees, and that loss counts toward Close after N losses — one rule\'s action can trigger another.',
+          'We cannot stop you placing an order inside the exchange\'s own app — no exchange gives us that switch. What we do is close the position immediately after it opens, then check you are actually flat. A forced close can register a small loss from fees, and that loss counts toward Close after N losses — one rule\'s action can trigger another.',
       },
       {
         heading: 'Economic calendar',
