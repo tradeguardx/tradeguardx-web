@@ -201,10 +201,11 @@ export default function LiveGuardPage() {
   });
 
   /**
-   * The three closest to firing, worst first. Three because the hero is a
-   * glance, not the Rule panel below — that one lists everything.
+   * The single rule closest to firing. Deliberately one, not a list: the Rule
+   * panel further down already lists all of them, and a second list in the
+   * hero is the same information competing with itself.
    */
-  const nearest = [...liveRules].sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0)).slice(0, 3);
+  const top = [...liveRules].sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0))[0] ?? null;
 
   const tradeCap = Number(ruleConfig(g.rules, 'max-trades-day')?.maxTrades);
   const tradesUsed = live?.tradeCountToday ?? 0;
@@ -242,34 +243,28 @@ export default function LiveGuardPage() {
               <div style={sx("margin-top:12px;font:700 62px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.05em", { color: fg, textShadow: `0 0 48px ${glow}` })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
               <div style={sx('margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink-2);max-width:52ch;text-wrap:pretty')}>{summary}</div>
             </div>
-            {/* What stops you next — your rules, ranked by how close each is. */}
-            <div style={sx('flex:1;min-width:min(280px,100%);max-width:430px')}>
-              {nearest.length > 0 ? (
-                <>
+            {/* ONE limit — the next one you will hit. A list here just
+                repeats the Rule panel below, which is the place for a list. */}
+            <div style={sx('flex:1;min-width:min(280px,100%);max-width:400px')}>
+              {top ? (
+                <div style={sx('padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2)', top.pct >= 100 ? { borderColor: 'var(--red-line)', background: 'var(--red-tint)' } : top.pct >= 70 ? { borderColor: 'var(--amber-line)' } : null)}>
                   <div style={sx("display:flex;align-items:baseline;justify-content:space-between;gap:10px;font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>
-                    <span>What stops you next</span>
-                    <span style={sx('letter-spacing:.1em')}>{onRules.length} on</span>
+                    <span>{top.pct >= 100 ? 'Limit reached' : 'Closest limit'}</span>
+                    <span style={sx('letter-spacing:.1em')}>{onRules.length} armed</span>
                   </div>
-                  <div style={sx('display:flex;flex-direction:column;gap:9px;margin-top:13px')}>
-                    {nearest.map((r) => (
-                      <div key={r.slug} style={sx('padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)', r.pct >= 100 ? { borderColor: 'var(--red-line)', background: 'var(--red-tint)' } : r.pct >= 70 ? { borderColor: 'var(--amber-line)' } : null)}>
-                        <div style={sx('display:flex;align-items:center;gap:8px')}>
-                          <span style={sx('flex:none;width:6px;height:6px;border-radius:999px', { background: r.accent })} />
-                          <span style={sx('flex:1;min-width:0;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{r.name}</span>
-                          <span style={sx("flex:none;font:600 9px/1 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;padding:3px 6px;border-radius:5px", { background: r.bg, color: r.fg })}>{r.label}</span>
-                        </div>
-                        <div style={sx('margin-top:8px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>
-                          <div style={sx('height:100%;border-radius:999px;transition:width .4s ease', { width: r.bar, background: r.fg })} />
-                        </div>
-                        {r.live && <div style={sx('margin-top:7px;font-size:11.5px;line-height:1.45;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{r.live}</div>}
-                      </div>
-                    ))}
+                  <div style={sx('display:flex;align-items:center;gap:9px;margin-top:14px')}>
+                    <span style={sx('flex:none;width:7px;height:7px;border-radius:999px', { background: top.accent })} />
+                    <span style={sx("flex:1;min-width:0;font:600 17px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{top.name}</span>
                   </div>
-                </>
+                  <div style={sx('margin-top:13px;height:7px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>
+                    <div style={sx('height:100%;border-radius:999px;transition:width .45s ease', { width: top.bar, background: top.fg, boxShadow: `0 0 14px -3px ${top.fg}` })} />
+                  </div>
+                  {top.live && <div style={sx('margin-top:11px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>{top.live}</div>}
+                </div>
               ) : (
-                <div style={sx('display:flex;flex-direction:column;justify-content:center;height:100%;min-height:118px;padding:16px 18px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface-2)')}>
-                  <div style={sx('font-size:12.5px;font-weight:600')}>No rules switched on</div>
-                  <p style={sx('margin:6px 0 11px;font-size:12px;line-height:1.5;color:var(--ink-3)')}>Nothing is watching this session yet. Turn one on and its live headroom shows here.</p>
+                <div style={sx('display:flex;flex-direction:column;justify-content:center;min-height:132px;padding:18px 20px;border:1px dashed var(--line-strong);border-radius:16px;background:var(--surface-2)')}>
+                  <div style={sx('font-size:13px;font-weight:600')}>No rules switched on</div>
+                  <p style={sx('margin:6px 0 12px;font-size:12px;line-height:1.5;color:var(--ink-3)')}>Nothing is watching this session yet.</p>
                   <button type="button" onClick={() => navigate('/dashboard/rules')} style={sx('align-self:flex-start;padding:7px 12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700')}>Choose rules</button>
                 </div>
               )}
