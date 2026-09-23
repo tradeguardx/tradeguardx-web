@@ -12,7 +12,7 @@ import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../api/userApi';
 import { setRuleLockDays } from '../api/tradingAccountsApi';
 import { RULE_GLYPH, ruleAccent } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
-import { formatRemaining } from '../components/dashboard/shell/format';
+import { formatRemaining, zoneLabel } from '../components/dashboard/shell/format';
 import { ruleLockNow } from '../lib/guard';
 
 /**
@@ -31,14 +31,33 @@ const HOUR_OFF = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space 
 const DAY_ON = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
 const DAY_OFF = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
 
-function clockAt(t, tz) {
-  if (!t) return '—';
-  return `${new Date(t).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz })} IST`;
+/**
+ * Release times render in the VIEWER's clock, not the account's reset zone.
+ *
+ * `trading_accounts.timezone` is the boundary the engine resets on — an
+ * internal detail that is UTC on Delta. clockAt formatted in that zone and
+ * then appended the literal string "IST", so a UTC account printed
+ * "00:00 IST": a time that is neither UTC nor IST. The hardcoded suffix
+ * hid it, because the label always looked right.
+ */
+function viewerZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
+  } catch {
+    return 'Asia/Kolkata';
+  }
 }
-function dayAt(t, tz) {
+function clockAt(t) {
+  if (!t) return '—';
+  const tz = viewerZone();
+  const time = new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz });
+  return `${time}${zoneLabel(tz) ? ` ${zoneLabel(tz)}` : ''}`;
+}
+function dayAt(t) {
   if (!t) return '';
-  const d = new Date(t).toLocaleDateString('en-IN', { timeZone: tz });
-  const n = new Date().toLocaleDateString('en-IN', { timeZone: tz });
+  const tz = viewerZone();
+  const d = new Date(t).toLocaleDateString('en-GB', { timeZone: tz });
+  const n = new Date().toLocaleDateString('en-GB', { timeZone: tz });
   return d === n ? 'today' : 'tomorrow';
 }
 function pick(o, ...keys) { for (const k of keys) if (o && o[k] != null) return o[k]; return null; }
@@ -50,7 +69,6 @@ export default function LiveGuardPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
-  const tz = selectedAccount?.timezone || 'Asia/Kolkata';
   const live = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount });
   const s = useMemo(() => sessionOf(live, g.rules), [live, g.rules]);
   const cur = s.currency;
@@ -356,7 +374,7 @@ export default function LiveGuardPage() {
           <div style={sx('margin-top:13px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}><div style={sx('height:100%;border-radius:999px;background:var(--amber-solid)', { width: cdPct })} /></div>
           <div style={sx('display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap')}>
             <span>Triggered by your Close-after-N-losses rule</span>
-            <span style={sx('text-align:right;white-space:nowrap')}>New orders allowed from <strong style={sx('color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums')}>{clockAt(g.lockUntil, tz)}</strong></span>
+            <span style={sx('text-align:right;white-space:nowrap')}>New orders allowed from <strong style={sx('color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums')}>{clockAt(g.lockUntil)}</strong></span>
           </div>
           <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--amber-line);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:92ch')}>Existing positions are untouched — you can still manage or close what is open. Only new entries are blocked, because the third loss in a row is where revenge trading starts. The clock runs down on its own; there is nothing to cancel.</p>
         </section>
@@ -441,7 +459,7 @@ export default function LiveGuardPage() {
                 <div style={sx('margin-top:13px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}><div style={sx('height:100%;border-radius:999px;background:var(--red-solid)', { width: lockPct })} /></div>
                 <div style={sx('display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap')}>
                   <span>{manual ? 'Armed by you' : lockInfo ? lockInfo.name : 'Armed by a rule'}</span>
-                  <span style={sx('text-align:right;white-space:nowrap')}>Trading resumes {dayAt(g.lockUntil, tz)} at <strong style={sx('color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums')}>{clockAt(g.lockUntil, tz)}</strong></span>
+                  <span style={sx('text-align:right;white-space:nowrap')}>Trading resumes {dayAt(g.lockUntil)} at <strong style={sx('color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums')}>{clockAt(g.lockUntil)}</strong></span>
                 </div>
                 {lockInfo && <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--red-line);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{lockInfo.why}</p>}
                 <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--red-line);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{armedBody}</p>
