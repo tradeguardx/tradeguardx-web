@@ -243,13 +243,14 @@
   .tgx-home .xb-partner img{ height: 24px; width: auto; }
   .tgx-home .xb-plus{ font-size: 22px; font-weight: 700; color: var(--text-3); }
 
-  /* CoinDCX rides in the lockup rather than the fine print — but dashed and
-     dimmed so it still reads as next, not live. */
+  /* CoinDCX went live 23 Sep 2026. It was dashed and dimmed to read as "next";
+     a solid pill now, because a LIVE tag inside a dashed placeholder says both
+     things at once. Matches .xb-partner apart from the smaller wordmark. */
   .tgx-home .xb-next{
     display: inline-flex; align-items: center; gap: 8px;
     padding: 8px 14px; border-radius: 999px;
-    background: rgba(255,255,255,0.03);
-    border: 1px dashed rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
   }
   .tgx-home .xb-coindcx{
     font-family: var(--sans); font-weight: 800; letter-spacing: -0.01em;
@@ -259,7 +260,8 @@
   .tgx-home .xbanner .xb-short{ display: none; }
   .tgx-home .xb-next-tag{
     padding: 3px 8px; border-radius: 999px;
-    background: rgba(249,115,22,0.14); color: #fb923c;
+    background: rgba(0,212,170,0.12); color: var(--accent);
+    border: 1px solid rgba(0,212,170,0.28);
     font-size: 9.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
   }
 
