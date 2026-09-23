@@ -10,6 +10,12 @@ import { useSEO } from '../hooks/useSEO';
  *   - planned: on the list, no commitment date
  *
  * Keep ~5-8 items per lane. If a lane gets longer, prune the oldest.
+ *
+ * Nothing goes in `planned` that you cannot point at evidence for — a control
+ * already in the UI that says it does nothing yet, a branch, a decision that
+ * was actually made. This page promises "no vapor, no fake promises" a few
+ * lines below, and it once carried a mobile companion app, a custom rule
+ * builder and a public API that nobody was building. A shorter lane is fine.
  */
 const ROADMAP = {
   shipped: [
@@ -27,12 +33,9 @@ const ROADMAP = {
     { title: 'Max drawdown enforcement', body: "Max Drawdown Lock alerts today but does not close or lock, which the name oversells. We are working out what a lifetime-drawdown lock should release on before wiring it to the kill switch." },
   ],
   planned: [
-    { title: 'Calendar auto-lock', body: "Lock the account automatically around high-impact macro releases — CPI, FOMC, NFP — for a window you choose either side of the print." },
+    { title: 'Calendar auto-lock', body: "Lock the account automatically around high-impact macro releases — CPI, FOMC, NFP — for a window you choose either side of the print. The control is already on the Economic calendar and currently tells you it arms nothing." },
     { title: 'WhatsApp and SMS alerts', body: "Breach alerts on the channels people actually read. Telegram and email work today." },
-    { title: 'Custom rule builder', body: "Compose your own rule from primitive conditions instead of waiting for us to add a template." },
-    { title: 'Mobile companion app', body: "Read-only view of account state, live rule status and recent trades from your phone. Enforcement already runs without it." },
-    { title: 'Spot and options coverage', body: "We enforce futures only. Options follow once the exchanges expose them properly; spot is a harder question under VDA rules and we will not pretend otherwise." },
-    { title: 'Public API', body: "Programmatic access to your trades, rules and breach history." },
+    { title: 'Options coverage', body: "We enforce futures only. Options follow once the exchanges expose them properly through their APIs. Spot is not planned — it sits under different tax rules and cannot be enforced the same way." },
   ],
 };
 
