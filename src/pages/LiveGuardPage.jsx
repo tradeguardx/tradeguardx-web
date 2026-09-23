@@ -442,11 +442,15 @@ export default function LiveGuardPage() {
               </div>
             )}
 
+            {armed && lockInfo && (
+              <p style={sx('margin:0 0 13px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{lockInfo.why}</p>
+            )}
+
             {armed && (
               <div style={sx('padding:16px 17px;border:1px solid var(--red-line);border-radius:12px;background:var(--red-tint)')}>
                 <div style={sx('display:flex;align-items:center;gap:8px')}>
                   <span style={sx('width:7px;height:7px;border-radius:50%;background:var(--red-solid);animation:tgxPulse 2s ease-in-out infinite')} />
-                  <span style={sx('font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--red);font-weight:700')}>{manual ? 'Manual lockout — armed by you' : lockInfo ? `Lockout — ${lockInfo.name}` : 'Lockout — armed by a rule'}</span>
+                  <span style={sx('font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--red);font-weight:700')}>{manual ? 'Manual lockout' : lockInfo ? lockInfo.name : 'Lockout'}</span>
                 </div>
                 <div style={sx('display:flex;align-items:baseline;gap:12px;margin-top:11px;flex-wrap:wrap')}>
                   <span style={sx("font:700 38px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.035em;color:var(--ink)")}>{formatRemaining(g.lockRemainingMs)}</span>
@@ -457,7 +461,7 @@ export default function LiveGuardPage() {
                   <span>{manual ? 'Armed by you' : 'No early exit'}</span>
                   <span style={sx('text-align:right;white-space:nowrap')}>Trading resumes {dayAt(g.lockUntil)} at <strong style={sx('color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums')}>{clockAt(g.lockUntil)}</strong></span>
                 </div>
-                <p style={sx('margin:11px 0 0;padding-top:11px;border-top:1px solid var(--red-line);font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>{lockInfo ? lockInfo.why : armedBody}</p>
+                {!lockInfo && <p style={sx('margin:11px 0 0;padding-top:11px;border-top:1px solid var(--red-line);font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>{armedBody}</p>}
               </div>
             )}
           </div>
