@@ -85,9 +85,21 @@ export function GuardProvider({ children }) {
       ]);
       if (signal?.aborted || myRun !== inflight.current) return;
 
+      // A fetch that FAILED is not an answer. settle() flattens a rejection
+      // into { ok:false, v:null }, and a null rules bundle is indistinguishable
+      // downstream from a real one with every rule switched off — so a single
+      // 5xx on /rules (a cold Lambda is enough) rendered a fully-armed account
+      // as "Not protected. No rules are switched on", with three of the four
+      // setup steps ticked and the fourth saying "do this next", until the poll
+      // 20s later quietly corrected it. Only write a slice when BOTH halves
+      // landed; the merge below then keeps whatever we already knew, or leaves
+      // the account in `loading` if we knew nothing yet.
       const fetched = {};
       ids.forEach((id, i) => {
-        fetched[id] = { connection: pairs[i * 2].v, rules: pairs[i * 2 + 1].v, loaded: true };
+        const conn = pairs[i * 2];
+        const bundle = pairs[i * 2 + 1];
+        if (!conn.ok || !bundle.ok) return;
+        fetched[id] = { connection: conn.v, rules: bundle.v, loaded: true };
       });
       // Merge rather than replace: a scoped pass must not wipe the states the
       // switcher is still showing for the other accounts.
