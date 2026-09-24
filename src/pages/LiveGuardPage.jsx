@@ -454,7 +454,7 @@ export default function LiveGuardPage() {
           ) : (
             /* ── Body: running (§6) ── */
             <div style={sx('display:flex;align-items:flex-start;justify-content:space-between;gap:26px;flex-wrap:wrap')}>
-              <div style={sx('min-width:min(280px,100%)')}>
+              <div style={sx('flex:1;min-width:min(280px,100%)')}>
                 <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>Today · session P&amp;L</div>
                 <div style={sx("margin-top:12px;font:700 62px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.05em", { color: fg, textShadow: `0 0 48px ${glow}` })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
                 <div style={sx('margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink-2);max-width:52ch;text-wrap:pretty')}>{summary}</div>
@@ -462,29 +462,31 @@ export default function LiveGuardPage() {
 
               {/* §6.2 slot. The spec's sparkline needs an intraday equity
                   series; the reference fakes it with two hardcoded zigzags
-                  picked by pnlSign. Nothing persists that series, so this
-                  renders only once one exists rather than drawing a curve
-                  nobody measured. */}
-              <div style={sx('flex:1;min-width:min(260px,100%);max-width:420px;position:relative')}>
-                {equitySeries ? (
-                  <>
-                    <svg viewBox="0 0 320 96" preserveAspectRatio="none" style={sx('width:100%;height:96px;display:block')}>
-                      <path d={equitySeries.fill} fill={fg} opacity=".10" />
-                      <path d={equitySeries.line} fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 7px ${glow})`, strokeDasharray: 440, animation: 'tgxDraw 1.4s cubic-bezier(.4,0,.2,1) both' }} />
-                    </svg>
-                    {pnlSign !== 0 && (
-                      <span aria-hidden style={sx('position:absolute;width:10px;height:10px;border-radius:50%;right:-5px;animation:tgxHalo 1.6s ease-out infinite', { top: `calc(${equitySeries.endTop} - 5px)`, background: fg, boxShadow: '0 0 0 3px var(--surface)', '--halo-c': fg })} />
-                    )}
-                  </>
-                ) : (
-                  <div style={sx('display:grid;place-items:center;height:96px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface-2)')}>
-                    <span style={sx('font-size:11.5px;color:var(--ink-3);text-align:center;padding:0 14px')}>An equity curve appears here once the session has points to plot.</span>
+                  picked by pnlSign. Nothing persists a real one, so the whole
+                  slot — chart AND its time axis — renders only once a series
+                  exists. It used to hold a dashed box reading "appears here
+                  once the session has points to plot" above a hardcoded
+                  09:15–now axis: the session already HAS points by the time
+                  anyone reads that, 09:15 is the NSE equity open and means
+                  nothing on a 24/7 crypto account, and an axis under an empty
+                  box is furniture for a chart that cannot arrive. Better to
+                  show nothing and let the P&L take the width. */}
+              {equitySeries && (
+                <div style={sx('flex:1;min-width:min(260px,100%);max-width:420px;position:relative')}>
+                  <svg viewBox="0 0 320 96" preserveAspectRatio="none" style={sx('width:100%;height:96px;display:block')}>
+                    <path d={equitySeries.fill} fill={fg} opacity=".10" />
+                    <path d={equitySeries.line} fill="none" stroke={fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 7px ${glow})`, strokeDasharray: 440, animation: 'tgxDraw 1.4s cubic-bezier(.4,0,.2,1) both' }} />
+                  </svg>
+                  {pnlSign !== 0 && (
+                    <span aria-hidden style={sx('position:absolute;width:10px;height:10px;border-radius:50%;right:-5px;animation:tgxHalo 1.6s ease-out infinite', { top: `calc(${equitySeries.endTop} - 5px)`, background: fg, boxShadow: '0 0 0 3px var(--surface)', '--halo-c': fg })} />
+                  )}
+                  {/* Whatever builds the series owns these labels — the axis
+                      must describe the points actually plotted. */}
+                  <div style={sx("display:flex;justify-content:space-between;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--ink-faint);margin-top:6px")}>
+                    <span>{equitySeries.startLabel}</span><span>{equitySeries.resolutionLabel}</span><span>now</span>
                   </div>
-                )}
-                <div style={sx("display:flex;justify-content:space-between;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--ink-faint);margin-top:6px")}>
-                  <span>09:15</span><span>{pnlSign === 0 ? 'no trades today' : 'equity · 5 min'}</span><span>now</span>
                 </div>
-              </div>
+              )}
             </div>
           )}
 

@@ -117,6 +117,12 @@ describe('dashboard shell', () => {
     expect(screen.getByText('Commitment controls')).toBeTruthy();
     expect(screen.getByText('Manual killswitch')).toBeTruthy();
     expect(screen.getByText('Rule lock')).toBeTruthy();
+    // No placeholder for a chart that cannot arrive: nothing persists an
+    // intraday equity series, so the slot and its time axis stay absent
+    // rather than promising a curve "once the session has points to plot".
+    expect(screen.queryByText(/equity curve appears here/i)).toBeNull();
+    expect(screen.queryByText('09:15')).toBeNull();
+    expect(screen.queryByText(/equity · 5 min/)).toBeNull();
   });
 
   it('renders Journal on Performance with eight stat cards, charts and reading lines', async () => {
