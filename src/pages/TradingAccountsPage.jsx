@@ -24,6 +24,7 @@ import SecretInput from '../components/common/SecretInput';
 import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPanel } from '../components/dashboard/deltaConnectShared';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { DELTA_EGRESS_IP } from '../api/config';
+import { resetDefaultsFor } from '../lib/dailyReset';
 import { venueFor } from '../lib/venues';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel, equityModeLabel } from '../lib/labels';
@@ -562,8 +563,12 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
 
   useEffect(() => {
     if (!selected) return;
-    setTimezone(selected.defaultTimezone || 'UTC');
-    setResetTime(selected.defaultResetTimeLocal || '00:00');
+    // Prop firm keeps its own published schedule; an exchange account goes to
+    // early morning where the TRADER is, because the reset is the release.
+    // See src/lib/dailyReset.js.
+    const d = resetDefaultsFor(selected);
+    setTimezone(d.timezone);
+    setResetTime(d.resetTime);
     setSelectedSize(selected.sizes?.[0] ?? null);
     setCustomSize('');
     // Clear Delta inputs when switching brokers so secrets never leak across selections.
@@ -822,15 +827,21 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
             </div>
           )}
 
-          {isFunded && (
+          {/* Shown for EVERY account type, not just funded. This used to be
+              behind `isFunded`, so an exchange account was silently created on
+              the venue's default zone with nothing on screen about it — fine
+              while every venue was Indian and the default was right, wrong the
+              moment a global venue arrives. The reset is when a daily lock
+              lifts, so it is not a detail to hide. */}
+          {selected && (
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--dash-text-muted)' }}>
-                4. Daily reset
+                {isFunded ? '4.' : '3.'} Daily reset
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block">
                   <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
-                    Reset time (local to prop firm)
+                    {isFunded ? 'Reset time (local to prop firm)' : 'Reset time (your local time)'}
                   </span>
                   <input
                     type="time"
@@ -862,7 +873,16 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 </label>
               </div>
               <p className="text-[11px] mt-2" style={{ color: 'var(--dash-text-muted)' }}>
-                Daily loss limit resets at this time each day. Defaults come from {selected.name}.
+                {isFunded ? (
+                  <>Daily loss limit resets at this time each day. Defaults come from {selected.name}.</>
+                ) : (
+                  <>
+                    This is also when a daily lock lifts — hit your loss limit and the account
+                    stays shut until here. Set it to early morning where you are, so a bad
+                    session cannot be resumed the same night. We guessed your timezone from
+                    this browser; change it if you are travelling or on a VPN.
+                  </>
+                )}
               </p>
             </div>
           )}
@@ -873,7 +893,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 className="text-[11px] font-semibold uppercase tracking-wider mb-3"
                 style={{ color: 'var(--dash-text-muted)' }}
               >
-                {isFunded ? '5.' : '3.'} Connect {v.name} API key
+                {isFunded ? '5.' : '4.'} Connect {v.name} API key
               </p>
               <ConnectResultPanel
                 venue={v}
@@ -895,7 +915,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 className="text-[11px] font-semibold uppercase tracking-wider mb-3"
                 style={{ color: 'var(--dash-text-muted)' }}
               >
-                {isFunded ? '5.' : '3.'} Connect {v.name} API key{' '}
+                {isFunded ? '5.' : '4.'} Connect {v.name} API key{' '}
                 <span style={{ color: '#f59e0b' }}>(required)</span>
               </p>
               <div
