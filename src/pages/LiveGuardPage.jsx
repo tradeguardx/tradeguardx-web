@@ -534,10 +534,18 @@ export default function LiveGuardPage() {
                 <span aria-hidden style={sx('position:absolute;width:12px;height:12px;border-radius:50%;top:-2px;transform:translateX(-50%);animation:tgxHalo 2s ease-out infinite;transition:left .6s cubic-bezier(.4,0,.2,1)', { left: markerLeft, '--halo-c': fg })} />
                 <div style={sx('position:absolute;top:-7px;transform:translateX(-50%);width:3px;height:22px;border-radius:2px;transition:left .6s cubic-bezier(.4,0,.2,1)', { left: markerLeft, background: fg, boxShadow: `0 0 0 3px var(--surface),0 0 16px ${glow}` })} />
               </div>
-              <div style={sx('display:flex;justify-content:space-between;gap:14px;font-size:11.5px;color:var(--ink-3)')}>
-                <span><strong style={sx('color:var(--red);font-weight:700;font-variant-numeric:tabular-nums')}>{lossLimit}</strong> {g.readOnly ? 'loss limit — we alert you, we cannot close' : 'loss limit — guard closes everything'}</span>
-                <span style={sx("font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);align-self:center")}>Breakeven</span>
-                <span style={sx('text-align:right')}><strong style={sx('color:var(--mint);font-weight:700;font-variant-numeric:tabular-nums')}>{target}</strong> {g.readOnly ? 'target — we alert you, nothing locks' : 'target — day locks, gains kept'}</span>
+              {/* "Breakeven" names the divider pinned at left:50% above, so it
+                  is positioned the same way rather than being the middle child
+                  of a space-between row — as the middle child its position was
+                  set by how wide the two end labels happened to be, which put
+                  it ~1.7% off the line it names, and further off in the
+                  read-only variant where the copy on each side changes length.
+                  The end labels are capped short of centre so they can never
+                  run into it. */}
+              <div style={sx('position:relative;display:flex;justify-content:space-between;gap:14px;font-size:11.5px;color:var(--ink-3)')}>
+                <span style={sx('max-width:calc(50% - 58px)')}><strong style={sx('color:var(--red);font-weight:700;font-variant-numeric:tabular-nums')}>{lossLimit}</strong> {g.readOnly ? 'loss limit — we alert you, we cannot close' : 'loss limit — guard closes everything'}</span>
+                <span style={sx("position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)")}>Breakeven</span>
+                <span style={sx('max-width:calc(50% - 58px);text-align:right')}><strong style={sx('color:var(--mint);font-weight:700;font-variant-numeric:tabular-nums')}>{target}</strong> {g.readOnly ? 'target — we alert you, nothing locks' : 'target — day locks, gains kept'}</span>
               </div>
             </div>
           )}
