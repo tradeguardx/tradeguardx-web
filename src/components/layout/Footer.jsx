@@ -118,7 +118,7 @@ export default function Footer() {
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-slate-400">
               Automated trade protection for serious traders. A server-side kill
-              switch that enforces your risk rules on Delta Exchange in real time.
+              switch that enforces your risk rules on Delta in real time.
             </p>
             {/* Status pill */}
             <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5">
