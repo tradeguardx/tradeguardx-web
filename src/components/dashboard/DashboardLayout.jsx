@@ -15,6 +15,8 @@ import Sidebar from './shell/Sidebar';
 import AccountSwitcher from './shell/AccountSwitcher';
 import GuardPill from './shell/GuardPill';
 import GuardBand from './shell/GuardBand';
+// TEMPORARY — remove with the Shark rollout, see MaintenanceRail.jsx.
+import MaintenanceRail from './MaintenanceRail';
 import AvatarMenu from './shell/AvatarMenu';
 import NotificationPanel from './shell/NotificationPanel';
 import { KillSwitchButton, KillSwitchModal } from './shell/KillSwitch';
@@ -109,6 +111,9 @@ function Shell() {
           </div>
           <GuardBand />
         </header>
+
+        {/* TEMPORARY — delete this line and the import when Shark testing ends. */}
+        <MaintenanceRail />
 
         <BreachToast />
 
