@@ -76,6 +76,38 @@ const VENUES = {
     // a position WITH a stop attached read as unprotected. Proven now.
     beta: false,
   },
+  shark: {
+    family: 'shark',
+    name: 'Shark',
+    longName: 'Shark Exchange',
+    keysUrl: () => 'https://sharkexchange.in',
+    ipField: 'IP whitelist',
+    ipRequired: false,
+    scopeLabel: 'Futures trading',
+    mobilePath: 'Profile → API',
+    withdrawalNote: 'Do not grant withdrawal. We never ask for it and refuse a key that has it.',
+    suggestsKeyName: true,
+    hasAppGuide: false,
+    // No taxCentre flag here on purpose: all three venues on this branch are
+    // Indian, so the tax centre applies to every account and there is nothing
+    // to gate. Shark is the one where it is EXACT rather than converted — it
+    // settles in INR, so the figure reconciles to the rupee with Shark's own
+    // statement. The hasTaxCentre() machinery arrives with the first global
+    // venue that has to switch it off.
+    /** No real key has been through this end to end. CoinDCX's own first live
+     *  key surfaced six bugs that nothing else would have found. */
+    beta: true,
+    // NOT YET CHECKED against the live form. Every field above is from
+    // Shark's published docs, not their key-creation page. Copy that names a
+    // control the user cannot find is the whole reason this array exists, so
+    // walk the page once and correct the wording before this ships.
+    createSteps: [
+      { title: 'Name', body: 'Anything you will recognise later. We suggest the name shown below.' },
+      { title: 'IP whitelist', body: 'Paste our IP so the key works only from our engine and nowhere else.' },
+      { title: 'Futures trading', body: 'Tick it. A read-only key connects fine and can never close a position.' },
+      { title: 'Copy the key and secret', body: 'Copy both, then paste them here.' },
+    ],
+  }
 };
 
 /** exchange slug → venue copy; null for non-exchange (prop-firm) accounts. */
@@ -83,6 +115,7 @@ export function venueFor(exchangeSlug) {
   if (!exchangeSlug) return null;
   if (exchangeSlug.startsWith('delta')) return VENUES.delta;
   if (exchangeSlug.startsWith('coindcx')) return VENUES.coindcx;
+  if (exchangeSlug.startsWith('shark')) return VENUES.shark;
   return null;
 }
 

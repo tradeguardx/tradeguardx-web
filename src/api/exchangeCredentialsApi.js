@@ -13,6 +13,7 @@ export function exchangeFromBrokerSlug(slug) {
   if (slug === 'delta_india') return 'delta_india';
   if (slug === 'delta_global') return 'delta_global';
   if (slug === 'coindcx') return 'coindcx';
+  if (slug === 'shark') return 'shark';
   return null;
 }
 

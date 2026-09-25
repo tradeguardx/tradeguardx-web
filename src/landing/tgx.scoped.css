@@ -298,6 +298,11 @@
   .tgx-home .xb-dot-slate{ background: #94a3b8; }
   .tgx-home .xb-soon{ color: var(--text-3); }
   .tgx-home .xb-soon b{ color: #f97316; font-weight: 700; }
+  /* Shark's mark is white "SHARK" over blue "EXCHANGE"; the blue identifies
+     it, so the wordmark carries it. Declared after .xb-wordmark and .xb-soon
+     because all three are single-class rules under .tgx-home — equal
+     specificity, so source order decides and those two both set a colour. */
+  .tgx-home .xb-shark{ color: #4db8e8; }
   .tgx-home .xb-soon em{
     font-style: normal; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase;
   }
