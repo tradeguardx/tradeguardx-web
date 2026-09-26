@@ -10,6 +10,7 @@ import { useGuard } from '../../context/GuardContext';
 import { ruleLockNow } from '../../lib/guard';
 import { Icon, RULE_GLYPH, ICON, ruleAccent } from './shell/icons';
 import { sx } from './shell/sx';
+import { currencySymbol } from '../../lib/session';
 
 /**
  * Rules — transcribed from the reference (lines 1010–1176) and the Rules &
@@ -151,14 +152,18 @@ function ordinal(n) {
  * are dynamic. Deliberately does NOT invent behavior a rule doesn't have —
  * e.g. stop-loss-alert only ever alerts, it never auto-closes.
  */
+// `sym` is the ACCOUNT's currency symbol, not a constant. These read "$500"
+// on every venue before, including Shark, which settles in INR — so a limit
+// the engine enforces as ₹500 was described as $500, roughly eighty times
+// larger. The percentage variants are currency-free and unchanged.
 const SUMMARY_FORMATTERS = {
-  'daily-loss': (v) =>
+  'daily-loss': (v, sym = '$') =>
     v.mode === 'amount'
-      ? `$${v.dailyLossAmount} · warns at $${v.warningAmount} · flattens and locks`
+      ? `${sym}${v.dailyLossAmount} · warns at ${sym}${v.warningAmount} · flattens and locks`
       : `${v.dailyLossPct}% · warns at ${v.warningPct}% · flattens and locks`,
-  'daily-profit-target': (v) =>
+  'daily-profit-target': (v, sym = '$') =>
     v.mode === 'amount'
-      ? `$${v.dailyTargetAmount} target · locks in the win`
+      ? `${sym}${v.dailyTargetAmount} target · locks in the win`
       : `${v.dailyTargetPct}% target · locks in the win`,
   'max-total-loss': (v) => `${v.maxDrawdownPct}% max drawdown`,
   'risk-per-trade': (v) => `${v.maxRiskPct}% of equity · rejects oversized orders`,
@@ -176,11 +181,11 @@ const SUMMARY_FORMATTERS = {
 };
 
 /** Falls back to the template description if a formatter is missing or a value isn't loaded yet. */
-function ruleSummaryLine(templateSlug, values, fallback) {
+function ruleSummaryLine(templateSlug, values, fallback, sym = '$') {
   const fmt = SUMMARY_FORMATTERS[templateSlug];
   if (!fmt) return fallback;
   try {
-    const line = fmt(values);
+    const line = fmt(values, sym);
     return line && !/undefined|NaN/.test(line) ? line : fallback;
   } catch {
     return fallback;
@@ -229,14 +234,19 @@ const BTN_SOLID = 'padding:9px 14px;border:1px solid var(--ink);border-radius:9p
 const BTN_GHOST = 'padding:9px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600';
 const INPUT = "width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font:600 14px/1.2 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums";
 
-function fieldDisplay(field, value) {
+function fieldDisplay(field, value, sym = '$') {
   if (field.type === 'select') return (field.options || []).find((o) => o.value === value)?.label ?? String(value ?? '—');
   if (field.type === 'toggle') return value ? 'On' : 'Off';
   if (value === '' || value == null) return '—';
-  return `${field.prefix ? `${field.prefix}` : ''}${value}${field.suffix ? ` ${field.suffix}` : ''}`;
+  const pre = field.prefix === '$' ? sym : field.prefix;
+  return `${pre ? `${pre}` : ''}${value}${field.suffix ? ` ${field.suffix}` : ''}`;
 }
 
-function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, expanded, onToggleExpand, enforcement }) {
+function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, expanded, onToggleExpand, enforcement, currency }) {
+  // The account's settlement currency, not a constant: rule templates are
+  // shared across venues but an amount is only meaningful in the currency the
+  // account actually settles in.
+  const sym = currencySymbol(currency);
   const toast = useToast();
   const isOn = !rule.locked && rule.enabled;
   // Reference A7/A8 derivations. Off wins over everything.
@@ -327,7 +337,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
   const accent = rule.locked ? { color: 'var(--ink-3)', tint: 'var(--surface-3)' } : ruleAccent(slug);
   const glyph = RULE_GLYPH[slug] ?? ICON.rules;
   const plain = REF_PLAIN[slug] || (RULE_DOCS[slug] ? `${RULE_DOCS[slug].summary} ${RULE_DOCS[slug].trigger}` : rule.description);
-  const summary = rule.locked ? rule.description : ruleSummaryLine(rule.id, values, rule.description);
+  const summary = rule.locked ? rule.description : ruleSummaryLine(rule.id, values, rule.description, sym);
 
   return (
     <div style={sx('border-bottom:1px solid var(--line)')}>
@@ -384,7 +394,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
               <div key={field.key} style={sx('min-width:132px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)', editing ? { minWidth: 180 } : {})}>
                 <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{field.label}</div>
                 {!editing || rule.locked ? (
-                  <div style={sx("margin-top:5px;font:600 15px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums")}>{rule.locked ? 'Upgrade to configure' : fieldDisplay(field, values[field.key])}</div>
+                  <div style={sx("margin-top:5px;font:600 15px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums")}>{rule.locked ? 'Upgrade to configure' : fieldDisplay(field, values[field.key], sym)}</div>
                 ) : field.type === 'select' ? (
                   <div style={sx('margin-top:6px;display:flex;gap:4px')}>
                     {(field.options || []).map((opt) => {
@@ -398,7 +408,11 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
                   </button>
                 ) : (
                   <div style={sx('margin-top:6px;display:flex;align-items:center;gap:6px')}>
-                    {field.prefix && <span style={sx('font-size:13px;color:var(--ink-3)')}>{field.prefix}</span>}
+                    {/* The template ships prefix:"$" from the database and one
+                        template serves every venue, so a dollar sign appears
+                        beside an amount the engine enforces in rupees. The
+                        account is the only thing that knows better. */}
+                    {field.prefix && <span style={sx('font-size:13px;color:var(--ink-3)')}>{field.prefix === '$' ? sym : field.prefix}</span>}
                     <input type={field.type === 'number' ? 'number' : 'text'} value={values[field.key] ?? ''} onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))} aria-label={field.label} style={sx(INPUT)} />
                     {field.suffix && <span style={sx('font-size:13px;color:var(--ink-3)')}>{field.suffix}</span>}
                   </div>
@@ -556,6 +570,9 @@ export default function RulesTerminal() {
     key: `${rule.id}-${reloadNonce}`, rule, accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId,
     isRetail: bundle?.isRetail, onSaved: load, cooled, ruleLocked, lockNote, enforcement: guardSel.enforcement,
     expanded: expandedRuleId === rule.id, onToggleExpand: () => toggleExpandedRule(rule.id),
+    // Shark settles in INR. Without this the amount fields and summaries show
+    // a dollar sign beside a number the engine enforces as rupees.
+    currency: selectedAccount?.accountCurrency,
   });
 
   return (

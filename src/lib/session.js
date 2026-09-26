@@ -28,12 +28,25 @@ export function sessionOf(live, bundle) {
   return { pnl, lossLimit, target, budgetUsed: drawdown, budgetPct, dayBase, currency: live.accountCurrency || 'USD' };
 }
 
+/**
+ * The symbol for an account's settlement currency.
+ *
+ * Exported because rule templates ship a hardcoded "$" prefix from the
+ * database — one template serves every account — and the only thing that knows
+ * an account settles in rupees is the account. Shark settles in INR: without
+ * this, its daily-loss limit renders "$500" for a number the engine enforces
+ * as ₹500, which is not a cosmetic difference at roughly eighty to one.
+ */
+export function currencySymbol(currency) {
+  return currency === 'INR' ? '₹' : '$';
+}
+
 export function fmtMoney(v, currency = 'USD', { sign = false, decimals = 2 } = {}) {
   if (v == null || !Number.isFinite(Number(v))) return '—';
   // Anything that rounds to zero is zero — never a signed "−$0.00".
   const num = Math.abs(Number(v)) < 0.5 * 10 ** -decimals ? 0 : Number(v);
   const abs = Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-  const sym = currency === 'INR' ? '₹' : '$';
+  const sym = currencySymbol(currency);
   const s = num < 0 ? '−' : sign && num > 0 ? '+' : '';
   return `${s}${sym}${abs}`;
 }
