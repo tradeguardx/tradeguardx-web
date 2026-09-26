@@ -60,8 +60,13 @@ function fmtHold(open, close) {
 
 function Select({ label, value, options, onChange }) {
   return (
-    <label style={sx('display:inline-flex;align-items:center;gap:6px')}>
-      <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)")}>{label}</span>
+    <label className="tr-sel" style={sx('display:inline-flex;align-items:center;gap:6px')}>
+      {/* The label is hidden on a phone, not removed: the chosen value already
+          reads as its own label ("All time", "Any side", "Newest"), and three
+          uppercase captions cost the width that lets the controls sit in one
+          row instead of three. Still announced to screen readers via the
+          select's aria-label. */}
+      <span className="tr-sel__label" style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)")}>{label}</span>
       <span style={{ position: 'relative', display: 'inline-block' }}>
         <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} style={sx(SEL)}>
           {options.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
@@ -182,7 +187,11 @@ export default function AllTradesPage() {
       </div>
 
       {/* view pills */}
-      <div style={sx('display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap')} role="tablist">
+      {/* Seven chips wrap to two rows on a phone. A rail keeps them to one and
+          scrolls, the same treatment the marketing page uses for its exchange
+          list — and unlike a wrap it does not push the trades further down
+          every time a count gets wider. */}
+      <div className="tr-chips" style={sx('display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap')} role="tablist">
         {VIEWS.map((f) => {
           const on = f.key === view;
           return (
@@ -200,10 +209,15 @@ export default function AllTradesPage() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" style={{ position: 'absolute', left: 11, top: '50%', marginTop: -7, color: 'var(--ink-faint)', pointerEvents: 'none' }}><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
           <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Search symbol or trade id" aria-label="Search trades" style={sx('width:100%;padding:8px 12px 8px 32px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px')} />
         </span>
-        <Select label="Range" value={range} options={RANGES} onChange={(v) => setParam({ range: v })} />
-        <Select label="Side" value={side} options={SIDES} onChange={(v) => setParam({ side: v })} />
-        <Select label="Sort" value={sort} options={SORTS} onChange={(v) => setParam({ sort: v })} />
-        {active && <button type="button" onClick={() => { setDraft(''); setParam({ view: 'all', range: 'all', side: 'any', sort: 'newest', q: '' }); }} style={sx('padding:7px 11px;border:0;background:none;color:var(--ink-3);font-size:12px;font-weight:600;text-decoration:underline')}>Clear filters</button>}
+        {/* Grouped so the mobile stack rule breaks AFTER the search box rather
+            than between every control. Search earns a full row; range, side and
+            sort are one-word choices that were each taking one. */}
+        <div className="tr-selects" style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap')}>
+          <Select label="Range" value={range} options={RANGES} onChange={(v) => setParam({ range: v })} />
+          <Select label="Side" value={side} options={SIDES} onChange={(v) => setParam({ side: v })} />
+          <Select label="Sort" value={sort} options={SORTS} onChange={(v) => setParam({ sort: v })} />
+          {active && <button type="button" onClick={() => { setDraft(''); setParam({ view: 'all', range: 'all', side: 'any', sort: 'newest', q: '' }); }} style={sx('padding:7px 11px;border:0;background:none;color:var(--ink-3);font-size:12px;font-weight:600;text-decoration:underline')}>Clear filters</button>}
+        </div>
       </div>
 
       {/* summary strip for the filtered set */}

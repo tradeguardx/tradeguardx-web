@@ -165,11 +165,16 @@ export default function BillingPage() {
         <div style={sx('padding:16px 19px;border-bottom:1px solid var(--line)')}>
           <h3 style={sx("margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em")}>What you are using</h3>
         </div>
-        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))')}>
-          {usage.map((u) => (
-            <div key={u.k} style={sx('padding:17px 19px;border-right:1px solid var(--line)')}>
-              <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{u.k}</div>
-              <div style={sx("margin-top:8px;font:600 19px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums", { color: u.fg })}>{u.v}</div>
+        {/* minmax(220px) meant one column at phone width, so three short
+            numbers — "4 of 7", "3", "3 financial years" — filled most of a
+            screen and pushed the plan cards below the fold. They are a glance,
+            not a read: side by side is how you compare them. 148px fits three
+            across at 360px and still holds the longest value on two lines. */}
+        <div className="bill-usage" style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,148px),1fr))')}>
+          {usage.map((u, n) => (
+            <div key={u.k} className="bill-usage__cell" style={sx('padding:17px 19px', n < usage.length - 1 ? { borderRight: '1px solid var(--line)' } : {})}>
+              <div className="bill-usage__k" style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{u.k}</div>
+              <div className="bill-usage__v" style={sx("margin-top:8px;font:600 19px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums", { color: u.fg })}>{u.v}</div>
               <div style={sx('margin-top:11px;height:4px;border-radius:999px;background:var(--surface-3);overflow:hidden')}><div style={sx('height:100%;border-radius:999px', { background: u.fg, width: u.bar })} /></div>
             </div>
           ))}

@@ -572,13 +572,18 @@ export default function RulesTerminal() {
           <span style={sx('font-size:12px;color:var(--ink-3)')}><strong style={sx('color:var(--mint);font-weight:700;font-variant-numeric:tabular-nums')}>{onCount}</strong> of {total} rules on</span>
           <span style={sx('font-size:12px;color:var(--ink-3)')}>rule lock <strong style={sx('font-weight:700', { color: ruleLocked ? 'var(--mint)' : 'var(--ink-2)' })}>{lockLabel}</strong></span>
         </div>
-        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))')}>
+        {/* Three columns on desktop, one swipeable rail on a phone. Stacked,
+            these three short explanations filled a screen before a single rule
+            could be seen — on the page whose job is switching rules on. They
+            are read once and then never again, so they should cost one screen
+            at most, not push the actual controls below the fold forever. */}
+        <div className="rt-explain" style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))')}>
           {[
             ['1', 'Switch on the rules you want', <>Every rule is off until you turn it on. Off rules do nothing at all — no alerts, no closing. Start with two.</>],
             ['2', 'Rule lock holds them there', <>Rules that are <strong style={sx('color:var(--ink);font-weight:700')}>on</strong> freeze for the window you pick — 7 days by default. Rules that are <strong style={sx('color:var(--ink);font-weight:700')}>off</strong> can always be turned on.</>],
             ['3', 'Killswitch is the manual one', <>Separate from rules. It stops you trading this account for a few hours, whatever your rules say. Set it on <button type="button" onClick={() => navigate('/dashboard/live')} style={sx('padding:0;border:0;background:none;color:var(--mint);font:inherit;font-weight:700;text-decoration:underline')}>Live guard</button>.</>],
           ].map(([n, title, body], idx) => (
-            <div key={n} style={sx('padding:17px 21px', idx < 2 ? { borderRight: '1px solid var(--line)' } : {})}>
+            <div key={n} className="rt-explain__card" style={sx('padding:17px 21px', idx < 2 ? { borderRight: '1px solid var(--line)' } : {})}>
               <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:8px')}>
                 <span style={sx("width:22px;height:22px;flex:none;border-radius:7px;background:var(--surface-3);display:grid;place-items:center;font:600 11px/1 'Space Grotesk',sans-serif;color:var(--ink-2)")}>{n}</span>
                 <span style={sx('font-size:13.5px;font-weight:600')}>{title}</span>

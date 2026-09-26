@@ -5,6 +5,7 @@ import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useGuard } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
 import { useLiveAccount } from '../hooks/useLiveAccount';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { sessionOf, fmtMoney, splitDecimal, ruleConfig } from '../lib/session';
 import { computeRule } from '../components/dashboard/RuleStatusCards';
 import { fetchJournalTrades } from '../api/tradesApi';
@@ -98,7 +99,26 @@ export default function LiveGuardPage() {
   const [stage, setStage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const isMobile = useIsMobile();
+  /**
+   * Commitment controls are collapsed on a phone.
+   *
+   * They are two long explanations and seven buttons at the bottom of the
+   * screen this product tells you to keep open while trading — and they are
+   * deliberately things you do once, while calm, not things you check. Open by
+   * default they pushed everything else up and made the page feel like a
+   * settings screen.
+   *
+   * Collapsing them hides CONTROLS, never STATUS: an active lockout renders in
+   * its own section above this one, and stays there. null means "not chosen
+   * yet", so the default can depend on width without an effect.
+   */
+  const [controlsOpen, setControlsOpen] = useState(null);
   const armed = g.guard === 'locked';
+  // Must come AFTER `armed` — reading it above its declaration is a temporal
+  // dead zone error that only shows at runtime, which is how it reached the
+  // smoke test rather than the build.
+  const showControls = controlsOpen ?? (armed || !isMobile);
   // Lockout needs a key that can act — not rules. See canLockOutOf in guard.js.
   const noEnforce = !armed && !g.canLockOut;
   const ksGap = g.gap && g.gap.key !== 'alerts' && g.gap.key !== 'rules' ? g.gap : null;
@@ -491,14 +511,20 @@ export default function LiveGuardPage() {
           )}
 
           {/* ── Tiles (§8) ── */}
-          <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,196px),1fr));gap:12px;margin-top:26px')}>
+          {/* 196px meant one tile per row on a phone, so the four numbers a
+              trader checks mid-session — budget left, trades used, progress to
+              target, rules armed — ran past a screen and a half, and the
+              session P&L bar below them was never visible at the same time.
+              They are a dashboard, not a list: two across reads in one glance.
+              150px fits two from 312px up. */}
+          <div className="lg-tiles" style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:12px;margin-top:26px')}>
             {tiles.map((tile) => (
-              <div key={tile.k} style={sx('padding:15px 16px 14px;border-radius:15px', { border: `1px solid ${tile.line}`, background: tile.bg })}>
+              <div key={tile.k} className="lg-tile" style={sx('padding:15px 16px 14px;border-radius:15px', { border: `1px solid ${tile.line}`, background: tile.bg })}>
                 <div style={sx('display:flex;align-items:baseline;justify-content:space-between;gap:8px')}>
                   <span style={sx("font:600 9px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)")}>{tile.k}</span>
                   {tile.tag && <span style={sx("font:600 10px/1 'JetBrains Mono',monospace", { color: tile.tagFg })}>{tile.tag}</span>}
                 </div>
-                <div style={sx("margin-top:10px;font:700 23px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: tile.fg })}>{tile.v}</div>
+                <div className="lg-tile__v" style={sx("margin-top:10px;font:700 23px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: tile.fg })}>{tile.v}</div>
                 {tile.pips ? (
                   <div style={sx('display:flex;gap:4px;margin-top:11px;flex-wrap:wrap')}>
                     {tile.pips.map((on, i) => <span key={i} style={sx('width:12px;height:5px;border-radius:999px', { background: on ? tile.pipFg : 'var(--surface-3)' })} />)}
@@ -508,7 +534,7 @@ export default function LiveGuardPage() {
                     <div style={sx('height:100%;border-radius:999px;transition:width .5s ease', { width: tile.bar, background: tile.barBg })} />
                   </div>
                 )}
-                <div style={sx('margin-top:9px;font-size:11.5px;line-height:1.4', { color: tile.noteFg })}>{tile.note}</div>
+                <div className="lg-tile__note" style={sx('margin-top:9px;font-size:11.5px;line-height:1.4', { color: tile.noteFg })}>{tile.note}</div>
               </div>
             ))}
           </div>
@@ -575,12 +601,32 @@ export default function LiveGuardPage() {
 
       {/* ── Commitment controls ───────────────────────────────────────── */}
       <section style={sx('margin-bottom:18px;border:1px solid var(--line-strong);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
-        <div style={sx('padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px;flex-wrap:wrap')}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round"><path d="M12 3v7" /><path d="M6.4 6.8a8 8 0 1011.2 0" /></svg>
-          <h3 style={sx("margin:0;font:600 16px/1.2 'Space Grotesk',sans-serif")}>Commitment controls</h3>
-          <span style={sx('font-size:11.5px;color:var(--ink-3)')}>{armed && !manual ? 'A rule locked this account — the details are below. These two controls are the ones you throw yourself.' : 'Separate from your rules. Both are switches you throw while calm, and neither has an undo.'}</span>
+        {/* Title and chevron on one line, description beneath.
+            One wrapping flex row put the chevron next to the description at
+            phone width, where it read as a control belonging to that sentence
+            rather than to the section. */}
+        <div style={sx('padding:16px 20px;border-bottom:1px solid var(--line)')}>
+          <div style={sx('display:flex;align-items:center;gap:11px')}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round" style={{ flex: 'none' }}><path d="M12 3v7" /><path d="M6.4 6.8a8 8 0 1011.2 0" /></svg>
+            <h3 style={sx("flex:1;min-width:0;margin:0;font:600 16px/1.2 'Space Grotesk',sans-serif")}>Commitment controls</h3>
+            {/* A chevron, not a labelled pill. "Show" in a bordered button read
+                as the section's primary action, which it is not — the actions
+                are inside it. Same control as the one on Accounts, so a
+                collapsed section looks the same wherever you meet one. */}
+            <button
+              type="button"
+              onClick={() => setControlsOpen(!showControls)}
+              aria-expanded={showControls}
+              aria-label={showControls ? 'Hide commitment controls' : 'Show commitment controls'}
+              style={sx('flex:none;display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink-3);cursor:pointer;transition:transform .18s ease', { transform: showControls ? 'rotate(180deg)' : 'none' })}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+            </button>
+          </div>
+          <p style={sx('margin:8px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink-3)')}>{armed && !manual ? 'A rule locked this account — the details are below. These two controls are the ones you throw yourself.' : 'Separate from your rules. Both are switches you throw while calm, and neither has an undo.'}</p>
         </div>
-        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))')}>
+        {showControls && (
+        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))')}>
 
           <div style={sx('padding:19px 20px;border-right:1px solid var(--line);display:flex;flex-direction:column')}>
             <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:5px')}>
@@ -717,6 +763,7 @@ export default function LiveGuardPage() {
             )}
           </div>
         </div>
+        )}
       </section>
 
       {/* ── Open positions ────────────────────────────────────────────── */}

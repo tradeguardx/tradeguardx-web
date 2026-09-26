@@ -15,14 +15,19 @@ export function TrialBanner() {
     days == null ? 'Your free trial is active' : days <= 0 ? 'Your trial ends today' : `${days} day${days === 1 ? '' : 's'} left`;
 
   return (
-    <div data-tgx-stack="1" style={sx('display:flex;align-items:center;gap:14px;padding:12px 15px;margin-bottom:16px;border:1px solid var(--mint-line);border-radius:14px;background:var(--mint-tint);flex-wrap:wrap')}>
-      <span style={sx('flex:none;width:28px;height:28px;border-radius:8px;background:var(--surface);display:grid;place-items:center;color:var(--mint)')}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3L4 14h7l-1 7 9-11h-7z" /></svg>
-      </span>
-      <p style={sx('flex:1;min-width:min(220px,100%);margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)')}>
-        <strong style={sx('color:var(--ink);font-weight:700')}>Free trial — everything unlocked.</strong> {left}. Upgrade any time to keep full access.
-      </p>
-      <Link to="/pricing" style={sx('flex:none;padding:8px 13px;border:1px solid var(--mint-solid);border-radius:9px;background:var(--mint-solid);color:#05221c;font-size:12.5px;font-weight:700;text-decoration:none')}>Upgrade</Link>
+    /* Same shape as the guard band, and for the same reason: data-tgx-stack
+       gives every child width:100% on a phone, which stretched this 28px badge
+       across the banner and turned Upgrade into a full-bleed button. */
+    <div className="guard-band" style={sx('display:flex;align-items:center;gap:14px;padding:12px 15px;margin-bottom:16px;border:1px solid var(--mint-line);border-radius:14px;background:var(--mint-tint)')}>
+      <div className="guard-band__main" style={sx('flex:1;min-width:0;display:flex;align-items:center;gap:12px')}>
+        <span style={sx('flex:none;width:28px;height:28px;border-radius:8px;background:var(--surface);display:grid;place-items:center;color:var(--mint)')}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3L4 14h7l-1 7 9-11h-7z" /></svg>
+        </span>
+        <p style={sx('flex:1;min-width:0;margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)')}>
+          <strong style={sx('color:var(--ink);font-weight:700')}>Free trial — everything unlocked.</strong> {left}. Upgrade any time to keep full access.
+        </p>
+      </div>
+      <Link className="guard-band__cta" to="/pricing" style={sx('flex:none;padding:8px 13px;border:1px solid var(--mint-solid);border-radius:9px;background:var(--mint-solid);color:#05221c;font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap')}>Upgrade</Link>
     </div>
   );
 }

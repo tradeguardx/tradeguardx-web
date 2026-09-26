@@ -18,6 +18,8 @@ import GuardBand from './shell/GuardBand';
 import AvatarMenu from './shell/AvatarMenu';
 import NotificationPanel from './shell/NotificationPanel';
 import { KillSwitchButton, KillSwitchModal } from './shell/KillSwitch';
+import BottomTabs from './shell/BottomTabs';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { sx } from './shell/sx';
 
 /**
@@ -40,6 +42,10 @@ function Shell() {
   const { prefs } = usePrefs();
   const { pathname } = useLocation();
   const mainRef = useRef(null);
+  // 900 matches the tab bar's breakpoint, not the 640 default: the chat
+  // button is fixed bottom-right at the same z-index, so wherever the tab bar
+  // exists the two occupy the same corner.
+  const isMobile = useIsMobile(900);
   const [drawer, setDrawer] = useState(false);
   const [killOpen, setKillOpen] = useState(false);
   const [killNonce, setKillNonce] = useState(0);
@@ -119,10 +125,18 @@ function Shell() {
         </main>
       </div>
 
+      {/* Mobile only; the CSS reveals it at the same width the sidebar becomes
+          a drawer, so there is never both a visible sidebar and a tab bar. */}
+      <BottomTabs onMore={() => setDrawer(true)} />
+
       <KillSwitchModal key={killNonce} open={killOpen} onClose={() => setKillOpen(false)} returnFocusRef={killBtnRef} />
       <WelcomeCelebration />
       <PhonePrompt />
-      <SupportChat />
+      {/* Not rendered on a phone. It sat on top of the bottom tab bar — same
+          corner, same z-index — so the "More" tab and the chat bubble fought
+          for the same thumb. Hiding it with CSS would leave the widget mounted
+          and polling for nothing. Support is still reachable from the menu. */}
+      {!isMobile && <SupportChat />}
     </div>
   );
 }

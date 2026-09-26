@@ -1158,7 +1158,10 @@
   [data-tgx-aside][data-open="1"]{transform:none;box-shadow:0 0 60px rgba(0,0,0,.55)}
   [data-tgx-scrim]{display:block}
   [data-tgx-burger]{display:grid}
-  [data-tgx-main]{padding:18px 15px 72px!important}
+  /* Clear the tab bar: its own height plus the home-indicator inset. Without
+     this the last card on every page sits under the bar and looks cut off,
+     which is the single most common way a bottom bar goes wrong. */
+  [data-tgx-main]{padding:18px 15px calc(84px + env(safe-area-inset-bottom,0px))!important}
   [data-tgx-headbar]{padding:10px 15px!important;gap:9px!important;flex-wrap:wrap}
   [data-tgx-band]{padding:11px 15px!important}
   [data-tgx-modal]{padding:14px!important;align-items:flex-end!important}
@@ -1313,4 +1316,204 @@
 
 @media (prefers-reduced-motion: reduce) {
   .live-card * { animation: none !important; transition: none !important; }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Mobile tab bar and app-like touch behaviour.
+
+   Only inside the dashboard: the marketing pages are a document and should
+   keep a document's selection and scroll behaviour.
+   --------------------------------------------------------------------------- */
+
+/* A tap that leaves a grey box behind reads as a web page. Removing the
+   highlight only works if something replaces it, or the tap feels dead — hence
+   the pressed state below. */
+.tgx-tab{-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:background .12s ease,transform .12s ease}
+.tgx-tab:active{background:var(--surface-2);transform:scale(.96)}
+.tgx-tab:focus-visible{outline:2px solid var(--mint);outline-offset:-2px;border-radius:10px}
+
+/* The bar sits above content but below the drawer (z-index 90) and its scrim,
+   so opening More never leaves the tabs floating over the menu. */
+.tgx-tabbar{backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px)}
+/* Above the drawer breakpoint the sidebar is permanently visible, so a tab bar
+   would be a second copy of the same navigation. */
+@media (min-width:901px){.tgx-tabbar{display:none}}
+
+@media (max-width:900px){
+  /* Rubber-banding past the end of a list scrolls the page behind it on iOS,
+     which is the clearest tell that you are in a browser. */
+  [data-tgx-main]{overscroll-behavior-y:contain}
+  /* Buttons and links inside the dashboard should respond immediately rather
+     than waiting out the double-tap-zoom delay. */
+  [data-tgx] button,[data-tgx] a{touch-action:manipulation}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .tgx-tab,.tgx-tab:active{transition:none;transform:none}
+}
+
+
+/* Plan & billing usage meters: three across on a phone, not three stacked.
+   The inline grid already allows it; this only buys back the room to do it
+   comfortably — the cells carry generous desktop padding and 19px type that
+   a 360px screen cannot spare three times over. */
+@media (max-width:560px){
+  .bill-usage__cell{padding:13px 11px!important}
+  .bill-usage__k{font-size:9.5px!important;letter-spacing:.05em!important}
+  .bill-usage__v{font-size:15.5px!important;line-height:1.15!important;overflow-wrap:anywhere}
+}
+
+
+/* Live guard tiles: two across on a phone. The grid already allows it; this
+   buys back the room, because desktop padding and 23px numerals four times
+   over is what forced them into a single column in the first place. */
+@media (max-width:560px){
+  .lg-tile{padding:12px 12px 11px!important}
+  .lg-tile__v{font-size:19px!important;margin-top:8px!important}
+  .lg-tile__note{font-size:10.5px!important;margin-top:7px!important}
+}
+
+
+/* All trades filters on a phone.
+   The shared [data-tgx-stack] rule puts every child on its own full-width row,
+   which turned a search box and three one-word dropdowns into four rows — and
+   with seven view chips and four stat tiles above the list, the first trade sat
+   roughly a screen and a half down on the page whose entire job is showing
+   trades. Search keeps its row; the three dropdowns share the next. */
+@media (max-width:760px){
+  .tr-selects{width:100%;flex-wrap:nowrap!important;gap:8px!important}
+  .tr-selects .tr-sel{flex:1 1 0;min-width:0}
+  .tr-selects .tr-sel select{width:100%}
+  .tr-sel__label{display:none}
+  /* Clear filters drops below rather than squeezing the dropdowns. */
+  .tr-selects > button{flex:none;width:100%;text-align:left;padding-left:0!important}
+}
+
+
+@media (max-width:760px){
+  /* One scrolling row instead of two wrapped ones. scroll-snap so a flicked
+     rail settles on a chip rather than halfway through one. */
+  .tr-chips{flex-wrap:nowrap!important;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+  .tr-chips::-webkit-scrollbar{display:none}
+  .tr-chips > *{flex:none;scroll-snap-align:start}
+}
+
+
+/* "How your protection fits together" — a rail on a phone.
+   Three stacked cards pushed the rule switches a full screen down on the page
+   whose entire purpose is switching rules on. The content is read once; the
+   controls are used every visit, so the controls win the fold. */
+@media (max-width:760px){
+  .rt-explain{display:flex!important;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .rt-explain::-webkit-scrollbar{display:none}
+  .rt-explain__card{flex:0 0 86%;scroll-snap-align:start;border-right:1px solid var(--line)!important}
+  /* 86% leaves the next card's edge visible, which is what tells someone there
+     is more to swipe — a full-width card looks like the only card. */
+  .rt-explain__card:last-child{border-right:0!important}
+}
+
+
+/* Add-a-venue wizard rail.
+   Three numbered stages with labels and connectors do not fit across a phone
+   without wrapping into a second row, which makes a progress rail read as a
+   list. The numbers and the stage heading beneath already say where you are,
+   so the labels go and the connectors carry the progress. */
+@media (max-width:620px){
+  .wiz-rail{gap:0}
+  .wiz-rail__label{display:none}
+  .wiz-rail__bar{margin:0 8px!important}
+}
+
+
+/* Guard band on a phone.
+   The band is the one thing on screen saying protection is missing, so it has
+   to read as a sentence with an action, not as a poster. Title and icon stay on
+   one line; the action sits under the text at its own width rather than
+   becoming a full-bleed button that looks like the page's primary call. */
+@media (max-width:900px){
+  .guard-band{flex-direction:column;align-items:stretch;gap:10px;padding:12px 15px!important}
+  .guard-band__cta{align-self:flex-start}
+}
+
+
+@media (max-width:900px){
+  /* Guard band: it is a warning, not an article. At full desktop padding and
+     line height it filled half a phone screen, which pushes the thing it is
+     warning you about off the fold — the opposite of what a warning is for. */
+  .guard-band{padding:11px 15px!important;gap:9px!important}
+  .guard-band__main{gap:9px!important}
+
+  /* The card header wraps on a phone, so Manage and the expand chevron land on
+     a row of their own. Butted together at the left they read as one control
+     with a stray box beside it; the chevron belongs at the row's edge, where
+     the eye already goes for "open this". */
+  .acct-card__chevron{margin-left:auto}
+}
+
+
+/* The wizard's motion is decoration; someone who has asked the OS to stop
+   animations has asked for a reason. framer-motion honours this itself for
+   transitions it owns, but the modal's own transform is set inline. */
+@media (prefers-reduced-motion:reduce){
+  [data-tgx-modal] *{animation:none!important;transition:none!important}
+}
+
+/* Stage rail: the completed connector carries the progress, so it gets the
+   accent weight rather than the numbers shouting. */
+.wiz-rail__bar{transition:background .25s ease}
+
+
+/* The add-venue dialog becomes a bottom sheet on a phone.
+   Floating in the middle with a margin on every side is a desktop dialog
+   scaled down: it wastes the narrowest dimension on gutters and leaves the
+   footer buttons mid-screen, away from the thumb. Flush to the bottom edge,
+   full width, rounded only where it meets the page — the shape phones already
+   use for exactly this. */
+@media (max-width:620px){
+  .wiz-modal{padding:0!important;place-items:end stretch!important;align-items:flex-end!important}
+  .wiz-dialog{width:100%!important;margin:0!important}
+  .wiz-card{
+    max-height:88dvh!important;
+    border-radius:18px 18px 0 0!important;
+    border-bottom:0!important;
+  }
+  /* Clear the home indicator so the footer actions are tappable. */
+  .wiz-card > footer{padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))!important}
+  /* The close button sits on the sheet's own corner, not the viewport's. */
+  .wiz-dialog > button[aria-label="Close"]{top:12px!important;right:12px!important}
+}
+
+
+/* Connect step actions: side by side with room, stacked and equal-width
+   without it. Two buttons of different widths on separate rows read as a
+   list of options rather than one step with two routes into it. */
+.cx-actions > *{flex:1 1 auto}
+@media (max-width:620px){
+  .cx-actions{flex-wrap:nowrap!important;flex-direction:column}
+  .cx-actions > *{width:100%}
+}
+
+
+/* Connect steps on a narrow screen.
+   A 28px badge plus a 15px gap indents every line of body text by 43px, and a
+   nested "what the venue asks for" list adds its own padding inside that. At
+   433px the result is more gutter than column — the text wraps two words early
+   on every line. The badge only has to be legible, not large. */
+/* row-gap:0 because the inline `gap:15px` shorthand sets BOTH axes. Title and
+   body used to be one nested block whose spacing came from the paragraph's own
+   5px margin; as grid siblings they would otherwise gain 15px on top of it, on
+   every step, on every screen size. */
+.cx-step{display:grid!important;grid-template-columns:auto 1fr;align-items:start;column-gap:15px;row-gap:0!important}
+.cx-step__n{grid-column:1;grid-row:1}
+.cx-step__title{grid-column:2;grid-row:1;align-self:center}
+.cx-step__body{grid-column:2;grid-row:2}
+
+@media (max-width:620px){
+  .cx-step{column-gap:10px!important;padding:15px 14px!important}
+  .cx-step__n{width:22px!important;height:22px!important;font-size:11px!important}
+  /* The body reclaims the badge column: on a 433px screen that 32px was the
+     difference between a line breaking early and not. */
+  .cx-step__body{grid-column:1 / -1!important}
+  .venue-step{gap:9px!important;padding:8px 11px!important}
 }
