@@ -13,6 +13,7 @@ import TermsPage from './pages/TermsPage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
 import PartnerApplyPage from './pages/PartnerApplyPage';
 import DocsPage from './pages/DocsPage';
+import DocsSlugRedirect from './pages/DocsSlugRedirect';
 import SecurityPage from './pages/SecurityPage';
 import RoadmapPage from './pages/RoadmapPage';
 import CryptoTaxIndiaPage from './pages/CryptoTaxIndiaPage';
@@ -34,6 +35,9 @@ import AccountsPage from './pages/AccountsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import CryptoKillSwitchPage from './pages/CryptoKillSwitchPage';
+import ExchangeIndexPage from './pages/exchanges/ExchangeIndexPage';
+import ExchangeHubPage from './pages/exchanges/ExchangeHubPage';
+import ExchangeGuidePage from './pages/exchanges/ExchangeGuidePage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import TaxPage from './pages/TaxPage';
@@ -65,7 +69,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Layout />}>
                   <Route index element={<CryptoHomePage />} />
-                  <Route path="home-classic" element={<HomePage />} />
+                  <Route path="home-classic" element={<HomePage noindex />} />
                   {/* Prop-firm page hidden for launch — redirect to the crypto home. */}
                   <Route path="prop-firm" element={<Navigate to="/" replace />} />
                   <Route path="pricing" element={<PricingPage />} />
@@ -90,9 +94,15 @@ function App() {
                   <Route path="help/:slug" element={<DocsPage />} />
                   {/* Old /docs paths redirect to /help. */}
                   <Route path="docs" element={<Navigate to="/help" replace />} />
-                  <Route path="docs/:slug" element={<Navigate to="/help" replace />} />
+                  <Route path="docs/:slug" element={<DocsSlugRedirect />} />
                   <Route path="security" element={<SecurityPage />} />
                   {/* Head-term landing page: "crypto kill switch", "killswitch app". */}
+                  {/* Venue pages. Two levels, and the venue hub IS its
+                      kill-switch page — there is deliberately no
+                      /exchanges/:venue/kill-switch competing with its parent. */}
+                  <Route path="exchanges" element={<ExchangeIndexPage />} />
+                  <Route path="exchanges/:venue" element={<ExchangeHubPage />} />
+                  <Route path="exchanges/:venue/:guide" element={<ExchangeGuidePage />} />
                   <Route path="crypto-kill-switch" element={<CryptoKillSwitchPage />} />
                   <Route path="crypto-tax-india" element={<CryptoTaxIndiaPage />} />
                   <Route path="roadmap" element={<RoadmapPage />} />

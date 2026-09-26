@@ -1,193 +1,24 @@
-import { DELTA_EGRESS_IP } from '../api/config';
-
 /**
- * Exchange documentation, keyed by exchange and split into navigable articles.
- * Rendered by DocsPage with a broker toggle.
+ * The help centre at /help — the seven articles that describe the ENGINE, not
+ * any one exchange.
  *
- * Only the SETUP guide is per-venue — that is the one part that depends on
- * whose form you are filling in. Everything after the key is connected (how
- * enforcement works, the kill switch, rules, cooldowns, the Live dashboard)
- * is identical on every venue because it is the same engine, so those
- * articles are written once in SHARED_ARTICLES and shared by reference.
- * Copying them per venue would guarantee they drift.
+ * This file used to hold a per-venue setup guide as well, keyed by broker, and
+ * DocsPage picked between them with React state. That meant one URL
+ * (/help/getting-started) for three different articles: Delta's was the only
+ * one a crawler ever saw, CoinDCX's had no address at all, and Shark — live and
+ * connectable — was not in the list, so it was unreachable even by clicking.
  *
- * To add a venue: write its setup article, add a DOCS entry spreading
- * SHARED_ARTICLES after it, and add a DOC_BROKERS row. No page changes.
+ * The setup guides now live in venueGuides.js under /exchanges/<venue>/api-key,
+ * one URL each. What is left here is what was always genuinely shared: the kill
+ * switch behaves identically wherever your key points, so it is described once.
+ * With nothing venue-specific left, the broker toggle went too — it offered a
+ * choice that no longer changed anything on the page.
  *
- * Broker shape:  { id, label, tagline, articles: Article[] }
  * Article shape: { slug, title, intro, sections: Section[] }
  * Section shape: { heading?, body?, list?: [{ bold?, text }], steps?: [{ title, body?, sub?: string[], note? }], note? }
  */
 
-export const DOCS = {
-  delta: {
-    id: 'delta',
-    label: 'Delta Exchange',
-    tagline:
-      'A server-side kill switch and journal for your Delta Exchange account. No browser extension — you connect a Trading API key and our always-on engine enforces your rules for you.',
-    articles: [
-      {
-        slug: 'getting-started',
-        title: 'Getting Started',
-        intro:
-          'Connect your Delta account and be protected in about five minutes. There is no extension to install — you create a Trading API key on Delta, whitelist our IP, and paste the key into TradeGuardX.',
-        sections: [
-          {
-            heading: 'What TradeGuardX does',
-            body:
-              "TradeGuardX is a risk-management layer on top of your own Delta Exchange account. You keep full control of your funds — we never hold them. You connect a Trading API key, define your rules (daily loss limit, max trades, loss-streak cooldown, and more), and our cloud engine enforces them: when a rule is breached it cancels your open orders and closes your positions, then locks the account for a cooldown so you can't keep digging.",
-            note:
-              'On a retail exchange like Delta this is a cooperative safety tool, not an un-bypassable cage — you always own your exchange login. Its job is to stop impulse decisions in the moment, for the trader who wants to be protected from their own tilt.',
-          },
-          {
-            heading: 'Set up Delta Exchange — step by step',
-            body: 'Follow these in order. The only part done outside TradeGuardX is creating the API key on Delta.',
-            steps: [
-              {
-                title: 'Create your TradeGuardX account',
-                body: 'Sign up at tradeguardx.com/signup with email or Google. No card is needed to start.',
-              },
-              {
-                title: 'Start adding your Delta account',
-                body: 'In the dashboard, open Accounts → "Add trading account" and choose Delta Exchange (India or Global).',
-                sub: [
-                  'Name the account. Keep this form open — it shows the IP you need to whitelist and is where you paste your key.',
-                  'The API Key and Secret are required to create the account, so you\'ll finish this form in step 4.',
-                ],
-              },
-              {
-                title: 'Create a Trading API key on Delta Exchange',
-                body: 'Open your Delta API keys page at delta.exchange/algo/delta-exchange-apis (log in first) and click "Create a new API key". Delta\'s form asks for just a few things:',
-                sub: [
-                  'API Key Name — type anything you like (e.g. "TradeGuardX"). It\'s just a label.',
-                  `Whitelisted IP — paste TradeGuardX's IP (${DELTA_EGRESS_IP}). The connection panel shows it with a Copy button. Delta requires this for Trading keys.`,
-                  'Permissions — tick "Trading". "Read Data" is always on (leave it); there is no Withdrawal option, so your key can never move funds.',
-                  'Click "Create API key", then copy the API Key and API Secret. Delta shows the secret only once — copy it immediately.',
-                ],
-                note: 'A read-only key (Trading unticked) can only send alerts — it cannot run the kill switch. For enforcement, tick Trading and whitelist the IP.',
-              },
-              {
-                title: 'Connect the key in TradeGuardX',
-                body: 'On the Add-account form (or the Delta connection panel), paste your API Key and API Secret and create/connect. The API key and secret are required to create a Delta account.',
-                sub: [
-                  'We validate the key against Delta immediately and show your linked Delta account and email.',
-                  'If Delta rejects it, check you used the right region key and gave it a few minutes — new keys take ~5 minutes to activate.',
-                  'Your secret is encrypted (KMS) before storage and is never shown again.',
-                ],
-              },
-              {
-                title: "Confirm you're protected",
-                body: 'The connection should read CONNECTED and the header shows a green "Protected" pill.',
-                note: 'If it shows "Alerts only" or "Unprotected", the key is read-only or the IP isn\'t whitelisted — recreate the key with the Trading permission and the IP whitelisted.',
-              },
-              {
-                title: 'Set your guardrails',
-                body: 'Open Rules and configure the protections you want — daily loss limit, max trades per day, loss-streak cooldown, risk per trade, and more.',
-                sub: [
-                  'Each rule has a "How it works" toggle explaining exactly what it does.',
-                  'Saving a tighter limit applies instantly; loosening one waits 24 hours (a cooling-off so you can\'t weaken protection on impulse).',
-                ],
-              },
-              {
-                title: "Trade — you're covered",
-                body: 'Open the Live tab to watch your session in real time: status, guardrail meters, and activity. If a rule is breached, the kill switch cancels your orders, closes your positions, and locks the account with an unlock countdown.',
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  coindcx: {
-    id: 'coindcx',
-    label: 'CoinDCX',
-    tagline:
-      'A server-side kill switch and journal for your CoinDCX futures account. No browser extension — you create an API key on CoinDCX, bind it to our IP, and our always-on engine enforces your rules for you.',
-    articles: [
-      {
-        slug: 'getting-started',
-        title: 'Getting Started',
-        intro:
-          'Connect your CoinDCX futures account and be protected in about five minutes. There is no extension to install — you create an API key on CoinDCX, bind it to our IP, and paste the key into TradeGuardX.',
-        sections: [
-          {
-            heading: 'What TradeGuardX does',
-            body:
-              "TradeGuardX is a risk-management layer on top of your own CoinDCX account. You keep full control of your funds — we never hold them. You connect an API key, define your rules (daily loss limit, max trades, loss-streak cooldown, and more), and our cloud engine enforces them: when a rule is breached it cancels your open orders and closes your positions, then locks the account for a cooldown so you can't keep digging.",
-            note:
-              'Futures only. CoinDCX spot is not enforced, does not appear in the journal, and is not carried into the tax centre — if you want spot protected, it is not something we can do today.',
-          },
-          {
-            heading: 'INR and USDT margin are one venue',
-            body:
-              'CoinDCX lets you margin the same perpetuals from either your INR wallet or your USDT wallet. That is a wallet toggle, not two exchanges: the instruments are identical and prices, fees and P&L are quoted in USDT either way. One key covers both, your rules apply across both, and your equity is reported as a single USDT figure with the INR wallet converted at CoinDCX\'s own spot rate.',
-          },
-          {
-            heading: 'Set up CoinDCX — step by step',
-            body: 'Follow these in order. The only part done outside TradeGuardX is creating the API key on CoinDCX.',
-            steps: [
-              {
-                title: 'Create your TradeGuardX account',
-                body: 'Sign up at tradeguardx.com/signup with email or Google. No card is needed to start.',
-              },
-              {
-                title: 'Start adding your CoinDCX account',
-                body: 'In the dashboard, open Accounts → "Add trading account" and choose CoinDCX.',
-                sub: [
-                  'Name the account. Keep this form open — it shows the IP you need to bind and is where you paste your key.',
-                  'The API Key and Secret are required to create the account, so you\'ll finish this form in step 4.',
-                ],
-              },
-              {
-                title: 'Create an API key on CoinDCX',
-                body: 'Open coindcx.com/create-api (log in first). Their form is short:',
-                sub: [
-                  'Label — type anything you like (e.g. "TradeGuardX"). It is just a name.',
-                  `Bind IP Address to API key — tick this, then paste TradeGuardX's IP (${DELTA_EGRESS_IP}) into the field that appears. The connection panel shows it with a Copy button. The key then works only from our engine and nowhere else.`,
-                  'Send OTP — CoinDCX sends one code to your email and another by SMS. Enter both to confirm the key.',
-                  'Copy the API Key and Secret. Both are shown once, on that screen — CoinDCX will not show the secret again.',
-                ],
-                note: 'There is no permission checkbox on CoinDCX\'s form, so there is nothing to tick for trading — do not go looking for one. We verify the key can actually act the moment you connect it, and tell you plainly if it cannot.',
-              },
-              {
-                title: 'Connect the key in TradeGuardX',
-                body: 'On the Add-account form, paste your API Key and Secret and create/connect.',
-                sub: [
-                  'We validate the key against CoinDCX immediately and show the linked account on the Accounts card.',
-                  'If CoinDCX rejects it, the IP binding is the usual cause — the key must be bound to our IP exactly, or bound to nothing at all.',
-                  'Your secret is encrypted (KMS) before storage and is never shown again.',
-                ],
-              },
-              {
-                title: "Confirm you're protected",
-                body: 'The connection should read CONNECTED and the header shows a green "Protected" pill.',
-                note: 'If it shows "Alerts only" or "Unprotected", the key cannot trade or the IP binding does not match — recreate the key and bind it to the IP shown on the panel.',
-              },
-              {
-                title: 'Set your guardrails',
-                body: 'Open Rules and configure the protections you want — daily loss limit, max trades per day, loss-streak cooldown, risk per trade, and more.',
-                sub: [
-                  'Each rule has a "How it works" toggle explaining exactly what it does.',
-                  'Saving a tighter limit applies instantly; loosening one waits 24 hours (a cooling-off so you can\'t weaken protection on impulse).',
-                ],
-              },
-              {
-                title: "Trade — you're covered",
-                body: 'Open the Live tab to watch your session in real time: status, guardrail meters, and activity. If a rule is breached, the kill switch cancels your orders, closes your positions, and locks the account with an unlock countdown.',
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-};
-
-/**
- * Written once, shared by every venue. These describe the engine, not the
- * exchange — the kill switch behaves identically wherever your key points.
- */
-const SHARED_ARTICLES = [
+export const HELP_ARTICLES = [
   {
     slug: 'how-it-works',
     title: 'How enforcement works',
@@ -347,13 +178,4 @@ const SHARED_ARTICLES = [
       },
     ],
   },
-];
-
-// Attach the shared set after each venue's own setup guide.
-for (const broker of Object.values(DOCS)) broker.articles.push(...SHARED_ARTICLES);
-
-// Brokers shown in the docs toggle, in order. Add more here as they ship.
-export const DOC_BROKERS = [
-  { id: 'delta', label: 'Delta Exchange' },
-  { id: 'coindcx', label: 'CoinDCX' },
 ];

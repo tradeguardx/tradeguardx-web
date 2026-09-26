@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useSEO } from '../hooks/useSEO';
+import { VENUE_PAGE_LIST } from '../lib/venueSeo';
+import { ogImageFor } from '../lib/publicRoutes';
 
 /**
  * Head-term landing page: "crypto kill switch", "crypto killswitch app",
@@ -11,6 +13,13 @@ import { useSEO } from '../hooks/useSEO';
  * job here is to be the page that genuinely explains what a crypto kill switch
  * is, including the parts that don't flatter us (what it can't do, when you
  * don't need one). Both spellings appear because people search both.
+ *
+ * IT IS ALSO THE HUB for /exchanges/<venue>. This page stays exactly where it
+ * is — it is indexed, and moving it would spend rankings for a tidier path —
+ * but it stops competing with its own children. It no longer argues the case for
+ * any single venue; it explains the category and hands the venue question to the
+ * venue page. Two pages optimised for "coindcx kill switch" would split the
+ * internal links between them and neither would win.
  */
 
 const FAQ = [
@@ -24,7 +33,7 @@ const FAQ = [
   },
   {
     q: 'Which exchanges does a crypto kill switch work with in India?',
-    a: 'Delta Exchange (India or Global) and CoinDCX futures, both live today, with one subscription covering both. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Bybit and Bitget are next. Spot is not covered on any venue — futures only.',
+    a: 'Three, all live today: Delta Exchange (India or Global), CoinDCX futures, and Shark Exchange, which is in beta. One subscription covers every exchange you connect. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Bybit and Bitget are built but not yet deployed. Spot is not covered on any venue — futures only.',
   },
   {
     q: 'Does a kill switch need access to my funds?',
@@ -36,7 +45,7 @@ const FAQ = [
   },
   {
     q: 'Does it work if I trade from the exchange mobile app?',
-    a: "Yes, and that is the main reason it runs on our servers rather than in your browser. We hold a live connection to your account, so it does not matter where the order came from — the exchange website, the phone app, or a bot you wrote yourself. If the trade reaches your account, we see it in roughly 120 milliseconds and act if it breaks a rule.",
+    a: "Yes, and that is the main reason it runs on our servers rather than in your browser. We hold a live connection to your account, so it does not matter where the order came from — the exchange website, the phone app, or a bot you wrote yourself. The connection is event-driven rather than polled: when a trade reaches your account we are told about it, and a breach is checked and acted on within seconds. How fast exactly depends on what that venue's own feed publishes, which is why each exchange page states its own position instead of one number standing in for all three.",
   },
   {
     q: 'What happens to my open positions when it fires?',
@@ -80,7 +89,7 @@ const SECTIONS = [
     h: 'Why server-side enforcement matters',
     p: [
       "A browser extension can only see the tab it's in, and only while that tab is open. Shut the laptop, pick up your phone, place an order through a third-party client, and it sees nothing at all. It is a reminder wearing the costume of a safety system.",
-      'TradeGuardX holds a live connection to your exchange from our own servers. Screen off, phone in your pocket, laptop shut in a bag — a breach is typically detected and acted on inside about 120 milliseconds. If you open a position while a lock is running, it gets closed on sight, and it does not count toward your trade limit or your losing streak.',
+      'TradeGuardX holds a live connection to your exchange from our own servers. Screen off, phone in your pocket, laptop shut in a bag — the feed pushes the change to us rather than us asking for it, and the breach is checked and acted on within seconds. The exact speed belongs to the venue, not to us: it depends on what that exchange publishes and how quickly, which is why each exchange page states its own position rather than one number standing in for all of them. If you open a position while a lock is running, it gets closed on sight, and it does not count toward your trade limit or your losing streak.',
     ],
   },
   {
@@ -122,12 +131,48 @@ const SECTIONS = [
   },
 ];
 
+/**
+ * The links that make this page a hub rather than a competitor.
+ *
+ * Every venue, including the two that are not live — a "not live yet" row is
+ * more useful than silence to someone searching "bybit kill switch", and it is
+ * the only honest answer we have for them today.
+ */
+function VenueLinks() {
+  return (
+    <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+      {VENUE_PAGE_LIST.map((v) => (
+        <li key={v.slug}>
+          <Link
+            to={`/exchanges/${v.slug}`}
+            className="flex h-full flex-col rounded-xl border px-4 py-3.5 transition-colors hover:border-white/20"
+            style={{ borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}
+          >
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-[15px] font-bold text-white">{v.longName}</span>
+              {v.beta && <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Beta</span>}
+              {v.status === 'waitlist' && (
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Not live yet</span>
+              )}
+            </span>
+            <span className="mt-1 text-[13px] leading-relaxed text-slate-400">{v.h1}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const HERO = ogImageFor('/crypto-kill-switch');
+
 export default function CryptoKillSwitchPage() {
   useSEO({
     title: 'Crypto Kill Switch for Indian Traders',
     description:
       'What a crypto kill switch is, how server-side enforcement differs from alerts, and what to look for in a killswitch app. Built for Delta Exchange and CoinDCX traders in India.',
     url: 'https://tradeguardx.com/crypto-kill-switch',
+    image: HERO,
+    imageAlt: 'The crypto kill switch for Indian traders — TradeGuardX',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
@@ -149,7 +194,7 @@ export default function CryptoKillSwitchPage() {
       </div>
 
       <div className="relative mx-auto max-w-3xl px-6 pb-24 pt-24">
-        <header className="mb-14">
+        <header className={HERO ? 'mb-8' : 'mb-14'}>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-accent">Crypto kill switch</p>
           <h1 className="mt-3 font-display text-4xl font-bold leading-tight text-white md:text-5xl">
             The crypto kill switch for Indian traders
@@ -175,6 +220,21 @@ export default function CryptoKillSwitchPage() {
           </div>
         </header>
 
+        {HERO && (
+          <img
+            src={HERO}
+            alt="The crypto kill switch for Indian traders — TradeGuardX"
+            width={1200}
+            height={630}
+            /* Eager: it sits directly under the H1, so lazy-loading it is a
+               visible pop-in on every visit to the page most likely to be
+               someone's first. */
+            loading="eager"
+            className="mb-14 w-full rounded-2xl border"
+            style={{ borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}
+          />
+        )}
+
         <div className="space-y-12">
           {SECTIONS.map((s, i) => (
             <motion.section
@@ -190,6 +250,7 @@ export default function CryptoKillSwitchPage() {
                   {para}
                 </p>
               ))}
+              {s.venueLinks && <VenueLinks />}
             </motion.section>
           ))}
         </div>
@@ -217,6 +278,11 @@ export default function CryptoKillSwitchPage() {
         <section className="mt-16 border-t pt-10" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
           <h2 className="mb-4 font-display text-lg font-bold text-white">Read next</h2>
           <ul className="space-y-2.5 text-[15px]">
+            <li>
+              <Link to="/exchanges" className="text-accent hover:underline">
+                Every exchange we support, and what each one can enforce
+              </Link>
+            </li>
             <li>
               <Link to="/help/kill-switch" className="text-accent hover:underline">
                 How the kill switch works, step by step

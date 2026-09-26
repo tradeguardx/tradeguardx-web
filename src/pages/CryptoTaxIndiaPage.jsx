@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useSEO } from '../hooks/useSEO';
+import { ogImageFor } from '../lib/publicRoutes';
 
 /**
  * Head-term landing page for the tax side of the product.
@@ -123,6 +124,8 @@ export default function CryptoTaxIndiaPage() {
     description:
       'How crypto is taxed in India: the flat 30% under Section 115BBH, why futures are treated as business income instead, 1% TDS under 194S, and which ITR to file. Built for Delta Exchange and CoinDCX traders.',
     url: 'https://tradeguardx.com/crypto-tax-india',
+    image: ogImageFor('/crypto-tax-india'),
+    imageAlt: 'Crypto tax in India — F&O and VDA, kept separate — TradeGuardX',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',

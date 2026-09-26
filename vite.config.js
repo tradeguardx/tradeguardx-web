@@ -1,39 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import prerender from '@prerenderer/rollup-plugin';
+import { PRERENDER_ROUTES } from './src/lib/publicRoutes.js';
 
-// Public, statically-renderable routes. Auth-gated routes (`/dashboard`,
-// `/influencer`) are deliberately excluded — Puppeteer would land on the
-// login redirect and snapshot that, which is worse than letting the SPA
-// render normally on first visit. Help slug pages enumerated explicitly.
-const PRERENDER_ROUTES = [
-  '/',
-  '/pricing',
-  '/login',
-  '/signup',
-  '/support',
-  '/privacy',
-  '/terms',
-  '/refund',
-  '/risk-disclosure',
-  '/partner-with-us',
-  '/help',
-  '/help/getting-started',
-  '/help/how-it-works',
-  '/help/kill-switch',
-  '/help/rules',
-  '/help/cooldowns',
-  '/help/changing-rules',
-  '/help/live-dashboard',
-  '/help/troubleshooting',
-  '/security',
-  '/crypto-kill-switch',
-  // An SEO landing page that is not prerendered is an empty shell to a
-  // crawler — the one failure mode that makes the whole page pointless.
-  // Add every new public content route here at the same time as the route.
-  '/crypto-tax-india',
-  '/roadmap',
-];
+// The route list lives in src/lib/publicRoutes.js, which the sitemap generator
+// reads too. It used to be duplicated here, and a page added to App.jsx and to
+// the sitemap but forgotten in this array is prerendered as nothing — an empty
+// shell to a crawler, which is the one failure mode that makes an SEO page
+// pointless. One list, two consumers.
+//
+// Auth-gated routes (/dashboard, /influencer) are deliberately absent: Puppeteer
+// would land on the login redirect and snapshot that, which is worse than
+// letting the SPA render normally on first visit.
 
 // Vercel's build environment (Amazon Linux 2023) doesn't ship the system
 // libs Puppeteer's bundled Chromium needs (libnspr4, libnss3, libdrm, etc.).

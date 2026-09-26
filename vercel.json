@@ -1,4 +1,30 @@
 {
+  "//": "Redirects are evaluated at the edge BEFORE the filesystem and before the SPA rewrite, so these are real 301s with a Location header. A client-side <Navigate> is not a redirect to a crawler — it answers 200 with the old URL's content and Google keeps the old URL as a duplicate.",
+  "redirects": [
+    {
+      "//": "/help/getting-started was the per-venue setup guide, and it is indexed. There are now three of those guides, one per venue, so the honest replacement for a request that did not name a venue is the venue index — not an arbitrary one of the three.",
+      "source": "/help/getting-started",
+      "destination": "/exchanges",
+      "permanent": true
+    },
+    {
+      "//": "Listed before the /docs/:slug rule, which matches in order. Without it this would 301 to /help/getting-started and then 301 again to /exchanges — a two-hop chain for a URL that has one correct destination.",
+      "source": "/docs/getting-started",
+      "destination": "/exchanges",
+      "permanent": true
+    },
+    {
+      "//": "/docs/:slug used to drop the slug and land everything on /help. Keep the slug: /docs/kill-switch is a request for /help/kill-switch.",
+      "source": "/docs/:slug",
+      "destination": "/help/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/docs",
+      "destination": "/help",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
@@ -6,4 +32,3 @@
     }
   ]
 }
-

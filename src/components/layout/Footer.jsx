@@ -15,6 +15,12 @@ const links = {
     // server-side via the exchange API key; the browser extension is the
     // prop-firm path, which isn't part of this launch.
     { label: 'What is a crypto kill switch?', to: '/crypto-kill-switch' },
+    // Site-wide links to the venue pages, so they are not orphans that depend
+    // on the sitemap to be discovered.
+    { label: 'Supported exchanges', to: '/exchanges' },
+    { label: 'Delta Exchange kill switch', to: '/exchanges/delta' },
+    { label: 'CoinDCX kill switch', to: '/exchanges/coindcx' },
+    { label: 'Shark Exchange kill switch', to: '/exchanges/shark' },
     { label: 'Guides', to: '/help' },
     { label: 'Support', to: '/support' },
     { label: 'Email Us', to: 'mailto:support@tradeguardx.com' },

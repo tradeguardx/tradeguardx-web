@@ -57,6 +57,9 @@ export default function Navbar() {
 
   const navLinks = [
     { label: 'How it Works', to: { pathname: '/', hash: 'scenarios' } },
+    // Which venues we support is the second question every visitor has, and it
+    // used to be answerable only from inside the docs sidebar.
+    { label: 'Exchanges', to: '/exchanges' },
     { label: 'Pricing', to: '/pricing' },
     // Prop-firm page hidden for now — Delta Exchange (crypto) is the launch focus.
     { label: 'Guides', to: '/help' },
