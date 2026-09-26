@@ -76,7 +76,7 @@ export default function ExchangeIndexPage() {
             the order came from the exchange website, its phone app, or a script you wrote.
           </p>
           <p className="mt-4 text-[15px] leading-relaxed text-slate-500">
-            One subscription covers every exchange you connect. Spot is not covered on any venue.
+            One subscription covers every exchange you connect. Spot is not covered on any of them.
           </p>
         </header>
 

@@ -286,7 +286,7 @@ const VENUE_PAGES = {
       {
         h: 'What is different about Delta Exchange',
         p: [
-          'Delta has the most granular and stable perpetuals API of the three venues we support, which matters more than it sounds: your protection is only ever as fast as the data feed behind it.',
+          'Delta has the most granular and stable perpetuals API of the three exchanges we support, which matters more than it sounds: your protection is only ever as fast as the data feed behind it.',
           'India and Global are separate Delta accounts with separate keys. Pick the region that matches the account you actually hold when you add it — a Global key on an India account is the single most common connection failure, and it looks identical to a bad key.',
           'The permission you need is called Trading. Read Data is always on and can be left alone. Futures only: Delta spot is not enforced.',
         ],
@@ -295,7 +295,7 @@ const VENUE_PAGES = {
         h: 'Which Delta Exchange rules can TradeGuardX enforce?',
         rulesTable: true,
         p: [
-          'All seven on Delta Exchange. This is the venue the engine was built against, and the behaviour of every rule below is the behaviour on Delta — the other venues match it rather than the reverse.',
+          'All seven on Delta Exchange. This is the exchange we built the engine against, and the behaviour of every rule below is the behaviour on Delta — the other venues match it rather than the reverse.',
         ],
       },
       {
@@ -313,7 +313,7 @@ const VENUE_PAGES = {
     faq: [
       {
         q: 'Does TradeGuardX work with Delta Exchange?',
-        a: 'Yes, on both Delta India and Delta Global, and it is the venue the engine was built against. There is no extension to install: you create a Trading API key on Delta, whitelist our IP, and paste it in. We hold a live connection to the account and enforce your rules from our servers.',
+        a: 'Yes, on both Delta India and Delta Global, and it is the exchange we built the engine against. There is no extension to install: you create a Trading API key on Delta, whitelist our IP, and paste it in. We hold a live connection to the account and enforce your rules from our servers.',
       },
       {
         q: 'Which Delta Exchange API permissions does a kill switch need?',
@@ -325,7 +325,7 @@ const VENUE_PAGES = {
       },
       {
         q: 'Can I create a Delta Exchange API key from the mobile app?',
-        a: 'Yes — Delta is the one venue of the three where you can. The path in the app is Algo Hub → APIs. Name the key, paste our IP and tap + to add it (typing the IP without adding it will not save), tick Trading, then create. On a desktop browser the same form is on Delta\'s API keys page.',
+        a: 'Yes — Delta is the one exchange of the three where you can. The path in the app is Algo Hub → APIs. Name the key, paste our IP and tap + to add it (typing the IP without adding it will not save), tick Trading, then create. On a desktop browser the same form is on Delta\'s API keys page.',
       },
       {
         q: 'Does the kill switch still work if I trade from the Delta app?',

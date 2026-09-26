@@ -84,14 +84,14 @@ export default function OverviewPage() {
   // ── facts ───────────────────────────────────────────────────────────
   const budgetLeft = s.lossLimit ? fmt0(Math.max(0, s.lossLimit - s.budgetUsed)) : '—';
   const facts = g.guard === 'armed'
-    ? [{ k: 'Enforced', v: 'Server', note: 'not your browser', fg: 'var(--ink)' }, { k: 'Reaction', v: '~120ms', note: 'from fill to close', fg: 'var(--ink)' }, { k: 'Key scope', v: 'Trading', note: 'cannot withdraw', fg: 'var(--mint)' }]
+    ? [{ k: 'Runs on', v: 'Our servers', note: 'not your browser', fg: 'var(--ink)' }, { k: 'Watching', v: 'Live', note: 'even with this tab shut', fg: 'var(--ink)' }, { k: 'Your key', v: 'Can trade', note: 'cannot withdraw', fg: 'var(--mint)' }]
     : g.guard === 'watching'
-      ? [{ k: 'Enforced', v: 'Nothing', note: 'read-only key', fg: 'var(--amber)' }, { k: 'Alerts', v: g.gap?.key === 'alerts' ? 'Off' : 'Working', note: g.gap?.key === 'alerts' ? 'no channel' : 'Telegram + email', fg: 'var(--ink)' }, { k: 'Budget left', v: budgetLeft, note: s.lossLimit ? `of ${fmt0(s.lossLimit)} today` : 'no loss rule', fg: 'var(--red)' }]
+      ? [{ k: 'Protecting', v: 'Nothing', note: 'read-only key', fg: 'var(--amber)' }, { k: 'Alerts', v: g.gap?.key === 'alerts' ? 'Off' : 'Working', note: g.gap?.key === 'alerts' ? 'no channel' : 'Telegram + email', fg: 'var(--ink)' }, { k: 'Budget left', v: budgetLeft, note: s.lossLimit ? `of ${fmt0(s.lossLimit)} today` : 'no loss rule', fg: 'var(--red)' }]
       : g.guard === 'locked'
-        ? [{ k: 'Clears', v: formatRemaining(g.lockRemainingMs), note: 'no early exit', fg: 'var(--red)' }, { k: 'Reason', v: g.lockReason === 'manual' ? 'Manual' : 'Rule', note: g.lockReason === 'manual' ? 'you started it' : 'a rule fired', fg: 'var(--ink)' }, { k: 'Watchdog', v: 'On', note: 'closes new positions', fg: 'var(--ink)' }]
+        ? [{ k: 'Clears', v: formatRemaining(g.lockRemainingMs), note: 'no early exit', fg: 'var(--red)' }, { k: 'Reason', v: g.lockReason === 'manual' ? 'Manual' : 'Rule', note: g.lockReason === 'manual' ? 'you started it' : 'a rule fired', fg: 'var(--ink)' }, { k: 'Anything you open', v: 'Closed', note: 'for the whole lock', fg: 'var(--ink)' }]
         : [
-          { k: 'Enforced', v: 'Nothing', note: g.gap?.short || 'setup unfinished', fg: 'var(--red)' },
-          { k: 'Rules on', v: `${g.rulesOn}/${g.rulesTotal}`, note: g.rulesOn > 0 ? 'ready to arm' : 'none switched on', fg: 'var(--ink)' },
+          { k: 'Protecting', v: 'Nothing', note: g.gap?.short || 'setup unfinished', fg: 'var(--red)' },
+          { k: 'Rules on', v: `${g.rulesOn}/${g.rulesTotal}`, note: g.rulesOn > 0 ? 'ready to go' : 'none switched on', fg: 'var(--ink)' },
           { k: 'Setup', v: `${4 - g.gaps.length}/4`, note: 'steps done', fg: 'var(--amber)' },
         ];
 

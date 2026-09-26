@@ -33,11 +33,11 @@ const FAQ = [
   },
   {
     q: 'Which exchanges does a crypto kill switch work with in India?',
-    a: 'Three, all live today: Delta Exchange (India or Global), CoinDCX futures, and Shark Exchange, which is in beta. One subscription covers every exchange you connect. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Spot is not covered on any venue — futures only.',
+    a: 'Three, all live today: Delta Exchange (India or Global), CoinDCX futures, and Shark Exchange, which is in beta. One subscription covers every exchange you connect. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Spot is not covered on any exchange — futures only.',
   },
   {
     q: 'Does a kill switch need access to my funds?',
-    a: 'No, and you should refuse any tool that asks. We use an API key scoped to read and trade only. That is enough to cancel an order and close a position, and it is nowhere near enough to move a rupee — the key cannot withdraw or transfer. Your funds never leave your own exchange wallet. None of the venues we support even offer a withdrawal permission on an API key.',
+    a: 'No, and you should refuse any tool that asks. We use an API key scoped to read and trade only. That is enough to cancel an order and close a position, and it is nowhere near enough to move a rupee — the key cannot withdraw or transfer. Your funds never leave your own exchange wallet. None of the exchanges we support even offer a withdrawal permission on an API key.',
   },
   {
     q: 'Can I turn the kill switch off when I want to keep trading?',
@@ -45,7 +45,7 @@ const FAQ = [
   },
   {
     q: 'Does it work if I trade from the exchange mobile app?',
-    a: "Yes, and that is the main reason it runs on our servers rather than in your browser. We hold a live connection to your account, so it does not matter where the order came from — the exchange website, the phone app, or a bot you wrote yourself. The connection is event-driven rather than polled: when a trade reaches your account we are told about it, and a breach is checked and acted on within seconds. How fast exactly depends on what that venue's own feed publishes, which is why each exchange page states its own position instead of one number standing in for all three.",
+    a: "Yes, and that is the main reason it runs on our servers rather than in your browser. We hold a live connection to your account, so it does not matter where the order came from — the exchange website, the phone app, or a bot you wrote yourself. The connection is event-driven rather than polled: when a trade reaches your account we are told about it, and a breach is checked and acted on within seconds. How fast exactly depends on what that exchange's own feed publishes, which is why each exchange page states its own position instead of one number standing in for all three.",
   },
   {
     q: 'What happens to my open positions when it fires?',
@@ -89,7 +89,7 @@ const SECTIONS = [
     h: 'Why server-side enforcement matters',
     p: [
       "A browser extension can only see the tab it's in, and only while that tab is open. Shut the laptop, pick up your phone, place an order through a third-party client, and it sees nothing at all. It is a reminder wearing the costume of a safety system.",
-      'TradeGuardX holds a live connection to your exchange from our own servers. Screen off, phone in your pocket, laptop shut in a bag — the feed pushes the change to us rather than us asking for it, and the breach is checked and acted on within seconds. The exact speed belongs to the venue, not to us: it depends on what that exchange publishes and how quickly, which is why each exchange page states its own position rather than one number standing in for all of them. If you open a position while a lock is running, it gets closed on sight, and it does not count toward your trade limit or your losing streak.',
+      'TradeGuardX holds a live connection to your exchange from our own servers. Screen off, phone in your pocket, laptop shut in a bag — the feed pushes the change to us rather than us asking for it, and the breach is checked and acted on within seconds. The exact speed belongs to the exchange, not to us: it depends on what that exchange publishes and how quickly, which is why each exchange page states its own position rather than one number standing in for all of them. If you open a position while a lock is running, it gets closed on sight, and it does not count toward your trade limit or your losing streak.',
     ],
   },
   {
@@ -119,7 +119,7 @@ const SECTIONS = [
     p: [
       'Two, both live today, both futures.',
       'Delta Exchange came first — India or Global, whichever account you hold. It has the most granular and stable perpetuals API in the country, which matters when your protection is only as fast as the data feed behind it.',
-      'CoinDCX futures went live in September 2026. Their INR and USDT margin modes are the same instruments with a different wallet posting margin, so one key covers both and your rules apply across the pair. Spot is not covered on either venue: we read futures, enforce futures, and say so rather than letting you assume.',
+      'CoinDCX futures went live in September 2026. Their INR and USDT margin modes are the same instruments with a different wallet posting margin, so one key covers both and your rules apply across the pair. Spot is not covered on either of them: we read futures, enforce futures, and say so rather than letting you assume.',
     ],
   },
   {

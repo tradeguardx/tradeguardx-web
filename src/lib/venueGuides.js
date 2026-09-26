@@ -324,7 +324,7 @@ export const VENUE_GUIDES = {
               text: 'Delta takes roughly five minutes to activate a freshly created key. An immediate rejection is often just impatience.',
             },
             {
-              bold: 'Delta is the one venue you can do this on a phone:',
+              bold: 'Delta is the one exchange you can do this on a phone:',
               text: 'The path in the Delta app is Algo Hub → APIs. On the others it has to be a computer.',
             },
           ],

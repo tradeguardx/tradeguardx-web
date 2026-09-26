@@ -257,17 +257,40 @@ export default function PhonePrompt() {
     if (!token || !userId || decidedRef.current) return undefined;
     const controller = new AbortController();
 
+    /*
+     * Retried, because "we already asked" and "we could not find out" used to
+     * be the same outcome.
+     *
+     * This is a ONE-SHOT prompt on the load right after signup: once it is
+     * dismissed or answered it never returns. So a single failed request on
+     * that exact load lost the number permanently, silently, with nothing
+     * logged — and a phone on mobile data is far likelier to drop one request
+     * than a laptop on wifi. That is the difference between signing up on a
+     * desktop and seeing this, and signing up on a phone and never seeing it.
+     *
+     * Two attempts, a second apart. Only a real answer from the server is
+     * allowed to be a reason not to prompt.
+     */
     (async () => {
-      try {
-        const settings = await fetchNotificationSettings({ accessToken: token, signal: controller.signal });
-        if (controller.signal.aborted) return;
-        // Show only if they've never given a number AND we've never asked.
-        if (settings && !settings.phone && !settings.phonePrompted) {
-          decidedRef.current = true;
-          setOpen(true);
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const settings = await fetchNotificationSettings({ accessToken: token, signal: controller.signal });
+          if (controller.signal.aborted) return;
+          // Show only if they've never given a number AND we've never asked.
+          if (settings && !settings.phone && !settings.phonePrompted) {
+            decidedRef.current = true;
+            setOpen(true);
+          } else if (settings) {
+            // A definite answer that says "no": stop asking for this session.
+            decidedRef.current = true;
+          }
+          return;
+        } catch {
+          if (controller.signal.aborted) return;
+          // Leave decidedRef alone — we still do not know, so a later render
+          // with a fresh token is free to try again.
+          if (attempt === 0) await new Promise((r) => setTimeout(r, 1000));
         }
-      } catch {
-        // Non-blocking: if the check fails we just don't prompt this load.
       }
     })();
 
