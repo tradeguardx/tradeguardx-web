@@ -68,3 +68,35 @@ describe('the mobile tab bar', () => {
     expect(onMore).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * The bar is a PHONE navigation. On desktop the sidebar is permanently visible,
+ * so a tab bar there is a second copy of the same nav — and it also collided
+ * with the support chat, which is gated to desktop-only on the same 900px
+ * boundary. For a while both were on screen at once.
+ *
+ * The cause was that `display:flex` was declared in the element's inline style.
+ * sx() returns a React style object, so it landed as `style="display:flex"`, and
+ * an inline style beats a stylesheet rule whether or not that rule is inside a
+ * media query. `@media ... { .tgx-tabbar { display:none } }` could never win.
+ *
+ * jsdom applies no stylesheet, so a test cannot observe the bar being hidden.
+ * What it CAN observe is the thing that made hiding impossible — so that is
+ * what is pinned.
+ */
+describe('visibility is left to CSS', () => {
+  it('declares no display in the inline style', () => {
+    const { container } = mount({ loaded: true, guard: 'armed', account: {} });
+    const bar = container.querySelector('.tgx-tabbar');
+    expect(bar).toBeTruthy();
+    expect(bar.style.display).toBe('');
+  });
+
+  it('keeps the class the stylesheet targets', () => {
+    // The media query selects on this class. Renaming it here without renaming
+    // it in index.css brings the bar back on desktop.
+    const { container } = mount({ loaded: true, guard: 'armed', account: {} });
+    expect(container.querySelector('nav.tgx-tabbar')).toBeTruthy();
+  });
+});
+

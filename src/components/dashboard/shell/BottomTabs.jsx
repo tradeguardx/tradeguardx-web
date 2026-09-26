@@ -99,12 +99,18 @@ export default function BottomTabs({ onMore }) {
       className="tgx-tabbar"
       aria-label="Primary"
       style={sx(
-        // Visibility is CSS's job, not an inline display:none waiting to be
-        // overridden with !important. Declared visible here and hidden above
-        // the drawer breakpoint, so a renamed selector or a dropped rule fails
-        // by showing the bar on desktop — visible and obvious — rather than by
-        // hiding it on mobile, where nobody would notice it had gone.
-        'position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;align-items:stretch;' +
+        // NO `display` HERE. sx() returns a React style object, so everything in
+        // this string lands as an inline style — and an inline style beats a
+        // stylesheet rule whether or not that rule sits in a media query. The
+        // `display:flex` that used to be here silently defeated
+        // `@media ... { .tgx-tabbar { display:none } }`, so the phone tab bar
+        // rendered on desktop underneath the sidebar, permanently, alongside the
+        // support chat it is supposed to be mutually exclusive with.
+        //
+        // The original comment here said visibility was "CSS's job" — it was
+        // right about the principle and then declared display anyway, which is
+        // the whole bug. Visibility now lives entirely in index.css.
+        'position:fixed;left:0;right:0;bottom:0;z-index:60;align-items:stretch;' +
           'background:var(--surface);border-top:1px solid var(--line);' +
           // The inset keeps the row clear of the iPhone home indicator. Without
           // it the labels sit under the gesture bar and the end tabs swallow

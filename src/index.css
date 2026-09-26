@@ -1335,10 +1335,22 @@
 
 /* The bar sits above content but below the drawer (z-index 90) and its scrim,
    so opening More never leaves the tabs floating over the menu. */
-.tgx-tabbar{backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px)}
+.tgx-tabbar{display:flex;backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px)}
 /* Above the drawer breakpoint the sidebar is permanently visible, so a tab bar
-   would be a second copy of the same navigation. */
-@media (min-width:901px){.tgx-tabbar{display:none}}
+   would be a second copy of the same navigation.
+
+   `not all and (max-width:900px)` rather than `(min-width:901px)`, because this
+   has to be the EXACT complement of the `(max-width: 900px)` that useIsMobile(900)
+   passes to matchMedia — that is what decides whether the support chat renders.
+   Two boundaries a pixel apart leave a gap: at a viewport of 900.5px, which browser
+   zoom and fractional device pixel ratios both produce, `min-width:901px` is false
+   AND `max-width:900px` is false, so the tab bar and the chat would both appear.
+   Negating the same query cannot have a gap.
+
+   Default is `display:flex` above, so a renamed selector or a dropped rule fails
+   by showing the bar on desktop — visible and obvious — rather than by hiding it
+   on mobile, where nobody would notice it had gone. */
+@media not all and (max-width:900px){.tgx-tabbar{display:none}}
 
 @media (max-width:900px){
   /* Rubber-banding past the end of a list scrolls the page behind it on iOS,
