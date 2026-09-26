@@ -67,10 +67,10 @@ const FAQ_LD = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    ['Will TradeGuardX have access to my funds?', 'No. Your Delta API key only has trade and balance-read scope — it can never withdraw, and your funds never leave your own Delta wallet. During a cooldown we don’t move funds; we cancel orders, close positions, and block new trades until the lock lifts.'],
-    ['Does this work on the Delta mobile app?', 'Yes. Enforcement is server-side via Delta’s API, so it works whether you trade from web, mobile, or a third-party client. We detect a trade within ~120ms and act if it breaks a rule. Alerts go to Telegram or email.'],
+    ['Will TradeGuardX have access to my funds?', 'No. Your API key can read your account and place trades — nothing else. It can never withdraw, and your funds never leave your own exchange wallet. None of the exchanges we support even offer a withdrawal permission on an API key, so the option does not exist to give away. During a cooldown we cancel orders, close positions, and block new trades until the lock lifts.'],
+    ['Does this work if I trade from the exchange’s mobile app?', 'Yes, and it is the reason we run on our own servers instead of in your browser. We hold a live connection to the account itself, so it makes no difference whether the order came from the exchange website, its phone app, or a script you wrote. A breach is checked and acted on within seconds. Alerts go to Telegram or email.'],
     ['Can I disable the rules when I want to trade more?', 'You can change rules in your dashboard, but loosening any limit goes through a 24-hour cooling-off window — you cannot loosen a rule in the heat of a bad session. You can tighten any rule instantly.'],
-    ['Which exchanges can I connect?', 'Delta, CoinDCX and Shark futures are all live, and one subscription covers every one — connect any or all. Delta came first because it has the most granular, stable perp API in India; CoinDCX followed, then Shark.'],
+    ['Which exchanges can I connect?', 'Delta Exchange, CoinDCX futures and Shark Exchange are live, and one subscription covers every one — connect any or all. Shark is in beta: the connection, the price feed and the close path have each been checked against a live account, but no rule has yet fired on a real open position there. Delta came first because it has the most granular, stable perp API in India; CoinDCX followed, then Shark.'],
   ].map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
 

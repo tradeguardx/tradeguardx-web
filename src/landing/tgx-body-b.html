@@ -87,15 +87,15 @@
       </details>
       <details class="faq-item">
         <summary>Will TradeGuardX have access to my funds?</summary>
-        <p>No. Your Delta API key only has trade and balance-read scope &mdash; it can never withdraw, and your funds never leave your own Delta wallet. During a cooldown we don't move anything: we cancel your orders, close your positions, and block new trades until the lock lifts.</p>
+        <p>No. Your API key can read your account and place trades &mdash; nothing else. It can never withdraw, and your funds never leave your own exchange wallet. None of the exchanges we support even offer a withdrawal permission on an API key, so the option does not exist to give away. During a cooldown we do not move anything: we cancel your orders, close your positions, and block new trades until the lock lifts.</p>
       </details>
       <details class="faq-item">
         <summary>How are my API keys stored and secured?</summary>
         <p>Your keys are <b>encrypted at rest</b> and used only from our single fixed, <b>IP-whitelisted</b> server &mdash; so even in the unlikely event of a leak, they'd be useless from anywhere else. Combined with the trade-only scope (never withdrawal), TradeGuardX is designed to enforce your rules and nothing else.</p>
       </details>
       <details class="faq-item">
-        <summary>What happens if the Delta API goes down?</summary>
-        <p>If we lose connection to Delta, you're notified immediately on Telegram and email. Existing positions remain on Delta &mdash; we don't hold them. When the API is restored, we resume monitoring exactly where we left off. We also run a backup heartbeat that triggers a "full close" if connection is lost for &gt;60 seconds during an active session, configurable per account.</p>
+        <summary>What happens if the exchange API goes down?</summary>
+        <p>Your positions stay where they are, on the exchange &mdash; we never hold them, so nothing of yours is stranded with us. We reconnect and pick up where we left off. While we are disconnected we cannot act, and we would rather say that plainly than imply a safety net we do not have: we do not close your positions because a feed dropped, and a rule cannot fire on data we are not receiving. If a key stops working altogether we keep retrying, tell you, and after a day of failures we remove it so you can reconnect a fresh one.</p>
       </details>
       <details class="faq-item">
         <summary>Can I just disable the rules when I want to trade more?</summary>
@@ -103,15 +103,15 @@
       </details>
       <details class="faq-item">
         <summary>Which exchanges can I connect?</summary>
-        <p>Delta, CoinDCX and Shark futures are all live, and one Pro subscription covers every one &mdash; connect any or all, no upgrade required. Delta came first because it has the best perp API in India for what we need: granular, fast, and stable. CoinDCX followed, then Shark.</p>
+        <p>Delta Exchange, CoinDCX futures and Shark Exchange are live, and one Pro subscription covers every one &mdash; connect any or all, no upgrade required. Shark is in beta: the connection, the price feed and the close path have each been checked against a live account, but no rule has yet fired on a real open position there, so treat it as working and watched rather than proven. Delta came first because it has the best perp API in India for what we need: granular, fast, and stable. CoinDCX followed, then Shark.</p>
       </details>
       <details class="faq-item">
         <summary>Is this regulated? Is it safe to give you API access?</summary>
         <p>API keys are scoped (no withdrawal), encrypted at rest, and tied to whitelisted IPs only. We're not a financial advisor and don't custody funds &mdash; we're a risk-enforcement layer that talks to Delta on your behalf. Read our docs for the full security posture.</p>
       </details>
       <details class="faq-item">
-        <summary>Does this work on the Delta mobile app?</summary>
-        <p>Yes. Enforcement is server-side via Delta's API, so it doesn't matter whether you place the trade from web, mobile, or any third-party client. If a trade hits your account, we see it within ~120ms and act if it breaks a rule. Alerts go to your choice of Telegram or email &mdash; you don't need to keep anything open.</p>
+        <summary>Does this work if I trade from the exchange's mobile app?</summary>
+        <p>Yes, and it is the reason we run on our own servers instead of in your browser. We hold a live connection to the account itself, so it makes no difference whether the order came from the exchange website, its phone app, or a script you wrote. A breach is checked and acted on within seconds. Alerts go to Telegram or email &mdash; you do not need to keep anything open.</p>
       </details>
     </div>
   </div>
