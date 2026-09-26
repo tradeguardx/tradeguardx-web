@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch } from './httpClient';
+import { apiGet, apiPost, apiPatch, apiDelete } from './httpClient';
 
 /**
  * GET /user/pairing/status?tradingAccountId=
@@ -179,6 +179,40 @@ export async function reconcileTradingAccount({
 export async function setRuleLockDays({ accessToken, accountId, days, signal } = {}) {
   if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
   const payload = await apiPatch(`/trading-accounts/${encodeURIComponent(accountId)}/rule-lock`, { days }, {
+    signal,
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return unwrap(payload);
+}
+
+/**
+ * GET /trading-accounts/{id}/deletable
+ *
+ * Answers two things at once: whether deletion is allowed, and what it would
+ * destroy. Every foreign key into trading_accounts is ON DELETE CASCADE, so
+ * "delete this account" also means its journal, trades, breach history and
+ * rules — the records the tax centre reads. The counts let the confirmation
+ * say so with numbers instead of a vague warning.
+ */
+export async function checkAccountDeletable({ accessToken, accountId, signal } = {}) {
+  if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
+  const payload = await apiGet(`/trading-accounts/${encodeURIComponent(accountId)}/deletable`, {
+    signal,
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return unwrap(payload);
+}
+
+/**
+ * DELETE /trading-accounts/{id}
+ *
+ * The server re-runs the same checks and answers 409 with the blockers if the
+ * account is connected or locked. That is deliberate: the gate is a safety
+ * rule, and a rule enforced only in the browser is a suggestion.
+ */
+export async function deleteTradingAccount({ accessToken, accountId, signal } = {}) {
+  if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
+  const payload = await apiDelete(`/trading-accounts/${encodeURIComponent(accountId)}`, {
     signal,
     headers: { Authorization: `Bearer ${accessToken}` },
   });

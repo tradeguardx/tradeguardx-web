@@ -7,6 +7,7 @@ import { useGuard } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
 import { fetchSupportedProps } from '../api/tradingAccountsApi';
 import { disconnectExchangeCredentials } from '../api/exchangeCredentialsApi';
+import { checkAccountDeletable, deleteTradingAccount } from '../api/tradingAccountsApi';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel } from '../lib/labels';
 import AddVenueWizard from '../components/dashboard/AddVenueWizard';
@@ -41,6 +42,46 @@ export default function AccountsPage() {
   const [propsLoading, setPropsLoading] = useState(false);
   const [dc, setDc] = useState(null); // account pending disconnect
   const [dcBusy, setDcBusy] = useState(false);
+  /**
+   * Delete flow. `del` is the account being considered, `delCheck` the
+   * server's answer about whether it may go and what goes with it.
+   *
+   * The check is asked for BEFORE the confirmation is shown, so the dialog can
+   * name what will be destroyed rather than warn in the abstract. Every FK
+   * into trading_accounts is ON DELETE CASCADE — the journal, the trades, the
+   * breach history, the rules, and the records the tax centre reads.
+   */
+  const [del, setDel] = useState(null);
+  const [delCheck, setDelCheck] = useState(null);
+  const [delBusy, setDelBusy] = useState(false);
+  const [delTyped, setDelTyped] = useState('');
+
+  const openDelete = async (a) => {
+    setDel(a);
+    setDelCheck(null);
+    setDelTyped('');
+    try {
+      setDelCheck(await checkAccountDeletable({ accessToken, accountId: a.id }));
+    } catch (e) {
+      setDelCheck({ deletable: false, blockers: [{ code: 'CHECK_FAILED', message: e?.message || 'Could not check this account.' }], counts: null });
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!del) return;
+    setDelBusy(true);
+    try {
+      await deleteTradingAccount({ accessToken, accountId: del.id });
+      toast.success('Account removed', `${del.name} is gone from your dashboard. Its records are kept for tax.`);
+      setDel(null);
+      await refreshTradingAccounts();
+      await guard.refresh();
+    } catch (e) {
+      toast.error('Could not delete', e?.message || 'Try again.');
+    } finally {
+      setDelBusy(false);
+    }
+  };
   /** Venue chosen from the picker; opening the wizard modal. */
   const [addSlug, setAddSlug] = useState('');
 
@@ -222,6 +263,13 @@ export default function AccountsPage() {
                 <div style={sx('display:flex;align-items:center;gap:12px;padding:14px 15px;border:1px dashed var(--line-strong);border-radius:13px;background:var(--surface);flex-wrap:wrap')}>
                   <span style={sx('flex:1;min-width:min(230px,100%);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{key.scope}</span>
                   <button type="button" onClick={() => go(a.id, '/dashboard/connect')} style={sx('flex:none;padding:9px 14px;border:1px solid var(--ink);border-radius:9px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700')}>Connect key</button>
+                  {/* Only offered with no key attached — a connected key is
+                      itself a blocker, so showing Delete beside a live
+                      connection would be an button that always refuses. It is
+                      still gated server-side; this only avoids offering it. */}
+                  {!locked && (
+                    <button type="button" onClick={() => openDelete(a)} style={sx('flex:none;padding:9px 12px;border:0;background:none;color:var(--ink-3);font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer')}>Delete account</button>
+                  )}
                 </div>
               )}
             </div>
@@ -331,6 +379,69 @@ export default function AccountsPage() {
             />
           </motion.div>
         </motion.div>
+      )}
+
+      {del && (
+        <div data-tgx-modal="1" onClick={() => !delBusy && setDel(null)} role="presentation" style={sx('position:fixed;inset:0;z-index:70;background:rgba(3,5,10,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px')}>
+          <div role="dialog" aria-modal="true" aria-label="Delete account" onClick={(e) => e.stopPropagation()} style={sx('width:min(480px,100%);padding:20px;border:1px solid var(--red-line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card)')}>
+            <h3 style={sx("margin:0;font:600 16px/1.25 'Space Grotesk',sans-serif")}>Delete {del.name}?</h3>
+
+            {!delCheck ? (
+              <p style={sx('margin:10px 0 0;font-size:12.5px;color:var(--ink-3)')}>Checking this account…</p>
+            ) : !delCheck.deletable ? (
+              <>
+                {/* Not an error — the account is simply in a state where this
+                    is not allowed yet, and each blocker says what to do. */}
+                <p style={sx('margin:10px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>This account cannot be deleted yet:</p>
+                <ul style={sx('margin:9px 0 0;padding-left:18px;font-size:12.5px;line-height:1.6;color:var(--ink-2)')}>
+                  {delCheck.blockers.map((b) => <li key={b.code}>{b.message}</li>)}
+                </ul>
+                <div style={sx('display:flex;gap:9px;margin-top:16px')}>
+                  <button type="button" onClick={() => setDel(null)} style={sx('padding:10px 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700')}>Close</button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Says what actually happens. The account is hidden, not
+                    erased: its journal and tax records are retained, because
+                    someone tidying a stale account should not also lose the
+                    evidence for a filing. Counting what is kept is more
+                    honest than a warning about what is lost. */}
+                <p style={sx('margin:10px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
+                  {del.name} disappears from your dashboard, the account switcher, the journal and your trades.
+                  {delCheck.counts && (delCheck.counts.journalTrades > 0 || delCheck.counts.breachEvents > 0)
+                    ? ` Its ${delCheck.counts.journalTrades} journal trade${delCheck.counts.journalTrades === 1 ? '' : 's'} and ${delCheck.counts.breachEvents} breach event${delCheck.counts.breachEvents === 1 ? '' : 's'} are kept for your tax records, not deleted.`
+                    : ''}
+                </p>
+                <p style={sx('margin:8px 0 0;font-size:12px;line-height:1.5;color:var(--ink-3)')}>
+                  You cannot undo this yourself — contact support if you need it back.
+                </p>
+                <label style={sx('display:block;margin-top:14px;font-size:12px;color:var(--ink-3)')}>
+                  Type <strong style={sx('color:var(--ink)')}>{del.name}</strong> to confirm
+                  <input
+                    value={delTyped}
+                    onChange={(e) => setDelTyped(e.target.value)}
+                    autoComplete="off"
+                    style={sx("width:100%;margin-top:6px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace")}
+                  />
+                </label>
+                <div style={sx('display:flex;gap:9px;margin-top:16px;flex-wrap:wrap')}>
+                  <button
+                    type="button"
+                    disabled={delBusy || delTyped.trim() !== del.name}
+                    onClick={confirmDelete}
+                    style={sx('flex:1;min-width:150px;padding:11px;border-radius:10px;font-size:12.5px;font-weight:700', delTyped.trim() === del.name && !delBusy
+                      ? { border: '1px solid var(--red-btn)', background: 'var(--red-btn)', color: '#fff' }
+                      : { border: '1px solid var(--line)', background: 'var(--surface-3)', color: 'var(--ink-faint)', cursor: 'default' })}
+                  >
+                    {delBusy ? 'Deleting…' : 'Delete permanently'}
+                  </button>
+                  <button type="button" disabled={delBusy} onClick={() => setDel(null)} style={sx('padding:11px 15px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Keep it</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       {dc && (
