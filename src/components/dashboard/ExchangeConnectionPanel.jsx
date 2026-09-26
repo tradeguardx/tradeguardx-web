@@ -8,7 +8,8 @@ import {
 import { DELTA_EGRESS_IP } from '../../api/config';
 import { venueFor } from '../../lib/venues';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import DeltaAppGuide from './DeltaAppGuide';
+import AppGuide from './AppGuide';
+import VenueSteps from './VenueSteps';
 import SecretInput from '../common/SecretInput';
 import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPanel } from './deltaConnectShared';
 
@@ -280,29 +281,55 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               backgroundColor: 'rgba(0,212,170,0.04)',
             }}
           >
-            {isMobile && v.hasAppGuide ? (
-              // Mobile: users are in the exchange's app, not a browser tab. Guide
-              // them through its key flow with the screenshot walkthrough.
-              // Same treatment whether this is a first connect or a reconnect after
-              // disconnect — no stripped-down version for the second case.
+            {isMobile && v.appGuide?.length ? (
+              // Mobile. A desktop-only venue gets the same walkthrough at the
+              // same prominence — the steps are what the user came for, and
+              // burying them under a notice makes the page feel like a refusal.
+              // The constraint goes ABOVE them, because "do this on a computer"
+              // is useless discovered at step six, next to a secret you cannot
+              // see twice.
               <div>
-                <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                  Create a <strong>{v.scopeLabel}</strong> key in the <strong>{v.name} app</strong> ({v.mobilePath}).
-                  Enable <strong>{v.scopeLabel}</strong>, whitelist the IP below, and paste the key here.
-                  A read-only key only sends alerts — it can&apos;t stop trading.
-                </p>
+                {v.desktopOnly ? (
+                  <div
+                    className="mb-2.5 rounded-lg border px-3 py-2"
+                    style={{ borderColor: 'rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.07)' }}
+                  >
+                    <p className="text-[12px] font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
+                      Not in the {v.name} app
+                    </p>
+                    <p className="mt-0.5 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                      {v.desktopOnlyNote} The steps below are the same ones either way, and so is the IP.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                    Create a <strong>{v.scopeLabel}</strong> key in the <strong>{v.name} app</strong> ({v.mobilePath}).
+                    A read-only key only sends alerts — it can&apos;t stop trading.
+                  </p>
+                )}
+                {/* Above the steps: someone who wants the pictures wants them
+                    before reading, not after. */}
                 <button
                   type="button"
                   onClick={() => setGuideOpen(true)}
-                  className="mt-2.5 inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold text-surface-950"
-                  style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
+                  className="mb-2.5 inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold"
+                  style={{ backgroundColor: 'var(--ink)', color: 'var(--surface)' }}
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden>
                     <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
                     <path strokeLinecap="round" d="M10.5 18.5h3" />
                   </svg>
-                  Show me how · 4 steps
+                  {/* Was hardcoded to 4 — correct for Delta, wrong the moment a
+                      venue with a different number of steps arrived. */}
+                  Show me how &middot; {v.appGuide.length} steps
                 </button>
+                {/* The venue's real flow, the same list the connect page shows.
+                    This used to be a hardcoded three-liner that named an app
+                    screen, an IP field and a permission tick — none of which
+                    exist on every venue. */}
+                <div className="mt-2.5">
+                  <VenueSteps venue={v} />
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -310,13 +337,33 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                   {isConnected ? `Create a new key on ${v.name} (takes ~2 min):` : `Create your key on ${v.name} (takes ~2 min):`}
                 </p>
 
+                {/* The walkthrough is not a mobile consolation prize. CoinDCX's
+                    screenshots are of the DESKTOP site, so this is where they
+                    are most useful — and the written steps below say what to
+                    type, while the pictures say where to look. Secondary
+                    styling keeps "Open {name} & create key" the primary act. */}
+                {v.appGuide?.length ? (
+                  <button
+                    type="button"
+                    onClick={() => setGuideOpen(true)}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] font-bold"
+                    style={{ borderColor: 'var(--line-strong)', color: 'var(--ink)' }}
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden>
+                      <rect x="2.5" y="4" width="19" height="13" rx="2" />
+                      <path strokeLinecap="round" d="M8 20.5h8" />
+                    </svg>
+                    Show me how &middot; {v.appGuide.length} steps
+                  </button>
+                ) : null}
+
                 <StepRow n={1}>
                   <a
                     href={apiKeysLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold text-surface-950"
-                    style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold"
+                    style={{ backgroundColor: 'var(--ink)', color: 'var(--surface)' }}
                   >
                     Open {v.name} &amp; create key
                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" aria-hidden>
@@ -340,7 +387,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                           setTimeout(() => setNameCopied(false), 1500);
                         }}
                         className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono font-bold text-[12px]"
-                        style={{ backgroundColor: 'rgba(0,212,170,0.14)', borderColor: 'rgba(0,212,170,0.45)', color: 'var(--accent, #00d4aa)' }}
+                        style={{ backgroundColor: 'var(--surface-2)', borderColor: 'var(--line-strong)', color: 'var(--ink)' }}
                         title="Copy suggested name"
                       >
                         {SUGGESTED_KEY_NAME} {nameCopied ? '✓' : 'Copy'}
@@ -356,7 +403,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                           type="button"
                           onClick={onCopyEgressIp}
                           className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono font-bold text-[12px]"
-                          style={{ backgroundColor: 'rgba(0,212,170,0.14)', borderColor: 'rgba(0,212,170,0.45)', color: 'var(--accent, #00d4aa)' }}
+                          style={{ backgroundColor: 'var(--surface-2)', borderColor: 'var(--line-strong)', color: 'var(--ink)' }}
                           title={ipCopied ? 'Copied' : 'Copy to clipboard'}
                         >
                           {DELTA_EGRESS_IP} {ipCopied ? '✓' : 'Copy'}
@@ -371,9 +418,9 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                 <StepRow n={3} label="Tick this permission">
                   <div
                     className="flex items-center gap-2.5 rounded-lg px-3 py-2.5"
-                    style={{ backgroundColor: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.3)' }}
+                    style={{ backgroundColor: 'var(--mint-tint)', border: '1px solid var(--mint-line)' }}
                   >
-                    <svg className="h-4 w-4 shrink-0" fill="none" stroke="var(--accent, #00d4aa)" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden>
+                    <svg className="h-4 w-4 shrink-0" fill="none" stroke="var(--mint)" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden>
                       <rect x="3" y="3" width="18" height="18" rx="4" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12l3 3 5-6" />
                     </svg>
@@ -391,7 +438,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               </div>
             )}
             <p className="mt-3 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
-              Secret shown once — copy it now. Stored encrypted (KMS). {v.withdrawalNote}
+              Secret shown once — copy it now. Stored encrypted (KMS).
             </p>
           </div>
 
@@ -470,7 +517,9 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
         </div>
       )}
 
-      {v.hasAppGuide && <DeltaAppGuide open={guideOpen} onClose={() => setGuideOpen(false)} />}
+      {v.appGuide?.length ? (
+        <AppGuide open={guideOpen} onClose={() => setGuideOpen(false)} steps={v.appGuide} docsUrl={v.keysUrl?.()} />
+      ) : null}
     </div>
   );
 }

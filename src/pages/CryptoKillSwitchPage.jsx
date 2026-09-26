@@ -28,7 +28,7 @@ const FAQ = [
   },
   {
     q: 'Does a kill switch need access to my funds?',
-    a: 'No, and you should refuse any tool that asks. We use an API key scoped to read and trade only. That is enough to cancel an order and close a position, and it is nowhere near enough to move a rupee — the key cannot withdraw or transfer, and we refuse a key that has been given withdrawal rights. Your funds never leave your own exchange wallet. On Delta there is no withdrawal option on API keys at all; on CoinDCX, simply never tick it.',
+    a: 'No, and you should refuse any tool that asks. We use an API key scoped to read and trade only. That is enough to cancel an order and close a position, and it is nowhere near enough to move a rupee — the key cannot withdraw or transfer. Your funds never leave your own exchange wallet. None of the venues we support even offer a withdrawal permission on an API key.',
   },
   {
     q: 'Can I turn the kill switch off when I want to keep trading?',

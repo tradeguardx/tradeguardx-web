@@ -36,9 +36,14 @@ export function trySplitPastedCredentials(text) {
 export function StepRow({ n, label, children }) {
   return (
     <div className="flex gap-2.5">
+      {/* Neutral, matching the connect page's step rail. These were accent-
+          coloured, which on the light theme renders orange — so a form whose
+          only real decision is "paste the key" had four orange numbers, an
+          orange button and two orange chips competing for the same attention.
+          The step numbers are structure, not emphasis. */}
       <span
-        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-        style={{ backgroundColor: 'rgba(0,212,170,0.15)', color: 'var(--accent, #00d4aa)' }}
+        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[11px] font-bold"
+        style={{ backgroundColor: 'var(--surface-3)', color: 'var(--ink-3)', fontFamily: "'JetBrains Mono',monospace" }}
       >
         {n}
       </span>
@@ -96,7 +101,11 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
           </li>
           <li className="flex items-start gap-2 text-[12px]" style={{ color: 'var(--dash-text-muted)' }}>
             <span>·</span>
-            <span>Withdrawal was never requested{venue?.withdrawalNote ? ` — ${venue.withdrawalNote}` : ''} Nothing here can move your funds.</span>
+            {/* "Withdrawal was never requested" implied it could have been.
+                None of the venues we support put a withdrawal permission on an
+                API key at all, so the reassurance invented a risk in order to
+                dismiss it. The fact that matters is the last clause. */}
+            <span>Nothing here can move your funds.</span>
           </li>
         </ul>
         {!live && (

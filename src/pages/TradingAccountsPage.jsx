@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -19,7 +19,8 @@ import {
 } from '../api/exchangeCredentialsApi';
 import ExchangeConnectionPanel from '../components/dashboard/ExchangeConnectionPanel';
 import VenueMark, { VenueBetaBadge } from '../components/dashboard/VenueMark';
-import DeltaAppGuide from '../components/dashboard/DeltaAppGuide';
+import AppGuide from '../components/dashboard/AppGuide';
+import VenueSteps from '../components/dashboard/VenueSteps';
 import SecretInput from '../components/common/SecretInput';
 import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPanel } from '../components/dashboard/deltaConnectShared';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -324,11 +325,20 @@ function PairingStatusBadge({ accessToken, tradingAccountId, propFirmSlug }) {
   );
 }
 
-function AccountCard({ account, accessToken, onUpdated, toast, collapsible = false, defaultExpanded = true }) {
+/**
+ * One account. Collapsible when there are several, and CONTROLLED by the list
+ * rather than holding its own open state.
+ *
+ * It used to own that state, which meant every card could be open at once and
+ * the page grew to the sum of all of them. Connecting a key on the fourth
+ * account meant scrolling past three expanded cards, finding its header,
+ * opening it, and scrolling again — for the account the header switcher already
+ * says you are working on.
+ */
+function AccountCard({ account, accessToken, onUpdated, toast, collapsible = false, expanded = true, onToggle, cardRef }) {
   const [name, setName] = useState(account.name || '');
   const [platform, setPlatform] = useState(account.platform || '');
   const [saving, setSaving] = useState(false);
-  const [expanded, setExpanded] = useState(collapsible ? defaultExpanded : true);
   const isFunded = account.equityMode === 'funded';
 
   useEffect(() => {
@@ -435,11 +445,12 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
         backgroundColor: 'var(--dash-bg-raised)',
         boxShadow: 'var(--dash-shadow-card)',
       }}
+      ref={cardRef}
     >
       {collapsible ? (
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={onToggle}
           className="w-full text-left px-5 py-4 hover:bg-white/[0.02] transition-colors"
           style={{ borderBottom: expanded ? '1px solid var(--dash-border)' : 'none' }}
           aria-expanded={expanded}
@@ -526,10 +537,15 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
   );
 }
 
-export function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toast }) {
-  const [selectedSlug, setSelectedSlug] = useState('');
+/**
+ * `presetSlug` lets the venue picker live OUTSIDE this form — the accounts page
+ * shows the venues, and choosing one opens this in a modal with the choice
+ * already made. Without it the form owns the picker and the whole flow has to
+ * be inline.
+ */
+export function AddAccountForm({ accessToken, supportedProps, onCreated, onCancel, toast, presetSlug = '', skipKey = false }) {
+  const [selectedSlug, setSelectedSlug] = useState(presetSlug || '');
   const [name, setName] = useState('');
-  const [platform, setPlatform] = useState('');
   const [customSize, setCustomSize] = useState('');
   const [selectedSize, setSelectedSize] = useState(null);
   const [timezone, setTimezone] = useState('');
@@ -576,10 +592,17 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
       ? Number(customSize)
       : selectedSize ?? null;
 
-  // Delta requires a Trading API key + secret up front — the account isn't
-  // protected without one, so we don't allow creating a "connect later" shell.
+  // Exchange venues normally require a Trading key up front — an account
+  // without one is a shell that enforces nothing, and we do not hand those out
+  // from the standalone form.
+  //
+  // skipKey is the wizard, where the NEXT stage connects the key. The rule is
+  // the same, it is just enforced one screen later by a better screen: the
+  // wizard's stage 2 is ConnectKeyFlow, the real connect page. Collecting the
+  // key here as well meant stage 2 had nothing left to do, and the two
+  // instruction lists disagreed about how many steps the venue has.
   const deltaCredsProvided =
-    !isDelta || (apiKey.trim() !== '' && apiSecret.trim() !== '');
+    skipKey || !isDelta || (apiKey.trim() !== '' && apiSecret.trim() !== '');
 
   const canCreate =
     !!selected &&
@@ -601,7 +624,6 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
         accessToken,
         name: name.trim(),
         propFirmSlug: selected.brokerId,
-        platform: platform.trim() || undefined,
         accountSize: isFunded ? sizeValue : undefined,
         equityMode: selected.equityMode,
         timezone,
@@ -610,9 +632,15 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
         dashboardUrl: selected.dashboardUrl ?? undefined,
       });
 
-      if (!isDelta) {
-        toast.success('Account created', 'Configure rules and connect the extension next.');
-        onCreated?.();
+      // In the wizard the account is all this stage makes; the key is the next
+      // stage's job, so hand back and let it advance. Connecting here as well
+      // left stage 2 with nothing to do.
+      if (!isDelta || skipKey) {
+        toast.success('Account created', skipKey ? 'Now connect the key.' : 'Configure rules and connect the extension next.');
+        // Hand the account back: the add-a-venue wizard selects it so its next
+        // stage connects a key to the one just made rather than to whatever
+        // happened to be selected before.
+        onCreated?.(account);
         return;
       }
 
@@ -664,6 +692,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
       className="mt-4 rounded-2xl border p-5 space-y-5"
       style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}
     >
+      {!presetSlug && (
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--dash-text-muted)' }}>
           1. Choose your venue
@@ -727,6 +756,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
           })}
         </div>
       </div>
+      )}
 
       {selected && (
         <motion.div
@@ -737,38 +767,36 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
         >
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--dash-text-muted)' }}>
-              2. Account details
+              {/* The numbers described a form that had a venue picker above and
+                  a key block below. In the wizard both live elsewhere, so a
+                  lone "2." counts through sections the user cannot see. */}
+              {presetSlug && skipKey ? 'Account details' : `${isFunded ? '4.' : '2.'} Account details`}
             </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block">
-                <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>Display name</span>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. FTMO 100k"
-                  className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent/40"
-                  style={{
-                    borderColor: 'var(--dash-border)',
-                    backgroundColor: 'var(--dash-bg-input)',
-                    color: 'var(--dash-text-primary)',
-                  }}
-                />
-              </label>
-              <label className="block">
-                <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>Platform (optional)</span>
-                <input
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value)}
-                  placeholder="e.g. MT5"
-                  className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent/40"
-                  style={{
-                    borderColor: 'var(--dash-border)',
-                    backgroundColor: 'var(--dash-bg-input)',
-                    color: 'var(--dash-text-primary)',
-                  }}
-                />
-              </label>
-            </div>
+            {/* Platform removed: it asked for MT4/MT5, which means nothing on
+                a crypto exchange — every venue here is its own platform. It was
+                optional and empty on every account, and an optional field
+                nobody can answer still costs a moment deciding whether they
+                should. */}
+            <label className="block">
+              <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>Display name</span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                /* Suggest the venue they just picked. "FTMO 100k" is a prop-firm
+                   example on a crypto venue picker, and the name only has to
+                   tell two accounts apart. */
+                placeholder={selected?.name ? `e.g. ${selected.name}` : 'e.g. your broker name'}
+                className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent/40"
+                style={{
+                  borderColor: 'var(--dash-border)',
+                  backgroundColor: 'var(--dash-bg-input)',
+                  color: 'var(--dash-text-primary)',
+                }}
+              />
+              <span className="mt-1 block text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
+                Just a label for you — it is what the account switcher shows.
+              </span>
+            </label>
           </div>
 
           {isFunded && (
@@ -867,7 +895,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
             </div>
           )}
 
-          {isDelta && createdAccount && connectOutcome && (
+          {isDelta && createdAccount && connectOutcome && !skipKey && (
             <div>
               <p
                 className="text-[11px] font-semibold uppercase tracking-wider mb-3"
@@ -880,7 +908,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 outcome={connectOutcome}
                 retrying={retrying}
                 onRetry={retryConnect}
-                onContinue={() => onCreated?.()}
+                onContinue={() => onCreated?.(createdAccount)}
                 apiKey={apiKey}
                 apiSecret={apiSecret}
                 onApiKeyChange={(e) => setApiKey(e.target.value)}
@@ -889,7 +917,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
             </div>
           )}
 
-          {isDelta && !createdAccount && (
+          {isDelta && !createdAccount && !skipKey && (
             <div>
               <p
                 className="text-[11px] font-semibold uppercase tracking-wider mb-3"
@@ -905,59 +933,104 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   backgroundColor: 'rgba(0,212,170,0.04)',
                 }}
               >
-                {isMobile && v.hasAppGuide ? (
-                  // Mobile: users are in the Delta app. Guide them through Algo Hub
-                  // → APIs with the screenshot walkthrough instead of the web link.
+                {isMobile && v.appGuide?.length ? (
+                  // Mobile: offer the screenshot walkthrough rather than a link
+                  // the user would have to switch away to open. For venues that
+                  // cannot issue a key from a phone at all, the constraint is
+                  // stated first and the steps still shown — they are what the
+                  // user will follow once they are at a computer.
                   <>
+                    {v.desktopOnly && (
+                      // The constraint goes first. Discovering "use a computer"
+                      // at the last step, holding a secret the venue will not
+                      // show again, is the worst place to learn it.
+                      <div
+                        className="mb-2.5 rounded-lg border px-3 py-2"
+                        style={{ borderColor: 'rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.07)' }}
+                      >
+                        <p className="text-[12px] font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
+                          Not in the {v.name} app
+                        </p>
+                        <p className="mt-0.5 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                          {v.desktopOnlyNote}
+                        </p>
+                      </div>
+                    )}
                     <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--dash-text-primary)' }}>
-                      Create your key in the {v.name} app (~2 min):
+                      {v.desktopOnly ? `Create your key on ${v.name} (~2 min):` : `Create your key in the ${v.name} app (~2 min):`}
                     </p>
-                    <ol className="space-y-1.5 text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                      <li><strong>1.</strong> Open the {v.name} app → tap <strong>{v.mobilePath}</strong>.</li>
-                      <li>
-                        <strong>2. {v.ipField}:</strong> paste our IP
-                        {DELTA_EGRESS_IP ? (
-                          <button
-                            type="button"
-                            onClick={() => { navigator.clipboard?.writeText(DELTA_EGRESS_IP); toast?.success?.('Copied', 'IP copied to clipboard.'); }}
-                            className="ml-1.5 inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono font-bold text-[11px]"
-                            style={{ backgroundColor: 'rgba(0,212,170,0.14)', borderColor: 'rgba(0,212,170,0.45)', color: 'var(--accent, #00d4aa)' }}
-                            title="Copy IP"
-                          >
-                            {DELTA_EGRESS_IP} <span>Copy</span>
-                          </button>
-                        ) : (
-                          <span> (shown after you select a live environment)</span>
-                        )}
-                      </li>
-                      <li><strong>3.</strong> Tick <strong>{v.scopeLabel}</strong>, create the key, then paste it below.</li>
-                    </ol>
+                    {/* Above the steps, not below them. Someone who wants the
+                        pictures wants them BEFORE reading four paragraphs —
+                        underneath, the offer only arrives once they have
+                        already done the work of reading. */}
                     <button
                       type="button"
                       onClick={() => setGuideOpen(true)}
-                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold text-surface-950"
-                      style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
+                      className="mb-2.5 inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold"
+                      style={{ backgroundColor: 'var(--ink)', color: 'var(--surface)' }}
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden>
                         <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
                         <path strokeLinecap="round" d="M10.5 18.5h3" />
                       </svg>
-                      Show me how · 4 steps
+                      Show me how &middot; {v.appGuide.length} steps
                     </button>
+                    {/* The venue's real flow, same list and same styling as
+                        the connect page. This was a hardcoded three-item list
+                        naming an app path, an IP field and a permission tick —
+                        none of which exist on every venue. */}
+                    <VenueSteps venue={v} />
+                    {/* The steps say "paste our IP"; this is the IP. It lived
+                        inside the hardcoded list that VenueSteps replaced, and
+                        an instruction to paste an address that is nowhere on
+                        screen is worse than no instruction. */}
+                    {DELTA_EGRESS_IP ? (
+                      <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                        <span className="text-[11.5px]" style={{ color: 'var(--dash-text-muted)' }}>{v.ipField}</span>
+                        <button
+                          type="button"
+                          onClick={() => { navigator.clipboard?.writeText(DELTA_EGRESS_IP); toast?.success?.('Copied', 'IP copied to clipboard.'); }}
+                          className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono font-bold text-[11px]"
+                          style={{ backgroundColor: 'var(--surface-2)', borderColor: 'var(--line-strong)', color: 'var(--ink)' }}
+                          title="Copy IP"
+                        >
+                          {DELTA_EGRESS_IP} <span>Copy</span>
+                        </button>
+                      </div>
+                    ) : null}
                   </>
                 ) : (
                   <>
                     <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--dash-text-primary)' }}>
                       Create your key on {v.name} (takes ~2 min):
                     </p>
+                    {/* Desktop gets the walkthrough too. CoinDCX's screenshots
+                        are of the desktop site, so this is where they are most
+                        useful — and it is the only place its key can be made at
+                        all. Secondary styling so "Open {name} & create key"
+                        stays the primary act. */}
+                    {v.appGuide?.length ? (
+                      <button
+                        type="button"
+                        onClick={() => setGuideOpen(true)}
+                        className="mb-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] font-bold"
+                        style={{ borderColor: 'var(--line-strong)', color: 'var(--ink)' }}
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden>
+                          <rect x="2.5" y="4" width="19" height="13" rx="2" />
+                          <path strokeLinecap="round" d="M8 20.5h8" />
+                        </svg>
+                        Show me how &middot; {v.appGuide.length} steps
+                      </button>
+                    ) : null}
                     <div className="space-y-3">
                       <StepRow n={1}>
                         <a
                           href={v.keysUrl(exchangeSlug)}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold text-surface-950"
-                          style={{ backgroundColor: 'var(--accent, #00d4aa)' }}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-bold"
+                          style={{ backgroundColor: 'var(--ink)', color: 'var(--surface)' }}
                         >
                           Open {v.name} &amp; create key
                           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" aria-hidden>
@@ -982,7 +1055,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                                 toast?.success?.('Copied', 'Key name copied to clipboard.');
                               }}
                               className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono font-bold text-[12px]"
-                              style={{ backgroundColor: 'rgba(0,212,170,0.14)', borderColor: 'rgba(0,212,170,0.45)', color: 'var(--accent, #00d4aa)' }}
+                              style={{ backgroundColor: 'var(--surface-2)', borderColor: 'var(--line-strong)', color: 'var(--ink)' }}
                               title="Copy suggested name"
                             >
                               {SUGGESTED_KEY_NAME} {nameCopied ? '✓' : 'Copy'}
@@ -998,7 +1071,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                                 type="button"
                                 onClick={() => { navigator.clipboard?.writeText(DELTA_EGRESS_IP); toast?.success?.('Copied', 'IP copied to clipboard.'); }}
                                 className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono font-bold text-[12px]"
-                                style={{ backgroundColor: 'rgba(0,212,170,0.14)', borderColor: 'rgba(0,212,170,0.45)', color: 'var(--accent, #00d4aa)' }}
+                                style={{ backgroundColor: 'var(--surface-2)', borderColor: 'var(--line-strong)', color: 'var(--ink)' }}
                                 title="Copy IP"
                               >
                                 {DELTA_EGRESS_IP} Copy
@@ -1016,9 +1089,9 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                       <StepRow n={3} label="Tick this permission">
                         <div
                           className="flex items-center gap-2.5 rounded-lg px-3 py-2.5"
-                          style={{ backgroundColor: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.3)' }}
+                          style={{ backgroundColor: 'var(--mint-tint)', border: '1px solid var(--mint-line)' }}
                         >
-                          <svg className="h-4 w-4 shrink-0" fill="none" stroke="var(--accent, #00d4aa)" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden>
+                          <svg className="h-4 w-4 shrink-0" fill="none" stroke="var(--mint)" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden>
                             <rect x="3" y="3" width="18" height="18" rx="4" />
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 12l3 3 5-6" />
                           </svg>
@@ -1037,7 +1110,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   </>
                 )}
                 <p className="mt-3 text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
-                  Secret shown once — copy it now. Stored encrypted (KMS). {v.withdrawalNote}
+                  Secret shown once — copy it now. Stored encrypted (KMS).
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -1101,7 +1174,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
             </div>
           )}
 
-          {!(isDelta && createdAccount && connectOutcome) && (
+          {!(isDelta && createdAccount && connectOutcome && !skipKey) && (
           <div className="flex flex-wrap gap-2 pt-2">
             <button
               type="button"
@@ -1110,8 +1183,10 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
               className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-surface-950 hover:bg-accent-hover disabled:opacity-50"
             >
               {creating
-                ? (isDelta && apiKey && apiSecret ? 'Creating & connecting…' : 'Creating…')
-                : (isDelta && apiKey && apiSecret ? 'Create & connect' : 'Create account')}
+                ? (isDelta && !skipKey && apiKey && apiSecret ? 'Creating & connecting…' : 'Creating…')
+                : skipKey
+                  ? 'Continue'
+                  : (isDelta && apiKey && apiSecret ? 'Create & connect' : 'Create account')}
             </button>
             <button
               type="button"
@@ -1126,7 +1201,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
         </motion.div>
       )}
 
-      <DeltaAppGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <AppGuide open={guideOpen} onClose={() => setGuideOpen(false)} steps={v.appGuide ?? []} docsUrl={v.keysUrl?.()} />
     </motion.div>
   );
 }
@@ -1134,12 +1209,44 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
 export default function TradingAccountsPage() {
   const { session, user } = useAuth();
   const toast = useToast();
-  const { accounts, accountsLoading, accountsError, refreshTradingAccounts } = useTradingAccounts();
+  const { accounts, accountsLoading, accountsError, refreshTradingAccounts, selectedTradingAccountId } = useTradingAccounts();
   const [showAdd, setShowAdd] = useState(false);
   const [supportedProps, setSupportedProps] = useState([]);
   const [propsLoading, setPropsLoading] = useState(false);
   const [propsError, setPropsError] = useState('');
   const [propsQueried, setPropsQueried] = useState(false);
+
+  /**
+   * One card open at a time, and by default the account the header switcher
+   * already says you are on.
+   *
+   * Before: every card kept its own open state and the first one in the list
+   * was expanded regardless. With four accounts that meant scrolling past
+   * everything, finding the right header, opening it, and scrolling again —
+   * to reach the account the rest of the dashboard was already scoped to.
+   * Nothing on this page read the selection it had.
+   *
+   * DERIVED, not synced. An effect that copied the selection into state would
+   * cascade a render on every change and, worse, need a second effect to undo
+   * a manual toggle when the selection moved. Tying the override to the
+   * selection it was made under does both for free: switch account and any
+   * manual open/close is no longer for the current selection, so it lapses.
+   */
+  const [override, setOverride] = useState(null);
+  const openCardRef = useRef(null);
+
+  const manual = override && override.forSelection === selectedTradingAccountId ? override : null;
+  const openId = manual ? manual.id : selectedTradingAccountId || accounts[0]?.id || null;
+
+  const toggleCard = (id) =>
+    setOverride({ forSelection: selectedTradingAccountId, id: openId === id ? null : id });
+
+  // Bring the open card into view when the selection moved it, so the answer
+  // to "where did my account go" is never "scroll and find out".
+  useEffect(() => {
+    if (!openId || !openCardRef.current) return;
+    openCardRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [openId]);
 
   // Unknown plan is not the free plan — don't block "Add account" on a guess
   // while the subscription resolves. The server enforces the real cap.
@@ -1248,7 +1355,7 @@ export default function TradingAccountsPage() {
         <p className="text-sm" style={{ color: 'var(--dash-text-muted)' }}>Loading…</p>
       ) : (
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-6">
-          {accounts.map((a, idx) => (
+          {accounts.map((a) => (
             <AccountCard
               key={a.id}
               account={a}
@@ -1256,7 +1363,9 @@ export default function TradingAccountsPage() {
               onUpdated={refreshTradingAccounts}
               toast={toast}
               collapsible={accounts.length > 1}
-              defaultExpanded={idx === 0}
+              expanded={accounts.length > 1 ? openId === a.id : true}
+              onToggle={() => toggleCard(a.id)}
+              cardRef={a.id === openId ? openCardRef : undefined}
             />
           ))}
           {accounts.length === 0 && !error && (

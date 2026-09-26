@@ -28,7 +28,7 @@ export const HELP_ARTICLES = [
       {
         heading: '3. Connect the enforcement key',
         body:
-          'Go to Connect key. Create an API key on your exchange, pin it to the TradeGuardX IP shown on the page, then paste the key and secret and verify. Never grant withdrawals — we do not need them and refuse a key that has them. This is the step that lets us cancel orders and close positions for you. A key that cannot trade is accepted but leaves the account in WATCHING — we see fills but cannot act. The Connect key page walks through your venue\'s own form field by field.',
+          'Go to Connect key. Create an API key on your exchange, pin it to the TradeGuardX IP shown on the page, then paste the key and secret and verify. This is the step that lets us cancel orders and close positions for you. A key that cannot trade is accepted but leaves the account in WATCHING — we see fills but cannot act. The Connect key page walks through your venue\'s own form field by field.',
       },
       {
         heading: '4. Switch on your rules',
@@ -62,7 +62,7 @@ export const HELP_ARTICLES = [
       {
         heading: 'Create the key on Delta',
         body:
-          'Delta → Account → API keys → Create. Tick Trading. Do NOT tick withdrawals — TradeGuardX never needs them and refuses keys that have them. Add the IP address shown on the Connect key page to the key\'s whitelist; without it Delta rejects every request we make.',
+          'Delta → Account → API keys → Create. Tick Trading. Add the IP address shown on the Connect key page to the key\'s whitelist; without it Delta rejects every request we make.',
       },
       {
         heading: 'Create the key on CoinDCX',

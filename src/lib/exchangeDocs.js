@@ -147,7 +147,7 @@ export const DOCS = {
                   'Send OTP — CoinDCX sends one code to your email and another by SMS. Enter both to confirm the key.',
                   'Copy the API Key and Secret. Both are shown once, on that screen — CoinDCX will not show the secret again.',
                 ],
-                note: 'There is no permission checkbox on CoinDCX\'s form, so there is nothing to tick for trading — do not go looking for one. We verify the key can actually act the moment you connect it, and tell you plainly if it cannot. Never grant Withdraw on any key; we never ask for it and refuse a key that has it.',
+                note: 'There is no permission checkbox on CoinDCX\'s form, so there is nothing to tick for trading — do not go looking for one. We verify the key can actually act the moment you connect it, and tell you plainly if it cannot.',
               },
               {
                 title: 'Connect the key in TradeGuardX',

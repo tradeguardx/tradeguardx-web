@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useGuard } from '../context/GuardContext';
@@ -8,7 +9,7 @@ import { fetchSupportedProps } from '../api/tradingAccountsApi';
 import { disconnectExchangeCredentials } from '../api/exchangeCredentialsApi';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel } from '../lib/labels';
-import { AddAccountForm } from './TradingAccountsPage';
+import AddVenueWizard from '../components/dashboard/AddVenueWizard';
 import VenueMark, { VenueBetaBadge } from '../components/dashboard/VenueMark';
 import { sx } from '../components/dashboard/shell/sx';
 
@@ -29,7 +30,7 @@ function fmtVerified(iso) {
 
 export default function AccountsPage() {
   const { session, user } = useAuth();
-  const { accounts, accountsLoading, refreshTradingAccounts, setSelectedTradingAccountId } = useTradingAccounts();
+  const { accounts, accountsLoading, refreshTradingAccounts, setSelectedTradingAccountId, selectedTradingAccountId } = useTradingAccounts();
   const guard = useGuard();
   const toast = useToast();
   const navigate = useNavigate();
@@ -40,6 +41,31 @@ export default function AccountsPage() {
   const [propsLoading, setPropsLoading] = useState(false);
   const [dc, setDc] = useState(null); // account pending disconnect
   const [dcBusy, setDcBusy] = useState(false);
+  /** Venue chosen from the picker; opening the wizard modal. */
+  const [addSlug, setAddSlug] = useState('');
+
+  /**
+   * One connection block open at a time — the account you are actually on.
+   *
+   * Every card used to render its API-connection panel expanded, so with three
+   * accounts the page was three full connection blocks deep and connecting a
+   * key meant scrolling past the two you did not want. The summary row stays
+   * visible on every card (name, guard state, venue, rules on): that is enough
+   * to compare accounts at a glance, which is what this page is for. The
+   * details behind it — key status, account id, replace/disconnect — are only
+   * ever about one account at a time.
+   *
+   * DERIVED from the selection rather than synced into state. An effect that
+   * copied it would cascade a render on every switch and then need a second
+   * effect to drop a manual toggle when the selection moved. Tying the
+   * override to the selection it was made under does both: change account and
+   * the override is no longer current, so it lapses on its own.
+   */
+  const [override, setOverride] = useState(null);
+  const manual = override && override.forSelection === selectedTradingAccountId ? override : null;
+  const openId = manual ? manual.id : selectedTradingAccountId || accounts[0]?.id || null;
+  const toggleCard = (id) =>
+    setOverride({ forSelection: selectedTradingAccountId, id: openId === id ? null : id });
 
   useEffect(() => {
     if (!showAdd || !accessToken || supportedProps.length) return undefined;
@@ -144,8 +170,22 @@ export default function AccountsPage() {
                 )}
               </span>
               <button type="button" onClick={() => go(a.id, to)} style={sx('flex:none;padding:9px 15px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700')}>{action}</button>
+              {/* Its own control, not a click handler on the whole row: the row
+                  already holds a primary action, and a card that navigates OR
+                  expands depending on where you land is a coin toss. */}
+              <button
+                type="button"
+                onClick={() => toggleCard(a.id)}
+                className="acct-card__chevron"
+                aria-expanded={openId === a.id}
+                aria-label={`${openId === a.id ? 'Hide' : 'Show'} ${a.name} connection details`}
+                style={sx('flex:none;display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink-3);cursor:pointer;transition:transform .18s ease', { transform: openId === a.id ? 'rotate(180deg)' : 'none' })}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+              </button>
             </div>
 
+            {openId === a.id && (
             <div style={sx('padding:16px 19px 18px;border-top:1px solid var(--line);background:var(--surface-2)')}>
               <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap')}>
                 <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)")}>{venue} API connection</span>
@@ -185,23 +225,43 @@ export default function AccountsPage() {
                 </div>
               )}
             </div>
+            )}
           </section>
         );
       })}
 
       {showAdd ? (
+        /* The picker stays on the page; choosing a venue opens the rest in a
+           modal. Adding an account is a short, complete task — inline it sat
+           under the existing accounts and the page kept growing beneath it,
+           so the thing you were doing was never the thing in front of you. */
         <section style={sx('padding:19px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card)')}>
+          <p style={sx("margin:0 0 12px;font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)")}>Choose your venue</p>
           {propsLoading && supportedProps.length === 0 ? (
             <p style={sx('margin:0;font-size:12.5px;color:var(--ink-3)')}>Loading venues…</p>
           ) : (
-            <AddAccountForm
-              accessToken={accessToken}
-              supportedProps={supportedProps}
-              onCreated={async () => { setShowAdd(false); await refreshTradingAccounts(); await guard.refresh(); }}
-              onCancel={() => setShowAdd(false)}
-              toast={toast}
-            />
+            <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:9px')}>
+              {supportedProps.map((pf) => {
+                const planned = pf.status === 'planned';
+                return (
+                  <button
+                    key={pf.brokerId}
+                    type="button"
+                    disabled={planned}
+                    onClick={() => setAddSlug(pf.brokerId)}
+                    style={sx('display:flex;align-items:center;gap:10px;padding:12px 13px;border:1px solid var(--line);border-radius:13px;background:var(--surface-2);text-align:left;cursor:pointer', planned ? { opacity: 0.5, cursor: 'not-allowed' } : {})}
+                  >
+                    <VenueMark slug={pf.brokerId} name={pf.name} size={30} radius={9} />
+                    <span style={sx('flex:1;min-width:0')}>
+                      <span style={sx('display:block;font-size:13px;font-weight:600')}>{pf.name}</span>
+                      <span style={sx('display:block;margin-top:2px;font-size:11.5px;color:var(--ink-3)')}>{planned ? 'Coming soon' : 'Server-side enforcement'}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           )}
+          <button type="button" onClick={() => setShowAdd(false)} style={sx('margin-top:13px;padding:0;border:0;background:none;color:var(--ink-3);font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer')}>Cancel</button>
         </section>
       ) : (
         <section style={sx('padding:20px;border:1px dashed var(--line-strong);border-radius:16px;background:var(--surface-2)')}>
@@ -218,6 +278,59 @@ export default function AccountsPage() {
           <p style={sx('margin:7px 0 13px;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:70ch')}>{capLine} Delta Exchange and CoinDCX Futures are the venues we enforce on today — prop-firm support is in progress, and we will say so plainly rather than list it as if it works.</p>
           <button type="button" disabled={atCap} onClick={() => setShowAdd(true)} style={sx('padding:10px 15px;border-radius:10px;font-size:12.5px;font-weight:700', atCap ? { border: '1px solid var(--surface-3)', background: 'var(--surface-3)', color: 'var(--ink-3)', cursor: 'not-allowed' } : { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' })}>{atCap ? `Plan limit reached (${maxAccounts})` : 'Choose a venue'}</button>
         </section>
+      )}
+
+      {addSlug && (
+        /* The wizard in a modal. Adding a venue is a short task with a clear
+           end, and inline it sat below the existing accounts with the page
+           growing beneath it — so the thing being done was never the thing in
+           front of you. The backdrop does NOT close it: three stages in, a
+           stray tap outside would discard a created account and a pasted key. */
+        <motion.div
+          data-tgx-modal="1"
+          className="wiz-modal"
+          role="presentation"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.16 }}
+          style={sx('position:fixed;inset:0;z-index:70;background:rgba(3,5,10,.72);backdrop-filter:blur(6px);display:grid;place-items:start center;padding:24px;overflow-y:auto')}
+        >
+          {/* Rises slightly rather than appearing. A dialog that snaps into
+              existence reads as a page change; a short lift reads as something
+              opening on top of what you were doing — which is what it is. */}
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add a venue"
+            className="wiz-dialog"
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, y: 10, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            style={sx('position:relative;width:min(720px,100%);margin:auto 0')}
+          >
+            {/* Top right, matching the kill-switch modal — the corner is where
+                people look to leave a dialog, and it stays reachable at any
+                stage without scrolling to the bottom of a three-stage form. */}
+            <button
+              type="button"
+              onClick={() => setAddSlug('')}
+              aria-label="Close"
+              style={sx('position:absolute;top:14px;right:14px;z-index:2;width:28px;height:28px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink-3);display:grid;place-items:center;cursor:pointer')}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+            <AddVenueWizard
+              accessToken={accessToken}
+              supportedProps={supportedProps}
+              propsLoading={propsLoading}
+              toast={toast}
+              presetSlug={addSlug}
+              onCancel={() => setAddSlug('')}
+              onDone={async () => { setAddSlug(''); setShowAdd(false); await refreshTradingAccounts(); await guard.refresh(); }}
+            />
+          </motion.div>
+        </motion.div>
       )}
 
       {dc && (

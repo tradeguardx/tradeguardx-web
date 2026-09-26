@@ -31,7 +31,15 @@ function Toggle({ on, onClick, label }) {
   );
 }
 
-export default function AlertsPage() {
+/**
+ * Alert settings, shared between the Alerts page and the third stage of the
+ * add-a-venue wizard.
+ *
+ * Exported so the wizard shows the real settings rather than a stripped copy.
+ * `embedded` drops the page heading — inside the wizard the stage rail already
+ * says where you are.
+ */
+export function AlertsSettings({ embedded = false }) {
   const { session, user } = useAuth();
   const { refresh } = useGuard();
   const toast = useToast();
@@ -91,11 +99,13 @@ export default function AlertsPage() {
   const sev = s?.notificationMinSeverity ?? 'warning';
 
   return (
-    <div style={sx('max-width:760px')}>
+    <div style={sx(embedded ? '' : 'max-width:760px')}>
+      {!embedded && (
       <div style={sx('margin-bottom:16px')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Alerts</h1>
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>The guard acts whether or not you are watching. Alerts are how you find out it did.</p>
       </div>
+      )}
 
       <section style={sx('margin-bottom:16px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
         <div style={sx('display:flex;align-items:flex-start;gap:14px;padding:18px 21px;border-bottom:1px solid var(--line)')}>
@@ -204,4 +214,8 @@ export default function AlertsPage() {
       </section>
     </div>
   );
+}
+
+export default function AlertsPage() {
+  return <AlertsSettings />;
 }
