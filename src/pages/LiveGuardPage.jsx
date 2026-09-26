@@ -136,7 +136,7 @@ export default function LiveGuardPage() {
       else toast.error('Could not start the lockout', err?.details?.error?.message || err?.message || 'Please try again.');
     } finally { setBusy(false); }
   };
-  const noEnforceBody = g.readOnly ? 'The key on this account is read-only, so we could not close anything the lockout was meant to stop.' : ksGap ? ksGap.body : 'Connect a key that can act and the lockout has something to hold it.';
+  const noEnforceBody = g.readOnly ? 'The key on this account is read-only, so we could not close anything the lockout was meant to stop.' : ksGap ? ksGap.body : 'Connect a key that can close positions and the lockout has something behind it.';
   const noEnforceCta = g.readOnly ? 'Replace the key' : ksGap ? ksGap.cta : 'Connect a key';
   const noEnforceTo = g.readOnly ? '/dashboard/connect' : ksGap ? ksGap.to : '/dashboard/connect';
   const armedBody = g.readOnly
@@ -241,8 +241,8 @@ export default function LiveGuardPage() {
     const acc = ruleAccent(r.templateSlug);
     let st;
     if (!g.loaded) st = { label: '…', bg: 'var(--surface-3)', fg: 'var(--ink-3)', live: 'Checking this account', bar: '0%' };
-    else if (g.guard === 'unprotected') st = { label: 'Not enforcing', bg: 'var(--surface-3)', fg: 'var(--ink-3)', live: 'Nothing is watching this rule yet', bar: '0%' };
-    else if (g.guard === 'watching') st = { label: 'Alert only', bg: 'var(--amber-tint)', fg: 'var(--amber)', live: 'Evaluated, but the key cannot act', bar: '0%' };
+    else if (g.guard === 'unprotected') st = { label: 'Not on', bg: 'var(--surface-3)', fg: 'var(--ink-3)', live: 'Nothing is watching this rule yet', bar: '0%' };
+    else if (g.guard === 'watching') st = { label: 'Alerts only', bg: 'var(--amber-tint)', fg: 'var(--amber)', live: 'Watching, but this key cannot close a position', bar: '0%' };
     else {
       const c = live ? computeRule(r.templateSlug, r.config, live, live.accountSize, fmt0) : null;
       const label = c?.tone === 'danger' ? 'Triggered' : c?.tone === 'warn' ? 'Close' : c?.tone === 'target' ? 'Target hit' : 'Armed';
@@ -324,7 +324,7 @@ export default function LiveGuardPage() {
       bar: `${Math.min(100, Math.max(0, usedPct))}%`,
       barBg: usedPct > 70 ? 'var(--red-solid)' : 'var(--amber-solid)',
       fg: usedPct > 70 ? 'var(--red)' : 'var(--ink)',
-      note: locked ? 'Frozen at the lockout' : 'At 0 the guard closes the day',
+      note: locked ? 'Frozen at the lockout' : 'At 0 we close the day',
       noteFg: 'var(--ink-3)',
     }),
     tone(atTradeCap ? 'red' : nearCap ? 'amber' : 'neutral', {
@@ -358,7 +358,7 @@ export default function LiveGuardPage() {
       bar: `${rulesTotal ? Math.round((rulesOn / rulesTotal) * 100) : 0}%`,
       barBg: g.readOnly ? 'var(--amber-solid)' : 'var(--mint-solid)',
       fg: 'var(--ink)',
-      note: g.readOnly ? 'Read-only key — we warn, cannot close' : rulesOn === 0 ? 'Nothing is being enforced' : 'Enforced even with this tab closed',
+      note: g.readOnly ? 'Read-only key — we can alert you, not close' : rulesOn === 0 ? 'No rules are on' : 'Works even with this tab closed',
       noteFg: g.readOnly || rulesOn === 0 ? 'var(--amber)' : 'var(--ink-3)',
     }),
   ];
@@ -372,11 +372,11 @@ export default function LiveGuardPage() {
       : `radial-gradient(80% 130% at 0% 0%, var(--${pnlSign < 0 ? 'red' : 'mint'}-tint), transparent 58%)`;
 
   const strip = locked
-    ? { label: 'Locked out', meta: g.readOnly ? 'Lockout is a commitment — this key cannot reject orders' : 'New orders are rejected on this account', right: `releases ${clockAt(g.lockUntil)}`, tone: 'var(--red)', bg: 'var(--red-tint)' }
+    ? { label: 'Locked out', meta: g.readOnly ? 'Lockout is a commitment — this key cannot block orders' : 'New orders are rejected on this account', right: `releases ${clockAt(g.lockUntil)}`, tone: 'var(--red)', bg: 'var(--red-tint)' }
     : !enforcing
       ? g.readOnly
-        ? { label: 'Watching', meta: 'Alerts only — the key cannot close positions', right: 'updates as fills land', tone: 'var(--amber)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
-        : { label: 'Not enforcing', meta: 'Switch on a rule to start enforcing', right: 'updates as fills land', tone: 'var(--amber)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
+        ? { label: 'Watching', meta: 'Alerts only — this key cannot close positions', right: 'updates as fills land', tone: 'var(--amber)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
+        : { label: 'Not on', meta: 'Switch on a rule to start', right: 'updates as fills land', tone: 'var(--amber)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
       : band === 'danger'
         ? { label: 'Near the limit', meta: atTradeCap ? 'Trade cap reached — the next entry is blocked' : `${Math.round(usedPct)}% of today's loss budget used — the guard is close to closing the day`, right: 'one bad fill from a close', tone: 'var(--red)', bg: 'var(--red-tint)', sweep: SWEEP.danger }
         : band === 'caution'
@@ -440,7 +440,7 @@ export default function LiveGuardPage() {
                 <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--red)")}>Trading resumes in</div>
                 <div style={sx("margin-top:12px;font:700 64px/1 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.04em;color:var(--ink)")}>{hms(g.lockRemainingMs)}</div>
                 <div style={sx('margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink-2)')}>
-                  Releases at <strong style={sx('color:var(--ink);font-weight:700')}>{clockAt(g.lockUntil)} {dayAt(g.lockUntil)}</strong> · {manual ? 'Manual lockout — armed by you' : lockInfo ? `Lockout — ${lockInfo.name}` : 'Lockout — armed by a rule'}
+                  Releases at <strong style={sx('color:var(--ink);font-weight:700')}>{clockAt(g.lockUntil)} {dayAt(g.lockUntil)}</strong> · {manual ? 'Lockout — you started this' : lockInfo ? `Lockout — ${lockInfo.name}` : 'Lockout — a rule started this'}
                 </div>
                 <div style={sx('margin-top:18px;height:10px;border-radius:999px;background:var(--surface-3);box-shadow:inset 0 1px 2px rgba(0,0,0,.25);overflow:hidden')}>
                   <div style={sx('position:relative;height:100%;border-radius:999px;overflow:hidden;transition:width .6s ease', { width: remainingPct, background: 'linear-gradient(90deg, var(--red-solid), #f97366)', boxShadow: '0 0 16px -2px var(--red-solid)' })}>
@@ -457,7 +457,7 @@ export default function LiveGuardPage() {
                 <div style={sx("margin-top:10px;font:700 34px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: fg })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
                 <div style={sx('display:flex;flex-direction:column;gap:10px;margin-top:16px')}>
                   {(g.readOnly
-                    ? [['!', 'var(--amber)', 'var(--amber-tint)', 'New orders not blockable · read-only key']]
+                    ? [['!', 'var(--amber)', 'var(--amber-tint)', 'We cannot block new orders with a read-only key']]
                     : [['✕', 'var(--red)', 'var(--red-tint)', 'New orders rejected']]
                   ).concat([
                     ['✕', 'var(--red)', 'var(--red-tint)', 'Rule and key edits blocked'],

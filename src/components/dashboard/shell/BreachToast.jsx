@@ -77,7 +77,7 @@ export default function BreachToast() {
         </span>
         <div style={sx('flex:1;min-width:0')}>
           <div style={sx('display:flex;align-items:center;gap:8px;flex-wrap:wrap')}>
-            <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--red)")}>Rule breached</span>
+            <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--red)")}>Limit hit</span>
             <span style={sx('font-size:11.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums')}>{timeOf(breach.createdAt)}</span>
           </div>
           <div style={sx('margin-top:6px;font-size:13.5px;font-weight:600;line-height:1.4')}>{name} fired on {breachAccountName}</div>

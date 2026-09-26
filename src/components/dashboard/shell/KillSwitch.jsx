@@ -148,7 +148,7 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   const armedBody = readOnly
     ? 'Clears on its own, then the account trades again. Rule and key changes are blocked so you cannot undo it — but the key here is read-only, so we cannot close anything you open in the meantime. This one holds because you decided it does.'
     : 'Clears on its own, then the account trades again. Support can lift it early if something real happens — you cannot.';
-  const reasonLabel = lockReason === 'manual' ? 'Manual lockout — armed by you' : 'Lockout — armed by a rule';
+  const reasonLabel = lockReason === 'manual' ? 'Lockout — you started this' : 'Lockout — a rule started this';
 
   return (
     <div data-tgx-modal="1" onClick={onClose} role="presentation" style={sx('position:fixed;inset:0;z-index:60;background:rgba(3,5,10,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px')}>

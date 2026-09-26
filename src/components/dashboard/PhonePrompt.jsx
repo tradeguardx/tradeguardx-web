@@ -196,7 +196,7 @@ export function PhonePromptDialog({ phone, onPhoneChange, optIn, onOptInChange, 
             <span className="text-[13.5px] leading-snug" style={{ color: 'var(--dash-text-secondary, #cbd5e1)' }}>
               Send me risk alerts on this number
               <span className="mt-0.5 block text-[12px]" style={{ color: 'var(--dash-text-muted, #94a3b8)' }}>
-                Only breach and kill-switch alerts. No marketing.
+                Only alerts when a rule fires or the kill switch runs. No marketing.
               </span>
             </span>
           </button>

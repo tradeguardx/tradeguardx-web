@@ -67,7 +67,7 @@ export default function VerifyEmailBanner() {
         </span>
         <div className="min-w-0">
           <p className="text-sm font-bold" style={{ color: 'var(--dash-text-primary)' }}>
-            Confirm your email to receive breach alerts
+            Confirm your email so we can alert you
           </p>
           <p className="mt-0.5 text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>
             We sent a link to <span className="font-medium">{email}</span>. Until it’s confirmed we can’t

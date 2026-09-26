@@ -88,7 +88,7 @@ export default function OverviewPage() {
     : g.guard === 'watching'
       ? [{ k: 'Enforced', v: 'Nothing', note: 'read-only key', fg: 'var(--amber)' }, { k: 'Alerts', v: g.gap?.key === 'alerts' ? 'Off' : 'Working', note: g.gap?.key === 'alerts' ? 'no channel' : 'Telegram + email', fg: 'var(--ink)' }, { k: 'Budget left', v: budgetLeft, note: s.lossLimit ? `of ${fmt0(s.lossLimit)} today` : 'no loss rule', fg: 'var(--red)' }]
       : g.guard === 'locked'
-        ? [{ k: 'Clears', v: formatRemaining(g.lockRemainingMs), note: 'no early exit', fg: 'var(--red)' }, { k: 'Reason', v: g.lockReason === 'manual' ? 'Manual' : 'Rule', note: g.lockReason === 'manual' ? 'you armed it' : 'a rule fired', fg: 'var(--ink)' }, { k: 'Watchdog', v: 'On', note: 'closes new positions', fg: 'var(--ink)' }]
+        ? [{ k: 'Clears', v: formatRemaining(g.lockRemainingMs), note: 'no early exit', fg: 'var(--red)' }, { k: 'Reason', v: g.lockReason === 'manual' ? 'Manual' : 'Rule', note: g.lockReason === 'manual' ? 'you started it' : 'a rule fired', fg: 'var(--ink)' }, { k: 'Watchdog', v: 'On', note: 'closes new positions', fg: 'var(--ink)' }]
         : [
           { k: 'Enforced', v: 'Nothing', note: g.gap?.short || 'setup unfinished', fg: 'var(--red)' },
           { k: 'Rules on', v: `${g.rulesOn}/${g.rulesTotal}`, note: g.rulesOn > 0 ? 'ready to arm' : 'none switched on', fg: 'var(--ink)' },
@@ -99,8 +99,8 @@ export default function OverviewPage() {
   const preds = [!g.gaps.some((x) => x.key === 'setup'), !g.gaps.some((x) => x.key === 'key'), !g.gaps.some((x) => x.key === 'rules'), !g.gaps.some((x) => x.key === 'alerts')];
   const firstUndone = preds.indexOf(false);
   const steps = [
-    { title: 'Create a trading account', body: 'Tell us which venue you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.bank, to: '/dashboard/account/trading', cta: 'Add an account' },
-    { title: 'Connect the enforcement key', body: 'An API key with trading scope. This is the step that makes closing possible.', accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.connect, to: '/dashboard/connect', cta: 'Connect the key' },
+    { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.bank, to: '/dashboard/account/trading', cta: 'Add an account' },
+    { title: 'Connect your API key', body: 'It needs permission to trade. That is what lets us close a position for you.', accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.connect, to: '/dashboard/connect', cta: 'Connect the key' },
     { title: 'Set your rules', body: 'Written while calm. Two are enough to start: a daily loss limit and a trade cap.', accent: 'var(--violet)', tint: 'rgba(109,63,212,0.12)', d: ICON.rules, to: '/dashboard/rules', cta: 'Choose rules' },
     { title: 'Turn on alerts', body: 'Telegram is the fast one. Without a channel a breach happens silently.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.bell, to: '/dashboard/alerts', cta: 'Set up alerts' },
   ].map((st, i) => {
@@ -162,7 +162,7 @@ export default function OverviewPage() {
         </div>
         <section style={sx(CARD)}>
           <div style={sx('padding:21px')}>
-            <p style={sx('margin:0 0 14px;font-size:13.5px;line-height:1.55;color:var(--ink-2)')}>Nothing is protected yet. Add a trading account, connect a key with trading scope, and switch on a rule — then this page can tell you the truth.</p>
+            <p style={sx('margin:0 0 14px;font-size:13.5px;line-height:1.55;color:var(--ink-2)')}>Nothing is protected yet. Add a trading account, connect a key that can trade, and switch on a rule — then this page can tell you the truth.</p>
             <button type="button" onClick={() => navigate('/dashboard/account/trading')} style={sx('padding:10px 14px;border:1px solid var(--ink);border-radius:9px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700')}>Add an account</button>
           </div>
         </section>

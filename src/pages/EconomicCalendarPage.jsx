@@ -90,11 +90,11 @@ function LockModal({ event, tz, onArmed, onClose }) {
     try {
       await scheduleCalendarLock({ accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId, eventId: event.id, lockFrom: win.from.toISOString(), lockUntil: win.to.toISOString() });
       onArmed(event.id);
-      toast.success('Auto-lock armed', `${selectedAccount?.name || 'This account'} blocks new orders ${win.fromLabel}–${win.toLabel} around ${event.title}. No cancel.`);
+      toast.success('Auto-lock is on', `${selectedAccount?.name || 'This account'} blocks new orders ${win.fromLabel}–${win.toLabel} around ${event.title}. No cancel.`);
       onClose();
     } catch (err) {
       const status = err?.status ?? err?.details?.status;
-      toast.error(status === 404 ? 'Auto-lock is not live on the engine yet' : 'Could not arm the lock', status === 404 ? 'Nothing was armed — the calendar lock endpoint is not deployed.' : err?.message || 'Please try again.');
+      toast.error(status === 404 ? 'Auto-lock is not switched on yet' : 'Could not switch on auto-lock', status === 404 ? 'Nothing changed — this feature is not switched on yet. Nothing on your account was affected.' : err?.message || 'Please try again.');
     } finally { setBusy(false); }
   };
 
@@ -319,7 +319,7 @@ export default function EconomicCalendarPage() {
                 <div style={sx('margin-top:12px')}>
                   <span style={sx('display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--mint-line);border-radius:9px;background:var(--mint-tint);color:var(--mint);font-size:12.5px;font-weight:600')}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M7 11V8.4a5 5 0 0110 0V11" /><path d="M6 11h12v8H6z" /></svg>
-                    Auto-lock armed
+                    Auto-lock is on
                   </span>
                   <div style={sx('margin-top:6px;font-size:11.5px;color:var(--ink-3)')}>No cancel — like the kill switch</div>
                 </div>

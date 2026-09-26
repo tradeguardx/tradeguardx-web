@@ -126,7 +126,7 @@ export default function PreferencesPage() {
       <section style={sx('border:1px solid var(--red-line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
         <div style={sx('padding:16px 19px;border-bottom:1px solid var(--line)')}>
           <h3 style={sx(H3, { color: 'var(--red)' })}>Close your account</h3>
-          <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:78ch')}>We delete your keys immediately and stop all enforcement. Your trade history and tax records stay available for 30 days so you can export them, then go too.</p>
+          <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:78ch')}>We delete your keys immediately and stop watching your account. Your trade history and tax records stay available for 30 days so you can export them, then go too.</p>
         </div>
         <div style={sx('padding:16px 19px;display:flex;gap:9px;flex-wrap:wrap')}>
           <button type="button" onClick={() => navigate('/dashboard/tax')} style={sx('padding:10px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700')}>Export my data first</button>

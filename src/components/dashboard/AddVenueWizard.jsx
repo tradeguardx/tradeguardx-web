@@ -160,7 +160,7 @@ export default function AddVenueWizard({ accessToken, supportedProps, propsLoadi
 
         {at === 1 && (
           propsLoading && supportedProps.length === 0 ? (
-            <p style={sx('margin:0;font-size:12.5px;color:var(--ink-3)')}>Loading venues…</p>
+            <p style={sx('margin:0;font-size:12.5px;color:var(--ink-3)')}>Loading exchanges…</p>
           ) : (
             <AddAccountForm
               accessToken={accessToken}

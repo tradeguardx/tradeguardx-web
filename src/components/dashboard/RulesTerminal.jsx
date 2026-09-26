@@ -25,7 +25,7 @@ import { currencySymbol } from '../../lib/session';
 const REF_PLAIN = {
   'daily-loss': 'We watch realised plus unrealised loss on the day. At the warning number you get a ping; at the hard number we cancel orders, close positions and lock the account until tomorrow.',
   'daily-profit-target': 'The opposite job: once you are properly up, we close the day so you stop handing it back. The account locks until the next reset and the gain is kept.',
-  'stop-loss-alert': 'A position with no stop is the single most expensive habit in your ledger. We give you a short grace period to add one, then alert.',
+  'stop-loss-alert': 'A position with no stop is the single most expensive habit there is. We give you a short grace period to add one, then alert.',
   'risk-per-trade': 'Measured from entry to your stop. Without a stop we cannot size the risk, so this rule leans on stop loss protection being on.',
   'max-total-loss': 'Peak-to-trough across the whole account, not just today. This one is not finished — right now it alerts rather than closes, and we would rather say so.',
   'max-trades-day': 'A trade counter is the cheapest revenge-trading brake there is. Hitting the cap locks the account for the rest of the session.',

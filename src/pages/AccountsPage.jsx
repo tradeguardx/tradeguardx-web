@@ -187,8 +187,8 @@ export default function AccountsPage() {
           : !hasKey
           ? { has: false, badge: 'Not connected', fg: 'var(--red)', bg: 'var(--red-tint)', scope: 'No key — nothing is being enforced on this account', note: '' }
           : st.enforcement === 'watching' || conn.enforcementCapable === false
-            ? { has: true, badge: 'Read-only', fg: 'var(--amber)', bg: 'var(--amber-tint)', scope: 'Read-only scope — we can see fills but cannot close anything', note: locked ? 'Key changes are blocked while the kill switch runs.' : 'Replace this with a trading-scope key and the engine starts enforcing on the next fill.' }
-            : { has: true, badge: 'Connected', fg: 'var(--mint)', bg: 'var(--mint-tint)', scope: 'Trading scope — can cancel orders and close positions', note: locked ? 'Key changes are blocked while the kill switch runs. That is deliberate: swapping the key would be a way to switch the lockout off.' : '' };
+            ? { has: true, badge: 'Read-only', fg: 'var(--amber)', bg: 'var(--amber-tint)', scope: 'Read-only — we can see your trades but cannot close them', note: locked ? 'Key changes are blocked while the kill switch runs.' : 'Make a new key with trading turned on and we start watching from your next trade.' }
+            : { has: true, badge: 'Connected', fg: 'var(--mint)', bg: 'var(--mint-tint)', scope: 'This key can cancel orders and close positions', note: locked ? 'Key changes are blocked while the kill switch runs. That is deliberate: swapping the key would be a way to switch the lockout off.' : '' };
         const action = d.action;
         const to = d.to;
         return (
