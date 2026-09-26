@@ -114,6 +114,30 @@ export const EXCLUDED_ROUTES = {
   '/home-classic': 'A second copy of the homepage. Rendered noindex; kept only as a reference layout.',
 };
 
+/**
+ * The 301s that back the entries above live in vercel.json, because they have
+ * to run at the edge. A client-side <Navigate> is not a redirect to a crawler:
+ * it answers 200 with the old URL's content, and Google keeps the old URL as a
+ * duplicate of wherever it landed.
+ *
+ *   /help/getting-started  -> /exchanges     the per-venue guide became three
+ *   /docs/getting-started  -> /exchanges     listed first; see below
+ *   /docs/:slug            -> /help/:slug    used to drop the slug entirely
+ *   /docs                  -> /help
+ *
+ * Order matters: Vercel matches redirects top to bottom, so
+ * /docs/getting-started is listed before /docs/:slug. Without it that URL would
+ * 301 to /help/getting-started and then 301 again to /exchanges — a two-hop
+ * chain for a URL with one correct destination.
+ *
+ * This note is here rather than in vercel.json because that file is validated
+ * against a schema with `additionalProperties: false`, at the top level AND
+ * inside each redirect. JSON has no comments, and a "//" key added as one makes
+ * the whole file invalid — Vercel then rejects the deployment before it builds,
+ * which looks exactly like a slow deploy and shipped nothing for a day.
+ * checkVercelConfig() in scripts/gen-sitemap.mjs now fails the build for it.
+ */
+
 /** Route prefixes that are never public at all. */
 export const PRIVATE_PREFIXES = ['/dashboard', '/influencer'];
 

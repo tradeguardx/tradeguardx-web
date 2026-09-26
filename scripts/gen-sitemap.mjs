@@ -59,6 +59,64 @@ async function routesFromApp() {
   return [...new Set(found)];
 }
 
+/**
+ * vercel.json is validated against a schema with `additionalProperties: false`
+ * — top level and inside every redirect and rewrite. An unknown key makes the
+ * file invalid and Vercel REJECTS THE DEPLOYMENT before building, with nothing
+ * in this repo to show for it: the site simply keeps serving the previous
+ * build, which is indistinguishable from a slow deploy.
+ *
+ * That already happened once, from "//" keys added as comments. JSON has none.
+ * The allowed sets below are copied from https://openapi.vercel.sh/vercel.json
+ * and only cover the properties this file uses — the point is to reject the
+ * mistake that is easy to make, not to reimplement Vercel's validator.
+ */
+const VERCEL_TOP_LEVEL = new Set([
+  'buildCommand', 'cleanUrls', 'crons', 'devCommand', 'framework', 'functions',
+  'headers', 'ignoreCommand', 'images', 'installCommand', 'outputDirectory',
+  'public', 'redirects', 'regions', 'rewrites', 'trailingSlash',
+]);
+const VERCEL_REDIRECT = new Set(['source', 'destination', 'permanent', 'statusCode', 'has', 'missing', 'env']);
+const VERCEL_REWRITE = new Set(['source', 'destination', 'has', 'missing']);
+
+async function checkVercelConfig() {
+  const file = path.join(ROOT, 'vercel.json');
+  let cfg;
+  try {
+    cfg = JSON.parse(await fs.readFile(file, 'utf8'));
+  } catch (err) {
+    return [`vercel.json is not valid JSON: ${err.message}`];
+  }
+
+  const bad = [];
+  for (const k of Object.keys(cfg)) {
+    if (!VERCEL_TOP_LEVEL.has(k)) {
+      bad.push(`vercel.json: unknown top-level key ${JSON.stringify(k)}. Vercel rejects the whole deployment for this — JSON has no comments.`);
+    }
+  }
+  for (const [list, allowed, label] of [
+    [cfg.redirects, VERCEL_REDIRECT, 'redirects'],
+    [cfg.rewrites, VERCEL_REWRITE, 'rewrites'],
+  ]) {
+    for (const [i, entry] of (list ?? []).entries()) {
+      for (const k of Object.keys(entry)) {
+        if (!allowed.has(k)) bad.push(`vercel.json: ${label}[${i}] has unknown key ${JSON.stringify(k)}.`);
+      }
+    }
+  }
+
+  // A redirect whose destination is itself another redirect's source is a
+  // two-hop chain. Vercel resolves one per request, so the crawler sees both.
+  const sources = new Map((cfg.redirects ?? []).map((r, i) => [r.source, i]));
+  for (const [i, r] of (cfg.redirects ?? []).entries()) {
+    const hop = sources.get(r.destination);
+    if (hop !== undefined && hop !== i) {
+      bad.push(`vercel.json: redirects[${i}] ${r.source} -> ${r.destination}, which is itself redirected by redirects[${hop}]. Point it at the final destination.`);
+    }
+  }
+  return bad;
+}
+
 function isPrivate(p) {
   return PRIVATE_PREFIXES.some((prefix) => p === prefix || p.startsWith(`${prefix}/`));
 }
@@ -78,7 +136,7 @@ function paramRouteCovered(routePath, manifestPaths) {
 async function main() {
   const appRoutes = await routesFromApp();
   const manifestPaths = PUBLIC_ROUTES.map((r) => r.path);
-  const problems = [];
+  const problems = await checkVercelConfig();
 
   for (const route of appRoutes) {
     if (route === '/*' || route === '*') continue; // catch-all 404
@@ -120,7 +178,7 @@ async function main() {
   }
 
   if (problems.length) {
-    console.error('\n✖ sitemap check failed:\n');
+    console.error('\n✖ pre-build check failed:\n');
     for (const p of problems) console.error(`  • ${p}`);
     console.error('');
     process.exit(1);

@@ -355,7 +355,19 @@ export default function AccountsPage() {
             initial={{ opacity: 0, y: 10, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            style={sx('position:relative;width:min(720px,100%);margin:auto 0')}
+            /*
+             * 880, not 720. Stage 2 is the widest thing this dialog ever shows
+             * — the venue's own step list, then two permission cards side by
+             * side ("Trade Futures — required" against "Read-only — looks fine,
+             * does nothing"). At 720 those two cards were narrow enough that
+             * the sentence explaining the quiet failure wrapped to three lines,
+             * and that sentence is the one doing the work on this screen.
+             *
+             * Still `min(…, 100%)`, and mobile overrides this to a full-width
+             * bottom sheet with !important, so this number only ever applies on
+             * a desktop viewport.
+             */
+            style={sx('position:relative;width:min(880px,100%);margin:auto 0')}
           >
             {/* Top right, matching the kill-switch modal — the corner is where
                 people look to leave a dialog, and it stays reachable at any
