@@ -70,7 +70,7 @@ const FAQ_LD = {
     ['Will TradeGuardX have access to my funds?', 'No. Your Delta API key only has trade and balance-read scope — it can never withdraw, and your funds never leave your own Delta wallet. During a cooldown we don’t move funds; we cancel orders, close positions, and block new trades until the lock lifts.'],
     ['Does this work on the Delta mobile app?', 'Yes. Enforcement is server-side via Delta’s API, so it works whether you trade from web, mobile, or a third-party client. We detect a trade within ~120ms and act if it breaks a rule. Alerts go to Telegram or email.'],
     ['Can I disable the rules when I want to trade more?', 'You can change rules in your dashboard, but loosening any limit goes through a 24-hour cooling-off window — you cannot loosen a rule in the heat of a bad session. You can tighten any rule instantly.'],
-    ['Which exchanges can I connect?', 'Delta and CoinDCX futures are both live, and one subscription covers both — connect either or both. Delta came first because it has the most granular, stable perp API in India; CoinDCX followed.'],
+    ['Which exchanges can I connect?', 'Delta, CoinDCX and Shark futures are all live, and one subscription covers every one — connect any or all. Delta came first because it has the most granular, stable perp API in India; CoinDCX followed, then Shark.'],
   ].map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
 
