@@ -86,7 +86,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
       setResult({ ok: true, summary });
       setKeyVal(''); setSecretVal('');
       await refreshTradingAccounts?.(); await refresh();
-      toast.success(summary?.enforcementCapable === false ? 'Connected — read-only' : 'Connected and verified', summary?.enforcementCapable === false ? 'The key cannot act. Replace it with a trading-scope key to enforce.' : 'Trading scope confirmed. The engine starts on the next fill.');
+      toast.success(summary?.enforcementCapable === false ? 'Connected — read-only' : 'Connected and checked', summary?.enforcementCapable === false ? 'This key can watch but not close. Make a new one with trading turned on.' : 'This key can close positions. We start watching from your next trade.');
     } catch (e) {
       setResult({ ok: false, message: e?.message || `${venue} rejected the connection. Try again.` });
     } finally { setBusy(false); }
@@ -96,8 +96,8 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
   // (CoinDCX — label, IP bind, OTP, done) would otherwise read 1, 2, 4.
   const steps = [
     { title: `Open your key page on ${venue}`, body: 'We link straight to it. Keep both tabs open — you will paste in each direction.', kind: 'link' },
-    { title: `Paste our IP into ${v.ipField}`, body: v.ipRequired ? 'The exchange will only accept requests from this one address. It is the same address for everyone, and it is ours.' : `${v.name} lets you leave a key unbound; binding it to our address means the key works from our engine and nowhere else. Same address for everyone, and it is ours.`, kind: 'ip' },
-    { title: `Give the key ${v.scopeLabel} permission`, body: 'Read-only will connect and look fine, and nothing will ever be enforced.', kind: 'scope' },
+    { title: `Paste our IP into ${v.ipField}`, body: v.ipRequired ? 'The exchange will only accept requests from this one address. It is the same address for everyone, and it is ours.' : `${v.name} lets you leave a key unrestricted. Adding our address means the key only works from us and nowhere else — the same address for every TradeGuardX account.`, kind: 'ip' },
+    { title: `Give the key ${v.scopeLabel} permission`, body: 'A read-only key connects fine and can never close a position, so the kill switch would do nothing.', kind: 'scope' },
     { title: 'Name it and paste it back here', body: 'Paste key and secret. If you copied both together we will split them for you.', kind: 'paste' },
   ]
     .filter((s) => s.kind !== 'scope' || v.scopeChoice !== false)
@@ -118,7 +118,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
     return (
       <div style={sx('max-width:900px')}>
         <div style={sx('margin-bottom:16px;max-width:76ch')}>
-          <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Connect enforcement</h1>
+          <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Connect your API key</h1>
           <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>There is no account to connect a key to yet.</p>
         </div>
         <button type="button" onClick={() => navigate('/dashboard/account/trading')} style={sx('padding:10px 14px;border:1px solid var(--ink);border-radius:9px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700')}>Add an account</button>
@@ -130,9 +130,9 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
     <div style={sx(embedded ? '' : 'max-width:900px')}>
       {!embedded && (
       <div style={sx('margin-bottom:16px;max-width:76ch')}>
-        <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Connect enforcement</h1>
+        <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Connect your API key</h1>
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>{connected && !replacing
-          ? `${venue} is connected and the engine can act on your account. Your rules decide when it does.`
+          ? `${venue} is connected and we can close positions on this account. Your rules decide when we do.`
           : `This is the step that turns your rules from a note into something that acts. ${steps.length === 3 ? 'Three' : 'Four'} short moves, two tabs, about three minutes.`}</p>
       </div>
       )}
@@ -150,8 +150,8 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
       {g.connection?.status === 'active' && !result && (
         <div style={sx('display:flex;align-items:flex-start;gap:12px;padding:15px 18px;margin-bottom:16px;border-radius:13px', g.readOnly ? { border: '1px solid var(--amber-line)', background: 'var(--amber-tint)' } : { border: '1px solid var(--mint-line)', background: 'var(--mint-tint)' })}>
           <div style={sx('flex:1')}>
-            <div style={sx('font-size:13.5px;font-weight:700', { color: g.readOnly ? 'var(--amber)' : 'var(--mint)' })}>{g.readOnly ? 'A read-only key is connected' : 'A trading-scope key is connected'}</div>
-            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:92ch')}>{g.readOnly ? 'Replace this with a trading-scope key and the engine starts enforcing on the next fill.' : replacing ? 'Pasting a new key below replaces it. Nothing changes until the new one verifies.' : 'Scope verified. The engine holds a live socket to your account.'}</p>
+            <div style={sx('font-size:13.5px;font-weight:700', { color: g.readOnly ? 'var(--amber)' : 'var(--mint)' })}>{g.readOnly ? 'Connected, but this key cannot close positions' : 'Connected and able to close positions'}</div>
+            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:92ch')}>{g.readOnly ? 'Make a new key with trading turned on and we start watching from your next trade.' : replacing ? 'Pasting a new key below replaces it. Nothing changes until the new one is checked.' : 'Checked and working. We are connected to your account and watching it live.'}</p>
           </div>
         </div>
       )}
@@ -160,10 +160,10 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
         <div style={sx('display:flex;align-items:flex-start;gap:12px;padding:15px 18px;margin-bottom:16px;border-radius:13px', result.ok ? (result.summary?.enforcementCapable === false ? { border: '1px solid var(--amber-line)', background: 'var(--amber-tint)' } : { border: '1px solid var(--mint-line)', background: 'var(--mint-tint)' }) : { border: '1px solid var(--red-line)', background: 'var(--red-tint)' })}>
           <div style={sx('flex:1')}>
             <div style={sx('font-size:13.5px;font-weight:700', { color: result.ok ? (result.summary?.enforcementCapable === false ? 'var(--amber)' : 'var(--mint)') : 'var(--red)' })}>
-              {result.ok ? (result.summary?.enforcementCapable === false ? 'Connected — but this key is read-only' : 'Connected. Trading scope verified.') : 'That key did not connect'}
+              {result.ok ? (result.summary?.enforcementCapable === false ? 'Connected — but this key cannot close positions' : 'Connected and checked') : 'That key did not connect'}
             </div>
             <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:92ch')}>
-              {result.ok ? (result.summary?.enforcementCapable === false ? 'It connects and looks healthy, and it cannot close anything. Replace it with a trading-scope key and the engine starts enforcing on the next fill.' : 'The engine holds a live socket to your account from here on. Switch on a rule and the guard arms itself.') : result.message}
+              {result.ok ? (result.summary?.enforcementCapable === false ? 'It connects and looks healthy, and it cannot close anything. Make a new key with trading turned on and we start watching from your next trade.' : 'We are connected to your account and watching it live. Switch on a rule and it starts working straight away.') : result.message}
             </p>
             {result.ok && result.summary?.enforcementCapable !== false && (
               <button type="button" onClick={() => navigate('/dashboard/rules')} style={sx('margin-top:10px;padding:8px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700')}>Choose rules</button>
@@ -183,7 +183,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
         <section style={sx('display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:17px 20px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card)')}>
           <div style={sx('min-width:0')}>
             <div style={sx('font-size:13.5px;font-weight:600')}>Your key is in place</div>
-            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-3);max-width:70ch')}>Nothing to do here. Replacing only matters if {venue} revoked the key, you rotated it, or our IP changed — pasting a new one replaces it, and nothing changes until the new one verifies.</p>
+            <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-3);max-width:70ch')}>Nothing to do here. You only need a new key if {venue} cancelled this one, you replaced it yourself, or our IP address changed. Pasting a new one swaps it, and nothing changes until we have checked it.</p>
           </div>
           <button type="button" onClick={() => setReplacing(true)} style={sx('flex:none;padding:9px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700')}>Replace key</button>
         </section>
@@ -280,11 +280,11 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                   <input id="cx-key" value={keyVal} onChange={(e) => onKey(e.target.value)} disabled={cooled} placeholder="paste key — or paste key and secret together" autoComplete="off" style={sx("width:100%;padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace;margin-bottom:12px")} />
                   <label htmlFor="cx-secret" style={sx('display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px')}>API secret</label>
                   <input id="cx-secret" value={secretVal} onChange={(e) => setSecretVal(e.target.value)} disabled={cooled} type="password" placeholder="paste secret" autoComplete="off" style={sx("width:100%;padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace;margin-bottom:12px")} />
-                  <button type="button" disabled={!ready || busy} onClick={submit} style={sx('padding:11px 16px;border-radius:10px;font-size:13px;font-weight:700', { border: `1px solid ${ready ? 'var(--ink)' : 'var(--surface-3)'}`, background: ready ? 'var(--ink)' : 'var(--surface-3)', color: ready ? 'var(--surface)' : 'var(--ink-3)' })}>{busy ? 'Verifying…' : cooled ? 'Blocked while your lockout runs' : 'Connect and verify scope'}</button>
+                  <button type="button" disabled={!ready || busy} onClick={submit} style={sx('padding:11px 16px;border-radius:10px;font-size:13px;font-weight:700', { border: `1px solid ${ready ? 'var(--ink)' : 'var(--surface-3)'}`, background: ready ? 'var(--ink)' : 'var(--surface-3)', color: ready ? 'var(--surface)' : 'var(--ink-3)' })}>{busy ? 'Checking…' : cooled ? 'Blocked while your lockout runs' : 'Connect and check'}</button>
                   {cooled && (
-                    <p style={sx('margin:11px 0 0;padding:11px 13px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:70ch')}><strong style={sx('color:var(--red);font-weight:700')}>Key changes are blocked while your lockout runs.</strong> Pulling the key would stop us enforcing, which would make the lockout meaningless. This unblocks itself when the lock expires.</p>
+                    <p style={sx('margin:11px 0 0;padding:11px 13px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:70ch')}><strong style={sx('color:var(--red);font-weight:700')}>Key changes are blocked while your lockout runs.</strong> Removing the key would stop us closing anything, which would make the lockout pointless. This unblocks itself when the lock expires.</p>
                   )}
-                  <p style={sx('margin:11px 0 0;font-size:12px;line-height:1.55;color:var(--ink-3);max-width:70ch')}>Stored encrypted, used only by the risk engine. We check the scope on connect and tell you plainly if the key cannot enforce — we will not let you believe you are protected when you are not.</p>
+                  <p style={sx('margin:11px 0 0;font-size:12px;line-height:1.55;color:var(--ink-3);max-width:70ch')}>Your secret is encrypted before we store it and is never shown again. We test the key the moment you connect it and tell you straight away if it cannot close a position — we will not let you think you are protected when you are not.</p>
                 </div>
               )}
             </div>

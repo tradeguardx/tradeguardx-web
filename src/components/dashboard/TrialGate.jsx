@@ -18,8 +18,8 @@ export function TrialBanner() {
     /* Same shape as the guard band, and for the same reason: data-tgx-stack
        gives every child width:100% on a phone, which stretched this 28px badge
        across the banner and turned Upgrade into a full-bleed button. */
-    <div className="guard-band" style={sx('display:flex;align-items:center;gap:14px;padding:12px 15px;margin-bottom:16px;border:1px solid var(--mint-line);border-radius:14px;background:var(--mint-tint)')}>
-      <div className="guard-band__main" style={sx('flex:1;min-width:0;display:flex;align-items:center;gap:12px')}>
+    <div className="guard-band" style={sx('align-items:center;gap:14px;padding:12px 15px;margin-bottom:16px;border:1px solid var(--mint-line);border-radius:14px;background:var(--mint-tint)')}>
+      <div className="guard-band__main" style={sx('flex:1;min-width:0;align-items:center;gap:12px')}>
         <span style={sx('flex:none;width:28px;height:28px;border-radius:8px;background:var(--surface);display:grid;place-items:center;color:var(--mint)')}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3L4 14h7l-1 7 9-11h-7z" /></svg>
         </span>

@@ -108,17 +108,27 @@ export default function AccountsPage() {
   const toggleCard = (id) =>
     setOverride({ forSelection: selectedTradingAccountId, id: openId === id ? null : id });
 
+  /*
+   * Loaded on mount, not on opening the picker.
+   *
+   * The card below shows which exchanges we support. It used to name them in a
+   * hardcoded sentence and two hardcoded marks, because this list was only
+   * fetched once you pressed the button — so the card could not have shown the
+   * real answer even if it wanted to. That is how it came to promise "Delta
+   * Exchange and CoinDCX" after Shark had shipped, while the picker one tap
+   * later offered three. One request on load, and the card cannot drift again.
+   */
   useEffect(() => {
-    if (!showAdd || !accessToken || supportedProps.length) return undefined;
+    if (!accessToken || supportedProps.length) return undefined;
     let cancelled = false;
     setPropsLoading(true);
     fetchSupportedProps({ accessToken })
       .then((rows) => { if (!cancelled) setSupportedProps(rows); })
-      .catch((e) => { if (!cancelled) toast.error('Could not load venues', e?.message); })
+      .catch((e) => { if (!cancelled) toast.error('Could not load exchanges', e?.message); })
       .finally(() => { if (!cancelled) setPropsLoading(false); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showAdd, accessToken]);
+  }, [accessToken]);
 
   // Before the subscription answers the plan is unknown, not free. Capping a
   // paying user at the free limit for that second disabled the one button
@@ -284,9 +294,9 @@ export default function AccountsPage() {
            under the existing accounts and the page kept growing beneath it,
            so the thing you were doing was never the thing in front of you. */
         <section style={sx('padding:19px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card)')}>
-          <p style={sx("margin:0 0 12px;font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)")}>Choose your venue</p>
+          <p style={sx("margin:0 0 12px;font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)")}>Choose your exchange</p>
           {propsLoading && supportedProps.length === 0 ? (
-            <p style={sx('margin:0;font-size:12.5px;color:var(--ink-3)')}>Loading venues…</p>
+            <p style={sx('margin:0;font-size:12.5px;color:var(--ink-3)')}>Loading exchanges…</p>
           ) : (
             <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:9px')}>
               {supportedProps.map((pf) => {
@@ -302,7 +312,7 @@ export default function AccountsPage() {
                     <VenueMark slug={pf.brokerId} name={pf.name} size={30} radius={9} />
                     <span style={sx('flex:1;min-width:0')}>
                       <span style={sx('display:block;font-size:13px;font-weight:600')}>{pf.name}</span>
-                      <span style={sx('display:block;margin-top:2px;font-size:11.5px;color:var(--ink-3)')}>{planned ? 'Coming soon' : 'Server-side enforcement'}</span>
+                      <span style={sx('display:block;margin-top:2px;font-size:11.5px;color:var(--ink-3)')}>{planned ? 'Coming soon' : 'Runs on our servers'}</span>
                     </span>
                   </button>
                 );
@@ -318,13 +328,13 @@ export default function AccountsPage() {
             {/* The venues, shown rather than listed — the marks answer "is my
                 exchange here?" faster than the sentence below does. */}
             <div style={sx('display:flex;align-items:center;gap:6px')}>
-              <VenueMark slug="delta_india" name="Delta" size={22} radius={7} />
-              <VenueMark slug="coindcx" name="CoinDCX" size={22} radius={7} />
-              <VenueBetaBadge slug="coindcx" />
+              {supportedProps.filter((pf) => pf.status !== 'planned').map((pf) => (
+                <VenueMark key={pf.brokerId} slug={pf.brokerId} name={pf.name} size={22} radius={7} />
+              ))}
             </div>
           </div>
-          <p style={sx('margin:7px 0 13px;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:70ch')}>{capLine} Delta Exchange and CoinDCX Futures are the venues we enforce on today — prop-firm support is in progress, and we will say so plainly rather than list it as if it works.</p>
-          <button type="button" disabled={atCap} onClick={() => setShowAdd(true)} style={sx('padding:10px 15px;border-radius:10px;font-size:12.5px;font-weight:700', atCap ? { border: '1px solid var(--surface-3)', background: 'var(--surface-3)', color: 'var(--ink-3)', cursor: 'not-allowed' } : { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' })}>{atCap ? `Plan limit reached (${maxAccounts})` : 'Choose a venue'}</button>
+          <p style={sx('margin:7px 0 13px;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:70ch')}>{capLine} Pick your exchange and we will walk you through creating the key.</p>
+          <button type="button" disabled={atCap} onClick={() => setShowAdd(true)} style={sx('padding:10px 15px;border-radius:10px;font-size:12.5px;font-weight:700', atCap ? { border: '1px solid var(--surface-3)', background: 'var(--surface-3)', color: 'var(--ink-3)', cursor: 'not-allowed' } : { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' })}>{atCap ? `Plan limit reached (${maxAccounts})` : 'Choose an exchange'}</button>
         </section>
       )}
 

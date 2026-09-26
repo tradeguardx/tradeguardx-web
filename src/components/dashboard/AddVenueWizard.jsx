@@ -106,7 +106,7 @@ export default function AddVenueWizard({ accessToken, supportedProps, propsLoadi
     at === 1
       ? { h: 'Name the account', p: 'Just a label so you can tell this account from the others. The key comes next.' }
       : at === 2
-        ? { h: 'Connect the key', p: 'This is the step that turns your rules into something that acts. Until it is done the account is listed but nothing is enforced on it.' }
+        ? { h: 'Connect the key', p: 'This is the step that makes your rules real. Until it is done the account is listed here but nothing is watching it.' }
         : { h: 'How you hear about it', p: 'The guard acts whether or not you are watching. This is how you find out it did — and it is the one step you can skip.' };
 
   return (

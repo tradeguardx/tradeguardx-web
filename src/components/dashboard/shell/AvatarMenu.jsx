@@ -42,9 +42,9 @@ export default function AvatarMenu() {
   const locked = all.filter((s) => s.guard === 'locked');
   const armedN = all.filter((s) => s.enforcement === 'armed').length;
   const signOutNote = locked.length
-    ? `A kill switch is still running on ${locked[0].account?.name}. Signing out does not stop it — the clock keeps going and the engine keeps enforcing without you logged in.`
+    ? `A kill switch is still running on ${locked[0].account?.name}. Signing out does not stop it — the clock keeps running and we keep closing anything you open, whether you are signed in or not.`
     : armedN
-      ? `Your rules keep running. ${armedN}${armedN === 1 ? ' account stays' : ' accounts stay'} protected while you are signed out — enforcement is server-side, not browser-side.`
+      ? `Your rules keep running. ${armedN}${armedN === 1 ? ' account stays' : ' accounts stay'} protected while you are signed out — your rules run on our servers, not in this browser.`
       : 'Nothing is being enforced on any account right now, so signing out changes nothing.';
 
   const planNote = user?.planKnown ? (user.planLabel ? `${user.planLabel} · billed monthly` : 'Free') : '';

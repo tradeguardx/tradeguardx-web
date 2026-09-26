@@ -27,7 +27,7 @@ const REF_PLAIN = {
   'daily-profit-target': 'The opposite job: once you are properly up, we close the day so you stop handing it back. The account locks until the next reset and the gain is kept.',
   'stop-loss-alert': 'A position with no stop is the single most expensive habit in your ledger. We give you a short grace period to add one, then alert.',
   'risk-per-trade': 'Measured from entry to your stop. Without a stop we cannot size the risk, so this rule leans on stop loss protection being on.',
-  'max-total-loss': 'Peak-to-trough across the whole account, not just today. Enforcement for this one is still being finished — right now it alerts rather than closes, and we would rather say so.',
+  'max-total-loss': 'Peak-to-trough across the whole account, not just today. This one is not finished — right now it alerts rather than closes, and we would rather say so.',
   'max-trades-day': 'A trade counter is the cheapest revenge-trading brake there is. Hitting the cap locks the account for the rest of the session.',
   'close-after-losses': 'Two tiers. Three losses in a row buys you a short forced break; five means the day is over. The soft tier is the one that changes behaviour.',
 };
@@ -250,8 +250,11 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
   const toast = useToast();
   const isOn = !rule.locked && rule.enabled;
   // Reference A7/A8 derivations. Off wins over everything.
-  const status = !isOn ? 'Off' : enforcement === 'armed' ? 'Armed' : enforcement === 'watching' ? 'Alert only' : 'Not enforcing';
-  const tone = status === 'Armed' ? { bg: 'var(--mint-tint)', fg: 'var(--mint)' } : status === 'Alert only' ? { bg: 'var(--amber-tint)', fg: 'var(--amber)' } : { bg: 'var(--surface-3)', fg: 'var(--ink-3)' };
+  const state = !isOn ? 'off' : enforcement === 'armed' ? 'on' : enforcement === 'watching' ? 'alerts' : 'inactive';
+  const status = { off: 'Off', on: 'On', alerts: 'Alerts only', inactive: 'Not working yet' }[state];
+  // Colour follows the STATE, not the words. Keying it on the label meant any
+  // rewording of user-facing copy quietly turned the pill grey.
+  const tone = state === 'on' ? { bg: 'var(--mint-tint)', fg: 'var(--mint)' } : state === 'alerts' ? { bg: 'var(--amber-tint)', fg: 'var(--amber)' } : { bg: 'var(--surface-3)', fg: 'var(--ink-3)' };
   const onUnlocked = isOn && !ruleLocked && !cooled;
   const toggleBlocked = isOn && (ruleLocked || cooled);
   const editable = !rule.locked && isOn && !ruleLocked && !cooled;
@@ -423,12 +426,12 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
 
           <div style={sx('display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3);margin-bottom:14px')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" style={{ color: 'var(--ink-faint)' }}><circle cx="12" cy="12" r="9" /><path d="M12 8v4l3 2" /></svg>
-            Enforced by: Risk engine · server-side
+            Runs on our servers, not in your browser
           </div>
 
           {PARTIAL.has(slug) && (
             <div style={sx('padding:12px 14px;margin-bottom:14px;border:1px solid var(--amber-line);border-radius:10px;background:var(--amber-tint);font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>
-              <strong style={sx('color:var(--amber);font-weight:700')}>Honest caveat:</strong> enforcement for this rule is still being built. Today it alerts you rather than closing anything, and we would rather tell you than let you assume otherwise.
+              <strong style={sx('color:var(--amber);font-weight:700')}>Honest caveat:</strong> this rule is not finished. Today it alerts you rather than closing anything, and we would rather tell you than let you assume otherwise.
             </div>
           )}
 
@@ -439,7 +442,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
             </div>
           ) : !isOn ? (
             <div style={sx('display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2);flex-wrap:wrap')}>
-              <span style={sx('flex:1;min-width:min(220px,100%)')}>This rule is off, so nothing here is being enforced. You can turn it on at any time — even while your other rules are locked.{lockNote ? <span style={sx('display:block;margin-top:4px;font-size:11.5px;color:var(--ink-3)')}>{lockNote}</span> : null}</span>
+              <span style={sx('flex:1;min-width:min(220px,100%)')}>This rule is off, so nothing here is happening. You can turn it on at any time — even while your other rules are locked.{lockNote ? <span style={sx('display:block;margin-top:4px;font-size:11.5px;color:var(--ink-3)')}>{lockNote}</span> : null}</span>
               {editing ? (
                 <>
                   <button type="button" disabled={busy} onClick={handleSave} style={sx(BTN_SOLID)}>{busy ? 'Saving…' : 'Save limits'}</button>
@@ -579,7 +582,7 @@ export default function RulesTerminal() {
     <div style={sx('animation:tgxSlide .22s ease-out')}>
       <div style={sx('margin-bottom:18px;max-width:78ch')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Rules</h1>
-        <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>Switch on what you want enforced. Every rule is on every plan — set them while calm, because they only matter when you are not.</p>
+        <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>Switch on the ones you want. Every rule is on every plan — set them while calm, because they only matter when you are not.</p>
       </div>
 
       <section style={sx('margin-bottom:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>

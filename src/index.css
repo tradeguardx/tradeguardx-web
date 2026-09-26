@@ -1333,6 +1333,12 @@
 .tgx-tab:active{background:var(--surface-2);transform:scale(.96)}
 .tgx-tab:focus-visible{outline:2px solid var(--mint);outline-offset:-2px;border-radius:10px}
 
+/* Display lives here, not in either component's inline style. An inline
+   `display` beats a stylesheet rule even inside a media query, which is how
+   the mobile layout below was being silently ignored. */
+.guard-band{display:flex}
+.guard-band__main{display:flex}
+
 /* The bar sits above content but below the drawer (z-index 90) and its scrim,
    so opening More never leaves the tabs floating over the menu. */
 .tgx-tabbar{display:flex;backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px)}
@@ -1444,8 +1450,30 @@
    one line; the action sits under the text at its own width rather than
    becoming a full-bleed button that looks like the page's primary call. */
 @media (max-width:900px){
-  .guard-band{flex-direction:column;align-items:stretch;gap:10px;padding:12px 15px!important}
-  .guard-band__cta{align-self:flex-start}
+  /*
+   * The CTA belongs under the TEXT, not under the icon.
+   *
+   * Stacking with flex put the button at the band's own left padding while the
+   * title and body sat indented past the warning triangle — so the button hung
+   * to the left of the sentence it answers, on both this band and the trial
+   * one. A margin-left would need the icon's width baked in, and the two bands
+   * use different icons, so it would be right on one and wrong on the other.
+   *
+   * A two-column grid gets it for free: `display:contents` promotes the icon
+   * and the text block out of .guard-band__main into the grid, so the icon
+   * takes column 1 and the text column 2, and the CTA simply asks for column 2.
+   * Whatever size the icon is, the button lines up with the text.
+   */
+  .guard-band{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    column-gap:10px;
+    row-gap:10px;
+    align-items:start;
+    padding:12px 15px!important;
+  }
+  .guard-band__main{display:contents}
+  .guard-band__cta{grid-column:2;justify-self:start}
 }
 
 
@@ -1453,8 +1481,7 @@
   /* Guard band: it is a warning, not an article. At full desktop padding and
      line height it filled half a phone screen, which pushes the thing it is
      warning you about off the fold — the opposite of what a warning is for. */
-  .guard-band{padding:11px 15px!important;gap:9px!important}
-  .guard-band__main{gap:9px!important}
+  .guard-band{padding:11px 15px!important;column-gap:9px!important;row-gap:10px!important}
 
   /* The card header wraps on a phone, so Manage and the expand chevron land on
      a row of their own. Butted together at the left they read as one control

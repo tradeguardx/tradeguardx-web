@@ -96,7 +96,7 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
             <span>
               {live
                 ? 'Kill switch is live — this key can close positions and lock the account.'
-                : (summary?.warnings?.[0] || 'Trade permission not confirmed — this key can only send alerts, not enforce.')}
+                : (summary?.warnings?.[0] || 'Trade permission not confirmed — this key can send alerts but cannot close a position.')}
             </span>
           </li>
           <li className="flex items-start gap-2 text-[12px]" style={{ color: 'var(--dash-text-muted)' }}>

@@ -31,8 +31,8 @@ export default function GuardBand() {
      * the link up into a full-width button. The icon belongs beside the title,
      * so it is nested with it and the band handles its own stacking.
      */
-    <div data-tgx-band="1" className="guard-band" role="status" style={sx('display:flex;align-items:flex-start;gap:12px;padding:12px 24px', { borderTop: `1px solid var(--${tone}-line)`, background: `var(--${tone}-tint)` })}>
-      <div className="guard-band__main" style={sx('flex:1;min-width:0;display:flex;align-items:flex-start;gap:10px')}>
+    <div data-tgx-band="1" className="guard-band" role="status" style={sx('align-items:flex-start;gap:12px;padding:12px 24px', { borderTop: `1px solid var(--${tone}-line)`, background: `var(--${tone}-tint)` })}>
+      <div className="guard-band__main" style={sx('flex:1;min-width:0;align-items:flex-start;gap:10px')}>
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="1.9" strokeLinecap="round" style={{ flex: 'none', marginTop: 2 }}><path d="M12 3l9 16H3l9-16z" /><path d="M12 9.5v4M12 16.4h.01" /></svg>
         <div style={sx('flex:1;min-width:0')}>
           <div style={sx('font-size:13.5px;font-weight:700;line-height:1.35', { color: fg })}>{bandTitle}</div>

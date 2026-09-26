@@ -149,8 +149,8 @@ describe('dashboard shell', () => {
     expect(screen.getByTitle('Turn this rule off')).toBeTruthy();
     expect(screen.getByTitle('Turn this rule on')).toBeTruthy();
     screen.getByText('Max trades per day').click();
-    await waitFor(() => expect(screen.getByText(/This rule is off, so nothing here is being enforced/)).toBeTruthy());
-    expect(screen.getByText('Enforced by: Risk engine · server-side')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(/This rule is off, so nothing here is happening/)).toBeTruthy());
+    expect(screen.getByText('Runs on our servers, not in your browser')).toBeTruthy();
   });
 
   it('renders the Economic calendar: Market nav, hero, all time variants, five ACTUAL states, empty day', async () => {
