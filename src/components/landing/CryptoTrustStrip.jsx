@@ -19,6 +19,11 @@ export default function CryptoTrustStrip() {
             <span><span className="text-slate-300">Coin</span><span className="text-orange-500">DCX</span></span>
             <span className="ml-1 text-[9px] uppercase tracking-widest text-accent">Live</span>
           </span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-accent/30 bg-surface-900/60 px-3 py-2 font-mono text-xs">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            Shark Exchange
+            <span className="ml-1 text-[9px] uppercase tracking-widest text-accent">Live</span>
+          </span>
         </div>
 
         {STATS.map((s) => (

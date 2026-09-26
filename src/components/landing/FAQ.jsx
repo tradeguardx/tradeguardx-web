@@ -32,7 +32,7 @@ export const faqs = [
   },
   {
     q: 'Which exchanges are supported?',
-    a: 'Delta Exchange and CoinDCX are both live today — we’re the first to bring real risk enforcement to either. More Indian crypto exchanges follow based on trader demand.',
+    a: 'Delta Exchange, CoinDCX and Shark Exchange are live today — we’re the first to bring real risk enforcement to any of them. More Indian crypto exchanges follow based on trader demand.',
   },
   {
     q: 'Is there a free plan?',
