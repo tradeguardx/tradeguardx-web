@@ -97,10 +97,17 @@ const VENUES = {
     /** No real key has been through this end to end. CoinDCX's own first live
      *  key surfaced six bugs that nothing else would have found. */
     beta: true,
-    // NOT YET CHECKED against the live form. Every field above is from
-    // Shark's published docs, not their key-creation page. Copy that names a
-    // control the user cannot find is the whole reason this array exists, so
-    // walk the page once and correct the wording before this ships.
+    // VERIFIED, 26 Sep 2026: the IP whitelist is real and Shark enforces it.
+    // A live key answered 403 {"error":"4009","message":"Access denied",
+    // "details":"IP address not whitelisted"} to every endpoint when called
+    // from outside our egress, and the address we publish below matches the
+    // Elastic IP on the engine's NAT — so it stays correct across task
+    // replacement rather than only until the next deploy.
+    //
+    // STILL UNCHECKED: the wording of the four steps against the live form.
+    // These names come from Shark's docs, not their key-creation page. Copy
+    // that names a control the user cannot find is the whole reason this array
+    // exists, so walk the page once and correct it.
     createSteps: [
       { title: 'Name', body: 'Anything you will recognise later. We suggest the name shown below.' },
       { title: 'IP whitelist', body: 'Paste our IP so the key works only from our engine and nowhere else.' },
