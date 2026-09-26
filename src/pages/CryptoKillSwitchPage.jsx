@@ -33,7 +33,7 @@ const FAQ = [
   },
   {
     q: 'Which exchanges does a crypto kill switch work with in India?',
-    a: 'Three, all live today: Delta Exchange (India or Global), CoinDCX futures, and Shark Exchange, which is in beta. One subscription covers every exchange you connect. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Bybit and Bitget are built but not yet deployed. Spot is not covered on any venue — futures only.',
+    a: 'Three, all live today: Delta Exchange (India or Global), CoinDCX futures, and Shark Exchange, which is in beta. One subscription covers every exchange you connect. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Spot is not covered on any venue — futures only.',
   },
   {
     q: 'Does a kill switch need access to my funds?',
@@ -120,7 +120,6 @@ const SECTIONS = [
       'Two, both live today, both futures.',
       'Delta Exchange came first — India or Global, whichever account you hold. It has the most granular and stable perpetuals API in the country, which matters when your protection is only as fast as the data feed behind it.',
       'CoinDCX futures went live in September 2026. Their INR and USDT margin modes are the same instruments with a different wallet posting margin, so one key covers both and your rules apply across the pair. Spot is not covered on either venue: we read futures, enforce futures, and say so rather than letting you assume.',
-      'One subscription covers every exchange you connect. Bybit and Bitget are next.',
     ],
   },
   {
@@ -134,9 +133,9 @@ const SECTIONS = [
 /**
  * The links that make this page a hub rather than a competitor.
  *
- * Every venue, including the two that are not live — a "not live yet" row is
- * more useful than silence to someone searching "bybit kill switch", and it is
- * the only honest answer we have for them today.
+ * Every venue we actually support. This page explains the category; each link
+ * hands the venue question to the venue's own page rather than answering it
+ * here, which is what stops the two competing for the same query.
  */
 function VenueLinks() {
   return (
@@ -151,9 +150,6 @@ function VenueLinks() {
             <span className="flex flex-wrap items-center gap-2">
               <span className="text-[15px] font-bold text-white">{v.longName}</span>
               {v.beta && <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Beta</span>}
-              {v.status === 'waitlist' && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Not live yet</span>
-              )}
             </span>
             <span className="mt-1 text-[13px] leading-relaxed text-slate-400">{v.h1}</span>
           </Link>

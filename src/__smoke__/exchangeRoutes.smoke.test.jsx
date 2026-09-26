@@ -67,11 +67,6 @@ describe('venue routing comes from the URL, not from state', () => {
     // we have sold a floor that does not exist.
     expect(screen.getAllByText('Alert only')).toHaveLength(2);
   });
-
-  it('a waitlist venue shows no rules table', () => {
-    mountAt('/exchanges/bybit');
-    expect(screen.queryByText('Max Drawdown Lock')).not.toBeInTheDocument();
-  });
 });
 
 describe('unknown URLs 404 instead of quietly redirecting', () => {
@@ -80,7 +75,8 @@ describe('unknown URLs 404 instead of quietly redirecting', () => {
   it.each([
     ['an unknown venue', '/exchanges/binance'],
     ['an unknown guide', '/exchanges/delta/withdrawals'],
-    ['a guide on a venue that has none', '/exchanges/bybit/api-key'],
+    ['a removed venue', '/exchanges/bybit'],
+    ['a removed venue\'s guide', '/exchanges/bitget/api-key'],
     ['an unknown help slug', '/help/getting-started'],
   ])('%s 404s', (_label, path) => {
     const { unmount } = mountAt(path);

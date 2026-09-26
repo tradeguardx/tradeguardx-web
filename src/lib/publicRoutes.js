@@ -61,8 +61,6 @@ export const PUBLIC_ROUTES = [
   { path: '/exchanges/coindcx/margin', priority: '0.6', changefreq: 'monthly', og: null },
   { path: '/exchanges/shark', priority: '0.9', changefreq: 'weekly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/killswitch-for-shark-exchange.png' },
   { path: '/exchanges/shark/api-key', priority: '0.7', changefreq: 'monthly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/og-guide-shark.png' },
-  { path: '/exchanges/bybit', priority: '0.5', changefreq: 'monthly', og: null },
-  { path: '/exchanges/bitget', priority: '0.5', changefreq: 'monthly', og: null },
 
   // Head-term landing pages. Both are indexed under these exact paths — they
   // are NOT moved into /exchanges/, whatever the tidier structure would be.

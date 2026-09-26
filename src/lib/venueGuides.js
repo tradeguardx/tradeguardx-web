@@ -339,7 +339,7 @@ export const VENUE_GUIDES = {
   },
 };
 
-/** Guides for a venue, in nav order. Empty array for the waitlist venues. */
+/** Guides for a venue, in nav order. Empty array for a venue with none. */
 export function guidesFor(venueSlug) {
   return Object.values(VENUE_GUIDES[venueSlug] ?? {});
 }

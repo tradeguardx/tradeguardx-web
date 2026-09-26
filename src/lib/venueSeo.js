@@ -116,8 +116,7 @@ const sharedWithdrawSection = (venue, sentence) => ({
 });
 
 /**
- * Venue pages, in the order they appear on /exchanges: live venues first,
- * waitlist last.
+ * Venue pages, in the order they appear on /exchanges.
  *
  * `title` is used verbatim (rawTitle in useSEO) rather than having
  * " — TradeGuardX" appended, because the suffix pushes every one of these past
@@ -338,90 +337,22 @@ const VENUE_PAGES = {
       },
     ],
   },
-
-  // ── Waitlist venues. Built on feature branches, not deployed: these pages
-  //    collect intent and must not imply a working integration.
-  bybit: {
-    slug: 'bybit',
-    name: 'Bybit',
-    longName: 'Bybit',
-    status: 'waitlist',
-    beta: false,
-    title: 'Bybit Kill Switch — Coming to TradeGuardX',
-    description:
-      'A kill switch for Bybit futures is built and not yet live. Join the waitlist and we will tell you the day it ships. Delta Exchange, CoinDCX and Shark are live today.',
-    h1: 'Kill switch for Bybit',
-    lede:
-      'Not live yet. The Bybit integration is built and waiting on deployment — until it ships, nothing on your Bybit account is being enforced, and we would rather say that than take a subscription for it.',
-    sections: [
-      {
-        h: 'What is actually built',
-        p: [
-          'A Bybit adapter exists on a feature branch and is not deployed. Connecting a Bybit key is not possible today, and no page in the product offers it.',
-          'We ship one venue at a time and prove each with a real key before calling it live, because CoinDCX\'s first live key surfaced three bugs that nothing else would have found. Announcing Bybit before that has happened would be announcing something we have not tested.',
-        ],
-      },
-      {
-        h: 'What you can do today',
-        p: [
-          'Three Indian venues are live: Delta Exchange, CoinDCX futures and Shark Exchange. One subscription covers every exchange you connect, so an account you start now carries over the day Bybit ships.',
-        ],
-      },
-    ],
-    faq: [
-      {
-        q: 'Does TradeGuardX support Bybit?',
-        a: 'Not yet. The Bybit integration is built but not deployed, so you cannot connect a Bybit key today and nothing on a Bybit account is being enforced. Delta Exchange, CoinDCX futures and Shark Exchange are live now.',
-      },
-      {
-        q: 'When will the Bybit kill switch be live?',
-        a: 'We do not publish a date, because every venue so far has needed a real key run end to end before it was trustworthy and that step is not schedulable. Join the waitlist and you will hear on the day it ships rather than the day it is announced.',
-      },
-    ],
-  },
-
-  bitget: {
-    slug: 'bitget',
-    name: 'Bitget',
-    longName: 'Bitget',
-    status: 'waitlist',
-    beta: false,
-    title: 'Bitget Kill Switch — Coming to TradeGuardX',
-    description:
-      'A kill switch for Bitget futures is built and not yet live. Join the waitlist and we will tell you the day it ships. Delta Exchange, CoinDCX and Shark are live today.',
-    h1: 'Kill switch for Bitget',
-    lede:
-      'Not live yet. The Bitget integration is built and waiting on deployment — until it ships, nothing on your Bitget account is being enforced, and we would rather say that than take a subscription for it.',
-    sections: [
-      {
-        h: 'What is actually built',
-        p: [
-          'A Bitget adapter exists on a feature branch and is not deployed. Connecting a Bitget key is not possible today, and no page in the product offers it.',
-          'We ship one venue at a time and prove each with a real key before calling it live. Until a Bitget key has run end to end, listing it as supported would be a claim we cannot keep.',
-        ],
-      },
-      {
-        h: 'What you can do today',
-        p: [
-          'Three Indian venues are live: Delta Exchange, CoinDCX futures and Shark Exchange. One subscription covers every exchange you connect, so an account you start now carries over the day Bitget ships.',
-        ],
-      },
-    ],
-    faq: [
-      {
-        q: 'Does TradeGuardX support Bitget?',
-        a: 'Not yet. The Bitget integration is built but not deployed, so you cannot connect a Bitget key today and nothing on a Bitget account is being enforced. Delta Exchange, CoinDCX futures and Shark Exchange are live now.',
-      },
-      {
-        q: 'When will the Bitget kill switch be live?',
-        a: 'We do not publish a date. Every venue so far has needed a real key run end to end before it was trustworthy, and that step is not schedulable. Join the waitlist and you will hear on the day it ships.',
-      },
-    ],
-  },
 };
 
-/** Display order on /exchanges and in the cross-links: live venues first. */
-export const VENUE_ORDER = ['delta', 'coindcx', 'shark', 'bybit', 'bitget'];
+/**
+ * Display order on /exchanges and in the cross-links.
+ *
+ * Bybit and Bitget had pages here saying the integration was built but not
+ * deployed. They are gone: a page whose whole content is "not yet" competes
+ * for the venue's name while having nothing to say to whoever arrives, and it
+ * put two of the five entries on the index in the position of advertising
+ * something nobody can buy. They were live for less than a day, so vercel.json
+ * 301s both to /exchanges — the honest answer to "does this work on Bybit" is
+ * the list of venues where it does.
+ *
+ * Re-adding one is a revert of this commit plus its route in publicRoutes.js.
+ */
+export const VENUE_ORDER = ['delta', 'coindcx', 'shark'];
 
 export const VENUE_PAGE_LIST = VENUE_ORDER.map((slug) => VENUE_PAGES[slug]);
 

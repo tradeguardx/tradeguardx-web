@@ -123,14 +123,6 @@ export default function ExchangeHubPage() {
                   Beta
                 </span>
               )}
-              {venue.status === 'waitlist' && (
-                <span
-                  className="rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                  style={{ color: '#94a3b8', borderColor: 'rgba(148,163,184,0.25)', backgroundColor: 'rgba(148,163,184,0.08)' }}
-                >
-                  Not live yet
-                </span>
-              )}
             </div>
             <h1 className="mt-3 font-display text-4xl font-bold leading-tight text-white md:text-5xl">{venue.h1}</h1>
             <p className="mt-5 text-lg leading-relaxed text-slate-400">{venue.lede}</p>
@@ -140,7 +132,7 @@ export default function ExchangeHubPage() {
                 to="/signup"
                 className="rounded-xl bg-accent px-6 py-3.5 text-[15px] font-bold text-surface-950 transition-transform hover:scale-[1.02]"
               >
-                {venue.status === 'waitlist' ? 'Join the waitlist' : 'Try free for 7 days'}
+                Try free for 7 days
               </Link>
               {guides.length > 0 && (
                 <Link
@@ -228,7 +220,6 @@ export default function ExchangeHubPage() {
                   <Link to={`/exchanges/${v.slug}`} className="text-accent hover:underline">
                     Kill switch for {v.longName}
                   </Link>
-                  {v.status === 'waitlist' && <span className="ml-2 text-[13px] text-slate-500">not live yet</span>}
                 </li>
               ))}
               <li className="pt-2">

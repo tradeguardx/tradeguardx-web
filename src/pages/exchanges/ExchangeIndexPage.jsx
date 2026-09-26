@@ -9,7 +9,7 @@ import { guidesFor } from '../../lib/venueGuides';
  * /exchanges — the venue index.
  *
  * Its job is to be the one page that links to every venue, so the venue pages
- * are not five orphans depending on the sitemap to be discovered. It is also
+ * are not orphans depending on the sitemap to be discovered. It is also
  * where /help/getting-started now lands: that URL is indexed, and the honest
  * replacement for "the setup guide" once there is one per venue is the list of
  * them, not an arbitrary one of the three.
@@ -17,7 +17,6 @@ import { guidesFor } from '../../lib/venueGuides';
 
 const STATUS = {
   live: { label: 'Live', color: '#00d4aa', bg: 'rgba(0,212,170,0.12)', border: 'rgba(0,212,170,0.3)' },
-  waitlist: { label: 'Not live yet', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.25)' },
 };
 
 export default function ExchangeIndexPage() {

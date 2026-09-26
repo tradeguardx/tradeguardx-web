@@ -99,12 +99,15 @@ describe('venue page structure', () => {
     }
   });
 
-  it('the waitlist venues never claim to be connectable', () => {
-    for (const v of VENUE_PAGE_LIST.filter((x) => x.status === 'waitlist')) {
-      // A rules table on a venue with no adapter deployed is the exact claim
-      // that costs a refund: it reads as "these seven rules work on Bybit".
-      expect(v.sections.some((s) => s.rulesTable)).toBe(false);
-      expect(guidesFor(v.slug)).toHaveLength(0);
+  it('every listed venue is one you can actually connect today', () => {
+    // There were Bybit and Bitget pages here whose content was "built, not
+    // deployed". A venue page that cannot be acted on is a page competing for
+    // that venue's name with nothing to offer whoever arrives on it — and the
+    // rules table on it reads as "these seven rules work on Bybit".
+    for (const v of VENUE_PAGE_LIST) {
+      expect(v.status, v.slug).toBe('live');
+      expect(v.sections.some((s) => s.rulesTable), v.slug).toBe(true);
+      expect(guidesFor(v.slug).length, v.slug).toBeGreaterThan(0);
     }
   });
 });
