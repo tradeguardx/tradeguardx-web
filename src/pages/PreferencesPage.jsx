@@ -97,7 +97,7 @@ export default function PreferencesPage() {
           </div>
           <div>
             <div style={sx(MONO)}>Chrome</div>
-            <Options k="chrome" value={prefs.chrome} onPick={setPref} options={[{ v: 'depth', label: 'Depth', note: 'Shadows and washes' }, { v: 'flat', label: 'Flat', note: 'Borders only' }, { v: 'print', label: 'Print', note: 'Hairlines, tight radii' }]} />
+            <Options k="chrome" value={prefs.chrome} onPick={setPref} options={[{ v: 'depth', label: 'Depth', note: 'Shadows and washes' }, { v: 'flat', label: 'Flat', note: 'Borders only' }, { v: 'print', label: 'Print', note: 'Default — hairlines, tight radii' }]} />
           </div>
         </div>
       </section>
