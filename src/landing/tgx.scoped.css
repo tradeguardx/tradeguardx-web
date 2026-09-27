@@ -329,6 +329,14 @@
     .tgx-home .xbanner .xb-long{ display: none; }
     .tgx-home .xbanner .xb-short{ display: inline-flex; }
 
+    /* The two "Soon" exchanges are hidden on a phone.
+       On a narrow screen the five chips wrap to three rows, and the last row
+       is entirely things you cannot use yet — so the first thing a visitor
+       reads about our exchange support is two that are not ready. Desktop has
+       the width to show all five on one line, where "Soon" reads as momentum
+       rather than as padding. Data unchanged; this is a layout decision. */
+    .tgx-home .xbanner .xb-soon{ display: none; }
+
     /* Line 1 — flag + claim only. */
     .tgx-home .xbanner-eyebrow{ font-size: 10px; letter-spacing: 0.08em; gap: 7px; }
     .tgx-home .xb-flag{ height: 14px; }
