@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useSEO } from '../hooks/useSEO';
 
 /**
  * A real date, not new Date(). This rendered "Last updated: <today>" on every
@@ -59,6 +60,12 @@ const sections = [
 ];
 
 export default function RefundPolicyPage() {
+  useSEO({
+    title: 'Refund Policy',
+    description: 'When a TradeGuardX subscription can be refunded, how to ask for one, and how long it takes. No hidden conditions and nothing buried in a clause.',
+    url: 'https://tradeguardx.com/refund',
+  });
+
   return (
     <div className="min-h-screen pt-28 pb-24 px-6 relative">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />

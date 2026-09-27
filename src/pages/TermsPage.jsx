@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useSEO } from '../hooks/useSEO';
 
 /**
  * A real date, not new Date(). This rendered "Last updated: <today>" on every
@@ -78,6 +79,12 @@ const sections = [
 ];
 
 export default function TermsPage() {
+  useSEO({
+    title: 'Terms & Conditions',
+    description: 'The terms you agree to when you use TradeGuardX — what the service does, what it does not promise, and where our responsibility begins and ends.',
+    url: 'https://tradeguardx.com/terms',
+  });
+
   return (
     <div className="min-h-screen pt-28 pb-24 px-6 relative">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-purple-500/5 blur-[120px] rounded-full pointer-events-none" />

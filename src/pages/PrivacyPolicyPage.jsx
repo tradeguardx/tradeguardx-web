@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useSEO } from '../hooks/useSEO';
 
 /**
  * A real date, not new Date(). This rendered "Last updated: <today>" on every
@@ -121,6 +122,12 @@ const sections = [
 ];
 
 export default function PrivacyPolicyPage() {
+  useSEO({
+    title: 'Privacy Policy',
+    description: 'What TradeGuardX collects, where it lives, who can see it, and how your exchange API keys are stored. Written to be read, not to be agreed to blindly.',
+    url: 'https://tradeguardx.com/privacy',
+  });
+
   return (
     <div className="min-h-screen pt-28 pb-24 px-6 relative">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />

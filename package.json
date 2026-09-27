@@ -8,13 +8,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/gen-sitemap.mjs && vite build",
+    "build": "node scripts/gen-sitemap.mjs && vite build && node scripts/check-prerendered.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node scripts/check-no-tax-arithmetic.mjs && node scripts/gen-sitemap.mjs && vitest run",
     "test:watch": "vitest",
     "check:tax": "node scripts/check-no-tax-arithmetic.mjs",
-    "check:sitemap": "node scripts/gen-sitemap.mjs"
+    "check:sitemap": "node scripts/gen-sitemap.mjs",
+    "check:seo": "node scripts/check-prerendered.mjs"
   },
   "dependencies": {
     "@sentry/react": "^8.45.0",
