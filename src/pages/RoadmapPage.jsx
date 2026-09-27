@@ -20,7 +20,7 @@ import { useSEO } from '../hooks/useSEO';
 const ROADMAP = {
   shipped: [
     { title: 'Server-side kill switch', body: "Breach a rule and we cancel your orders, close your positions at market, and lock the account — from our servers, typically inside 120ms, whether you traded from the web, the exchange app or a third-party client." },
-    { title: 'Delta Exchange and CoinDCX', body: "Both live, both futures, one subscription covering both. Delta India or Global; CoinDCX futures across INR and USDT margin from a single key." },
+    { title: 'Delta Exchange, CoinDCX and Shark', body: "All three live, all futures, one subscription covering them. Delta India or Global; CoinDCX futures across INR and USDT margin from a single key." },
     { title: 'Seven risk rules', body: "Daily loss, daily profit target, max trades per day, close after N losses with escalating cooldowns, risk per trade, max drawdown and stop-loss protection. Every rule on every plan." },
     { title: 'Manual lockout', body: "Shut yourself out for 3, 6 or 12 hours when you can feel the tilt coming. No cancel button — you can extend it, never shorten it." },
     { title: 'Rule lock and cooling-off', body: "Tightening a limit applies instantly; loosening waits 24 hours. Your API key is frozen while a lock runs, so pulling the key is not an exit either." },

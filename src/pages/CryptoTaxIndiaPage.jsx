@@ -72,7 +72,7 @@ const SECTIONS = [
     ],
   },
   {
-    h: 'Delta Exchange and CoinDCX tax reports',
+    h: 'Delta Exchange, CoinDCX and Shark tax reports',
     p: [
       'Both are supported and both are read through the exchange API, so you are not downloading a CSV and hoping the columns line up. Delta settles in USD and CoinDCX futures in USDT, so an Indian figure needs converting — we derive the rate from your own capital movements, show it on the page, and label it a disclosed assumption rather than pretending it is a statutory rate. Your CA may apply a different one under Rule 115.',
       'Futures only, on both venues. CoinDCX spot is not carried, and we say so rather than letting you assume the report is complete.',
@@ -109,7 +109,7 @@ const FAQ = [
     a: "No, and we would rather be clear about that than imply otherwise. We rebuild your financial year from exchange fills, reconcile it against your wallet, separate the tax regimes, and export the working for your CA. Filing, and the judgement about classification that precedes it, stays with you and your accountant.",
   },
   {
-    q: 'Does it work with Delta Exchange and CoinDCX?',
+    q: 'Does it work with Delta Exchange, CoinDCX and Shark?',
     a: "Yes, both, read directly through the exchange API rather than from a CSV download. Futures only on both venues. Because Delta settles in USD and CoinDCX futures in USDT, rupee figures require conversion — we derive the rate from your own capital movements and disclose it on the page as an assumption, not a statutory rate.",
   },
   {
@@ -122,7 +122,7 @@ export default function CryptoTaxIndiaPage() {
   useSEO({
     title: 'Crypto Tax India — Futures vs VDA, 30%, 1% TDS and ITR',
     description:
-      'How crypto is taxed in India: the flat 30% under Section 115BBH, why futures are treated as business income instead, 1% TDS under 194S, and which ITR to file. Built for Delta Exchange and CoinDCX traders.',
+      'How crypto is taxed in India: the flat 30% under Section 115BBH, why futures are treated as business income instead, 1% TDS under 194S, and which ITR to file. Built for Indian crypto futures traders.',
     url: 'https://tradeguardx.com/crypto-tax-india',
     image: ogImageFor('/crypto-tax-india'),
     imageAlt: 'Crypto tax in India — F&O and VDA, kept separate — TradeGuardX',

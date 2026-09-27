@@ -116,11 +116,15 @@ const SECTIONS = [
   },
   {
     h: 'Which Indian exchanges we support',
+    // Deliberately short, and deliberately not a pitch for any one exchange.
+    // The per-exchange argument lives at /exchanges/<venue>, and repeating it
+    // here would put two of our own pages in front of the same query.
     p: [
-      'Two, both live today, both futures.',
-      'Delta Exchange came first — India or Global, whichever account you hold. It has the most granular and stable perpetuals API in the country, which matters when your protection is only as fast as the data feed behind it.',
-      'CoinDCX futures went live in September 2026. Their INR and USDT margin modes are the same instruments with a different wallet posting margin, so one key covers both and your rules apply across the pair. Spot is not covered on either of them: we read futures, enforce futures, and say so rather than letting you assume.',
+      'Three, all live today, all futures: Delta Exchange (India or Global), CoinDCX futures, and Shark Exchange, which is in beta. One subscription covers every exchange you connect.',
+      'What differs between them is not the guard — it is one engine and the rules behave identically wherever your key points. What differs is the exchange: what its API publishes, what its key permissions are called, whether it settles in rupees or dollars, and whether you can even create the key on a phone. Those are exchange questions, so each one has its own page below rather than a paragraph here.',
+      'Spot is not covered anywhere: we read futures, enforce futures, and say so rather than letting you assume.',
     ],
+    venueLinks: true,
   },
   {
     h: 'When you don\'t need this',
@@ -165,7 +169,7 @@ export default function CryptoKillSwitchPage() {
   useSEO({
     title: 'Crypto Kill Switch for Indian Traders',
     description:
-      'What a crypto kill switch is, how server-side enforcement differs from alerts, and what to look for in a killswitch app. Built for Delta Exchange and CoinDCX traders in India.',
+      'What a crypto kill switch is, how server-side enforcement differs from alerts, and what to look for in a killswitch app. Built for Indian crypto futures traders.',
     url: 'https://tradeguardx.com/crypto-kill-switch',
     image: HERO,
     imageAlt: 'The crypto kill switch for Indian traders — TradeGuardX',
@@ -198,7 +202,8 @@ export default function CryptoKillSwitchPage() {
           <p className="mt-5 text-lg leading-relaxed text-slate-400">
             A kill switch caps the day, not the trade. Set your daily loss limit once — TradeGuardX
             cancels your orders, closes your positions, and locks new entries the moment you cross it.
-            Enforced from our servers on Delta Exchange and CoinDCX, whether your screen is on or not.
+            Enforced from our servers on Delta Exchange, CoinDCX and Shark Exchange, whether your
+            screen is on or not.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link

@@ -86,7 +86,7 @@ export default function CryptoHomePage() {
   useSEO({
     title: "India's First Crypto Trading Kill Switch",
     description:
-      "Never blow another trading account. Set daily-loss, max-trades, position-size and cooldown rules once — TradeGuardX blocks new orders, closes open positions, and locks your account the moment you break a limit. Live on Delta Exchange and CoinDCX.",
+      "Never blow another trading account. Set daily-loss, max-trades, risk-per-trade and cooldown rules once — TradeGuardX blocks new orders, closes open positions, and locks your account the moment you break a limit. Live on Delta Exchange, CoinDCX and Shark.",
     url: 'https://tradeguardx.com',
     jsonLd: FAQ_LD,
   });

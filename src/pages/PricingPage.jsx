@@ -190,7 +190,7 @@ const TRUST_BADGES = [
 export default function PricingPage() {
   useSEO({
     title: 'Pricing',
-    description: 'Free and Pro plans for real-time trading risk management on Delta Exchange and CoinDCX. Every rule on every plan — Pro adds unlimited accounts and 3 years of history.',
+    description: 'Free and Pro plans for real-time trading risk management on Delta Exchange, CoinDCX and Shark Exchange. Every rule on every plan — Pro adds unlimited accounts and 3 years of history.',
     url: 'https://tradeguardx.com/pricing',
   });
   const [plans, setPlans] = useState([]);
