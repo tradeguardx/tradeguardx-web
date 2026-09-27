@@ -80,6 +80,9 @@ export const PUBLIC_ROUTES = [
 
   // Company
   { path: '/security', priority: '0.7', changefreq: 'monthly', og: null },
+  // Prerendered but not submitted. It exists for someone deciding whether to
+  // trust us with an API key, not to rank for anything.
+  { path: '/about', priority: '0.4', changefreq: 'yearly', og: null, sitemap: false },
   { path: '/roadmap', priority: '0.6', changefreq: 'weekly', og: null },
   { path: '/support', priority: '0.6', changefreq: 'monthly', og: null },
   { path: '/partner-with-us', priority: '0.6', changefreq: 'monthly', og: null },

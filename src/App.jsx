@@ -15,6 +15,7 @@ import PartnerApplyPage from './pages/PartnerApplyPage';
 import DocsPage from './pages/DocsPage';
 import DocsSlugRedirect from './pages/DocsSlugRedirect';
 import SecurityPage from './pages/SecurityPage';
+import AboutPage from './pages/AboutPage';
 import RoadmapPage from './pages/RoadmapPage';
 import CryptoTaxIndiaPage from './pages/CryptoTaxIndiaPage';
 import RiskDisclosurePage from './pages/RiskDisclosurePage';
@@ -96,6 +97,7 @@ function App() {
                   <Route path="docs" element={<Navigate to="/help" replace />} />
                   <Route path="docs/:slug" element={<DocsSlugRedirect />} />
                   <Route path="security" element={<SecurityPage />} />
+                  <Route path="about" element={<AboutPage />} />
                   {/* Head-term landing page: "crypto kill switch", "killswitch app". */}
                   {/* Venue pages. Two levels, and the venue hub IS its
                       kill-switch page — there is deliberately no
