@@ -133,10 +133,10 @@ const VENUE_PAGES = {
     name: 'Shark',
     longName: 'Shark Exchange',
     status: 'live',
-    beta: true,
+    beta: false,
     title: 'Shark Exchange Kill Switch — Auto-Close | TradeGuardX',
     description:
-      'Set a daily loss limit on Shark Exchange and have it enforced. TradeGuardX cancels your orders, closes your positions and locks the account from our servers. Beta.',
+      'Set a daily loss limit on Shark Exchange and have it enforced. TradeGuardX cancels your orders, closes your positions and locks the account from our servers, in rupees.',
     h1: 'Kill switch for Shark Exchange',
     lede:
       'Connect a Shark Exchange API key with Trade Futures enabled, set your daily loss limit once, and our engine enforces it — cancelling orders, closing positions and locking the account without you having to be at the screen.',
@@ -154,7 +154,7 @@ const VENUE_PAGES = {
         h: 'Which Shark Exchange rules can TradeGuardX enforce?',
         rulesTable: true,
         p: [
-          'Shark Exchange is in beta: the connection, the mark-price feed and the close path have each been verified against a live account, but no rule has yet fired against a real open position. Treat it as working and watched rather than proven, and keep your first limits small.',
+          'All seven on Shark Exchange, with the same behaviour as every other exchange — it is one engine behind all of them. Shark came out of beta once a real key had run through it end to end and the daily-loss rule had fired on a live account.',
         ],
       },
       {
@@ -172,7 +172,7 @@ const VENUE_PAGES = {
     faq: [
       {
         q: 'Does TradeGuardX work with Shark Exchange?',
-        a: 'Yes, and it is in beta. Shark runs on the Pi42 API stack and we hold a live connection to your account: positions, orders, balances and the public mark-price feed. The connection, the feed and the close path have each been verified against a live account. What has not happened yet is a rule firing against a real open position, so we label it beta rather than proven.',
+        a: 'Yes, fully. Shark runs on the Pi42 API stack and we hold a live connection to your account: positions, orders, balances and the public mark-price feed. The connection, the feed and the close path have each been verified against a live account, and the daily-loss rule has fired on one.',
       },
       {
         q: 'Can I create a Shark Exchange API key on my phone?',

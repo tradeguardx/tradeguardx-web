@@ -174,9 +174,9 @@ const VENUES = {
     // settles in INR, so the figure reconciles to the rupee with Shark's own
     // statement. The hasTaxCentre() machinery arrives with the first global
     // venue that has to switch it off.
-    /** No real key has been through this end to end. CoinDCX's own first live
-     *  key surfaced six bugs that nothing else would have found. */
-    beta: true,
+    /** Out of beta, 27 Sep 2026. A real key has been through it end to end and
+     *  the daily-loss rule has fired on a live Shark account. */
+    beta: false,
     // VERIFIED, 26 Sep 2026: the IP whitelist is real and Shark enforces it.
     // A live key answered 403 {"error":"4009","message":"Access denied",
     // "details":"IP address not whitelisted"} to every endpoint when called

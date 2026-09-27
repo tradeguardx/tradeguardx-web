@@ -59,7 +59,6 @@ const SHARK_STEPS = [
     sub: [
       'Each rule has a "How it works" toggle explaining exactly what it does.',
       'Saving a tighter limit applies instantly; loosening one waits 24 hours — a cooling-off so you cannot weaken protection on impulse.',
-      'Shark is in beta. No rule has yet fired against a real open position, so start with limits you are comfortable testing.',
     ],
   },
 ];

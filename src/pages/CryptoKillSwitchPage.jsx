@@ -33,7 +33,7 @@ const FAQ = [
   },
   {
     q: 'Which exchanges does a crypto kill switch work with in India?',
-    a: 'Three, all live today: Delta Exchange (India or Global), CoinDCX futures, and Shark Exchange, which is in beta. One subscription covers every exchange you connect. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Spot is not covered on any exchange — futures only.',
+    a: 'Three, all live today: Delta Exchange (India or Global), CoinDCX futures, and Shark Exchange. One subscription covers every exchange you connect. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Spot is not covered on any exchange — futures only.',
   },
   {
     q: 'Does a kill switch need access to my funds?',
@@ -70,7 +70,7 @@ const FAQ = [
  * the exchange's own key-creation form.
  */
 const BROKER_ROWS = [
-  { k: 'Status', delta: 'Live', coindcx: 'Live', shark: 'Live — beta' },
+  { k: 'Status', delta: 'Live', coindcx: 'Live', shark: 'Live' },
   { k: 'What you trade', delta: 'Perpetual futures', coindcx: 'Perpetual futures', shark: 'Perpetual futures' },
   { k: 'Priced / settled in', delta: 'USD', coindcx: 'USDT (INR wallet converts)', shark: 'INR' },
   { k: 'Your limits are set in', delta: 'Dollars', coindcx: 'Dollars', shark: 'Rupees' },
@@ -144,7 +144,7 @@ const SECTIONS = [
       'Three, all live today, all futures, and one subscription covers every one you connect.',
       'Delta Exchange came first, India or Global, whichever account you hold. It has the most granular and stable perpetuals API in the country, which matters more than it sounds: your protection is only ever as fast as the data feed behind it. It is also the one exchange of the three where you can create the API key on your phone.',
       'CoinDCX futures followed. Its INR and USDT margin modes are one venue and two wallets, not two exchanges — the same instruments priced in USDT either way — so one key covers both and your rules apply across the pair. Its key form has no permission checkbox at all, which confuses people looking for one.',
-      'Shark Exchange is the newest and is in beta. It settles in INR, so your limits are rupee amounts that reconcile to the paisa against Shark\'s own statement rather than surviving a conversion. It is also the one that most often goes wrong at setup: Shark issues every key Read-only, and the permission that lets anything be closed is edited after the secret is already on screen, which is exactly when people think they are finished.',
+      'Shark Exchange is the newest, and it settles in INR, so your limits are rupee amounts that reconcile to the paisa against Shark\'s own statement rather than surviving a conversion. It is also the one that most often goes wrong at setup: Shark issues every key Read-only, and the permission that lets anything be closed is edited after the secret is already on screen, which is exactly when people think they are finished.',
       'What does not differ is the guard. It is one engine, and the rules behave identically wherever your key points. What differs is the exchange underneath — and that is what the table shows.',
     ],
     brokerTable: true,
