@@ -23,13 +23,35 @@ export function initSentry() {
     // Don't capture user input by default; broker / financial UIs are
     // sensitive. Switch to true only after a privacy review.
     sendDefaultPii: false,
-    // Throw away noisy errors that aren't actionable.
+    /*
+     * Throw away noise that is not ours and not actionable.
+     *
+     * The point of filtering is not tidiness — it is that a feed full of
+     * errors nobody can fix trains you to stop reading the feed, and the one
+     * real bug arrives in the middle of it.
+     */
     ignoreErrors: [
       // Browser extensions firing into our window
       'top.GLOBALS',
       // ResizeObserver loop noise
       'ResizeObserver loop limit exceeded',
       'ResizeObserver loop completed with undelivered notifications',
+      /*
+       * Facebook / Instagram in-app browser. Their webview logs
+       * FBNavFirstContentfulPaint and friends to the console and talks to the
+       * native side over a JS bridge; when Android garbage-collects that
+       * bridge object — typically because the webview was backgrounded — the
+       * next postMessage throws this. It is Facebook's instrumentation
+       * failing inside Facebook's own browser. Nothing we ship causes it and
+       * nothing we ship can prevent it.
+       */
+      'Java object is gone',
+      'Error invoking postMessage',
+      // Same family: iOS in-app webviews tearing down mid-navigation.
+      "null is not an object (evaluating 'webkit.messageHandlers",
+      // A user navigating away mid-request is not an error.
+      'AbortError',
+      'The operation was aborted',
     ],
   });
 }
