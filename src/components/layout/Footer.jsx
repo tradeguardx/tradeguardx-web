@@ -6,25 +6,32 @@ const links = {
     { label: 'For crypto traders', to: '/' },
     { label: 'How it Works', to: { pathname: '/', hash: 'scenarios' } },
     { label: 'Pricing', to: '/pricing' },
-    { label: 'Crypto tax India', to: '/crypto-tax-india' },
     { label: 'Roadmap', to: '/roadmap' },
     { label: 'FAQ', to: { pathname: '/', hash: 'faq' } },
+  ],
+  // Site-wide links to the venue pages, so they are not orphans depending on
+  // the sitemap to be discovered. The labels drop "kill switch" because the
+  // heading above them already says it — three near-identical link texts in a
+  // row read as one repeated item rather than three destinations.
+  exchanges: [
+    { label: 'All supported exchanges', to: '/exchanges' },
+    { label: 'Delta Exchange', to: '/exchanges/delta' },
+    { label: 'CoinDCX', to: '/exchanges/coindcx' },
+    { label: 'Shark Exchange', to: '/exchanges/shark' },
   ],
   resources: [
     // "Install for Chrome" removed — the crypto/Delta product enforces
     // server-side via the exchange API key; the browser extension is the
     // prop-firm path, which isn't part of this launch.
     { label: 'What is a crypto kill switch?', to: '/crypto-kill-switch' },
-    // Site-wide links to the venue pages, so they are not orphans that depend
-    // on the sitemap to be discovered.
-    { label: 'Supported exchanges', to: '/exchanges' },
-    { label: 'Delta Exchange kill switch', to: '/exchanges/delta' },
-    { label: 'CoinDCX kill switch', to: '/exchanges/coindcx' },
-    { label: 'Shark Exchange kill switch', to: '/exchanges/shark' },
     { label: 'Guides', to: '/help' },
+    { label: 'Crypto tax India', to: '/crypto-tax-india' },
+    { label: 'Security', to: '/security' },
+  ],
+  company: [
+    { label: 'About us', to: '/about' },
     { label: 'Support', to: '/support' },
     { label: 'Email Us', to: 'mailto:support@tradeguardx.com' },
-    { label: 'About us', to: '/about' },
     { label: 'Partner program', to: '/partner-with-us' },
   ],
   legal: [
@@ -32,7 +39,6 @@ const links = {
     { label: 'Terms & Conditions', to: '/terms' },
     { label: 'Refund Policy', to: '/refund' },
     { label: 'Risk Disclosure', to: '/risk-disclosure' },
-    { label: 'Security', to: '/security' },
   ],
 };
 
@@ -107,7 +113,7 @@ export default function Footer() {
 
       {/* Main link grid */}
       <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
-        <div className="grid grid-cols-2 gap-12 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] md:gap-10">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-[minmax(0,1.5fr)_repeat(4,minmax(0,1fr))] md:gap-8">
           {/* Brand column */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -125,7 +131,7 @@ export default function Footer() {
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-slate-400">
               Automated trade protection for serious traders. A server-side kill
-              switch that enforces your risk rules on Delta in real time.
+              switch that enforces your risk rules on Delta, CoinDCX and Shark in real time.
             </p>
             {/* Status pill */}
             <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5">
