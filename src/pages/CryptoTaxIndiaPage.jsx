@@ -75,7 +75,7 @@ const SECTIONS = [
     h: 'Delta Exchange, CoinDCX and Shark tax reports',
     p: [
       'Both are supported and both are read through the exchange API, so you are not downloading a CSV and hoping the columns line up. Delta settles in USD and CoinDCX futures in USDT, so an Indian figure needs converting — we derive the rate from your own capital movements, show it on the page, and label it a disclosed assumption rather than pretending it is a statutory rate. Your CA may apply a different one under Rule 115.',
-      'Futures only, on both venues. CoinDCX spot is not carried, and we say so rather than letting you assume the report is complete.',
+      'Futures only, on all three exchanges. Spot is not carried, and we say so rather than letting you assume the report is complete.',
     ],
   },
   {
@@ -110,7 +110,7 @@ const FAQ = [
   },
   {
     q: 'Does it work with Delta Exchange, CoinDCX and Shark?',
-    a: "Yes, both, read directly through the exchange API rather than from a CSV download. Futures only on both venues. Because Delta settles in USD and CoinDCX futures in USDT, rupee figures require conversion — we derive the rate from your own capital movements and disclose it on the page as an assumption, not a statutory rate.",
+    a: "Yes, all three, read directly through the exchange API rather than from a CSV download. Futures only. Shark settles in INR, so its rupee figures need no conversion at all and reconcile to the paisa against Shark's own statement. Delta settles in USD and CoinDCX futures in USDT, so those do require conversion — we derive the rate from your own capital movements and disclose it on the page as an assumption, not a statutory rate.",
   },
   {
     q: 'How far back does it go?',
