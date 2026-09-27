@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useSEO } from '../hooks/useSEO';
-import { VENUE_PAGE_LIST } from '../lib/venueSeo';
+import { ENFORCED_RULES, VENUE_PAGE_LIST } from '../lib/venueSeo';
 import { ogImageFor } from '../lib/publicRoutes';
 
 /**
@@ -61,6 +61,27 @@ const FAQ = [
   },
 ];
 
+/**
+ * How the three exchanges actually differ, side by side.
+ *
+ * Only a page that covers all of them can answer "which one should I use",
+ * so this is additive to the venue pages rather than a second copy of them.
+ * Every value here is carried from venues.js, where it was checked against
+ * the exchange's own key-creation form.
+ */
+const BROKER_ROWS = [
+  { k: 'Status', delta: 'Live', coindcx: 'Live', shark: 'Live — beta' },
+  { k: 'What you trade', delta: 'Perpetual futures', coindcx: 'Perpetual futures', shark: 'Perpetual futures' },
+  { k: 'Priced / settled in', delta: 'USD', coindcx: 'USDT (INR wallet converts)', shark: 'INR' },
+  { k: 'Your limits are set in', delta: 'Dollars', coindcx: 'Dollars', shark: 'Rupees' },
+  { k: 'Permission the key needs', delta: '“Trading”', coindcx: 'None to tick — there is no box', shark: '“Trade Futures”' },
+  { k: 'Key is read-only by default', delta: 'No', coindcx: 'No', shark: 'Yes — you must change it' },
+  { k: 'Can you create the key on a phone?', delta: 'Yes (Algo Hub → APIs)', coindcx: 'No — desktop only', shark: 'No — desktop only' },
+  { k: 'IP whitelist', delta: 'Required', coindcx: 'Optional, but we bind it', shark: 'Supported, and we use it' },
+  { k: 'Spot covered', delta: 'No', coindcx: 'No', shark: 'No' },
+  { k: 'Tax centre', delta: 'Yes', coindcx: 'Yes', shark: 'Yes — exact, it settles in INR' },
+];
+
 const SECTIONS = [
   {
     h: 'What a crypto kill switch actually does',
@@ -73,10 +94,10 @@ const SECTIONS = [
   {
     h: 'The rules you can actually set',
     p: [
-      'Seven of them, and every one is on every plan — the paid tier buys more accounts and more history, never more protection.',
-      'Four will close your positions and lock the account: a daily loss cap, a maximum trade count, a daily profit target (so a good day survives contact with a bad afternoon), and a losing-streak cooldown that escalates — three losses in a row buys you three hours off, five buys twelve.',
-      'Risk per trade works differently: it closes the single position whose stop sits too far away, and leaves everything else alone. Two more only warn you — one when a position has been sitting open without a stop attached, one when the account is deep in drawdown. We would rather say that plainly than let you believe something is watching when it is only talking.',
+      'Seven of them, and every one is on every plan — the paid tier buys more accounts and more history, never more protection. They behave identically on all three exchanges, because it is one engine behind them.',
+      'The column that matters is the last one. Three of these seven never close anything. A trader who believes Max Drawdown is a floor has bought a floor that does not exist, so it says so here rather than in the small print.',
     ],
+    rulesTable: true,
   },
   {
     h: 'The lockout you pull yourself',
@@ -120,10 +141,13 @@ const SECTIONS = [
     // The per-exchange argument lives at /exchanges/<venue>, and repeating it
     // here would put two of our own pages in front of the same query.
     p: [
-      'Three, all live today, all futures: Delta Exchange (India or Global), CoinDCX futures, and Shark Exchange, which is in beta. One subscription covers every exchange you connect.',
-      'What differs between them is not the guard — it is one engine and the rules behave identically wherever your key points. What differs is the exchange: what its API publishes, what its key permissions are called, whether it settles in rupees or dollars, and whether you can even create the key on a phone. Those are exchange questions, so each one has its own page below rather than a paragraph here.',
-      'Spot is not covered anywhere: we read futures, enforce futures, and say so rather than letting you assume.',
+      'Three, all live today, all futures, and one subscription covers every one you connect.',
+      'Delta Exchange came first, India or Global, whichever account you hold. It has the most granular and stable perpetuals API in the country, which matters more than it sounds: your protection is only ever as fast as the data feed behind it. It is also the one exchange of the three where you can create the API key on your phone.',
+      'CoinDCX futures followed. Its INR and USDT margin modes are one venue and two wallets, not two exchanges — the same instruments priced in USDT either way — so one key covers both and your rules apply across the pair. Its key form has no permission checkbox at all, which confuses people looking for one.',
+      'Shark Exchange is the newest and is in beta. It settles in INR, so your limits are rupee amounts that reconcile to the paisa against Shark\'s own statement rather than surviving a conversion. It is also the one that most often goes wrong at setup: Shark issues every key Read-only, and the permission that lets anything be closed is edited after the secret is already on screen, which is exactly when people think they are finished.',
+      'What does not differ is the guard. It is one engine, and the rules behave identically wherever your key points. What differs is the exchange underneath — and that is what the table shows.',
     ],
+    brokerTable: true,
     venueLinks: true,
   },
   {
@@ -141,6 +165,95 @@ const SECTIONS = [
  * hands the venue question to the venue's own page rather than answering it
  * here, which is what stops the two competing for the same query.
  */
+/**
+ * The seven rules, with the honest column.
+ *
+ * Same ENFORCED_RULES the venue pages render, imported rather than retyped —
+ * a second hand-written copy of this list is how a page ends up promising a
+ * rule the engine does not have.
+ */
+const FIRES = {
+  full: { label: 'Closes & locks', color: '#00d4aa', bg: 'rgba(0,212,170,0.12)', border: 'rgba(0,212,170,0.3)' },
+  'one position': { label: 'Closes one position', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.28)' },
+  'alert only': { label: 'Alert only', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.25)' },
+};
+
+function RulesTable() {
+  return (
+    <div className="mt-6 overflow-hidden rounded-2xl border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+      {ENFORCED_RULES.map((r, i) => {
+        const f = FIRES[r.fires];
+        return (
+          <div
+            key={r.name}
+            className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-start sm:gap-5"
+            style={{
+              borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.06)',
+              backgroundColor: i % 2 ? 'rgba(255,255,255,0.015)' : 'transparent',
+            }}
+          >
+            <div className="sm:w-[185px] sm:shrink-0">
+              <p className="text-[14px] font-bold text-white">{r.name}</p>
+              <span
+                className="mt-2 inline-block whitespace-nowrap rounded-md border px-2 py-1 text-[11px] font-bold"
+                style={{ color: f.color, backgroundColor: f.bg, borderColor: f.border }}
+              >
+                {f.label}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] leading-relaxed text-slate-300">{r.does}</p>
+              <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{r.detail}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * The three exchanges side by side. Scrolls horizontally on a phone rather
+ * than reflowing, because a comparison you cannot read across columns has
+ * stopped being a comparison.
+ */
+function BrokerTable() {
+  const head = ['', 'Delta Exchange', 'CoinDCX', 'Shark Exchange'];
+  return (
+    <div className="mt-6 overflow-x-auto rounded-2xl border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+      <table className="w-full min-w-[640px] border-collapse text-left">
+        <thead>
+          <tr>
+            {head.map((h) => (
+              <th
+                key={h || 'blank'}
+                className="px-4 py-3 text-[12px] font-bold uppercase tracking-wider"
+                style={{ color: h ? '#00d4aa' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                {h || '·'}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {BROKER_ROWS.map((r, i) => (
+            <tr key={r.k} style={{ backgroundColor: i % 2 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
+              <th scope="row" className="px-4 py-3 text-[13px] font-semibold text-slate-300" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                {r.k}
+              </th>
+              {[r.delta, r.coindcx, r.shark].map((v, j) => (
+                <td key={j} className="px-4 py-3 text-[13px] text-slate-400" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  {v}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function VenueLinks() {
   return (
     <ul className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -251,6 +364,8 @@ export default function CryptoKillSwitchPage() {
                   {para}
                 </p>
               ))}
+              {s.rulesTable && <RulesTable />}
+              {s.brokerTable && <BrokerTable />}
               {s.venueLinks && <VenueLinks />}
             </motion.section>
           ))}
