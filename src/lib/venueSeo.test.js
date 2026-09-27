@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ENFORCED_RULES, VENUE_ORDER, VENUE_PAGE_LIST, venuePageFor } from './venueSeo';
 import { guidesFor } from './venueGuides';
+import { HELP_ARTICLES } from './exchangeDocs';
 import { PUBLIC_ROUTES, SITEMAP_ROUTES, EXCLUDED_ROUTES } from './publicRoutes';
 
 /**
@@ -60,6 +61,40 @@ describe('venue page titles', () => {
       expect(v.description.length, `${v.slug} too short`).toBeGreaterThan(110);
       expect(v.description.length, `${v.slug} too long`).toBeLessThanOrEqual(175);
     }
+  });
+});
+
+describe('help page titles', () => {
+  /*
+   * These are the long tail: the specific question someone types when a key
+   * will not connect or a lock will not lift. They used to be internal doc
+   * labels — "Your rules", "The Live dashboard" — which target nothing.
+   *
+   * The ceiling is the same 60 characters, and it is easy to blow because the
+   * brand suffix is added by useSEO rather than written here. "· Guides" alone
+   * was costing nine characters and saying nothing a searcher wanted.
+   */
+  it.each(HELP_ARTICLES.map((a) => [a.slug, a.title]))('%s fits in a search result', (_slug, title) => {
+    expect(`${title} — TradeGuardX`.length).toBeLessThanOrEqual(TITLE_MAX);
+  });
+
+  it('keeps a short label for the sidebar', () => {
+    // The question makes a bad nav item. Both exist on purpose.
+    for (const a of HELP_ARTICLES) expect((a.navTitle ?? a.title).length).toBeLessThanOrEqual(24);
+  });
+
+  it('never competes with /crypto-kill-switch for the head term', () => {
+    // That page owns "crypto kill switch". A help article aimed at the same
+    // phrase splits the internal links instead of doubling them — the exact
+    // failure the /exchanges structure was built to avoid.
+    for (const a of HELP_ARTICLES) {
+      expect(a.title.toLowerCase(), a.slug).not.toMatch(/^(the )?(crypto )?kill switch/);
+    }
+  });
+
+  it('gives every help page a distinct title', () => {
+    const t = HELP_ARTICLES.map((a) => a.title);
+    expect(new Set(t).size).toBe(t.length);
   });
 });
 

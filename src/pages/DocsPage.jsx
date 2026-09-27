@@ -120,7 +120,7 @@ function HelpArticle({ article, activeSlug }) {
   const jsonLd = useMemo(() => buildDocsSchema(article, pageUrl, description), [article, pageUrl, description]);
 
   useSEO({
-    title: `${article.title} · Guides`,
+    title: article.title,
     description,
     url: pageUrl,
     jsonLd,
@@ -155,7 +155,7 @@ function HelpArticle({ article, activeSlug }) {
                       border: `1px solid ${isActive ? 'rgba(0,212,170,0.20)' : 'transparent'}`,
                     }}
                   >
-                    {a.title}
+                    {a.navTitle ?? a.title}
                   </Link>
                 );
               })}

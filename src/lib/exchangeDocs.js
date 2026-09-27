@@ -21,7 +21,8 @@
 export const HELP_ARTICLES = [
   {
     slug: 'how-it-works',
-    title: 'How enforcement works',
+    navTitle: 'How enforcement works',
+    title: 'How TradeGuardX watches your account',
     intro:
       'Once your key is connected, a dedicated engine keeps a live connection to your exchange and streams your positions, orders, and balances — and checks every update against your rules within seconds.',
     sections: [
@@ -37,7 +38,8 @@ export const HELP_ARTICLES = [
   },
   {
     slug: 'kill-switch',
-    title: 'The kill switch',
+    navTitle: 'The kill switch',
+    title: 'What happens when you break a trading rule',
     intro:
       'There is one kill switch and two ways to fire it: a rule breach fires it for you, or you fire it yourself. What it does is identical either way — only the trigger and the lock length differ.',
     sections: [
@@ -87,7 +89,8 @@ export const HELP_ARTICLES = [
   },
   {
     slug: 'cooldowns',
-    title: 'Cooldowns & locks',
+    navTitle: 'Cooldowns & locks',
+    title: 'How long does a trading cooldown last?',
     intro:
       'Every lock is time-based and self-releasing. Nothing you do on the exchange shortens one, and no error can leave you locked forever.',
     sections: [
@@ -118,7 +121,8 @@ export const HELP_ARTICLES = [
   },
   {
     slug: 'rules',
-    title: 'Your rules',
+    navTitle: 'Your rules',
+    title: 'Which trading rules can be automated?',
     intro:
       'Rules are configured per account on the Rules page — each has its own "How it works" toggle with full detail. In short:',
     sections: [
@@ -137,7 +141,8 @@ export const HELP_ARTICLES = [
   },
   {
     slug: 'changing-rules',
-    title: 'Changing rules safely',
+    navTitle: 'Changing rules safely',
+    title: "Why you can't loosen a limit instantly",
     intro:
       'To stop impulse decisions, loosening a protection is delayed while tightening is instant. This applies at all times, not only during a lock.',
     sections: [
@@ -152,7 +157,8 @@ export const HELP_ARTICLES = [
   },
   {
     slug: 'live-dashboard',
-    title: 'The Live dashboard',
+    navTitle: 'The Live dashboard',
+    title: 'Watching a trading session in real time',
     intro:
       'The Live tab is your session cockpit — everything about the current trading day in one place.',
     sections: [
@@ -164,7 +170,8 @@ export const HELP_ARTICLES = [
   },
   {
     slug: 'troubleshooting',
-    title: 'Troubleshooting',
+    navTitle: 'Troubleshooting',
+    title: 'Why is my exchange API key not working?',
     intro: 'The most common issues and how to fix them.',
     sections: [
       {
