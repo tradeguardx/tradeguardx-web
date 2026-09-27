@@ -34,6 +34,16 @@ const FOUNDER_LINKEDIN = (
   import.meta.env.VITE_FOUNDER_LINKEDIN ?? 'https://www.linkedin.com/in/prashant-pathak-b0088311a/'
 ).trim();
 
+/**
+ * Founder portrait. Empty until the file is hosted, and the layout is written
+ * so that both states look deliberate rather than broken — no grey box, no
+ * placeholder silhouette, just the name sitting where it would anyway.
+ *
+ * Same rule as the links above: nothing on this page renders a URL that has
+ * not been confirmed to load.
+ */
+const FOUNDER_PHOTO = (import.meta.env.VITE_FOUNDER_PHOTO ?? '').trim();
+
 function Glyph({ d }) {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -73,15 +83,34 @@ export default function AboutPage() {
 
         <div className="space-y-12">
           <motion.section initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35 }}>
-            <h2 className="mb-3 font-display text-2xl font-bold text-white">Prashant Pathak</h2>
+            <div className="mb-4 flex items-center gap-4">
+              {FOUNDER_PHOTO && (
+                <img
+                  src={FOUNDER_PHOTO}
+                  alt="Prashant Pathak"
+                  width={84}
+                  height={84}
+                  loading="eager"
+                  className="h-[84px] w-[84px] flex-none rounded-2xl border object-cover"
+                  style={{ borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.03)' }}
+                />
+              )}
+              <div className="min-w-0">
+                <h2 className="font-display text-2xl font-bold text-white">Prashant Pathak</h2>
+                <p className="mt-1 text-[13px] font-semibold uppercase tracking-[0.14em] text-accent">
+                  Founder, TradeGuardX
+                </p>
+              </div>
+            </div>
             <p className="mb-3 text-[15px] leading-relaxed text-slate-300">
-              Founder of TradeGuardX. He writes the product, answers the support email, and is the
-              person on the other end if something goes wrong with your account.
+              TradeGuardX is built on one idea: the version of you who sets a limit on a calm
+              morning and the version who wants to override it at 2pm are not the same person, and
+              the first one should win. Every rule in the product follows from that, including the
+              ones that refuse to let you loosen a limit in the moment you most want to.
             </p>
             <p className="mb-5 text-[15px] leading-relaxed text-slate-300">
-              There is no support queue between you and him. If you have a question about what the
-              guard did, why a rule fired, or whether you should trust this with a live key, write
-              directly — the address below is his, not a shared inbox.
+              Questions about what the guard did, why a rule fired, or whether to trust it with a
+              live key reach him directly.
             </p>
 
             <div className="flex flex-wrap gap-3">
