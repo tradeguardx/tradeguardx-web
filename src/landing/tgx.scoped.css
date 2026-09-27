@@ -329,6 +329,16 @@
     .tgx-home .xbanner .xb-long{ display: none; }
     .tgx-home .xbanner .xb-short{ display: inline-flex; }
 
+    /* Three chips, one row. At full size they wrap 2 + 1 and leave the third
+       exchange alone on its own line, reading as an afterthought rather than
+       an equal. Shrinking the pill and its tag on a phone fits all three, so
+       the row says "three exchanges" at a glance. */
+    .tgx-home .xb-next{ padding: 6px 10px; gap: 6px; }
+    .tgx-home .xb-next-tag{ padding: 2px 6px; font-size: 8.5px; letter-spacing: 0.1em; }
+    .tgx-home .xb-wordmark,
+    .tgx-home .xb-coindcx{ font-size: 14px; }
+    .tgx-home .xb-logo{ width: 15px; height: 15px; }
+
     /* The two "Soon" exchanges are hidden on a phone.
        On a narrow screen the five chips wrap to three rows, and the last row
        is entirely things you cannot use yet — so the first thing a visitor
