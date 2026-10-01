@@ -67,12 +67,29 @@ function Shell() {
     document.documentElement.style.removeProperty('--tg-promo-h');
   }, []);
 
-  // <main> is the scroll container; reset it on route change (double rAF so
-  // it lands after the auth re-render and the route's first paint).
+  /*
+   * Land every route at the top. Double rAF so it happens after the auth
+   * re-render and the route's first paint.
+   *
+   * WHY behavior:'instant' RATHER THAN THE DEFAULT. `html` sets
+   * `scroll-behavior: smooth`, which makes a bare scrollTo(0, 0) an animation
+   * — several hundred milliseconds during which the outgoing route is being
+   * torn down and the incoming one is growing. The animation gets interrupted
+   * and the new page opens wherever the last one was left, which on a long
+   * page means opening Alerts at its footer. 'instant' opts this one scroll
+   * out of that; the smooth behaviour stays for anchor links, where it is
+   * wanted.
+   *
+   * The window is the scroller here — <main> has no overflow of its own — but
+   * it is reset too, cheaply, so this keeps working if that ever changes.
+   */
   useEffect(() => {
     let inner;
     const outer = requestAnimationFrame(() => {
-      inner = requestAnimationFrame(() => { mainRef.current?.scrollTo?.({ top: 0, left: 0 }); window.scrollTo?.(0, 0); });
+      inner = requestAnimationFrame(() => {
+        window.scrollTo?.({ top: 0, left: 0, behavior: 'instant' });
+        mainRef.current?.scrollTo?.({ top: 0, left: 0, behavior: 'instant' });
+      });
     });
     return () => { cancelAnimationFrame(outer); if (inner) cancelAnimationFrame(inner); };
   }, [pathname]);

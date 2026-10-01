@@ -19,7 +19,10 @@ export default function ScrollToTop() {
       const t = window.setTimeout(() => scrollToHashTarget(hash), 120);
       return () => clearTimeout(t);
     }
-    window.scrollTo(0, 0);
+    // 'instant' because html sets scroll-behavior:smooth — without it this is
+    // an animation running while the outgoing route unmounts, and it loses,
+    // leaving the new page opened wherever the last one was scrolled to.
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [pathname, hash]);
 
   return null;
