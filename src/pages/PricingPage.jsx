@@ -27,9 +27,27 @@ import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
  * and forgot to type it is simply charged full price and has no idea. Sending
  * it ourselves is what makes the banner's promise true.
  */
-function checkoutCouponCode() {
-  // Referral > code from a promo link (?promo=) > site-wide promo from env.
-  return getStoredReferralCode() || getLinkPromoCode() || getActivePromo()?.code || undefined;
+/**
+ * The code to send to checkout, if any. Referral > promo link (?promo=) >
+ * site-wide promo from env.
+ *
+ * THE INTERVAL RESTRICTION BELONGS TO PROMOS, NOT REFERRALS. A site-wide promo
+ * is advertised against the monthly price (activePromo.discountedPrice takes a
+ * monthly figure), so applying it to a quarterly or yearly checkout would make
+ * the banner's promise untrue — that is what the restriction was for.
+ *
+ * A referral code has no such tie. It is meant to work on every plan, and the
+ * voucher owed to the referrer is tiered BY the plan bought, so quarterly and
+ * yearly are the ones worth attributing most. Dropping the code on those
+ * intervals meant the two highest tiers could never be paid, silently: the
+ * referee pays, and no attribution is ever recorded.
+ */
+export function checkoutCouponCode({ interval, multiInterval }) {
+  const referral = getStoredReferralCode();
+  if (referral) return referral;
+
+  if (multiInterval && interval !== 'monthly') return undefined;
+  return getLinkPromoCode() || getActivePromo()?.code || undefined;
 }
 
 // ─── Per-plan visual theming ─────────────────────────────────────────────────
@@ -249,7 +267,7 @@ export default function PricingPage() {
         accessToken: session.access_token,
         planSlug: plan.key,
         interval: plan.intervals.length > 1 ? interval : 'monthly',
-        couponCode: plan.intervals.length > 1 && interval !== 'monthly' ? undefined : checkoutCouponCode(),
+        couponCode: checkoutCouponCode({ interval, multiInterval: plan.intervals.length > 1 }),
       });
       const url = res?.data?.checkoutUrl;
       if (url) { trackCheckoutStarted(plan.key); window.location.href = url; return; }
@@ -284,7 +302,7 @@ export default function PricingPage() {
           accessToken: session.access_token,
           planSlug: plan.key,
           interval: plan.intervals.length > 1 ? interval : 'monthly',
-          couponCode: plan.intervals.length > 1 && interval !== 'monthly' ? undefined : checkoutCouponCode(),
+          couponCode: checkoutCouponCode({ interval, multiInterval: plan.intervals.length > 1 }),
         });
         if (cancelled) return;
         const url = res?.data?.checkoutUrl;
