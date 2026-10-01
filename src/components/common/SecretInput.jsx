@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNoAutofill } from '../../lib/noAutofill';
 
 /**
  * A masked input for API secrets that does NOT trip browser/password-manager
@@ -15,24 +16,25 @@ import { useState } from 'react';
  * Chromium + WebKit and, as of recent versions, Firefox; if a browser doesn't
  * support the property the value just shows as plain text — acceptable for a
  * value the user pasted and can hide again.
+ *
+ * The autofill opt-outs come from useNoAutofill so there is one definition of
+ * them, and it also keeps the field readOnly until it is touched — autofill
+ * runs at load, and no browser writes into a readOnly input. The default
+ * `name` is deliberately meaningless, because autofill heuristics match on
+ * name before they look at anything else and `tgx-secret` is the word they
+ * are looking for.
  */
-export default function SecretInput({ value, onChange, placeholder, className = '', wrapperClassName = '', style, name = 'tgx-secret', ...rest }) {
+export default function SecretInput({ value, onChange, placeholder, className = '', wrapperClassName = '', wrapperStyle, style, name = 'tgx-val-b', ...rest }) {
   const [reveal, setReveal] = useState(false);
+  const noAutofill = useNoAutofill();
 
   return (
-    <div className={`relative ${wrapperClassName}`}>
+    <div className={`relative ${wrapperClassName}`} style={wrapperStyle}>
       <input
         type="text"
         name={name}
         inputMode="text"
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="off"
-        spellCheck={false}
-        data-lpignore="true"
-        data-1p-ignore="true"
-        data-bwignore="true"
-        data-form-type="other"
+        {...noAutofill}
         value={value}
         onChange={onChange}
         placeholder={placeholder}

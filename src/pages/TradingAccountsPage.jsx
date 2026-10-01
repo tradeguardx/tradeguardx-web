@@ -26,6 +26,7 @@ import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPa
 import { useIsMobile } from '../hooks/useIsMobile';
 import { DELTA_EGRESS_IP } from '../api/config';
 import { venueFor } from '../lib/venues';
+import { useNoAutofill } from '../lib/noAutofill';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel, equityModeLabel } from '../lib/labels';
 
@@ -553,6 +554,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
   const [creating, setCreating] = useState(false);
   // Delta-only: optional API key/secret entered inline during account creation.
   const [apiKey, setApiKey] = useState('');
+  const noAutofill = useNoAutofill();
   const [apiSecret, setApiSecret] = useState('');
   const isMobile = useIsMobile();
   const [guideOpen, setGuideOpen] = useState(false);
@@ -1120,12 +1122,8 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   </span>
                   <input
                     type="text"
-                    name="tgx-delta-key"
-                    autoComplete="off"
-                    data-lpignore="true"
-                    data-1p-ignore="true"
-                    data-form-type="other"
-                    spellCheck={false}
+                    name="tgx-val-a"
+                    {...noAutofill}
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     onPaste={(e) => {

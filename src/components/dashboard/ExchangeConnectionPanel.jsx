@@ -11,6 +11,7 @@ import { useIsMobile } from '../../hooks/useIsMobile';
 import AppGuide from './AppGuide';
 import VenueSteps from './VenueSteps';
 import SecretInput from '../common/SecretInput';
+import { useNoAutofill } from '../../lib/noAutofill';
 import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPanel } from './deltaConnectShared';
 
 function formatDateTime(iso) {
@@ -40,6 +41,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   const [loadError, setLoadError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [apiKey, setApiKey] = useState('');
+  const noAutofill = useNoAutofill();
   const [apiSecret, setApiSecret] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -447,12 +449,8 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>API Key</span>
               <input
                 type="text"
-                name="tgx-delta-key"
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-form-type="other"
-                spellCheck={false}
+                name="tgx-val-a"
+                {...noAutofill}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 onPaste={(e) => {

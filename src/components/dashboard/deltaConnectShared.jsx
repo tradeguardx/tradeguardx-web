@@ -1,4 +1,5 @@
 import SecretInput from '../common/SecretInput';
+import { useNoAutofill } from '../../lib/noAutofill';
 
 /**
  * Shared pieces of the exchange connect UI — used by BOTH the first-time
@@ -73,6 +74,7 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
   // `venue` names the exchange the user actually connected; without it this
   // panel told every CoinDCX user that "Delta" was connected.
   const venueName = venue?.name ?? 'Exchange';
+  const noAutofill = useNoAutofill();
   if (outcome.ok) {
     const { summary } = outcome;
     const live = summary?.enforcementCapable === true;
@@ -140,9 +142,8 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
           <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>API Key</span>
           <input
             type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            spellCheck={false}
+            name="tgx-val-a"
+            {...noAutofill}
             value={apiKey}
             onChange={onApiKeyChange}
             placeholder="Paste API Key"
