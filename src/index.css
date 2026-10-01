@@ -1555,7 +1555,9 @@
 .cx-input:disabled{opacity:.55}
 
 .cx-head{display:flex;align-items:center;gap:15px;width:100%;padding:17px 22px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit}
-.cx-head:hover{background:var(--surface-2)}
+/* --surface-2 is now the fill of an unopened step card, so hovering one
+   changed nothing. */
+.cx-head:hover{background:var(--surface-3)}
 .cx-body{padding:0 22px 19px 65px}
 
 @media (max-width:620px){

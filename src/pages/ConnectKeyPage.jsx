@@ -299,13 +299,29 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
         </section>
       )}
 
+      {/* Each step is its own card, and the open one is outlined brightly.
+          As one bordered panel with hairline dividers, every row looked the
+          same weight and the only thing marking where you were was a chevron
+          pointing the other way — on a page you come back to repeatedly, from
+          another tab, having lost your place. The border is the answer to
+          "where was I". */}
       {showGuide && (
-      <section style={sx('border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+      <section style={sx('display:flex;flex-direction:column;gap:9px')}>
         {steps.map((st) => {
           const done = isDone(st.n);
           const open = openStep === st.n;
           return (
-          <div key={st.n} style={sx('border-bottom:1px solid var(--line)')}>
+          <div
+            key={st.n}
+            style={sx(
+              'border-radius:15px;overflow:hidden;transition:border-color .15s ease,box-shadow .15s ease',
+              open
+                ? { border: '1.5px solid var(--ink)', background: 'var(--surface)', boxShadow: 'var(--shadow-card)' }
+                : done
+                  ? { border: '1px solid var(--mint-line)', background: 'var(--surface)' }
+                  : { border: '1px solid var(--line)', background: 'var(--surface-2)' },
+            )}
+          >
             {/* The whole header is the control. A chevron alone is a 15px
                 target on a phone, on a page people are working through
                 one-handed while switching to another app. */}
@@ -413,7 +429,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
         {/* Only a venue with an app flow has anything to say here. For the
             desktop-only two this repeated step one's callout verbatim. */}
         {!v.desktopOnly && (
-          <div style={sx('display:flex;align-items:flex-start;gap:10px;padding:15px 22px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
+          <div style={sx('display:flex;align-items:flex-start;gap:10px;padding:15px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" style={{ flex: 'none', marginTop: 2, color: 'var(--ink-faint)' }}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
             {/* Was "Doing this on your phone?" — asked of someone who is
                 plainly on a phone, and asked of desktop users as an aside about
@@ -425,7 +441,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
           </div>
         )}
         {connected && !g.readOnly && (
-          <div style={sx('padding:13px 22px;border-top:1px solid var(--line);background:var(--surface-2)')}>
+          <div style={sx('padding:13px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)')}>
             <button type="button" onClick={() => { setReplacing(false); setKeyVal(""); setSecretVal(""); }} style={sx('padding:8px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Cancel — keep the key I have</button>
           </div>
         )}
