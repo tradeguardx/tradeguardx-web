@@ -25,14 +25,73 @@ const VENUES = {
     /** Where the exchange's API-key page lives; slug-aware for India/Global. */
     keysUrl: (slug) => deltaApiKeysUrl(slug),
     /** The label the exchange puts on its allow-list field. */
-    ipField: 'Whitelisted IP',
+    ipField: 'Trusted IPs to Whitelist',
     ipRequired: true,
+    /**
+     * The two things on Delta's IP field that cost people a key.
+     *
+     * The box is not the whitelist. Typing an IP and pressing Create API key
+     * leaves it out — it counts only once + Add turns it into a chip. And
+     * Delta offers ready-made chips beside it (My IP Address, Algotest,
+     * Tradetron); "My IP Address" is the one that looks right and is not. A
+     * key whitelisted to the user's own home IP connects, verifies, and then
+     * fails from our engine, which is the worst of both — they believe they
+     * are covered.
+     */
+    ipAddNote: 'Press + Add so it becomes a chip. Ignore the ready-made chips beside it — My IP Address is your computer, not us.',
+    /**
+     * Delta's form opens with an account dropdown. Nothing else we support
+     * has one, and a key made on the wrong account belongs to an account we
+     * are not watching: it connects, it passes the scope check, and it can
+     * never close the position the user is actually holding.
+     */
+    accountField: 'Account Name',
+    accountNote: 'The dropdown at the top. Pick the account you actually trade in — the key works on that one only.',
     /** How the exchange names the permission the kill switch needs. */
     scopeLabel: 'Trading',
+    /**
+     * Delta's Permissions block is two cards, not one tick box, and the first
+     * is already on. Drawing only Trading made the replica look unlike the
+     * screen it is copying — and "All API keys have read permissions" reads,
+     * to someone skimming, as though the key is already set up.
+     */
+    readScopeLabel: 'Read Data',
     /** Path inside the mobile app, when the user is on a phone. */
     mobilePath: 'Algo Hub → APIs',
+    /**
+     * Getting to the form, as three taps.
+     *
+     * This step used to render the whole createSteps list — every field of the
+     * form, in words, above a screen that then draws the same form filled in.
+     * Reading the form twice before seeing it once is not thoroughness, it is
+     * a wall of text between someone and a button. Finding the page is the
+     * only thing step one has to do.
+     */
+    navPath: ['Algo Hub', 'APIs', 'Create API key'],
     /** The exchange asks the user to name the key; we suggest one. */
     suggestsKeyName: true,
+    /** Delta's own label for it. Ours said "Name"; the form says this. */
+    keyNameField: 'API Key Name',
+    /**
+     * The rest of Delta's form as it is drawn, so the replica can BE the form
+     * rather than describe it. Every string here is read off the live page —
+     * placeholder text, button labels, the suggested-IP chips, the sub-line
+     * under each permission card. If Delta restyles the page these are what
+     * go stale, and they are all in one block for that reason.
+     */
+    accountDefault: 'Main',
+    ipAddButton: '+ Add',
+    /**
+     * Delta's own one-click chips. Drawn because leaving them out makes the
+     * replica look unlike the screen — and because the user needs to be told
+     * to walk past them, which cannot be said about something not shown.
+     */
+    ipChips: ['My IP Address', 'Algotest IP', 'Tradetron IP'],
+    readScopeNote: 'All API keys have read permissions',
+    scopeNote: 'Select this to give trading permissions',
+    submitLabel: 'Create API key',
+    /** Delta's accent, so the replica reads as their page and not ours. */
+    accent: 'amber',
     /**
      * Screenshot walkthrough, shown on phones where the user is in the venue's
      * app rather than on its site in a browser tab. Lives here rather than in
@@ -59,10 +118,11 @@ const VENUES = {
      * the generic "create a key with trading scope" is where people stall.
      */
     createSteps: [
-      { title: 'Name', body: 'Anything you will recognise later. We suggest the name shown below.' },
-      { title: 'Whitelisted IP', body: 'Paste our IP. The key then works only from our engine and nowhere else.' },
-      { title: 'Trading', body: 'Tick it. Read-only connects fine and can never close a position.' },
-      { title: 'Create', body: 'Delta shows the key and secret once. Copy both, then paste them here.' },
+      { title: 'Account Name', body: 'The dropdown at the top. Pick the account you actually trade in — the key works on that one only.' },
+      { title: 'API Key Name', body: 'Anything you will recognise later. We suggest the name shown below.' },
+      { title: 'Trusted IPs to Whitelist', body: 'Paste our IP into the box and press + Add, so it shows as a chip. Typing it alone does not save it. The chips Delta offers — My IP Address, Algotest, Tradetron — are not us.' },
+      { title: 'Permissions', body: 'Read Data is already on and cannot be turned off. Tick Trading as well — a read-only key connects fine and can never close a position.' },
+      { title: 'Create API key', body: 'Delta shows the key and secret once. Copy both, then paste them here.' },
     ],
     /** Proven in production. A beta venue says so on every surface. */
     beta: false,
@@ -101,6 +161,13 @@ const VENUES = {
     desktopOnly: true,
     desktopOnlyNote: 'CoinDCX has no create-key screen in their mobile app, and the flow needs a desktop browser. Their limit, not ours.',
     mobilePath: null,
+    navPath: ['Profile icon', 'API Dashboard', 'Create API Key'],
+    /**
+     * CoinDCX confirms the key with two codes, not one, and they arrive by
+     * different routes. Someone watching only their inbox waits for an SMS
+     * they have already received, and the form times out.
+     */
+    otpNote: 'CoinDCX then sends two codes — one by email, one by SMS. Both are needed.',
     suggestsKeyName: true,
     /**
      * Six steps, all hosted. The captions are the instruction in words, which
@@ -142,8 +209,57 @@ const VENUES = {
     name: 'Shark',
     longName: 'Shark Exchange',
     keysUrl: () => 'https://sharkexchange.in/user/api-management',
-    ipField: 'IP whitelist',
-    ipRequired: false,
+    /*
+     * CHECKED against Shark's live Create API Key modal, 1 Oct 2026.
+     *
+     * We had this field as "IP whitelist", optional. Both wrong. Their form
+     * labels it "Add IP addresses (comma separated)" and marks it required
+     * with a red asterisk alongside the label — so our copy was telling people
+     * a mandatory field was theirs to skip, under a name that is not on the
+     * screen.
+     */
+    keyNameField: 'Label API',
+    keyNameHint: 'Between 2 and 64 characters. Any label you will recognise later.',
+    ipField: 'Add IP addresses (comma separated)',
+    ipRequired: true,
+    submitLabel: 'Create',
+    /**
+     * Shark's create form has two fields and nothing else — no permission
+     * control at all. It is set afterwards, which `afterCreate` below draws.
+     */
+    scopeChoice: false,
+    /**
+     * The screen Shark shows once the key exists, and the one that decides
+     * whether any of this works.
+     *
+     * Three things have to happen on it and two of them are easy to miss: the
+     * secret is visible only here, the key is issued Read-only so Trade
+     * Futures has to be ticked, and Save & Complete stays inert until the
+     * "I have noted & stored" box is ticked. Someone who copies the keys and
+     * closes the tab has a key that connects to us and can never close a
+     * position.
+     */
+    afterCreate: {
+      lead: 'Shark shows the API key and the secret on this screen and nowhere else. Copy both before you touch anything on it.',
+      keyLabel: 'API Key',
+      secretLabel: 'Secret Key',
+      restrictionsHeading: 'Edit API Restrictions',
+      readScopeLabel: 'Read',
+      readScopeNote: 'Shark issues every key Read-only.',
+      scopeNote: 'Without it we can watch the account and never close a position.',
+      ipHeading: 'IP Access Restriction:',
+      ipMode: 'Restricted access to trusted IPs only (recommended)',
+      ipConfirmButton: 'Confirm',
+      /** Their own three lines, in their own order and wording. */
+      warnings: [
+        'Store the API and Secret Key securely.',
+        'If lost, you will need to create a new API Key.',
+        'For security reasons, Secret Keys are only visible when the API key is created.',
+      ],
+      confirmLabel: 'I have noted & stored the API key & Secret Key',
+      submitLabel: 'Save & Complete',
+      submitNote: 'Stays greyed out until that box is ticked.',
+    },
     // Shark's own words on the form: "Trade Futures", under Edit API
     // Restrictions. We said "Futures trading", which is a control nobody can
     // find by that name.
@@ -161,6 +277,9 @@ const VENUES = {
     desktopOnly: true,
     desktopOnlyNote: 'Shark only allows API key creation from a laptop or desktop — their mobile app has no create-key screen at all.',
     mobilePath: null,
+    navPath: ['Profile icon', 'API Management', 'Create API key'],
+    /** Shark texts one 6-digit code, and it expires; there is a resend link. */
+    otpNote: 'Shark then texts a 6-digit code to your registered number. It expires — resend it if it does.',
     suggestsKeyName: true,
     appGuide: [
       { src: guideImg('shark-step-1.png'), alt: 'Step 1 — Sign in on a browser, open the profile menu top-right, choose API Management, then Create API key' },
@@ -198,7 +317,7 @@ const VENUES = {
       { title: 'Log in on a laptop or desktop', body: 'The Shark mobile app does not allow API key creation at all — this has to be a computer.' },
       { title: 'Profile icon, top right → API Management', body: 'The profile menu is where the API section lives.' },
       { title: 'Create API key', body: 'Opens the Create API Key form.' },
-      { title: 'Label API and Add IP addresses', body: 'Name it, paste our IP into the address field, then Create.' },
+      { title: 'Label API and Add IP addresses', body: 'Both are required. Name it, paste our IP into the address field, then Create.' },
       { title: 'Enter Verification Code', body: 'Shark texts a 6-digit code to your registered number. It expires, and there is a resend link if it does.' },
       { title: 'Tick Trade Futures, then Save & Complete', body: 'Shark issues every key as Read only. Without Trade Futures we can watch the account but never close a position — the kill switch would do nothing. Copy the key and secret on this screen first; the secret is never shown again.' },
     ],

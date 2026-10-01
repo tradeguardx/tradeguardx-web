@@ -428,7 +428,7 @@
   /* ── Redesign tokens (dark) ─────────────────────────────────────── */
   --bg:#05070d; --bg-deep:#03050a; --bg-header:rgba(7,10,17,.78);
   --surface:#0a0e18; --surface-2:#111828; --surface-3:#1b2334;
-  --line:rgba(255,255,255,.065); --line-strong:rgba(255,255,255,.15);
+  --line:rgba(255,255,255,.065); --line-strong:rgba(255,255,255,.15); --line-input:rgba(255,255,255,.26);
   --ink:#eef2f8; --ink-2:#9dacc1; --ink-3:#8593a8; --ink-faint:#72829a;
   --mint:#3ae8c0; --mint-solid:#00d4aa;
   --mint-tint:rgba(0,212,170,.12); --mint-line:rgba(0,212,170,.34);
@@ -490,7 +490,7 @@
   /* ── Redesign tokens (light) ────────────────────────────────────── */
   --bg:#eef1f6; --bg-deep:#e7ebf2; --bg-header:rgba(255,255,255,.8);
   --surface:#ffffff; --surface-2:#f4f6fa; --surface-3:#e9edf3;
-  --line:rgba(15,23,42,.10); --line-strong:rgba(15,23,42,.19);
+  --line:rgba(15,23,42,.10); --line-strong:rgba(15,23,42,.19); --line-input:rgba(15,23,42,.32);
   --ink:#0a1120; --ink-2:#2f3d52; --ink-3:#47566c; --ink-faint:#5b6a80;
   --mint:#00755f; --mint-solid:#00b894;
   --mint-tint:rgba(0,184,148,.13); --mint-line:rgba(0,160,128,.36);
@@ -1534,25 +1534,35 @@
 }
 
 
-/* Connect steps on a narrow screen.
-   A 28px badge plus a 15px gap indents every line of body text by 43px, and a
-   nested "what the venue asks for" list adds its own padding inside that. At
-   433px the result is more gutter than column — the text wraps two words early
-   on every line. The badge only has to be legible, not large. */
-/* row-gap:0 because the inline `gap:15px` shorthand sets BOTH axes. Title and
-   body used to be one nested block whose spacing came from the paragraph's own
-   5px margin; as grid siblings they would otherwise gain 15px on top of it, on
-   every step, on every screen size. */
-.cx-step{display:grid!important;grid-template-columns:auto 1fr;align-items:start;column-gap:15px;row-gap:0!important}
-.cx-step__n{grid-column:1;grid-row:1}
-.cx-step__title{grid-column:2;grid-row:1;align-self:center}
-.cx-step__body{grid-column:2;grid-row:2}
+/* Connect steps.
+   The badge only has to be legible, not large: at 433px a 28px badge plus a
+   15px gap indents every line of body text by 43px, which is more gutter than
+   column and wraps the text two words early on every line.
+
+   The connect flow is an accordion: a header row that is entirely clickable,
+   and a body that only exists while that step is open. The body indents to
+   line up under the title on a wide screen and goes full-bleed on a phone,
+   where a 65px left gutter costs a third of the line. */
+/* A box you can actually type in.
+   --line-strong is 15% white on a near-black fill, which on a phone at
+   daylight brightness is no edge at all — and this page is full of DRAWN
+   boxes that are pictures of the exchange's form. The two need to be told
+   apart at a glance, and the real one is the one that should look real: a
+   heavier edge, and a focus ring, which a picture never gets. */
+.cx-input{border:1px solid var(--line-input)!important;transition:border-color .14s ease,box-shadow .14s ease}
+.cx-input:hover:not(:disabled){border-color:var(--ink-faint)!important}
+.cx-input:focus{outline:none;border-color:var(--mint)!important;box-shadow:0 0 0 3px var(--mint-tint)}
+.cx-input:disabled{opacity:.55}
+
+.cx-head{display:flex;align-items:center;gap:15px;width:100%;padding:17px 22px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit}
+.cx-head:hover{background:var(--surface-2)}
+.cx-body{padding:0 22px 19px 65px}
 
 @media (max-width:620px){
-  .cx-step{column-gap:10px!important;padding:15px 14px!important}
+  .cx-head{gap:10px!important;padding:14px 14px!important}
   .cx-step__n{width:22px!important;height:22px!important;font-size:11px!important}
   /* The body reclaims the badge column: on a 433px screen that 32px was the
      difference between a line breaking early and not. */
-  .cx-step__body{grid-column:1 / -1!important}
+  .cx-body{padding:0 14px 15px!important}
   .venue-step{gap:9px!important;padding:8px 11px!important}
 }

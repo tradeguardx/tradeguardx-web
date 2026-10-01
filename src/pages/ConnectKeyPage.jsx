@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
@@ -10,7 +10,12 @@ import { ENGINE_EGRESS_IP, venueFor } from '../lib/venues';
 import { brokerLabel } from '../lib/labels';
 import { sx } from '../components/dashboard/shell/sx';
 import AppGuide from '../components/dashboard/AppGuide';
-import VenueSteps from '../components/dashboard/VenueSteps';
+import VenuePath from '../components/dashboard/VenuePath';
+import { useIsMobile } from '../hooks/useIsMobile';
+import VenueFormReplica from '../components/dashboard/VenueFormReplica';
+import VenueAfterCreate from '../components/dashboard/VenueAfterCreate';
+import { useNoAutofill } from '../lib/noAutofill';
+import SecretInput from '../components/common/SecretInput';
 
 /**
  * Connect enforcement — transcribed from the reference (lines 1620–1702).
@@ -42,10 +47,30 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
   const [keyVal, setKeyVal] = useState('');
   const [secretVal, setSecretVal] = useState('');
   const [copied, setCopied] = useState('');
+  const noAutofill = useNoAutofill();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null); // { ok, summary | message }
+  const resultRef = useRef(null);
+
+  /**
+   * Bring the verdict to the person who asked for it.
+   *
+   * The banner renders at the top of the page and Connect is at the bottom of
+   * step three, so pressing it produced a result nobody saw — and the success
+   * case also collapses the whole guide, which changes the page height under
+   * you at the same moment. The answer to "did that work?" was somewhere above
+   * the fold, on a page that had just got shorter.
+   *
+   * This is the one scroll worth taking from the user: they pressed a button
+   * that either armed enforcement on their money or did not.
+   */
+  useEffect(() => {
+    if (!result) return;
+    resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [result]);
   const [replacing, setReplacing] = useState(false); // he asked to swap a working key
   const [guideOpen, setGuideOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'your exchange';
   /**
@@ -64,7 +89,6 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
    * including the screenshots.
    */
   const keyName = SUGGESTED_KEY_NAME;
-  const ip = ENGINE_EGRESS_IP || '13.205.214.83';
   const cooled = g.guard === 'locked';
   const exchangeSlug = selectedAccount ? exchangeFromBrokerSlug(selectedAccount.propFirmSlug) : null;
   const v = venueFor(exchangeSlug) ?? venueFor('delta_india');
@@ -92,16 +116,80 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
     } finally { setBusy(false); }
   };
 
-  // Numbered AFTER filtering: a venue whose key form has no permission choice
-  // (CoinDCX — label, IP bind, OTP, done) would otherwise read 1, 2, 4.
+  /*
+   * THREE STEPS, NOT FOUR. The IP and the permission were separate steps, which
+   * split one screen of the exchange's form across two of ours — someone read
+   * "paste the IP", tabbed over, pasted it, tabbed back, and was then told
+   * about a checkbox on the form they had just left.
+   *
+   * They are now one "fill in their form" step rendering VenueFormReplica: the
+   * exchange's form drawn as it will look, values filled, copy button on each.
+   * The filtering that used to drop the permission step for CoinDCX moves into
+   * the replica, which says "there is no permission control here" rather than
+   * silently omitting it — an absence nobody can see is not an instruction.
+   */
+  /**
+   * On a phone, with a venue that has a working app flow, the key is made in
+   * the app — so there is no page to open and no second tab to keep.
+   *
+   * Only Delta qualifies today. CoinDCX and Shark have no create-key screen in
+   * their apps at all (desktopOnly), so on a phone the honest answer there is
+   * still the link plus desktopOnlyNote telling them to find a computer —
+   * hiding the link would leave that step with nothing in it.
+   */
+  const inApp = isMobile && !v.desktopOnly && Boolean(v.mobilePath) && Boolean(v.appGuide?.length);
+
+  /*
+   * The titles say what you DO, in the order you do it: open, create, paste.
+   *
+   * They have to work collapsed, because that is how most of them are read —
+   * one line in a closed row, scanned to find where you are. "Create the key
+   * in the Delta app" and "Fill in Delta Exchange's form" described the same
+   * screen twice and used two different names for the same venue in adjacent
+   * rows. And the old first title, "Open your key page on Delta Exchange",
+   * named a thing ("your key page") that is not what Delta calls anything.
+   *
+   * Venue naming is v.name throughout — the short one. `venue` is the account
+   * label, which is "Delta Exchange" here, and mixing the two in one card
+   * reads as two different integrations.
+   */
   const steps = [
-    { title: `Open your key page on ${venue}`, body: 'We link straight to it. Keep both tabs open — you will paste in each direction.', kind: 'link' },
-    { title: `Paste our IP into ${v.ipField}`, body: v.ipRequired ? 'The exchange will only accept requests from this one address. It is the same address for everyone, and it is ours.' : `${v.name} lets you leave a key unrestricted. Adding our address means the key only works from us and nowhere else — the same address for every TradeGuardX account.`, kind: 'ip' },
-    { title: `Give the key ${v.scopeLabel} permission`, body: 'A read-only key connects fine and can never close a position, so the kill switch would do nothing.', kind: 'scope' },
-    { title: 'Name it and paste it back here', body: 'Paste key and secret. If you copied both together we will split them for you.', kind: 'paste' },
-  ]
-    .filter((s) => s.kind !== 'scope' || v.scopeChoice !== false)
-    .map((s, i) => ({ ...s, n: i + 1 }));
+    {
+      title: inApp ? `Open the key form in the ${v.name} app` : `Open ${v.name}'s key form`,
+      body: inApp
+        ? 'Three taps to the form, then come back here with the key and secret. The screenshots below show each screen.'
+        : 'We link straight to it. Keep both tabs open — you will paste in each direction.',
+      kind: 'link',
+    },
+    {
+      title: 'Fill it in and create the key',
+      body: v.afterCreate
+        ? 'Copy these two values across and press Create. One more screen follows.'
+        : 'Copy these two values across and press Create.',
+      kind: 'form',
+    },
+    /*
+     * Shark's fourth step, and only Shark's.
+     *
+     * It used to be drawn inside step two, under the create form — which put
+     * two different screens of the exchange in one step of ours, the second of
+     * them below a Create button that ends the first. That is the same mistake
+     * the IP and permission steps made before they were merged, run the other
+     * way: merging is right when it is ONE screen, wrong when it is two.
+     *
+     * It earns a step because it is where the job is finished and where it is
+     * most often abandoned — the secret is shown only there, and the key is
+     * issued without the permission that makes it useful.
+     */
+    ...(v.afterCreate
+      ? [{
+          title: `Copy both, then tick ${v.scopeLabel}`,
+          body: `${v.name} shows the secret on this screen and nowhere else, and issues the key read-only. Both are fixed here.`,
+          kind: 'after',
+        }]
+      : []),
+    { title: 'Paste the key and secret here', body: 'If you copied both together we will split them for you.', kind: 'paste' },
+  ].map((st, i) => ({ ...st, n: i + 1 }));
   const pasteStep = steps.find((s) => s.kind === 'paste')?.n ?? steps.length;
 
   // A key that is in place and can act. A read-only key counts as connected
@@ -113,6 +201,28 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
   // key is in, 1 until a key exists. Derived from the list so a venue with
   // one step fewer doesn't leave the rail stuck.
   const step = result?.ok ? pasteStep + 1 : keyVal || secretVal ? pasteStep : g.connection?.status === 'active' ? pasteStep + 1 : 1;
+
+  /**
+   * Which step is open, and which are behind you.
+   *
+   * `step` above is derived from what has actually happened — a key typed, a
+   * key accepted — and it cannot see the part of this that happens on the
+   * exchange's site. Nothing we can observe distinguishes "reading step one"
+   * from "has created the key and is coming back", so the progress rail sat on
+   * 1 through the entire job and all three steps stayed open the whole time.
+   *
+   * `picked` is the user saying where they are, by opening a step. Moving on
+   * to step two is the signal that step one is behind them — which is the only
+   * signal there is, and it costs nothing to give, unlike a button asking
+   * someone to confirm what they just did. It wins over the derived value,
+   * because after they have told us, they are driving. 0 means everything
+   * collapsed, which is why this is `??` and not `||`.
+   */
+  const [picked, setPicked] = useState(null);
+  const openStep = picked ?? step;
+  /** Behind the open one, or behind what we can prove — either finishes it. */
+  const isDone = (n) => n < openStep || n < step;
+  const toggleStep = (n) => setPicked((prev) => ((prev ?? step) === n ? 0 : n));
 
   if (!selectedAccount) {
     return (
@@ -133,7 +243,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Connect your API key</h1>
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>{connected && !replacing
           ? `${venue} is connected and we can close positions on this account. Your rules decide when we do.`
-          : `This is the step that turns your rules from a note into something that acts. ${steps.length === 3 ? 'Three' : 'Four'} short moves, two tabs, about three minutes.`}</p>
+          : `This is the step that turns your rules from a note into something that acts. ${steps.length === 3 ? 'Three' : 'Four'} short moves${inApp ? '' : ', two tabs'}, about three minutes.`}</p>
       </div>
       )}
 
@@ -157,7 +267,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
       )}
 
       {result && (
-        <div style={sx('display:flex;align-items:flex-start;gap:12px;padding:15px 18px;margin-bottom:16px;border-radius:13px', result.ok ? (result.summary?.enforcementCapable === false ? { border: '1px solid var(--amber-line)', background: 'var(--amber-tint)' } : { border: '1px solid var(--mint-line)', background: 'var(--mint-tint)' }) : { border: '1px solid var(--red-line)', background: 'var(--red-tint)' })}>
+        <div ref={resultRef} style={sx('display:flex;align-items:flex-start;gap:12px;padding:15px 18px;margin-bottom:16px;border-radius:13px', result.ok ? (result.summary?.enforcementCapable === false ? { border: '1px solid var(--amber-line)', background: 'var(--amber-tint)' } : { border: '1px solid var(--mint-line)', background: 'var(--mint-tint)' }) : { border: '1px solid var(--red-line)', background: 'var(--red-tint)' })}>
           <div style={sx('flex:1')}>
             <div style={sx('font-size:13.5px;font-weight:700', { color: result.ok ? (result.summary?.enforcementCapable === false ? 'var(--amber)' : 'var(--mint)') : 'var(--red)' })}>
               {result.ok ? (result.summary?.enforcementCapable === false ? 'Connected — but this key cannot close positions' : 'Connected and checked') : 'That key did not connect'}
@@ -191,20 +301,31 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
 
       {showGuide && (
       <section style={sx('border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
-        {steps.map((st) => (
-          <div key={st.n} className="cx-step" style={sx('display:flex;gap:15px;padding:19px 22px;border-bottom:1px solid var(--line)')}>
-            <span className="cx-step__n" style={sx("flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 12.5px/1 'Space Grotesk',sans-serif", {
-              background: step > st.n ? 'var(--mint-solid)' : step === st.n ? 'var(--ink)' : 'var(--surface-3)',
-              color: step > st.n ? '#04241d' : step === st.n ? 'var(--surface)' : 'var(--ink-3)',
-              boxShadow: step === st.n ? '0 0 0 4px var(--mint-tint)' : 'none',
-            })}>{st.n}</span>
-            {/* Title and body are siblings, not one nested block, so the grid
-                can put the title beside the badge and let the body start at
-                the card's edge on a narrow screen. Nested, every line of body
-                text carried the badge's 43px indent. */}
-            <div className="cx-step__title" style={sx('min-width:0;font-size:14.5px;font-weight:600;letter-spacing:-.005em')}>{st.title}</div>
-            <div className="cx-step__body" style={sx('min-width:0')}>
-              <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:74ch')}>{st.body}</p>
+        {steps.map((st) => {
+          const done = isDone(st.n);
+          const open = openStep === st.n;
+          return (
+          <div key={st.n} style={sx('border-bottom:1px solid var(--line)')}>
+            {/* The whole header is the control. A chevron alone is a 15px
+                target on a phone, on a page people are working through
+                one-handed while switching to another app. */}
+            <button type="button" className="cx-head" onClick={() => toggleStep(st.n)} aria-expanded={open}>
+              <span className="cx-step__n" style={sx("flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 12.5px/1 'Space Grotesk',sans-serif", {
+                background: done ? 'var(--mint-solid)' : open ? 'var(--ink)' : 'var(--surface-3)',
+                color: done ? '#04241d' : open ? 'var(--surface)' : 'var(--ink-3)',
+                boxShadow: open && !done ? '0 0 0 4px var(--mint-tint)' : 'none',
+              })}>{done ? '✓' : st.n}</span>
+              <span style={sx('flex:1;min-width:0;font-size:14.5px;font-weight:600;letter-spacing:-.005em', done && !open ? { color: 'var(--ink-3)' } : {})}>{st.title}</span>
+              {done && !open && (
+                <span style={sx('flex:none;font-size:11.5px;font-weight:700;color:var(--mint)')}>Done</span>
+              )}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {open && (
+            <div className="cx-body">
+              <p style={sx('margin:0 0 0;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:74ch')}>{st.body}</p>
 
               {st.kind === 'link' && (
                 <>
@@ -212,12 +333,26 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                       differently-sized buttons with ragged right edges and two
                       different colour treatments — which reads as one being
                       more important, when they are simply two ways to do the
-                      same step. */}
+                      same step.
+
+                      ON A PHONE, FOR A VENUE WITH AN APP FLOW, THERE IS NO
+                      LINK. Delta's key page is a desktop web page; tapping it
+                      from a phone hands someone a site they are meant to do
+                      this in the app, and the app is already installed and
+                      already logged in. The walkthrough becomes the action
+                      instead, and the taps to reach it sit under it. */}
+                  {/* The taps come first: they are the instruction, and on a
+                      phone a filled full-width button above them read as the
+                      thing to press rather than the thing to fall back on. */}
+                  <VenuePath venue={v} />
+
                   <div className="cx-actions" style={sx('display:flex;flex-wrap:wrap;gap:9px;margin-top:12px')}>
-                    <a href={v.keysUrl(exchangeSlug)} target="_blank" rel="noreferrer" className="cx-link" style={sx('display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700;text-decoration:none')}>
-                      Open the key page
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 17L17 7M9 7h8v8" /></svg>
-                    </a>
+                    {!inApp && (
+                      <a href={v.keysUrl(exchangeSlug)} target="_blank" rel="noreferrer" className="cx-link" style={sx('display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700;text-decoration:none')}>
+                        Open the key page
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 17L17 7M9 7h8v8" /></svg>
+                      </a>
+                    )}
 
                     {/* This page is called "Connect enforcement" and is where
                         people actually land to connect — yet it was the one
@@ -234,41 +369,24 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                   </div>
 
                   {v.desktopOnly && (
-                    <p style={sx('margin:10px 0 0;font-size:12px;line-height:1.55;color:var(--amber)')}>
+                    /* Said once, here, where someone decides whether to carry
+                       on. It was a thin amber line here AND a repeat in the
+                       page footer that prefixed it with "X cannot issue a key
+                       from a phone — ", making one sentence with two em dashes
+                       that said the same thing twice. */
+                    <p style={sx('margin:11px 0 0;padding:11px 13px;border:1px solid var(--amber-line);border-radius:10px;background:var(--amber-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:70ch')}>
+                      <strong style={sx('font-weight:700', { color: 'var(--amber)' })}>Do this on a laptop or desktop.</strong>{' '}
                       {v.desktopOnlyNote}
                     </p>
                   )}
 
-                  {/* The venue's own form, named field by field. People stall
-                      on the other tab, not on this one — so describe what is
-                      in front of them there, in their words. */}
-                  <div style={sx('margin-top:14px')}>
-                    <VenueSteps venue={v} />
-                  </div>
                 </>
               )}
 
-              {st.kind === 'ip' && (
-                <div style={sx('margin-top:12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap')}>
-                  <code style={sx("padding:9px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);font:500 14px/1 'JetBrains Mono',monospace;color:var(--ink)")}>{ip}</code>
-                  <button type="button" onClick={() => copy(ip)} style={sx('padding:9px 13px;border:1px solid var(--ink);border-radius:9px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700')}>{copied === ip ? 'Copied' : 'Copy IP'}</button>
-                  <span style={sx('font-size:12px;color:var(--ink-3)')}>One address, ours, shared by every account.</span>
-                </div>
+              {st.kind === 'form' && (
+                <VenueFormReplica venue={v} onCopy={copy} copiedValue={copied} />
               )}
-
-              {st.kind === 'scope' && (
-                <div style={sx('margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px')}>
-                  <div style={sx('padding:12px 14px;border:1px solid var(--mint-line);border-radius:10px;background:var(--mint-tint)')}>
-                    <div style={sx('font-size:12px;font-weight:700;color:var(--mint)')}>{v.scopeLabel} — required</div>
-                    <p style={sx('margin:4px 0 0;font-size:12px;line-height:1.5;color:var(--ink-2)')}>Lets us cancel orders and close positions. Nothing else works without it.</p>
-                  </div>
-                  <div style={sx('padding:12px 14px;border:1px solid var(--amber-line);border-radius:10px;background:var(--amber-tint)')}>
-                    <div style={sx('font-size:12px;font-weight:700;color:var(--amber)')}>Read-only — looks fine, does nothing</div>
-                    <p style={sx('margin:4px 0 0;font-size:12px;line-height:1.5;color:var(--ink-2)')}>Connects successfully, evaluates rules, and can never intervene. The quiet failure.</p>
-                  </div>
-                </div>
-              )}
-
+              {st.kind === 'after' && <VenueAfterCreate venue={v} />}
               {st.kind === 'paste' && (
                 <div style={sx('margin-top:13px')}>
                   <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap')}>
@@ -277,9 +395,9 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                     <button type="button" onClick={() => copy(keyName)} style={sx('padding:7px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:600')}>{copied === keyName ? 'Copied' : 'Copy'}</button>
                   </div>
                   <label htmlFor="cx-key" style={sx('display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px')}>API key</label>
-                  <input id="cx-key" value={keyVal} onChange={(e) => onKey(e.target.value)} disabled={cooled} placeholder="paste key — or paste key and secret together" autoComplete="off" style={sx("width:100%;padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace;margin-bottom:12px")} />
+                  <input id="cx-key" name="tgx-cx-a" className="cx-input" {...noAutofill} value={keyVal} onChange={(e) => onKey(e.target.value)} disabled={cooled} placeholder="paste key — or paste key and secret together" style={sx("width:100%;padding:11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace;margin-bottom:12px")} />
                   <label htmlFor="cx-secret" style={sx('display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px')}>API secret</label>
-                  <input id="cx-secret" value={secretVal} onChange={(e) => setSecretVal(e.target.value)} disabled={cooled} type="password" placeholder="paste secret" autoComplete="off" style={sx("width:100%;padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace;margin-bottom:12px")} />
+                  <SecretInput id="cx-secret" name="tgx-cx-b" className="cx-input" value={secretVal} onChange={(e) => setSecretVal(e.target.value)} disabled={cooled} placeholder="paste secret" wrapperStyle={sx('margin-bottom:12px')} style={sx("width:100%;padding:11px 40px 11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace")} />
                   <button type="button" disabled={!ready || busy} onClick={submit} style={sx('padding:11px 16px;border-radius:10px;font-size:13px;font-weight:700', { border: `1px solid ${ready ? 'var(--ink)' : 'var(--surface-3)'}`, background: ready ? 'var(--ink)' : 'var(--surface-3)', color: ready ? 'var(--surface)' : 'var(--ink-3)' })}>{busy ? 'Checking…' : cooled ? 'Blocked while your lockout runs' : 'Connect and check'}</button>
                   {cooled && (
                     <p style={sx('margin:11px 0 0;padding:11px 13px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:70ch')}><strong style={sx('color:var(--red);font-weight:700')}>Key changes are blocked while your lockout runs.</strong> Removing the key would stop us closing anything, which would make the lockout pointless. This unblocks itself when the lock expires.</p>
@@ -288,17 +406,24 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                 </div>
               )}
             </div>
+            )}
           </div>
-        ))}
-        <div style={sx('display:flex;align-items:flex-start;gap:10px;padding:15px 22px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" style={{ flex: 'none', marginTop: 2, color: 'var(--ink-faint)' }}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
-          {/* Was "the exchange app hides the allowed-IP field under advanced
-              settings" for every venue — true of Delta, nonsense for CoinDCX
-              and Shark, which have no create-key screen in their app at all. */}
-          <span>{v.desktopOnly
-            ? `${v.name} cannot issue a key from a phone — ${v.desktopOnlyNote}`
-            : 'Doing this on your phone? The exchange app hides the allowed-IP field under advanced settings.'} <a href="/help" target="_blank" rel="noreferrer">Read the walkthrough</a>.</span>
-        </div>
+          );
+        })}
+        {/* Only a venue with an app flow has anything to say here. For the
+            desktop-only two this repeated step one's callout verbatim. */}
+        {!v.desktopOnly && (
+          <div style={sx('display:flex;align-items:flex-start;gap:10px;padding:15px 22px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" style={{ flex: 'none', marginTop: 2, color: 'var(--ink-faint)' }}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
+            {/* Was "Doing this on your phone?" — asked of someone who is
+                plainly on a phone, and asked of desktop users as an aside about
+                a screen they are not looking at. Each audience now gets the one
+                sentence that is about them. */}
+            <span>{inApp
+              ? `In the ${v.name} app the allowed-IP field sits under advanced settings.`
+              : `On a phone, the ${v.name} app hides the allowed-IP field under advanced settings.`} <a href="/help" target="_blank" rel="noreferrer">Read the walkthrough</a>.</span>
+          </div>
+        )}
         {connected && !g.readOnly && (
           <div style={sx('padding:13px 22px;border-top:1px solid var(--line);background:var(--surface-2)')}>
             <button type="button" onClick={() => { setReplacing(false); setKeyVal(""); setSecretVal(""); }} style={sx('padding:8px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Cancel — keep the key I have</button>
