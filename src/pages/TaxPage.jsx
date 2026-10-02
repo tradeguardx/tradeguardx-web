@@ -274,11 +274,26 @@ export default function TaxPage() {
    */
   const gated =
     data?.calculationStatus === 'INVALID_PENDING_RECONCILIATION' ||
-    data?.calculationStatus === 'VENUE_NOT_SUPPORTED';
+    data?.calculationStatus === 'VENUE_NOT_SUPPORTED' ||
+    data?.calculationStatus === 'NO_ACTIVITY';
   const gateTitle =
     data?.calculationStatus === 'VENUE_NOT_SUPPORTED'
       ? 'No tax report for this account yet'
-      : 'Tax calculation requires reconciliation';
+      : data?.calculationStatus === 'NO_ACTIVITY'
+        ? data?.neverSynced
+          ? 'This account has not been imported yet'
+          : `Nothing to report for ${data?.fyLabel ?? 'this year'}`
+        : 'Tax calculation requires reconciliation';
+  /*
+   * An empty year is not a warning.
+   *
+   * The gate panel is amber because the other two statuses are problems the
+   * user has to act on. "You did not trade this year" is neither a problem nor
+   * theirs to fix, and dressing it in alarm colours teaches people to read
+   * amber as decoration — which is the one thing that must not happen on the
+   * statuses that ARE warnings.
+   */
+  const gateIsNeutral = data?.calculationStatus === 'NO_ACTIVITY' && !data?.neverSynced;
   // The unit the API says these figures are in. Never defaulted to INR — that
   // assumption is exactly what produced the misstatement.
   const currency = data?.currency ?? 'UNKNOWN';
@@ -464,13 +479,17 @@ export default function TaxPage() {
       {gated && (
         <div
           className="mt-6 flex items-start gap-3 rounded-2xl border p-5"
-          style={{ borderColor: 'var(--tax-warn)', backgroundColor: AMBER_SOFT }}
+          style={
+            gateIsNeutral
+              ? { borderColor: BORDER, backgroundColor: RAISED }
+              : { borderColor: 'var(--tax-warn)', backgroundColor: AMBER_SOFT }
+          }
         >
-          <span style={{ color: AMBER, marginTop: 2 }}>
-            <Icon d={P.alert} size={18} />
+          <span style={{ color: gateIsNeutral ? SECONDARY : AMBER, marginTop: 2 }}>
+            <Icon d={gateIsNeutral ? P.info : P.alert} size={18} />
           </span>
           <div>
-            <p className="text-sm font-bold" style={{ color: AMBER }}>
+            <p className="text-sm font-bold" style={{ color: gateIsNeutral ? PRIMARY : AMBER }}>
               {gateTitle}
             </p>
             <p className="mt-1 text-sm leading-relaxed" style={{ color: SECONDARY }}>
