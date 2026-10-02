@@ -440,6 +440,29 @@
      purpose: any coloured answer here would be a guess. */
   --neutral:var(--ink-3); --neutral-solid:var(--surface-3);
   --neutral-tint:var(--surface-2); --neutral-line:var(--line);
+
+  /* ── Tax centre, dark ──────────────────────────────────────────
+     These existed ONLY under [data-dash-theme="light"], so in dark every
+     var(--tax-*) resolved to nothing and fell back to inherited text. The page
+     rendered monochrome: a positive result in the same white as a negative
+     one, status chips with no status, amber warnings indistinguishable from
+     the rest. On a page whose job is to show whether a year made or lost
+     money, losing the one signal that says which is not a cosmetic problem.
+
+     Derived from the dashboard's own semantic tokens rather than picked
+     afresh — the tax centre should not be the one surface where green means a
+     different green. The -soft fills are low-alpha tints, not the light
+     theme's near-white washes, which would glow on #05070d. */
+  --tax-pos: var(--mint);
+  --tax-pos-soft: rgba(0,212,170,.10);
+  --tax-neg: var(--red);
+  --tax-neg-soft: rgba(239,68,68,.10);
+  --tax-warn: var(--amber);
+  --tax-warn-soft: rgba(240,180,41,.10);
+  --tax-accent: var(--mint-solid);
+  /* Violet has no dashboard equivalent; lifted for contrast on a dark card. */
+  --tax-violet: #b89cff;
+  --tax-violet-soft: rgba(139,92,246,.13);
   --violet:#bda6ff; --blue:#7cb9ff; --gold:#f0b429;
   --grid:rgba(255,255,255,.035);
   --wash: radial-gradient(ellipse 70% 60% at 0% 0%, rgba(0,212,170,.14), transparent 60%);
