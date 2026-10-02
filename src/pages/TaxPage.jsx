@@ -262,7 +262,23 @@ export default function TaxPage() {
     return () => ctrl.abort();
   }, [load]);
 
-  const gated = data?.calculationStatus === 'INVALID_PENDING_RECONCILIATION';
+  /*
+   * Statuses that must suppress every figure on this page.
+   *
+   * VENUE_NOT_SUPPORTED is the tax pipeline having no data for this venue at
+   * all — sync-service has adapters for Delta and CoinDCX and refuses the
+   * rest, so a Shark account produced a complete-looking report of zeros.
+   * Zero and absent are indistinguishable on screen and only one of them is
+   * safe to file against, so an uncovered venue renders the explanation and
+   * nothing else.
+   */
+  const gated =
+    data?.calculationStatus === 'INVALID_PENDING_RECONCILIATION' ||
+    data?.calculationStatus === 'VENUE_NOT_SUPPORTED';
+  const gateTitle =
+    data?.calculationStatus === 'VENUE_NOT_SUPPORTED'
+      ? 'No tax report for this account yet'
+      : 'Tax calculation requires reconciliation';
   // The unit the API says these figures are in. Never defaulted to INR — that
   // assumption is exactly what produced the misstatement.
   const currency = data?.currency ?? 'UNKNOWN';
@@ -455,7 +471,7 @@ export default function TaxPage() {
           </span>
           <div>
             <p className="text-sm font-bold" style={{ color: AMBER }}>
-              Tax calculation requires reconciliation
+              {gateTitle}
             </p>
             <p className="mt-1 text-sm leading-relaxed" style={{ color: SECONDARY }}>
               {data.calculationStatusMessage}
