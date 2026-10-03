@@ -1591,3 +1591,42 @@
   .cx-body{padding:0 14px 15px!important}
   .venue-step{gap:9px!important;padding:8px 11px!important}
 }
+
+
+/* ── v2 share / leaderboard / rewards: keyframes ───────────────────────────
+   Verbatim from the design handoff's global style block
+   (00_global-styles-tokens-keyframes.css.html).
+
+   ONLY the keyframes it did not already have. The handoff says to paste that
+   block in unchanged, and all 34 of its tokens are already defined here with
+   the same values — pasting it whole would redeclare them and, because it is
+   appended last, would silently drop --line-input and the --tax-* set added
+   earlier. Ten of its keyframes were already present too. These fourteen are
+   what is genuinely new.
+
+   The reduced-motion rule that disables them all already exists above, as
+   does [data-tgx-modal]'s bottom docking. */
+@keyframes tgxBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes tgxCell { from { transform: scaleY(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes tgxFlicker { 0%,100% { transform: scale(1) rotate(-2deg); } 33% { transform: scale(1.08,1.14) rotate(2deg); } 66% { transform: scale(.96,1.04) rotate(-1deg); } }
+@keyframes tgxFloat { 0%,100% { transform: translate(-50%,0) rotate(-6deg); } 50% { transform: translate(-50%,-5px) rotate(6deg); } }
+@keyframes tgxFlow { from { background-position: 0 0; } to { background-position: 18px 0; } }
+@keyframes tgxGoldText { from { background-position: 200% 0; } to { background-position: -50% 0; } }
+@keyframes tgxGrow { from { transform: scaleY(0); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes tgxGrowX { from { transform: scaleX(0); } }
+@keyframes tgxRing { 0% { transform: translate(-50%,-50%) scale(1); opacity: .7; } 100% { transform: translate(-50%,-50%) scale(2.3); opacity: 0; } }
+@keyframes tgxRingIn { from { stroke-dashoffset: 214; } }
+@keyframes tgxRow { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+@keyframes tgxSpin { to { transform: rotate(360deg); } }
+@keyframes tgxTwinkle { 0%,100% { opacity: 0; transform: scale(.4) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+@keyframes tgxUp { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+/* Sideways-scrolling tab bars hide their scrollbar: the handoff's tab rows
+   overflow on a phone and the bar is the affordance, not the scrollbar. */
+[data-tgx-tabs]{scrollbar-width:none}
+[data-tgx-tabs]::-webkit-scrollbar{display:none}
+
+/* The handoff's style-hover on a share target: border and text lift on hover.
+   Inline styles cannot express :hover, which is the one thing the template
+   runtime did for free. */
+.tgx-share-target{transition:border-color .14s ease,color .14s ease}
+.tgx-share-target:hover{border-color:var(--line-strong)!important;color:var(--ink)!important}
