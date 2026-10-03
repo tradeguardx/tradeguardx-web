@@ -24,7 +24,18 @@ import { fmtMoney } from '../lib/session';
 import { sx } from '../components/dashboard/shell/sx';
 
 // ─── utils ──────────────────────────────────────────────────────────────────
+/**
+ * A number, or an em dash when there isn't one.
+ *
+ * The null check is explicit because Number(null) is 0 and Number('') is 0,
+ * both finite — so an absent exit price rendered as "0.00", which is not a
+ * missing value but a claim that the trade closed at zero. Shark's CLOSED
+ * record carries no exit price at all, so every Shark trade showed EXIT 0.00.
+ * Number(undefined) is NaN and already fell through, which is why this only
+ * surfaced on the venue that sends null rather than omitting the field.
+ */
 function fmtNum(v, dp = 2) {
+  if (v == null || v === '') return '—';
   const n = Number(v);
   return Number.isFinite(n) ? n.toFixed(dp) : '—';
 }
@@ -491,7 +502,15 @@ function MediaReel({ media }) {
 }
 
 // ─── Event Timeline ───────────────────────────────────────────────────────────
-function EventTimeline({ events }) {
+/**
+ * `currency` is required, not defaulted to USD.
+ *
+ * The amount column was formatted with a hardcoded 'USD', so a Shark trade —
+ * settled in rupees — printed +$61,496.54 beside a header reading
+ * +₹61,496.54. Same figure, two currencies, a hundredfold apart in meaning.
+ * Delta settles in dollars so the bug was invisible there.
+ */
+function EventTimeline({ events, currency }) {
   if (!events.length) return (
     <div style={sx('padding:30px 21px;font-size:13px;color:var(--ink-3)')}>No events recorded on this trade yet.</div>
   );
@@ -518,7 +537,7 @@ function EventTimeline({ events }) {
           )}
         </span>
         {cost != null && (
-          <span style={sx("flex:none;font:600 13px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;padding-top:3px", { color: cost < 0 ? 'var(--red)' : cost > 0 ? 'var(--mint)' : 'var(--ink-3)' })}>{fmtMoney(cost, 'USD', { sign: true })}</span>
+          <span style={sx("flex:none;font:600 13px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;padding-top:3px", { color: cost < 0 ? 'var(--red)' : cost > 0 ? 'var(--mint)' : 'var(--ink-3)' })}>{fmtMoney(cost, currency, { sign: true })}</span>
         )}
       </div>
     );
@@ -1436,7 +1455,7 @@ export default function TradeDetailPage() {
                 <h3 style={sx("margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em")}>Timeline</h3>
                 <p style={sx('margin:5px 0 0;font-size:12.5px;color:var(--ink-3)')}>Where discipline cost money, priced where it happened.</p>
               </div>
-              <EventTimeline events={events} />
+              <EventTimeline events={events} currency={cur} />
             </section>
           )}
 
