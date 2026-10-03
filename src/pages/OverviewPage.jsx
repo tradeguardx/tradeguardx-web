@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useGuard } from '../context/GuardContext';
+import { useShare } from '../context/ShareContext';
 import { useLiveAccount } from '../hooks/useLiveAccount';
+import ShareCardsStrip from '../components/share/ShareCardsStrip';
 import { sessionOf, fmtMoney } from '../lib/session';
 import { fetchJournalStats, fetchTaxSummary, fetchJournalTrades } from '../api/tradesApi';
 import { fetchBreaches } from '../api/breachesApi';
@@ -26,6 +28,7 @@ export default function OverviewPage() {
   const { session } = useAuth();
   const { selectedAccount, selectedTradingAccountId, accountsLoading } = useTradingAccounts();
   const { selected: g } = useGuard();
+  const { openShare, items: shareItems, awards: shareAwards, canShare } = useShare();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
   const live = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount });
@@ -236,9 +239,13 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <div style={sx('position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));border-top:1px solid var(--line)')}>
+        {/* Three short key/value facts. At a 170px floor they wrap 2 + 1 on a
+            phone, which leaves the third stranded under a half-width divider.
+            On a phone they read better as what they actually are — a small
+            definition list — so .ov-facts turns them into rows. */}
+        <div className="ov-facts tgx-cells" style={sx('position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));border-top:1px solid var(--line)')}>
           {facts.map((f) => (
-            <div key={f.k} style={sx('padding:16px 20px;border-right:1px solid var(--line)')}>
+            <div key={f.k} style={sx('padding:16px 20px')}>
               <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)")}>{f.k}</div>
               <div style={sx("margin-top:9px;font:600 21px/1 'Space Grotesk',sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums", { color: f.fg })}>{f.v}</div>
               <div style={sx('margin-top:6px;font-size:11.5px;color:var(--ink-3)')}>{f.note}</div>
@@ -252,15 +259,19 @@ export default function OverviewPage() {
         </div>
       </section>
 
-      <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(214px,1fr));gap:14px;margin-bottom:22px')}>
+      {/* Four numbers meant to be scanned against each other. auto-fit with a
+          214px floor collapses them to one per row below ~460px, which turns a
+          glance into four screens of scrolling with the fourth card below the
+          fold. Pinned to a 2x2 on a phone instead — see .ov-stats. */}
+      <div className="ov-stats" style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(214px,1fr));gap:14px;margin-bottom:22px')}>
         {statCards.map((c) => (
           <button key={c.k} type="button" className="ov-stat" onClick={() => navigate(c.to)} style={sx('position:relative;text-align:left;padding:17px 18px 18px;border:1px solid var(--line);border-radius:16px;background:var(--surface);background-image:linear-gradient(180deg,rgba(255,255,255,.028),transparent 46%);box-shadow:var(--shadow-card);color:var(--ink);transition:transform .16s ease,border-color .16s ease')}>
             <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:8px')}>
-              <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)")}>{c.k}</span>
+              <span className="ov-stat__k" style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)")}>{c.k}</span>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--ink-faint)' }}><path d="M8 5l7 7-7 7" /></svg>
             </div>
-            <div style={sx("margin-top:14px;font:700 30px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.035em", { color: c.fg })}>{c.v}</div>
-            <div style={sx('margin-top:9px;font-size:12px;color:var(--ink-3);line-height:1.5;text-wrap:pretty')}>{c.note}</div>
+            <div className="ov-stat__v" style={sx("margin-top:14px;font:700 30px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.035em", { color: c.fg })}>{c.v}</div>
+            <div className="ov-stat__n" style={sx('margin-top:9px;font-size:12px;color:var(--ink-3);line-height:1.5;text-wrap:pretty')}>{c.note}</div>
             {c.bar && (
               <div style={sx('margin-top:14px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>
                 <div style={sx('height:100%;border-radius:999px', { background: c.fg, width: c.bar, boxShadow: `0 0 12px -2px ${c.fg}` })} />
@@ -269,6 +280,34 @@ export default function OverviewPage() {
           </button>
         ))}
       </div>
+
+      {/*
+        ABOVE "What to do next" AND "Activity", NOT UNDER THEM.
+
+        The handoff put the strip at the bottom of Overview, after the guard
+        and status content. On a phone that is four stat cards, a task list
+        and a live feed of scroll before you reach it — so the one surface
+        that asks the user to do something FOR us sat below everything that
+        asks them to do something for themselves, and most sessions never
+        saw it. It goes directly under the numbers it is about.
+
+        The spec's `account.connected && account.guard !== 'unprotected'` is
+        one condition here: 'unprotected' is exactly the state with no key, so
+        anything else already implies a connection. 'loading' is excluded on
+        the same principle as the guard pill — a pending fetch is not an
+        answer either way.
+
+        `canShare` is the fourth condition and the important one: a protected
+        account with no closed trades has nothing to put on a card, and the
+        alternative to hiding the strip is showing the design's demo trade
+        under this user's name.
+      */}
+      <ShareCardsStrip
+        show={g.loaded && g.guard !== 'unprotected' && g.guard !== 'loading' && canShare}
+        items={shareItems}
+        awards={shareAwards}
+        onOpenShare={openShare}
+      />
 
       <div style={sx('display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start')} className="ov-two">
         <section style={sx(CARD)}>

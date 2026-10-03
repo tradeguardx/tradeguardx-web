@@ -87,6 +87,49 @@ export const SHARE_CARDS = {
 export const SHARE_KINDS = ['trade', 'day', 'week', 'month'];
 
 /**
+ * What the card says about the product, to someone who has never heard of it.
+ *
+ * A share card travels to people with no context. Everything else on it — the
+ * figures, the chart, the rules — assumes you already know what a killswitch
+ * is and that this one exists. These two lines are the only part written for
+ * the stranger, which makes them the part that converts.
+ *
+ * Kept here rather than inline so the claim is in one place: it is a marketing
+ * statement on an artefact we hand to users to publish under their own names,
+ * and it has to stay true as venues come and go.
+ */
+/**
+ * The venue mark on the card.
+ *
+ * It was hard-coded to Delta — logo, orange dot and all — so a Shark account's
+ * card told the world the trade happened somewhere it did not. On an artefact
+ * the user posts under their own name that is not a styling slip, it is a
+ * false statement about their own trading.
+ *
+ * Colours are each venue's own, so the chip reads as theirs rather than ours.
+ */
+const VENUES = {
+  delta_india: { name: 'Delta Exchange', mark: '\u0394', bg: '#fd7d02', fg: '#2a1400' },
+  delta_global: { name: 'Delta Global', mark: '\u0394', bg: '#fd7d02', fg: '#2a1400' },
+  coindcx: { name: 'CoinDCX', mark: 'C', bg: '#1a73e8', fg: '#eaf2ff' },
+  shark: { name: 'Shark', mark: 'S', bg: '#12b5a6', fg: '#02261f' },
+};
+
+export function venueMark(slug) {
+  if (!slug) return null;
+  const key = String(slug).toLowerCase();
+  if (VENUES[key]) return VENUES[key];
+  // An unmapped venue still gets a correct NAME; only the styling falls back.
+  const name = key.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  return { name, mark: name.charAt(0).toUpperCase(), bg: '#4b5a72', fg: '#eef3fa' };
+}
+
+export const BRAND = {
+  tagline: 'India\u2019s first crypto killswitch',
+  venues: 'Live on Delta \u00b7 CoinDCX \u00b7 Shark',
+};
+
+/**
  * Every money figure in a string, replaced with $•••.
  *
  * The regex has to catch the sign too, or "−$218.40" becomes "−$•••" in the
@@ -104,21 +147,55 @@ const MASK = /[−+]?\$[\d,]+(\.\d+)?/g;
  * story — a rule fired, it was worth it — without publishing their account
  * size. If any one figure survives the mask, the toggle has lied to them.
  */
-export function shareCard(kind, { amounts = true } = {}) {
-  const c = { ...(SHARE_CARDS[kind] || SHARE_CARDS.trade) };
+export function shareCard(kind, { amounts = true, cards = null, mask = MASK, sym = '$' } = {}) {
+  // `cards` is the account's real figures, built by shareBuild.js. The static
+  // table below it is the design handoff's demo data, which must never reach a
+  // user: it describes a stranger's SOL trade. Callers that have real data
+  // pass it; the standalone preview page does not.
+  const src = (cards && cards[kind]) || SHARE_CARDS[kind] || SHARE_CARDS.trade;
+  const c = { ...src };
   if (!amounts) {
-    c.hero = '$•••';
+    const dots = `${sym}•••`;
+    c.hero = dots;
     c.dec = '';
-    c.pill = c.pillRed ? '−$•••' : '+$•••';
+    c.pill = c.pillRed ? `−${dots}` : `+${dots}`;
     c.pillText = 'amounts hidden';
-    c.cap = c.cap.replace(MASK, '$•••');
+    c.cap = String(c.cap ?? '').replace(mask, dots);
+    /*
+     * EVERY FIGURE, NOT THE ONES THAT EXISTED WHEN THIS WAS WRITTEN.
+     *
+     * The card grew a sub-line under the hero and a row of tiles, and both
+     * carry money. Masking four named fields meant the toggle hid the hero
+     * and the pill while "+₹61,496.54", "−₹11,220.42" and "₹72,716.96
+     * avoided" stayed on the card — the figures a user turns this off to
+     * avoid publishing, left in the three places they are easiest to read.
+     *
+     * So the sweep is over everything that can hold one, and `hide` runs the
+     * same regex the caption uses rather than naming fields, because the next
+     * field someone adds will not be named here either.
+     */
+    const hide = (v) => (v == null ? v : String(v).replace(mask, dots));
+    c.heroSub = hide(c.heroSub);
+    c.heldLabel = hide(c.heldLabel);
+    c.savedLabel = hide(c.savedLabel);
+    c.headline = hide(c.headline);
+    c.label = hide(c.label);
+    c.meta = hide(c.meta);
+    if (Array.isArray(c.tiles)) c.tiles = c.tiles.map((t) => ({ ...t, v: hide(t.v) }));
   }
   return c;
 }
 
-/** `card.cap` plus the referral tail. The code is what makes a share earn. */
-export function shareCaption(card, referral = 'ARJUN14') {
-  return `${card.cap} Would yours hold? tradeguardx.com/r/${referral}`;
+/**
+ * `card.cap` plus the referral tail. The code is what makes a share earn.
+ *
+ * Until the rewards system issues real codes there is nothing to append, and
+ * a made-up one would send every friend who typed it to a dead link and credit
+ * the sharer nothing. No code, no /r/ path.
+ */
+export function shareCaption(card, referral) {
+  const tail = referral ? `tradeguardx.com/r/${referral}` : 'tradeguardx.com';
+  return `${card.cap} Would yours hold? ${tail}`;
 }
 
 /**
@@ -178,7 +255,7 @@ export function shareTargets(fmt = 'card') {
       fg: '#fff',
       s: 'M7.5 3h9A4.5 4.5 0 0121 7.5v9a4.5 4.5 0 01-4.5 4.5h-9A4.5 4.5 0 013 16.5v-9A4.5 4.5 0 017.5 3zM12 8a4 4 0 110 8 4 4 0 010-8z',
       f: 'M17.2 5.6a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2z',
-      msg: 'Sent to Instagram Stories — the 9:16 version is used',
+      msg: 'Sent to Instagram — attach the saved card to a post or a Story',
     },
     {
       name: 'Discord',
@@ -192,15 +269,89 @@ export function shareTargets(fmt = 'card') {
 }
 
 export const DOWNLOAD_LABEL = (fmt) => (fmt === 'card' ? 'Download PNG' : 'Download MP4');
+/**
+ * The prototype's success lines. Kept for the sizes they name — the modal now
+ * builds its own message from the file it actually wrote, because the reel's
+ * MP4 does not exist yet and this one claimed it had been saved.
+ */
 export const DOWNLOAD_MSG = (fmt) =>
   fmt === 'card'
     ? 'Saved tradeguardx-card.png (1080 × 1350)'
     : 'Saved tradeguardx-reel.mp4 (1080 × 1920, 18 s)';
 
+/** The link every card carries, and the one a web intent publishes. */
+export function shareLink(referral) {
+  return referral ? `https://tradeguardx.com/r/${referral}` : 'https://tradeguardx.com';
+}
+
+/**
+ * Where a destination button goes when the browser has no native share sheet.
+ *
+ * Only three of the five can be opened with content: WhatsApp, Telegram and X
+ * all take a prefilled text intent. Instagram and Discord have no web compose
+ * endpoint at all — nothing we can open will carry either the caption or the
+ * image — so those are `manual`, and the modal says so rather than claiming a
+ * post was opened.
+ *
+ * None of the three can carry the PNG either: a web intent is text-only. The
+ * modal therefore saves the file first and tells the user to attach it, which
+ * is the truthful version of the prototype's "Opened WhatsApp with your card
+ * and caption".
+ */
+export function shareIntent(name, { caption, referral = null } = {}) {
+  // No default code. 'ARJUN14' is the handoff's demo, and defaulting to it put
+  // a stranger's referral into the Telegram link of every share.
+  const text = encodeURIComponent(caption ?? '');
+  switch (name) {
+    case 'WhatsApp':
+      return { url: `https://wa.me/?text=${text}`, manual: false };
+    case 'Telegram':
+      return { url: `https://t.me/share/url?url=${encodeURIComponent(shareLink(referral))}&text=${text}`, manual: false };
+    case 'X':
+      return { url: `https://twitter.com/intent/tweet?text=${text}`, manual: false };
+    default:
+      return { url: '', manual: true };
+  }
+}
+
+/** The exported PNG is this component at 432×540 × 2.5 — exactly 1080×1350. */
+export const EXPORT = { width: 432, pixelRatio: 2.5, bg: '#080a14' };
+
+/**
+ * THE SHAPE. Singular.
+ *
+ * There were three — Post 4:5, Story 9:16 and Square 1:1 — with a picker in
+ * the modal to choose between them. It cost a section of the panel, three
+ * versions of the composition to keep in agreement, and a decision from
+ * someone who came here to post a trade and now had to think about aspect
+ * ratios.
+ *
+ * 4:5 is the one every platform in the Share-to row takes as-is: Instagram
+ * feed, X, Telegram, WhatsApp and Discord all render it without cropping. The
+ * other two were a choice between the shape that always works and two that
+ * sometimes do, which is not a choice worth asking anyone to make.
+ *
+ * 1080 x 1350, and it divides into whole pixels at EXPORT.pixelRatio — a
+ * fractional height there is a half-pixel row of background along the bottom
+ * edge of every card.
+ */
+export const SHARE_SIZE = { key: 'post', label: 'Post', sub: '4:5', w: 1080, h: 1350 };
+
+/** File name for a saved card. One place so the success line cannot drift. */
+export function exportFileName(kind) {
+  return `tradeguardx-${kind}-card.png`;
+}
+
 /** The four cards on the Overview strip. Colours and glyphs are the handoff's. */
 export const STRIP_ITEMS = [
   {
     kind: 'trade',
+    // The 1.5px gradient frame the card sits inside, and Guardy's two body
+    // tones plus his mouth for the shield portrait. All from the reference.
+    frame: 'linear-gradient(140deg,#9be3ff,rgba(122,215,255,.15) 40%,rgba(122,215,255,.15) 60%,#5ff2d2)',
+    c1: '#5ff2d2',
+    c2: '#00b893',
+    mood: 'M-30 34 Q0 64 30 34 Q0 40 -30 34',
     k: 'Last trade',
     ach: 'Saved by the guard',
     v: '$921.80',
@@ -218,6 +369,12 @@ export const STRIP_ITEMS = [
   },
   {
     kind: 'day',
+    // The 1.5px gradient frame the card sits inside, and Guardy's two body
+    // tones plus his mouth for the shield portrait. All from the reference.
+    frame: 'linear-gradient(140deg,#ffe28a,rgba(177,145,251,.15) 40%,rgba(177,145,251,.15) 60%,#c4b0ff)',
+    c1: '#ffe28a',
+    c2: '#e09a00',
+    mood: 'M-30 34 Q0 64 30 34 Q0 40 -30 34',
     k: 'Yesterday',
     ach: 'Quit while ahead',
     v: '+$400',
@@ -235,6 +392,12 @@ export const STRIP_ITEMS = [
   },
   {
     kind: 'week',
+    // The 1.5px gradient frame the card sits inside, and Guardy's two body
+    // tones plus his mouth for the shield portrait. All from the reference.
+    frame: 'linear-gradient(140deg,#c4b0ff,rgba(177,145,251,.15) 40%,rgba(177,145,251,.15) 60%,#ff7ad9)',
+    c1: '#c4b0ff',
+    c2: '#7c3aed',
+    mood: 'M-30 34 Q0 58 30 34',
     k: 'This week',
     ach: 'Green week',
     v: '3',
@@ -252,6 +415,12 @@ export const STRIP_ITEMS = [
   },
   {
     kind: 'month',
+    // The 1.5px gradient frame the card sits inside, and Guardy's two body
+    // tones plus his mouth for the shield portrait. All from the reference.
+    frame: 'conic-gradient(from 210deg,#ffe27a,#ff7ad9,#7ad7ff,#7affd4,#ffe27a)',
+    c1: '#ffe28a',
+    c2: '#e09a00',
+    mood: 'M-30 34 Q0 64 30 34 Q0 40 -30 34',
     k: 'September',
     ach: 'Rule-proof month',
     v: '+$4,812',
@@ -269,6 +438,19 @@ export const STRIP_ITEMS = [
   },
 ];
 
+/** The day card's six bars. */
+export const DAY_BARS = ['22%', '34%', '30%', '52%', '70%', '100%'];
+
+/**
+ * The month card's 21-day heat strip, one cell per trading day.
+ *
+ * G and R are the handoff's own string, kept as a string so the sequence stays
+ * readable and reviewable rather than becoming 21 opaque objects.
+ */
+export const MONTH_HEAT = 'GRGGRGGRGRRGRGRGGRGRG'
+  .split('')
+  .map((c) => ({ bg: c === 'G' ? 'rgba(47,227,189,.85)' : 'rgba(255,122,112,.75)' }));
+
 /** The week card's mini chart: red days hang below the baseline. */
 export const WEEK_BARS = [
   { hu: '46%', hd: '0%', g: false },
@@ -278,11 +460,20 @@ export const WEEK_BARS = [
   { hu: '100%', hd: '0%', g: false },
 ];
 
-/** "Next to unlock": only the goals still locked, with their progress. */
+/**
+ * "Next to unlock": only the goals still locked, with their progress.
+ *
+ * Four of six are already earned, which is what the counter beside the heading
+ * says — showing the earned ones again here would make the section a list of
+ * things the user has rather than a reason to come back.
+ */
 export const STRIP_LOCKED = [
-  { name: '10-day green streak', note: '6 of 10 days', tier: 'EPIC', pct: '60%' },
-  { name: 'Diamond discipline', note: '38 of 90 days, no breaks', tier: 'LEGENDARY', pct: '42%' },
+  { name: '10-day green streak', note: '6 of 10 days', tier: 'EPIC', pct: '60%', gem: 'var(--surface-3)', glyph: 'M13 3L5 13h6l-1 8 8-10h-6l1-8z', locked: true },
+  { name: 'Diamond discipline', note: '38 of 90 days, no breaks', tier: 'LEGENDARY', pct: '42%', gem: 'var(--surface-3)', glyph: 'M6 3h12l3 6-9 12L3 9l3-6zM3 9h18', locked: true },
 ];
+
+export const ACHIEVEMENTS_EARNED = 4;
+export const ACHIEVEMENTS_TOTAL = 6;
 
 /** The default rule chips on a card. Production passes the real four. */
 export const DEFAULT_RULE_CHIPS = ['−$220 max loss', '+$400 target', '6 trades/day', '1% risk'];

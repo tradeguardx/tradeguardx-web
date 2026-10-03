@@ -110,6 +110,31 @@ describe('dashboard shell', () => {
     expect(screen.queryByText(/4,957/)).toBeNull();
   });
 
+  it('puts the share strip above “What to do next”, not under everything', async () => {
+    /*
+     * The handoff put it at the bottom of Overview. On a phone that is four
+     * stat cards, a task list and a live activity feed of scroll before you
+     * reach it — so the one surface that asks the user to do something FOR us
+     * sat below everything asking them to do something for themselves.
+     *
+     * Asserted on DOM order rather than on a screenshot, because this is the
+     * sort of thing a later refactor silently reverses.
+     */
+    mount('/dashboard/overview');
+    await waitFor(() => expect(screen.getByText('What to do next')).toBeTruthy());
+    const next = screen.getByText('What to do next');
+    const activity = screen.getByText('Activity');
+    const strip = screen.queryByText(/Share your/i) ?? screen.queryByText(/Shareable/i);
+    // The strip only renders for an account with something real to share; when
+    // it is there, it is above both.
+    if (strip) {
+      expect(strip.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(strip.compareDocumentPosition(activity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    // And "What to do next" still comes before "Activity".
+    expect(next.compareDocumentPosition(activity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('renders Live guard with the limit scale and commitment controls', async () => {
     mount('/dashboard/live');
     await waitFor(() => expect(screen.getByText(/loss limit — guard closes everything/)).toBeTruthy());

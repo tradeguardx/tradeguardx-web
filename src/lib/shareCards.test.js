@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { STORIES } from './reelStories';
 import {
   DOWNLOAD_LABEL,
   DOWNLOAD_MSG,
+  EXPORT,
+  exportFileName,
+  shareIntent,
+  shareLink,
   SHARE_CARDS,
   SHARE_KINDS,
+  SHARE_SIZE,
   STRIP_ITEMS,
   WEEK_BARS,
   segment,
@@ -153,5 +159,168 @@ describe('the overview strip', () => {
     const guarded = WEEK_BARS.filter((b) => b.g);
     expect(guarded).toHaveLength(2);
     for (const b of guarded) expect(b.hd).toBe('100%');
+  });
+});
+
+describe('share destinations and the exported file', () => {
+  it('exports exactly 1080 x 1350', () => {
+    // The 4:5 card is 432x540 in CSS pixels. Anything other than 2.5 here and
+    // the file stops being the size every caption and modal line claims.
+    expect(EXPORT.width * EXPORT.pixelRatio).toBe(1080);
+    expect(EXPORT.width * 1.25 * EXPORT.pixelRatio).toBe(1350);
+  });
+
+  it('names the file after the card, not the moment', () => {
+    // No timestamp: a second save of the same card should overwrite, not
+    // litter the Downloads folder with four copies of one trade.
+    expect(exportFileName('week')).toBe('tradeguardx-week-card.png');
+  });
+
+  it('carries the referral code in the link a web post publishes', () => {
+    expect(shareLink('ARJUN14')).toBe('https://tradeguardx.com/r/ARJUN14');
+  });
+
+  it('opens WhatsApp, Telegram and X with the caption', () => {
+    const caption = shareCaption(shareCard('trade', { amounts: true }), 'ARJUN14');
+    for (const name of ['WhatsApp', 'Telegram', 'X']) {
+      const i = shareIntent(name, { caption, referral: 'ARJUN14' });
+      expect(i.manual).toBe(false);
+      expect(i.url).toContain(encodeURIComponent(caption));
+    }
+  });
+
+  it('admits Instagram and Discord cannot be opened with content', () => {
+    // Neither has a web composer that accepts text or an image. Claiming
+    // otherwise is what the prototype's message did.
+    for (const name of ['Instagram', 'Discord']) {
+      const i = shareIntent(name, { caption: 'x' });
+      expect(i.manual).toBe(true);
+      expect(i.url).toBe('');
+    }
+  });
+
+  it('every destination the modal renders resolves to an intent', () => {
+    for (const t of shareTargets('card')) {
+      expect(shareIntent(t.name, { caption: 'x' })).toHaveProperty('manual');
+    }
+  });
+});
+
+describe('every card can become a reel', () => {
+  it('each tab points at a story that exists', () => {
+    // ShareReel falls back to the trade story for an unknown id, so a missing
+    // story does not throw — it silently plays someone else's trade under the
+    // week's heading. Nothing on screen says anything is wrong.
+    for (const kind of SHARE_KINDS) {
+      expect(STORIES[SHARE_CARDS[kind].reelStory], `no reel story for ${kind}`).toBeDefined();
+    }
+  });
+
+  it('no two tabs share a reel', () => {
+    const used = SHARE_KINDS.map((k) => SHARE_CARDS[k].reelStory);
+    expect(new Set(used).size).toBe(used.length);
+  });
+});
+
+describe('one export shape', () => {
+  /*
+   * There were three — Post 4:5, Story 9:16 and Square 1:1 — with a picker in
+   * the modal to choose between them. It cost a section of the panel, three
+   * sets of type sizes inside the card, and a decision from someone who came
+   * here to post a trade and now had to think about aspect ratios.
+   *
+   * 4:5 is the one every platform in the Share-to row takes as-is.
+   */
+  it('is the feed shape, 1080 × 1350', () => {
+    expect(SHARE_SIZE.w).toBe(1080);
+    expect(SHARE_SIZE.h / SHARE_SIZE.w).toBeCloseTo(5 / 4, 6);
+  });
+
+  it('divides into whole pixels at the export ratio', () => {
+    // The canvas is laid out in CSS pixels and scaled by EXPORT.pixelRatio. A
+    // fractional height there is a half-pixel row of background along the
+    // bottom edge of every card.
+    expect(Number.isInteger(SHARE_SIZE.w / EXPORT.pixelRatio)).toBe(true);
+    expect(Number.isInteger(SHARE_SIZE.h / EXPORT.pixelRatio)).toBe(true);
+  });
+
+  it('gives a whole canvas height at the design width', () => {
+    const h = (EXPORT.width * SHARE_SIZE.h) / SHARE_SIZE.w;
+    expect(EXPORT.width).toBe(432);
+    expect(Number.isInteger(h)).toBe(true);
+  });
+
+  it('names the file one way, because there is one shape', () => {
+    expect(exportFileName('trade')).toBe('tradeguardx-trade-card.png');
+    expect(exportFileName('week')).toBe('tradeguardx-week-card.png');
+  });
+});
+
+describe('hiding amounts hides every amount', () => {
+  /*
+   * "If any one figure survives the mask, the toggle has lied to them."
+   *
+   * It did. The mask named four fields, and the card later grew a sub-line
+   * under the hero and a row of tiles — both carrying money. With amounts off
+   * the hero read "₹•••" while "+₹61,496.54", "−₹11,220.42" and "₹72,716.96
+   * avoided" stayed on the card, in the three places they are easiest to
+   * read. This is the test that the next field added does not do it again.
+   */
+  const CARD = {
+    available: true,
+    hero: '\u20b961,496', dec: '.54', pill: '+\u20b961,496.54', pillRed: false,
+    pillText: 'instead of \u2212\u20b911,220.42 at the day\u2019s low',
+    heroSub: '\u20b972,716.96 avoided \u00b7 it fell to \u2212\u20b911,220.42',
+    heldLabel: '\u2212\u20b911,220.42',
+    savedLabel: '\u20b972,716.96',
+    headline: 'My daily target banked it before the move gave it back.',
+    label: 'Saved by my daily target',
+    meta: 'Long \u00b7 10x',
+    tiles: [{ k: 'Mine', v: '+\u20b961,496.54' }, { k: 'If I\u2019d held', v: '\u2212\u20b911,220.42' }],
+    cap: 'My daily target closed SOLUSDT at +\u20b961,496.54. Saved \u20b972,716.96.',
+  };
+  const INR = /[\u2212+]?\u20b9[\d,]+(\.\d+)?/g;
+  const hidden = () => shareCard('trade', { amounts: false, cards: { trade: CARD }, mask: INR, sym: '\u20b9' });
+
+  it('leaves no figure anywhere on the card', () => {
+    const c = hidden();
+    const everything = [c.hero, c.dec, c.pill, c.pillText, c.heroSub, c.heldLabel, c.savedLabel, c.headline, c.label, c.meta, c.cap]
+      .concat((c.tiles ?? []).map((t) => t.v))
+      .join(' | ');
+    expect(everything).not.toMatch(/61,496|11,220|72,716/);
+  });
+
+  it('keeps the story, which is the point of the toggle', () => {
+    // A user hiding their account size still wants "a rule fired, it was
+    // worth it" to be readable.
+    const c = hidden();
+    expect(c.headline).toContain('My daily target banked it');
+    expect(c.tiles.map((t) => t.k)).toEqual(['Mine', 'If I\u2019d held']);
+    expect(c.meta).toBe('Long \u00b7 10x');
+  });
+
+  it('shows every figure when the toggle is on', () => {
+    const c = shareCard('trade', { cards: { trade: CARD }, mask: INR, sym: '\u20b9' });
+    expect(c.heroSub).toContain('72,716.96');
+    expect(c.tiles[0].v).toBe('+\u20b961,496.54');
+  });
+});
+
+describe('no demo values escape into a real share', () => {
+  it('never puts the demo referral code in a link', () => {
+    // shareIntent defaulted to 'ARJUN14', so an account with no code of its
+    // own published a stranger's referral in every Telegram share.
+    const i = shareIntent('Telegram', { caption: 'hello' });
+    expect(i.url).not.toContain('ARJUN');
+    expect(i.url).toContain(encodeURIComponent('https://tradeguardx.com'));
+  });
+
+  it('uses a real code when there is one', () => {
+    expect(shareIntent('Telegram', { caption: 'x', referral: 'TEST9' }).url).toContain('TEST9');
+  });
+
+  it('leaves the /r/ path off a link with no code', () => {
+    expect(shareLink(null)).toBe('https://tradeguardx.com');
+    expect(shareCaption({ cap: 'x' })).not.toContain('/r/');
   });
 });

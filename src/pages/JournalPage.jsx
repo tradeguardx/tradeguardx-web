@@ -11,6 +11,7 @@ import { journalHistoryDaysForPlan } from '../lib/planLimits';
 import { tagLabel } from '../lib/labels';
 import { fmtMoney } from '../lib/session';
 import { sx } from '../components/dashboard/shell/sx';
+import { enoughSample, inference } from '../lib/sample';
 
 /**
  * Journal — reference lines 1177–1364 plus Part B of the Rules & Journal
@@ -196,12 +197,20 @@ export default function JournalPage() {
     if (blank) return [dash('Net P&L', 'needs closed trades'), dash('Win rate', 'needs closed trades'), dash('Profit factor', 'needs closed trades'), dash('Expectancy', 'needs closed trades'), dash('Max drawdown', 'needs closed trades'), dash('Avg R:R', 'needs closed trades'), dash('Avg hold', 'needs closed trades'), dash('Discipline', 'scored after ~20 trades')];
     return [
       { k: 'Net P&L', v: money(netPnl, cur, 2), note: `${closed90.length} closed trades, ${days} days`, fg: signFg(netPnl) },
-      { k: 'Win rate', v: winRate != null ? `${Math.round(winRate)}%` : '—', note: `${wins.length} of ${closed90.length} trades`, fg: 'var(--ink)' },
-      { k: 'Profit factor', v: profitFactor != null ? profitFactor.toFixed(2) : '—', note: 'gross won ÷ gross lost', fg: profitFactor != null && profitFactor < 1 ? 'var(--red)' : 'var(--ink)' },
-      { k: 'Expectancy', v: expectancy != null ? money(expectancy, cur, 2) : '—', note: 'average result per trade', fg: expectancy != null && expectancy < 0 ? 'var(--red)' : 'var(--ink)' },
+      // Win rate, profit factor, expectancy and avg R:R are estimates of an
+      // edge, not facts about the account. On a handful of trades they are
+      // noise wearing a percentage sign, so they wait for a sample — the same
+      // bar the discipline score below has always used.
+      { k: 'Win rate', ...inference(closed90.length, winRate, `${wins.length} of ${closed90.length} trades`, { format: (v) => `${Math.round(v)}%` }), fg: 'var(--ink)' },
+      { k: 'Profit factor', ...inference(closed90.length, profitFactor, 'gross won ÷ gross lost', { format: (v) => v.toFixed(2) }), fg: enoughSample(closed90.length) && profitFactor != null && profitFactor < 1 ? 'var(--red)' : 'var(--ink)' },
+      { k: 'Expectancy', ...inference(closed90.length, expectancy, 'average result per trade', { format: (v) => money(v, cur, 2) }), fg: enoughSample(closed90.length) && expectancy != null && expectancy < 0 ? 'var(--red)' : 'var(--ink)' },
       { k: 'Max drawdown', v: maxDd < 0 ? money(maxDd, cur, 0) : '$0', note: maxDdPct != null ? `${pct(maxDdPct)} from the peak${recovered ? ', recovered' : ', still in it'}` : 'peak to trough, closed P&L', fg: maxDd < 0 ? 'var(--red)' : 'var(--ink)' },
-      { k: 'Avg R:R', v: avgRR != null ? avgRR.toFixed(2) : '—', note: 'average win ÷ average loss', fg: 'var(--ink)' },
+      { k: 'Avg R:R', ...inference(closed90.length, avgRR, 'average win ÷ average loss', { format: (v) => v.toFixed(2) }), fg: 'var(--ink)' },
       { k: 'Avg hold', v: fmtHold(avgHold), note: `${(closed90.length / days).toFixed(1)} trades per day`, fg: 'var(--ink)' },
+      // Not gated here: the API scores discipline and decides for itself when
+      // it has seen enough, returning null until then. Applying a second,
+      // client-side bar on top would hide a score the server was willing to
+      // stand behind.
       { k: 'Discipline', v: score != null ? `${score}/100` : '—', note: score != null ? `${breaches90.length} rule ${breaches90.length === 1 ? 'break' : 'breaks'} in ${days} days` : 'scored after ~20 trades', fg: disciplineFg },
     ];
   })();

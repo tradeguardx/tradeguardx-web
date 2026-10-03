@@ -1,11 +1,24 @@
-import { clamp } from './reelMotion';
+import { M, clamp, interpolate, tw } from './reelMotion';
 
 /**
  * What the reel is about, per story.
  *
- * Two stories ship now — `trade` (one trade closed by the loss limit) and
- * `day` (a day locked by the daily target). Week and month use a bar layout
- * rather than a price line and are deliberately not built here.
+ * All four ship: `trade` (one trade closed by the loss limit), `day` (a day
+ * locked by the daily target), `week` (five bars, two of them caught by the
+ * limit) and `month` (a long equity line against the one it avoided).
+ *
+ * `mode` decides how the avoided path is drawn:
+ *
+ *   'after'     A continues where P stopped — what the price did NEXT.
+ *               The reveal widens the x-axis past the close.
+ *   'parallel'  A runs alongside P over the same period — the same days
+ *               without the guard. The x-axis does not grow; only the floor
+ *               drops. Used by week and month, where "afterwards" is not a
+ *               thing that happened.
+ *
+ * `days` marks the bar-race layout. When it is present WeekBars replaces the
+ * price chart, the close stamp moves to the top-left of the panel, and the
+ * "if held" line is dropped — the ghost bars already say it, per-day.
  *
  * IN PRODUCTION THESE COME FROM THE CLOSED TRADE. The numbers below are the
  * demo values, and the shape is the contract:
@@ -122,7 +135,129 @@ export const STORIES = {
       'The trades he didn’t take would have lost it all.',
     ],
   },
+  week: {
+    // The bar race. `v` is where the day actually closed; `ghost` is where it
+    // was heading when the limit stopped it — drawn as a dashed outline below
+    // the bar at the reveal. Only the two red days have one.
+    days: [
+      { d: 'MON', v: 312.4 },
+      { d: 'TUE', v: -218.6, ghost: -1140.2 },
+      { d: 'WED', v: 486.9 },
+      { d: 'THU', v: -219.8, ghost: -1913.4 },
+      { d: 'FRI', v: 887.4 },
+    ],
+    // Cumulative, for the card's mini chart only — the reel draws bars.
+    // Sum of v = +1,248.30; sum with the ghosts = −1,366.90; saved = 2,615.20.
+    P: [0, 312.4, 93.8, 580.7, 360.9, 1248.3],
+    A: [0, 312.4, -827.8, -340.9, -2254.3, -1366.9],
+    mode: 'parallel',
+    win: true,
+    k: 3,
+    limit: 0,
+    limitLabel: '',
+    limitC: RED,
+    lit: 0,
+    saved: 2615.2,
+    sym: 'THIS WEEK',
+    tag: '28 SEP – 2 OCT',
+    liveLabel: 'WEEK P&L',
+    savedLabel: 'THE GUARD WAS WORTH',
+    stamp: 'Week closed at +$1,248.30',
+    heldPre: 'Same week without the guard: ',
+    held: '−$1,366.90',
+    near: () => 0,
+    card: {
+      sym: 'Weekly recap',
+      meta: '28 Sep – 2 Oct',
+      badge: 'Green week',
+      label: 'The guard was worth',
+      pill: '+$1,248.30',
+      pillC: MINT,
+      pillText: 'instead of −$1,366.90 without it',
+      tiles: [
+        ['Week', '+$1,248.30', MINT],
+        ['Days', '3 up · 2 down', '#fff'],
+        ['Without guard', '−$1,366.90', GREY],
+      ],
+      ach: 'Green week, rules held',
+      tier: 'EPIC',
+      achText: '3 green days, 2 red days stopped at the limit, 0 rule edits.',
+      date: 'Week 40 · 2026',
+    },
+    caps: [
+      'Arjun locks his rules on Monday.',
+      'Seven days. No edits allowed.',
+      'One bar a day. Watch the red ones.',
+      'Both red days stopped dead at −$220.',
+      'The week closes green.',
+      'Without the guard, it was −$1,366.90.',
+    ],
+  },
+  month: {
+    P: [0, 420, 310, 820, 1240, 980, 1610, 2050, 1830, 2480, 3010, 2790, 3560, 4120, 4812.6],
+    A: [0, 420, -150, 380, 700, -620, -210, 300, -1350, -900, -400, -2100, -3300, -4700, -6240.1],
+    mode: 'parallel',
+    win: true,
+    k: 25,
+    limit: 0,
+    limitLabel: '',
+    limitC: RED,
+    lit: 0,
+    saved: 11052.7,
+    sym: 'SEPTEMBER',
+    tag: '21 TRADING DAYS',
+    liveLabel: 'MONTH P&L',
+    savedLabel: 'THE GUARD WAS WORTH',
+    stamp: 'September closed at +$4,812.60',
+    heldPre: 'Same month without the guard: ',
+    held: '−$6,240.10',
+    near: () => 0,
+    card: {
+      sym: 'Monthly recap',
+      meta: 'September · 21 days',
+      badge: 'Green month',
+      label: 'The guard was worth',
+      pill: '+$4,812.60',
+      pillC: MINT,
+      pillText: 'instead of −$6,240.10 without it',
+      tiles: [
+        ['Month', '+$4,812.60', MINT],
+        ['Without guard', '−$6,240.10', GREY],
+        ['Guard closes', '9', '#fff'],
+      ],
+      ach: 'Rule-proof month',
+      tier: 'LEGENDARY',
+      achText: '21 days, 9 closes, 0 rule edits.',
+      date: 'Sep 2026',
+    },
+    caps: [
+      'Arjun locked his rules on the 1st.',
+      'Re-locked every 7 days. Never edited once.',
+      'Twenty-one trading days.',
+      'Nine times, the guard closed a bad day.',
+      'September closes green.',
+      'Without the guard: −$6,240.10.',
+    ],
+  },
 };
+
+/** When day `i`'s bar starts animating. One a second, a little over. */
+export const dayT0 = (Tr, i) => Tr + 0.6 + i * 1.05;
+
+/**
+ * What day `i` is worth at time T — the whole point of the week story.
+ *
+ * A green day simply grows to its close. A red day does not: it plunges
+ * towards −700, and then, 0.45s in, snaps back up to where the limit actually
+ * stopped it. That snap is the guard, and it is why the red bars are the ones
+ * the caption tells you to watch.
+ */
+export function dayVal(d, i, T, Tr) {
+  const t0 = dayT0(Tr, i);
+  if (d.v >= 0) return d.v * tw(0, 1, t0, t0 + 0.5, M.enter)(T);
+  if (T < t0 + 0.45) return -700 * tw(0, 1, t0, t0 + 0.45, M.enter)(T);
+  return interpolate([t0 + 0.45, t0 + 0.8], [-700, d.v], M.pop)(T);
+}
 
 /**
  * The chart's vertical range, in three parts.

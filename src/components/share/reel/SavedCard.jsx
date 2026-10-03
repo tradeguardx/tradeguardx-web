@@ -16,11 +16,29 @@ import { FONT_B, FONT_D, FONT_M, RED } from '../../../lib/reelStories';
  * anyone can post a green number, and the claim here is that a rule set
  * beforehand is what produced it.
  */
-export default function SavedCard({ story, P, A, HI, LO1, handle = '@arjun.trades', referral = 'ARJUN14', rules, sheen }) {
+export default function SavedCard({ story, P, A, HI, LO1, handle, referral, rules, sheen, sym = '$', venue = null }) {
   const glass = 'rgba(255,255,255,.07)';
   const line = 'rgba(255,255,255,.15)';
-  const [bm, bd] = split(usd(story.saved));
   const cd = story.card;
+  /*
+   * THE END CARD FOLLOWS THE OUTCOME. IT USED TO BE MINT NO MATTER WHAT.
+   *
+   * The hero figure, its glow and the badge chip were all hard-coded to the
+   * green — so a trade that LOST ₹5.97 ended its reel with a large green
+   * ₹5.97 under a green badge, with no minus sign on it, because the figure
+   * came from `story.saved`, which is a magnitude. Three separate things all
+   * saying "you won" on a losing trade, on the frame people screenshot.
+   *
+   * Signed, and coloured by the sign. `story.card.hero` carries the figure
+   * already formatted; the fallback keeps the handoff's demo reels rendering
+   * exactly as they did.
+   */
+  const [bm, bd] = split(cd.hero ?? usd(story.saved, sym));
+  const heroC = cd.heroC ?? '#3ff0c8';
+  const down = heroC === RED || heroC === '#ff8a80';
+  const heroGlow = down ? 'rgba(239,68,68,.32)' : 'rgba(0,212,170,.35)';
+  const badgeBg = down ? 'rgba(239,68,68,.16)' : 'rgba(0,212,170,.16)';
+  const badgeFg = down ? '#ff8a80' : '#3ff0c8';
   const XN = P.length - 1;
   const XA = A.length - 1;
   const chips = rules ?? ['−$220 max loss', '+$400 target', '6 trades/day', '1% risk'];
@@ -70,8 +88,9 @@ export default function SavedCard({ story, P, A, HI, LO1, handle = '@arjun.trade
             </div>
           </div>
           <div style={{ boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 7, padding: '5px 10px 5px 5px', borderRadius: 999, background: glass, boxShadow: `inset 0 0 0 1px ${line}` }}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fd7d02', display: 'grid', placeItems: 'center', font: `800 11px/1 ${FONT_D}` }}>Δ</div>
-            <span style={{ fontSize: 11.5, fontWeight: 700 }}>Delta Exchange</span>
+            {/* The venue the trade happened on, never assumed. */}
+            <div style={{ width: 20, height: 20, borderRadius: '50%', background: venue?.bg ?? '#4b5a72', color: venue?.fg ?? '#eef3fa', display: 'grid', placeItems: 'center', font: `800 11px/1 ${FONT_D}` }}>{venue?.mark ?? '•'}</div>
+            <span style={{ fontSize: 11.5, fontWeight: 700 }}>{venue?.name ?? 'Your exchange'}</span>
           </div>
         </div>
 
@@ -91,12 +110,12 @@ export default function SavedCard({ story, P, A, HI, LO1, handle = '@arjun.trade
             <span style={{ font: `700 17px/1 ${FONT_D}` }}>{cd.sym}</span>
             <span style={{ fontSize: 11.5, fontWeight: 600, color: '#c9d2e0' }}>{cd.meta}</span>
             <span style={{ flex: 1 }} />
-            <span style={{ boxSizing: 'border-box', font: `700 10px/1 ${FONT_M}`, letterSpacing: '.1em', textTransform: 'uppercase', padding: '5px 8px', borderRadius: 6, background: 'rgba(0,212,170,.16)', color: '#3ff0c8' }}>
+            <span style={{ boxSizing: 'border-box', font: `700 10px/1 ${FONT_M}`, letterSpacing: '.1em', textTransform: 'uppercase', padding: '5px 8px', borderRadius: 6, background: badgeBg, color: badgeFg }}>
               {cd.badge}
             </span>
           </div>
           <div style={{ marginTop: 16, font: `600 9.5px/1 ${FONT_M}`, letterSpacing: '.16em', textTransform: 'uppercase', color: '#9aa6ba' }}>{cd.label}</div>
-          <div style={{ marginTop: 8, font: `700 54px/1 ${FONT_D}`, letterSpacing: '-.055em', color: '#3ff0c8', textShadow: '0 0 40px rgba(0,212,170,.35)' }}>
+          <div style={{ marginTop: 8, font: `700 54px/1 ${FONT_D}`, letterSpacing: '-.055em', color: heroC, textShadow: `0 0 40px ${heroGlow}` }}>
             {bm}
             <span style={{ fontSize: '.5em', opacity: 0.6 }}>{bd}</span>
           </div>
@@ -144,9 +163,14 @@ export default function SavedCard({ story, P, A, HI, LO1, handle = '@arjun.trade
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               <span style={{ font: `700 12.5px/1 ${FONT_D}` }}>{cd.ach}</span>
-              <span style={{ boxSizing: 'border-box', font: `600 8.5px/1 ${FONT_M}`, letterSpacing: '.12em', padding: '3px 6px', borderRadius: 5, background: 'rgba(122,215,255,.2)', color: '#7ad7ff' }}>
-                {cd.tier}
-              </span>
+              {/* No tier unless one was earned — see tierFor() in shareBuild.js.
+                  Rendered unconditionally this was an empty blue pill sitting
+                  next to the achievement line on every ordinary close. */}
+              {cd.tier && (
+                <span style={{ boxSizing: 'border-box', font: `600 8.5px/1 ${FONT_M}`, letterSpacing: '.12em', padding: '3px 6px', borderRadius: 5, background: 'rgba(122,215,255,.2)', color: '#7ad7ff' }}>
+                  {cd.tier}
+                </span>
+              )}
             </div>
             <div style={{ fontSize: 11, color: '#c9d2e0', marginTop: 4 }}>{cd.achText}</div>
           </div>
@@ -154,11 +178,13 @@ export default function SavedCard({ story, P, A, HI, LO1, handle = '@arjun.trade
 
         <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#9aa6ba' }}>
           <span>
-            <b style={{ color: '#c9d2e0' }}>{handle}</b> · {cd.date}
+            {/* Same as the card: no handle means no handle, never the demo's. */}
+            {handle && <b style={{ color: '#c9d2e0' }}>{handle} · </b>}
+            {cd.date}
           </span>
           <span style={{ boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 7, padding: '5px 6px 5px 9px', borderRadius: 8, background: glass, boxShadow: `inset 0 0 0 1px ${line}` }}>
             <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>Would yours hold?</span>
-            <span style={{ boxSizing: 'border-box', font: `700 10px/1 ${FONT_M}`, padding: '4px 6px', borderRadius: 5, background: '#00d4aa', color: '#04140f' }}>{referral}</span>
+            {referral && <span style={{ boxSizing: 'border-box', font: `700 10px/1 ${FONT_M}`, padding: '4px 6px', borderRadius: 5, background: '#00d4aa', color: '#04140f' }}>{referral}</span>}
           </span>
         </div>
       </div>

@@ -2,8 +2,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import Guardy from './Guardy';
 import PriceChart from './PriceChart';
 import SavedCard from './SavedCard';
+import WeekBars from './WeekBars';
 import { M, at, bump, clamp, colourFor, interpolate, money, split, tw, usd } from '../../../lib/reelMotion';
-import { CUES, FONT_B, FONT_D, FONT_M, RULES, STORIES, yRange } from '../../../lib/reelStories';
+import { CUES, FONT_B, FONT_D, FONT_M, RULES, STORIES, dayVal, yRange } from '../../../lib/reelStories';
 
 const W = 1080;
 const H = 1920;
@@ -28,16 +29,37 @@ const { S, Tr, G, C, END } = CUES;
  */
 export default function ShareReel({
   story: storyId = 'trade',
+  /** The account's own story. Falls back to the demo set only when absent,
+      which on the dashboard never happens — the modal hides the Reel format
+      for a tab it has no real story for. */
+  data = null,
   id,
   color,
   captions = true,
   handle,
   referral,
+  /** Plain strings for the end card's chip row. */
   rules,
+  /** {k, v, c} for the rail of rule blocks. A different shape from `rules`. */
+  ruleBlocks = null,
+  /**
+   * The account's settlement symbol. Every figure in the reel is drawn from
+   * the account's own ledger, so a hard-coded '$' renders a Shark trader's
+   * rupees as dollars — the same figure, off by roughly eighty to one, on the
+   * artefact they post publicly.
+   */
+  sym = '$',
+  /**
+   * The venue the trade happened on, as venueMark() describes it. The reel
+   * had Delta's name and orange dot hard-coded in two places — the header and
+   * the end card — so a Shark trade's reel announced the wrong exchange
+   * twice, in a video the user posts under their own name.
+   */
+  venue = null,
   className,
   style,
 }) {
-  const story = STORIES[storyId] || STORIES.trade;
+  const story = data ?? STORIES[storyId] ?? STORIES.trade;
   const { P, A } = story;
   const { HI, LO0, LO1 } = yRange(story);
   const XN = P.length - 1;
@@ -145,6 +167,9 @@ export default function ShareReel({
             handle={handle}
             referral={referral}
             rules={rules}
+            ruleBlocks={ruleBlocks}
+            sym={sym}
+            venue={venue}
           />
         </div>
       )}
@@ -175,13 +200,17 @@ function usePrefersReducedMotion() {
 }
 
 /** Everything below is a pure function of T. No state, no effects, no clock. */
-function Frame({ T, story, P, A, XN, XA, HI, LO0, LO1, body, captions, handle, referral, rules }) {
+function Frame({ T, story, P, A, XN, XA, HI, LO0, LO1, body, captions, handle, referral, rules, ruleBlocks, sym = '$', venue = null }) {
   const K = story.k;
   const WIN = story.win;
 
   const drawP = tw(0, 1, Tr + 0.7, G, M.glide)(T);
   const afterP = tw(0, 1, G + 1.1, G + 2.8, M.glide)(T);
-  const live = at(P, drawP);
+  // The week counts up as its bars land; everything else reads a point off
+  // the drawn path.
+  const live = story.days
+    ? story.days.reduce((sum, d, i) => sum + dayVal(d, i, T, Tr), 0)
+    : at(P, drawP);
   const savedNow = story.saved * afterP;
 
   const liveMood = live >= 0 ? clamp(live / (40 * K), 0, 1) : clamp(live / (140 * K), -1, 0);
@@ -195,8 +224,14 @@ function Frame({ T, story, P, A, XN, XA, HI, LO0, LO1, body, captions, handle, r
       : interpolate([G, G + 0.25, G + 0.8, G + 2.6], [-1, -0.6, 0.3, 1], M.glide)(T);
   }
 
-  const launches = RULES.map((_, i) => S + 0.8 + i * 0.45);
-  let arms = Math.max(...launches.map((l) => bump(T, l, 0.3))) * 0.9;
+  // The user's own rules when we have them. The rail is the part of the reel
+  // that says "these are the limits I wrote", so the demo set here would be a
+  // claim about rules this account never had.
+  const railBlocks = ruleBlocks?.length ? ruleBlocks : RULES;
+  const launches = railBlocks.map((_, i) => S + 0.8 + i * 0.45);
+  // An account with no rules on has no blocks, and Math.max of nothing is
+  // -Infinity, which propagates into Guardy's arm transform as NaN.
+  let arms = (launches.length ? Math.max(...launches.map((l) => bump(T, l, 0.3))) : 0) * 0.9;
   if (T >= Tr && T < G) arms = clamp((live - 18 * K) / (25 * K), 0, 1);
   if (T >= G) arms = WIN ? tw(0.4, 1, G, G + 0.4, M.pop)(T) : tw(0, 1, G + 2, G + 2.6, M.pop)(T);
   const wave = T >= C + 0.8 ? Math.max(0, Math.sin((T - C) * 9)) * 0.35 : 0;
@@ -231,8 +266,20 @@ function Frame({ T, story, P, A, XN, XA, HI, LO0, LO1, body, captions, handle, r
 
   const pnlO = tw(0, 1, Tr + 0.2, Tr + 0.8, M.enter)(T) * tw(1, 0, G + 1.0, G + 1.3, M.enter)(T);
   const savO = tw(0, 1, G + 1.15, G + 1.5, M.enter)(T) * tw(1, 0, C, C + 0.45, M.enter)(T);
-  const [pm, pd] = split(money(live));
-  const [sm, sd] = split(usd(Math.max(0, savedNow)));
+  const [pm, pd] = split(money(live, sym));
+  /*
+   * THE REVEAL FIGURE CARRIES ITS SIGN.
+   *
+   * Unsigned is right for a SAVING — "you avoided ₹921.80" is a positive
+   * amount however the trade itself went. It is wrong when the reveal is the
+   * trade's own result: a ₹5.97 loss arrived as a bare "₹5.97", in mint,
+   * under a label that scrolls past in half a second. `savedNeg` is set by
+   * the story that knows which of the two this is.
+   */
+  const revealMag = Math.max(0, savedNow);
+  const [sm, sd] = split(story.savedNeg ? money(-revealMag, sym) : usd(revealMag, sym));
+  const savedC = story.savedC ?? '#2fe3bd';
+  const savedGlow = savedC === '#2fe3bd' ? 'rgba(0,212,170,.45)' : 'rgba(239,68,68,.42)';
   const headerO = tw(1, 0, C, C + 0.5, M.enter)(T);
 
   const cardP = tw(0, 1, C + 0.35, C + 1.25, M.pop)(T);
@@ -266,10 +313,12 @@ function Frame({ T, story, P, A, XN, XA, HI, LO0, LO1, body, captions, handle, r
           </div>
           <div style={{ font: `700 36px/1 ${FONT_D}`, letterSpacing: '-.02em' }}>TradeGuard<span style={{ color: '#00d4aa' }}>X</span></div>
         </div>
-        <div style={{ boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 14, padding: '10px 22px 10px 10px', borderRadius: 999, background: 'rgba(255,255,255,.06)', boxShadow: 'inset 0 0 0 2px rgba(255,255,255,.1)' }}>
-          <div style={{ width: 42, height: 42, borderRadius: '50%', background: '#fd7d02', display: 'grid', placeItems: 'center', font: `800 22px/1 ${FONT_D}` }}>Δ</div>
-          <span style={{ fontSize: 26, fontWeight: 700 }}>Delta Exchange</span>
-        </div>
+        {venue && (
+          <div style={{ boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 14, padding: '10px 22px 10px 10px', borderRadius: 999, background: 'rgba(255,255,255,.06)', boxShadow: 'inset 0 0 0 2px rgba(255,255,255,.1)' }}>
+            <div style={{ width: 42, height: 42, borderRadius: '50%', background: venue.bg, color: venue.fg, display: 'grid', placeItems: 'center', font: `800 22px/1 ${FONT_D}` }}>{venue.mark}</div>
+            <span style={{ fontSize: 26, fontWeight: 700 }}>{venue.name}</span>
+          </div>
+        )}
       </div>
 
       <div style={{ position: 'absolute', left: 80, right: 80, top: 250, opacity: pnlO }}>
@@ -287,20 +336,46 @@ function Frame({ T, story, P, A, XN, XA, HI, LO0, LO1, body, captions, handle, r
         </div>
       </div>
 
+      {/*
+        The reveal figure.
+
+        Mint is right when the number is a SAVING — the rule was worth that
+        much. It is wrong on a reel whose reveal is the trade's own result and
+        that result was a loss: the figure the whole second act builds to
+        would arrive in the colour of a win. `savedC` lets the story say.
+      */}
       <div style={{ position: 'absolute', left: 80, right: 80, top: 250, opacity: savO }}>
         <div style={{ font: `600 24px/1 ${FONT_M}`, letterSpacing: '.16em', color: '#8794a8' }}>{story.savedLabel}</div>
-        <div style={{ marginTop: 26, font: `700 150px/1 ${FONT_D}`, letterSpacing: '-.055em', fontVariantNumeric: 'tabular-nums', color: '#2fe3bd', textShadow: '0 0 70px rgba(0,212,170,.45)' }}>
+        <div style={{ marginTop: 26, font: `700 150px/1 ${FONT_D}`, letterSpacing: '-.055em', fontVariantNumeric: 'tabular-nums', color: savedC, textShadow: `0 0 70px ${savedGlow}` }}>
           {sm}<span style={{ fontSize: '.5em', opacity: 0.6 }}>{sd}</span>
         </div>
       </div>
 
       <div style={{ position: 'absolute', left: 80, top: 520, width: 920, height: 680, borderRadius: 44, background: 'rgba(255,255,255,.05)', boxShadow: 'inset 0 0 0 2px rgba(255,255,255,.09), inset 0 2px 0 rgba(255,255,255,.1)', opacity: panelO, transform: `translateX(${shake}px) scale(${panelS})` }} />
 
-      <div style={{ position: 'absolute', left: CX, top: CY, width: CW, height: CH, opacity: panelO, transform: `translateX(${shake}px)` }}>
+      {story.days && <WeekBars T={T} Tr={Tr} G={G} o={panelO} story={story} sym={sym} />}
+
+      {/* Kept mounted at opacity 0 for the bar stories rather than unmounted:
+          the chart owns the SVG gradient and clip ids the card's mini chart
+          also references. */}
+      <div style={{ position: 'absolute', left: CX, top: CY, width: CW, height: CH, opacity: story.days ? 0 : panelO, transform: `translateX(${shake}px)` }}>
         <PriceChart id="pc" story={story} P={P} A={A} w={CW} h={CH} xMax={xMax} lo={lo} hi={HI} drawP={drawP} afterP={afterP} />
       </div>
 
-      <div style={{ position: 'absolute', left: Xc(XN), top: WIN ? Yc(P[XN]) + 34 : Yc(P[XN]) - 34, transform: `translate(-86%,${WIN ? '0' : '-100%'}) scale(${stampS})`, transformOrigin: WIN ? '86% 0' : '86% 100%', opacity: stampO * panelO }}>
+      {/* The week's stamp sits at the top-left of the panel: there is no line
+          end to hang it off, and the bars occupy the middle. */}
+      {story.days && (
+        <div style={{ position: 'absolute', left: 140, top: 630, transform: `scale(${stampS})`, transformOrigin: '0 50%', opacity: stampO * panelO }}>
+          <div style={{ boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 22px', borderRadius: 18, background: '#00c49d', color: '#02241d', font: `800 28px/1 ${FONT_B}`, whiteSpace: 'nowrap', boxShadow: '0 16px 40px -10px rgba(0,212,170,.7)' }}>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d={shieldPath} /><path d="M9 12l2.2 2.2L15.5 10" />
+            </svg>
+            {story.stamp}
+          </div>
+        </div>
+      )}
+
+      <div style={{ position: 'absolute', left: Xc(XN), top: WIN ? Yc(P[XN]) + 34 : Yc(P[XN]) - 34, transform: `translate(-86%,${WIN ? '0' : '-100%'}) scale(${stampS})`, transformOrigin: WIN ? '86% 0' : '86% 100%', opacity: story.days ? 0 : stampO * panelO }}>
         <div style={{ boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 22px', borderRadius: 18, background: '#00c49d', color: '#02241d', font: `800 28px/1 ${FONT_B}`, whiteSpace: 'nowrap', boxShadow: '0 16px 40px -10px rgba(0,212,170,.7)' }}>
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <path d={shieldPath} /><path d="M9 12l2.2 2.2L15.5 10" />
@@ -309,11 +384,11 @@ function Frame({ T, story, P, A, XN, XA, HI, LO0, LO1, body, captions, handle, r
         </div>
       </div>
 
-      <div style={{ position: 'absolute', left: 130, top: 1150, opacity: tw(0, 1, G + 2.6, G + 3, M.enter)(T) * panelO, font: `600 26px/1.3 ${FONT_B}`, color: '#a3b0c2' }}>
+      <div style={{ position: 'absolute', left: 130, top: 1150, opacity: story.days ? 0 : tw(0, 1, G + 2.6, G + 3, M.enter)(T) * panelO, font: `600 26px/1.3 ${FONT_B}`, color: '#a3b0c2' }}>
         {story.heldPre}<b style={{ color: '#ff7a70' }}>{story.held}</b>
       </div>
 
-      {RULES.map((r, i) => {
+      {railBlocks.map((r, i) => {
         const l = launches[i];
         const p = tw(0, 1, l, l + 0.55, M.pop)(T);
         const toRail = tw(0, 1, Tr - 0.25, Tr + 0.6)(T);
@@ -340,7 +415,7 @@ function Frame({ T, story, P, A, XN, XA, HI, LO0, LO1, body, captions, handle, r
       </div>
 
       <div style={{ position: 'absolute', left: 108, top: 250, width: 432, height: 540, transform: `translateY(${(1 - cardP) * 260}px) scale(${2 * (0.9 + 0.1 * cardP)}) rotate(${(1 - cardP) * -4}deg)`, transformOrigin: '0 0', opacity: cardO }}>
-        <SavedCard story={story} P={P} A={A} HI={HI} LO1={LO1} handle={handle} referral={referral} rules={rules} sheen={sheen} />
+        <SavedCard story={story} P={P} A={A} HI={HI} LO1={LO1} handle={handle} referral={referral} rules={rules} sheen={sheen} sym={sym} venue={venue} />
       </div>
 
       <div style={{ position: 'absolute', left: 80, right: 80, top: 1410, textAlign: 'center', opacity: tagO }}>

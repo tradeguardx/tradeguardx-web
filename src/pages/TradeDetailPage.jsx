@@ -5,8 +5,8 @@ import { ShimmerBlock } from '../components/common/LoadingSkeleton';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useDashboardTheme } from '../context/DashboardThemeContext';
+import { useShare } from '../context/ShareContext';
 import RealReplayChart from '../components/charts/RealReplayChart';
-import { TradeShareCard, ShareModal } from '../components/share/ShareableCards';
 import {
   fetchJournalEvents,
   fetchJournalMedia,
@@ -1184,14 +1184,13 @@ export default function TradeDetailPage() {
   const { session } = useAuth();
   const { selectedTradingAccountId } = useTradingAccounts();
   const { isDark } = useDashboardTheme();
+  const { openShare, canShare } = useShare();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [trade, setTrade] = useState(null);
   const [media, setMedia] = useState([]);
   const [events, setEvents] = useState([]);
   const [tab, setTab] = useState('overview');
-  const [shareOpen, setShareOpen] = useState(false);
-  const shareCardRef = useRef(null);
 
   // AI narrative — single source of truth from the API
   const [narrative, setNarrative] = useState(null);
@@ -1305,7 +1304,7 @@ export default function TradeDetailPage() {
   const clock = (v) => (v ? new Date(v).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }) : null);
   const windowText = [clock(trade.openedAt), clock(trade.closedAt)].filter(Boolean).join('–') || (isClosed ? '' : 'open');
   const cell = (label, value, fg) => (
-    <div key={label} style={sx('padding:14px 18px;border-right:1px solid var(--line)')}>
+    <div key={label} style={sx('padding:14px 18px')}>
       <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{label}</div>
       <div style={sx("margin-top:6px;font:600 16px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums", fg ? { color: fg } : undefined)}>{value}</div>
     </div>
@@ -1318,9 +1317,6 @@ export default function TradeDetailPage() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 6l-6 6 6 6" /></svg>
           All trades
         </Link>
-        {isClosed && (
-          <button type="button" onClick={() => setShareOpen(true)} style={sx('margin-left:auto;padding:6px 11px;border:1px solid var(--mint-line);border-radius:8px;background:var(--mint-tint);color:var(--mint);font-size:12.5px;font-weight:600')}>Share</button>
-        )}
       </div>
 
       <section style={sx('margin-bottom:18px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
@@ -1331,6 +1327,12 @@ export default function TradeDetailPage() {
             <span style={sx('font-size:12.5px;color:var(--ink-3)')}>{when}{windowText ? ` · ${windowText}` : ''}</span>
             {!isClosed && <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--amber)')}>Open</span>}
             <span style={sx("margin-left:auto;font:500 10px/1 'JetBrains Mono',monospace;color:var(--ink-faint)")} title={trade.tradeUid}>{shortId(trade.tradeUid, 14)} · {sourceLabel(trade.source)}</span>
+            {isClosed && canShare && (
+              <button type="button" onClick={() => openShare('trade', { tradeUid: trade.tradeUid })} style={sx('display:flex;align-items:center;gap:7px;padding:8px 13px;border:1px solid var(--mint-line);border-radius:9px;background:var(--mint-tint);color:var(--mint);font-size:12.5px;font-weight:700')}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V3M7 8l5-5 5 5" /><path d="M5 13v6h14v-6" /></svg>
+                Share card
+              </button>
+            )}
           </div>
           <div style={sx('display:flex;align-items:baseline;gap:14px;flex-wrap:wrap')}>
             <span style={sx("font:700 40px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: pnlFg })}>{isClosed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : 'open'}</span>
@@ -1347,7 +1349,7 @@ export default function TradeDetailPage() {
             <p style={sx('margin:12px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink-3);max-width:72ch')}>Reading the trade…</p>
           ) : null}
         </div>
-        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-top:1px solid var(--line)')}>
+        <div className="tgx-cells" style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));border-top:1px solid var(--line)')}>
           {cell('Entry', fmtNum(trade.entryPrice, 2))}
           {cell('Exit', isClosed ? fmtNum(trade.exitPrice, 2) : '—')}
           {cell('Stop as planned', firstSl != null ? fmtNum(firstSl, 2) : '—')}
@@ -1468,10 +1470,6 @@ export default function TradeDetailPage() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Share modal */}
-      <ShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} cardRef={shareCardRef} title={`${trade.symbol} Trade`}>
-        <TradeShareCard ref={shareCardRef} trade={trade} disciplineScore={narrative?.analysis?.disciplineScore?.overall ?? 100} events={events} />
-      </ShareModal>
     </div>
   );
 }

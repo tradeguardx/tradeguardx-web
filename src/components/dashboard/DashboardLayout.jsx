@@ -10,6 +10,7 @@ import { TrialBanner, UpgradeWall } from './TrialGate';
 import WelcomeCelebration from './WelcomeCelebration';
 import PhonePrompt from './PhonePrompt';
 import BreachToast from './shell/BreachToast';
+import { ShareProvider } from '../../context/ShareContext';
 import VerifyEmailBanner from './VerifyEmailBanner';
 import Sidebar from './shell/Sidebar';
 import AccountSwitcher from './shell/AccountSwitcher';
@@ -164,7 +165,11 @@ export default function DashboardLayout() {
       <PrefsProvider>
         <TradingAccountProvider>
           <GuardProvider>
-            <Shell />
+            {/* Inside GuardProvider so the breach toast — which lives in the
+                shell, not in a page — can open the share modal. */}
+            <ShareProvider>
+              <Shell />
+            </ShareProvider>
           </GuardProvider>
         </TradingAccountProvider>
       </PrefsProvider>

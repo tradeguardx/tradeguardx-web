@@ -60,7 +60,17 @@ export default function PriceChart({
   const last = pts[pts.length - 1];
   const yl = Y(story.limit);
   const area = f(pts.concat([[last[0], y0], [0, y0]]));
-  const saved = !ap.length
+  /*
+   * TWO POINTS, OR NOTHING.
+   *
+   * The own-trade story hands this an `A` of a single point sitting exactly
+   * on the close — there is no path the trade did not take, and inventing one
+   * is the whole thing the counterfactual refuses to do. One point still
+   * produced a degenerate polygon and a one-point polyline: invisible today,
+   * and exactly the sort of thing that starts drawing a stray line across the
+   * panel the next time someone touches the geometry.
+   */
+  const saved = ap.length < 2
     ? ''
     : story.mode === 'parallel'
       ? f(ap.concat(ap.slice().reverse().map((p) => [p[0], Y(at(P, ((p[0] / w) * xMax) / XN))])))
@@ -116,7 +126,7 @@ export default function PriceChart({
       {saved && <polygon points={saved} fill="rgba(0,212,170,.16)" />}
       <polygon points={area} fill="rgba(0,212,170,.20)" clipPath={`url(#${id}u)`} />
       <polygon points={area} fill="rgba(239,68,68,.20)" clipPath={`url(#${id}d)`} />
-      {ap.length > 0 && (
+      {ap.length > 1 && (
         <polyline
           points={f(ap)}
           fill="none"

@@ -77,14 +77,14 @@ export const at = (arr, p) => {
  * −0.004 rather than 0 so a value that rounds to 0.00 is never shown as
  * "−$0.00", which reads as a loss of nothing.
  */
-export const money = (v) =>
+export const money = (v, sym = '$') =>
   (v < -0.004 ? '−' : '+') +
-  '$' +
+  sym +
   Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** The same, unsigned — for amounts whose sign is already implied by the label. */
-export const usd = (v) =>
-  '$' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const usd = (v, sym = '$') =>
+  sym + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** Split at the last dot so the decimals can be rendered smaller. */
 export const split = (s) => {

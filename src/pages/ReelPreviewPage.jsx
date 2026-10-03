@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import ShareReel from '../components/share/reel/ShareReel';
+import ShareCardsStrip from '../components/share/ShareCardsStrip';
+import ShareCardModal from '../components/share/ShareCardModal';
+import { DEFAULT_RULE_CHIPS } from '../lib/shareCards';
 
 /**
  * A harness for reviewing the share reel. Not a product page.
@@ -19,6 +22,7 @@ const WIDTHS = [
 ];
 
 export default function ReelPreviewPage() {
+  const [shareKind, setShareKind] = useState(null);
   const [story, setStory] = useState('trade');
   const [width, setWidth] = useState(360);
   const [captions, setCaptions] = useState(true);
@@ -44,7 +48,7 @@ export default function ReelPreviewPage() {
         </p>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-          {['trade', 'day'].map((s) => (
+          {['trade', 'day', 'week', 'month'].map((s) => (
             <button key={s} type="button" style={btn(story === s)} onClick={() => setStory(s)}>{s}</button>
           ))}
         </div>
@@ -67,7 +71,21 @@ export default function ReelPreviewPage() {
         <div style={{ width, maxWidth: '100%', borderRadius: 18, overflow: 'hidden', boxShadow: '0 30px 80px -30px rgba(0,0,0,.9)' }}>
           <ShareReel story={story} id="demo-trade-1" color={colour || undefined} captions={captions} />
         </div>
+
+        {/* The v2 share system. Rendered inside [data-tgx] so the handoff's
+            tokens resolve exactly as they will on the real Overview. */}
+        <div data-tgx="1" data-theme="dark" style={{ marginTop: 44 }}>
+          <h2 style={{ font: "700 20px/1.2 'Space Grotesk', sans-serif", margin: '0 0 4px' }}>Share cards — strip &amp; modal</h2>
+          <p style={{ margin: '0 0 6px', fontSize: 13, color: '#8794a8' }}>
+            Tap any card to open the modal on that tab.
+          </p>
+          <ShareCardsStrip onOpenShare={setShareKind} />
+        </div>
       </div>
+
+      {/* The standalone preview plays the handoff's demo reels, so it asks
+          for the demo rule chips by name. Nothing else may. */}
+      <ShareCardModal open={shareKind !== null} kind={shareKind ?? 'trade'} onClose={() => setShareKind(null)} rules={DEFAULT_RULE_CHIPS} />
     </div>
   );
 }

@@ -626,9 +626,9 @@ export default function LiveGuardPage() {
           <p style={sx('margin:8px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink-3)')}>{armed && !manual ? 'A rule locked this account — the details are below. These two controls are the ones you throw yourself.' : 'Separate from your rules. Both are switches you throw while calm, and neither has an undo.'}</p>
         </div>
         {showControls && (
-        <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))')}>
+        <div className="tgx-cells" style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))')}>
 
-          <div style={sx('padding:19px 20px;border-right:1px solid var(--line);display:flex;flex-direction:column')}>
+          <div style={sx('padding:19px 20px;display:flex;flex-direction:column')}>
             <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:5px')}>
               <span style={sx('width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--red-tint);color:var(--red)')}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
@@ -822,9 +822,9 @@ export default function LiveGuardPage() {
             <button type="button" onClick={() => navigate('/dashboard/rules')} style={sx('padding:8px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700')}>Choose rules</button>
           </div>
         )}
-        <div style={sx('display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr))')}>
+        <div className="tgx-cells" style={sx('display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,208px),1fr))')}>
           {liveRules.map((r) => (
-            <div key={r.slug} style={sx('padding:15px 17px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)')}>
+            <div key={r.slug} style={sx('padding:15px 17px')}>
               <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:10px')}>
                 <span style={sx('width:26px;height:26px;border-radius:8px;display:grid;place-items:center', { background: r.tint, color: r.accent })}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={r.d1} /><path d={r.d2} /></svg>

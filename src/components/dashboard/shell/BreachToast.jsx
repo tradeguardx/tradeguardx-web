@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useTradingAccounts } from '../../../context/TradingAccountContext';
 import { useGuard } from '../../../context/GuardContext';
+import { useShare } from '../../../context/ShareContext';
 import { acknowledgeBreaches } from '../../../api/breachesApi';
 import { sx } from './sx';
 
@@ -32,6 +33,7 @@ export default function BreachToast() {
   const { session } = useAuth();
   const { accounts, selectedTradingAccountId, setSelectedTradingAccountId } = useTradingAccounts();
   const { unreadList } = useGuard();
+  const { openShare, canShare } = useShare();
   const navigate = useNavigate();
   const [breach, setBreach] = useState(null);
   const [seen, setSeen] = useState(() => new Set());
@@ -55,6 +57,17 @@ export default function BreachToast() {
     setSeen((s) => new Set(s).add(breach.id));
     acknowledgeBreaches({ accessToken, ids: [breach.id] }).catch(() => {});
     setBreach(null);
+  };
+
+  // Sharing the save hides the toast — the modal would otherwise open behind
+  // it and the 9s timer would keep running underneath. Unlike dismiss() this
+  // does not acknowledge: the breach stays unread for the bell, same as the
+  // timeout path, because opening a share card is not reading the breach.
+  const share = () => {
+    if (!breach) return;
+    setSeen((s) => new Set(s).add(breach.id));
+    setBreach(null);
+    openShare('trade');
   };
 
   useEffect(() => {
@@ -83,6 +96,14 @@ export default function BreachToast() {
           <div style={sx('margin-top:6px;font-size:13.5px;font-weight:600;line-height:1.4')}>{name} fired on {breachAccountName}</div>
           <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{breach.message}</p>
           <div style={sx('display:flex;gap:8px;margin-top:11px;flex-wrap:wrap')}>
+            {canShare && <button
+              type="button"
+              onClick={share}
+              style={sx('display:flex;align-items:center;gap:6px;padding:7px 12px;border:0;border-radius:8px;background:var(--mint-solid);color:#02241d;font-size:12px;font-weight:700')}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V3M7 8l5-5 5 5" /><path d="M5 13v6h14v-6" /></svg>
+              Share this save
+            </button>}
             <button
               type="button"
               onClick={() => {

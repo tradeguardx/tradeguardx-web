@@ -3,9 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGuard } from '../context/GuardContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
+import { useShare } from '../context/ShareContext';
 import { fetchUnifiedTrades } from '../api/tradesApi';
 import { useTradeAnnotationsBulk } from '../hooks/useTradeAnnotations';
 import { fmtMoney } from '../lib/session';
+import { inference } from '../lib/sample';
 import { sx } from '../components/dashboard/shell/sx';
 
 /**
@@ -31,7 +33,7 @@ const SIDES = [{ key: 'any', label: 'Any side' }, { key: 'buy', label: 'Long' },
 const SORTS = [{ key: 'newest', label: 'Newest' }, { key: 'oldest', label: 'Oldest' }, { key: 'best', label: 'Best P&L' }, { key: 'worst', label: 'Worst P&L' }];
 const PAGE_SIZES = [25, 50, 100];
 const DEFAULTS = { view: 'all', range: 'all', side: 'any', sort: 'newest', q: '', page: '1', size: '25' };
-const GRID = 'display:grid;grid-template-columns:1.3fr 1fr .8fr .7fr .8fr 1fr .8fr;gap:12px';
+const GRID = 'display:grid;grid-template-columns:1.3fr 1fr .8fr .7fr .8fr 1fr .8fr 44px;gap:12px';
 const SEL = 'padding:7px 30px 7px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:600;appearance:none;-webkit-appearance:none';
 
 function pick(o, ...keys) { for (const k of keys) if (o && o[k] != null) return o[k]; return null; }
@@ -82,6 +84,7 @@ export default function AllTradesPage() {
   const { session } = useAuth();
   const { selectedTradingAccountId, accountsLoading, selectedAccount } = useTradingAccounts();
   const { now } = useGuard();
+  const { openShare, canShare } = useShare();
   const [params, setParams] = useSearchParams();
   const get = (k, valid) => { const v = params.get(k) ?? DEFAULTS[k]; return valid && !valid.includes(v) ? DEFAULTS[k] : v; };
   const view = get('view', VIEWS.map((v) => v.key));
@@ -161,7 +164,7 @@ export default function AllTradesPage() {
     const wins = closed.filter((t) => pnlOf(t) > 0).length;
     const net = closed.reduce((s, t) => s + pnlOf(t), 0);
     const breaks = filtered.reduce((s, t) => s + ruleBlockCount(t), 0);
-    return { total: filtered.length, open: filtered.length - closed.length, net, winRate: closed.length ? Math.round((wins / closed.length) * 100) : null, breaks };
+    return { total: filtered.length, open: filtered.length - closed.length, closed: closed.length, net, winRate: closed.length ? Math.round((wins / closed.length) * 100) : null, breaks };
   }, [filtered]);
 
   const counts = useMemo(() => {
@@ -226,7 +229,9 @@ export default function AllTradesPage() {
           {[
             { k: 'Trades', v: String(stats.total), note: stats.open ? `${stats.open} open` : 'all closed', fg: 'var(--ink)' },
             { k: 'Net P&L', v: fmtMoney(stats.net, cur, { sign: true, decimals: 2 }), note: 'closed trades in view', fg: stats.net < 0 ? 'var(--red)' : stats.net > 0 ? 'var(--mint)' : 'var(--ink)' },
-            { k: 'Win rate', v: stats.winRate == null ? '—' : `${stats.winRate}%`, note: 'closed trades in view', fg: 'var(--ink)' },
+            // An estimate of an edge, not a fact about the filtered set. On
+            // five trades one more win moves it thirteen points.
+            { k: 'Win rate', ...inference(stats.closed, stats.winRate, 'closed trades in view', { format: (v) => `${v}%` }), fg: 'var(--ink)' },
             { k: 'Rule breaks', v: String(stats.breaks), note: stats.breaks ? 'across the trades in view' : 'clean', fg: stats.breaks ? 'var(--red)' : 'var(--ink)' },
           ].map((c) => (
             <div key={c.k} style={sx('padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:var(--surface);box-shadow:var(--shadow-card)')}>
@@ -240,7 +245,7 @@ export default function AllTradesPage() {
 
       <section style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
         <div data-tgx-thead="1" style={sx(GRID, sx('padding:11px 18px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600'))}>
-          <span>When</span><span>Symbol</span><span>Side</span><span>Size</span><span>Hold</span><span>Rule breaks</span><span style={{ textAlign: 'right' }}>P&amp;L</span>
+          <span>When</span><span>Symbol</span><span>Side</span><span>Size</span><span>Hold</span><span>Rule breaks</span><span style={{ textAlign: 'right' }}>P&amp;L</span><span />
         </div>
         {error && <div style={sx('padding:14px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--amber)')}>{error}</div>}
         {rows === null || accountsLoading ? (
@@ -252,8 +257,25 @@ export default function AllTradesPage() {
           </div>
         ) : slice.map((t) => {
           const long = isLong(t); const pnl = pnlOf(t); const blocks = ruleBlockCount(t); const closed = isClosed(t);
+          const openTrade = () => t.tradeUid && navigate(`/dashboard/trades/${encodeURIComponent(t.tradeUid)}`);
           return (
-            <button key={t.tradeUid || t.id} type="button" className="tr-row" data-tgx-trow="1" onClick={() => t.tradeUid && navigate(`/dashboard/trades/${encodeURIComponent(t.tradeUid)}`)} style={sx(GRID, sx('width:100%;padding:13px 18px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;align-items:center;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums'))}>
+            /*
+             * A div, not a button. The row carries its own Share button now,
+             * and a button inside a button is invalid HTML — browsers drop the
+             * inner one out of the outer, which is how you get a share control
+             * that navigates instead of sharing. role/tabIndex/onKeyDown keep
+             * the row operable from the keyboard.
+             */
+            <div
+              key={t.tradeUid || t.id}
+              role="button"
+              tabIndex={0}
+              className="tr-row"
+              data-tgx-trow="1"
+              onClick={openTrade}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTrade(); } }}
+              style={sx(GRID, sx('width:100%;padding:13px 18px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;align-items:center;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums;cursor:pointer'))}
+            >
               <span data-c="when" style={sx('color:var(--ink-3)')}>{fmtWhen(pick(t, 'openedAt', 'closedAt'))}</span>
               <span data-c="sym" style={sx('font-weight:600')}>{pick(t, 'symbol')}</span>
               <span data-c="side" style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: long ? 'var(--mint)' : 'var(--red)' })}>{long ? 'Long' : 'Short'}</span>
@@ -261,7 +283,21 @@ export default function AllTradesPage() {
               <span data-c="hold" style={sx('color:var(--ink-3)')}>{fmtHold(pick(t, 'openedAt'), pick(t, 'closedAt'))}</span>
               <span data-c="blocks"><span style={sx('font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px', blocks > 0 ? { background: 'var(--red-tint)', color: 'var(--red)' } : { background: 'var(--surface-3)', color: 'var(--ink-3)' })}>{blocks > 0 ? `${blocks} ${blocks === 1 ? 'break' : 'breaks'}` : 'clean'}</span></span>
               <span data-c="pnl" style={sx('text-align:right;font-weight:600', { color: !closed ? 'var(--ink-3)' : pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink)' })}>{closed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : 'open'}</span>
-            </button>
+              <span data-c="share" style={sx('display:flex;justify-content:flex-end')}>
+                {closed && canShare && t.tradeUid && (
+                  <button
+                    type="button"
+                    aria-label={`Share ${pick(t, 'symbol') ?? 'this trade'}`}
+                    title="Share this trade"
+                    className="tr-share"
+                    onClick={(e) => { e.stopPropagation(); openShare('trade', { tradeUid: t.tradeUid }); }}
+                    style={sx('width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink-3);cursor:pointer')}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V3M7 8l5-5 5 5" /><path d="M5 13v6h14v-6" /></svg>
+                  </button>
+                )}
+              </span>
+            </div>
           );
         })}
 

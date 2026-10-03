@@ -1,42 +1,10 @@
 import { useEffect, useRef, useState, useMemo, useCallback, forwardRef } from 'react';
+import { fetchKlines, resolveBinancePair } from '../../lib/binanceKlines';
 import {
   createChart, CrosshairMode,
   CandlestickSeries, HistogramSeries, LineSeries,
   createSeriesMarkers,
 } from 'lightweight-charts';
-
-// ─── Symbol → Binance pair mapping ──────────────────────────────────────────
-const BINANCE_PAIRS = {
-  BTCUSD: 'BTCUSDT', BTCUSDT: 'BTCUSDT',
-  ETHUSD: 'ETHUSDT', ETHUSDT: 'ETHUSDT',
-  BNBUSD: 'BNBUSDT', BNBUSDT: 'BNBUSDT',
-  SOLUSD: 'SOLUSDT', SOLUSDT: 'SOLUSDT',
-  XRPUSD: 'XRPUSDT', XRPUSDT: 'XRPUSDT',
-  DOGEUSD: 'DOGEUSDT', DOGEUSDT: 'DOGEUSDT',
-  ADAUSD: 'ADAUSDT', ADAUSDT: 'ADAUSDT',
-  DOTUSD: 'DOTUSDT', DOTUSDT: 'DOTUSDT',
-  MATICUSD: 'MATICUSDT', MATICUSDT: 'MATICUSDT',
-  AVAXUSD: 'AVAXUSDT', AVAXUSDT: 'AVAXUSDT',
-  LINKUSD: 'LINKUSDT', LINKUSDT: 'LINKUSDT',
-  LTCUSD: 'LTCUSDT', LTCUSDT: 'LTCUSDT',
-  UNIUSD: 'UNIUSDT', UNIUSDT: 'UNIUSDT',
-  SHIBUSD: 'SHIBUSDT', SHIBUSDT: 'SHIBUSDT',
-  PEPE: 'PEPEUSDT', PEPEUSD: 'PEPEUSDT',
-  NEARUSD: 'NEARUSDT', NEARUSDT: 'NEARUSDT',
-};
-
-function resolveBinancePair(symbol) {
-  if (!symbol) return null;
-  const upper = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (BINANCE_PAIRS[upper]) return BINANCE_PAIRS[upper];
-  // try appending USDT if it doesn't already end with it
-  if (!upper.endsWith('USDT') && !upper.endsWith('USD')) {
-    if (BINANCE_PAIRS[upper + 'USDT']) return BINANCE_PAIRS[upper + 'USDT'];
-  }
-  // fallback: raw symbol + USDT (user can try, Binance will 400 if invalid)
-  if (upper.endsWith('USD') && !upper.endsWith('USDT')) return upper + 'T';
-  return upper.endsWith('USDT') ? upper : upper + 'USDT';
-}
 
 // ─── Timeframes ─────────────────────────────────────────────────────────────
 const INTERVALS = [
@@ -47,35 +15,6 @@ const INTERVALS = [
   { label: '4H',  value: '4h',  ms: 14_400_000 },
   { label: '1D',  value: '1d',  ms: 86_400_000 },
 ];
-
-// ─── Fetch Binance klines ───────────────────────────────────────────────────
-async function fetchKlines(symbol, interval, startMs, endMs) {
-  const chunks = [];
-  let cursor = startMs;
-
-  while (cursor < endMs) {
-    const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=${interval}&startTime=${cursor}&endTime=${endMs}&limit=1000`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Binance ${res.status}`);
-    const rows = await res.json();
-    if (!rows.length) break;
-
-    for (const k of rows) {
-      chunks.push({
-        time: Math.floor(k[0] / 1000),
-        open:   parseFloat(k[1]),
-        high:   parseFloat(k[2]),
-        low:    parseFloat(k[3]),
-        close:  parseFloat(k[4]),
-        volume: parseFloat(k[5]),
-      });
-    }
-    cursor = rows[rows.length - 1][6] + 1; // closeTime + 1
-    if (rows.length < 1000) break;
-  }
-
-  return chunks;
-}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const SEVEN_DAYS = 7 * 24 * 3_600_000;

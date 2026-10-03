@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { at, bump, colourFor, hash, interpolate, M, money, split, tw, usd } from './reelMotion';
-import { CUES, STORIES, yRange } from './reelStories';
+import { CUES, STORIES, dayT0, dayVal, yRange } from './reelStories';
 
 /**
  * The reel's correctness is almost entirely in this file's maths.
@@ -138,17 +138,27 @@ describe("Guardy's colour", () => {
 });
 
 describe('story data', () => {
-  it('has the two stories that ship, and not week or month', () => {
-    // Week and month use a bar layout, not a price line. Shipping them through
-    // this component would render them wrong rather than not at all.
-    expect(Object.keys(STORIES).sort()).toEqual(['day', 'trade']);
+  it('has all four stories the share modal offers', () => {
+    expect(Object.keys(STORIES).sort()).toEqual(['day', 'month', 'trade', 'week']);
   });
 
-  it('joins the two paths where the rule fired', () => {
+  it('joins the two paths where the rule fired, in `after` stories', () => {
     // A[0] must equal P[last]: the saved area is drawn between them, so a gap
     // here is a visible break exactly where the reel makes its claim.
     for (const s of Object.values(STORIES)) {
+      if (s.mode !== 'after') continue;
       expect(s.A[0]).toBeCloseTo(s.P[s.P.length - 1], 6);
+    }
+  });
+
+  it('runs both paths over the same period in `parallel` stories', () => {
+    // Week and month compare the same days with and without the guard, so the
+    // two paths start together and must have one point each per period —
+    // a mismatch would draw the avoided loss against the wrong day.
+    for (const s of Object.values(STORIES)) {
+      if (s.mode !== 'parallel') continue;
+      expect(s.A).toHaveLength(s.P.length);
+      expect(s.A[0]).toBe(s.P[0]);
     }
   });
 
@@ -164,6 +174,47 @@ describe('story data', () => {
     expect(d.P[d.P.length - 1]).toBe(400);
     expect(d.A[d.A.length - 1]).toBe(-185.4);
     expect(Math.abs(d.A[d.A.length - 1] - d.P[d.P.length - 1])).toBeCloseTo(d.saved, 6);
+  });
+
+  it('lands the week story on its figures', () => {
+    const w = STORIES.week;
+    expect(w.P[w.P.length - 1]).toBeCloseTo(1248.3, 6);
+    expect(w.A[w.A.length - 1]).toBeCloseTo(-1366.9, 6);
+    expect(Math.abs(w.A[w.A.length - 1] - w.P[w.P.length - 1])).toBeCloseTo(w.saved, 6);
+  });
+
+  it('the week’s five bars add up to the week it claims', () => {
+    // The headline P&L is the running sum of the bars, so if these disagree
+    // with the stamp the number on screen contradicts the caption under it.
+    const sum = STORIES.week.days.reduce((a, d) => a + d.v, 0);
+    expect(sum).toBeCloseTo(1248.3, 6);
+  });
+
+  it('the week’s ghosts add up to the week it avoided', () => {
+    const noGuard = STORIES.week.days.reduce((a, d) => a + (d.ghost ?? d.v), 0);
+    expect(noGuard).toBeCloseTo(-1366.9, 6);
+  });
+
+  it('only the red week days carry a ghost', () => {
+    // A ghost on a green day would claim the guard saved a day it never
+    // touched.
+    for (const d of STORIES.week.days) {
+      if (d.ghost == null) expect(d.v).toBeGreaterThan(0);
+      else expect(d.v).toBeLessThan(0);
+    }
+  });
+
+  it('lands the month story on its figures', () => {
+    const m = STORIES.month;
+    expect(m.P[m.P.length - 1]).toBeCloseTo(4812.6, 6);
+    expect(m.A[m.A.length - 1]).toBeCloseTo(-6240.1, 6);
+    expect(Math.abs(m.A[m.A.length - 1] - m.P[m.P.length - 1])).toBeCloseTo(m.saved, 6);
+  });
+
+  it('gives every story six captions', () => {
+    // The caption schedule has exactly six slots. A seventh never shows and a
+    // fifth leaves the last third of the reel silent.
+    for (const s of Object.values(STORIES)) expect(s.caps).toHaveLength(6);
   });
 
   it('keeps the trade range hand-set', () => {
@@ -206,5 +257,76 @@ describe('the loop', () => {
     expect(black(0)).toBe(1);
     expect(black(CUES.END)).toBe(1);
     expect(black(CUES.END / 2)).toBe(0);
+  });
+});
+
+describe('the week bar race', () => {
+  const { Tr, G, END } = CUES;
+  const W = STORIES.week;
+  const total = (T) => W.days.reduce((a, d, i) => a + dayVal(d, i, T, Tr), 0);
+
+  it('every bar has landed before the reveal', () => {
+    // The guard beat at G is the payoff. A bar still growing into it reads as
+    // the week not being over when the stamp says it closed.
+    const last = dayT0(Tr, W.days.length - 1) + 0.8;
+    expect(last).toBeLessThan(G);
+  });
+
+  it('settles on the week it claims, and stays there', () => {
+    expect(total(G)).toBeCloseTo(1248.3, 6);
+    expect(total(END)).toBeCloseTo(1248.3, 6);
+  });
+
+  it('is flat before the first bar', () => {
+    expect(total(Tr)).toBe(0);
+  });
+
+  it('plunges a red day and then snaps it back to the limit', () => {
+    // The snap IS the guard. Without the overshoot below the close there is
+    // no moment for the shield coin to land on, and the red days just grow
+    // like the green ones.
+    const i = 1;
+    const d = W.days[i];
+    const t0 = dayT0(Tr, i);
+    const deep = dayVal(d, i, t0 + 0.45, Tr);
+    expect(deep).toBeCloseTo(-700, 6);
+    expect(dayVal(d, i, t0 + 0.8, Tr)).toBeCloseTo(d.v, 6);
+    expect(deep).toBeLessThan(d.v);
+  });
+
+  it('grows a green day straight to its close', () => {
+    const i = 0;
+    const d = W.days[i];
+    const t0 = dayT0(Tr, i);
+    let prev = -Infinity;
+    for (let T = t0; T <= t0 + 0.5; T += 0.02) {
+      const v = dayVal(d, i, T, Tr);
+      expect(v).toBeGreaterThanOrEqual(prev - 1e-9);
+      prev = v;
+    }
+    expect(dayVal(d, i, t0 + 0.5, Tr)).toBeCloseTo(d.v, 6);
+  });
+
+  it('is a pure function of T', () => {
+    // The whole reel depends on this: an MP4 renderer asks for frames out of
+    // order and must get the same picture the preview showed.
+    for (const T of [0, 4.2, 6.37, G, G + 1.9, END]) {
+      expect(total(T)).toBe(total(T));
+      expect(dayVal(W.days[3], 3, T, Tr)).toBe(dayVal(W.days[3], 3, T, Tr));
+    }
+  });
+});
+
+describe('the reel is not dollar-only', () => {
+  it('formats in whatever the account settles in', () => {
+    // Shark settles in INR. Every figure in the reel comes from that ledger,
+    // so a hard-coded '$' is the same number off by roughly eighty to one —
+    // on the artefact the user posts publicly.
+    expect(money(1248.3, '\u20b9')).toBe('+\u20b91,248.30');
+    expect(usd(2615.2, '\u20b9')).toBe('\u20b92,615.20');
+  });
+
+  it('still defaults to dollars', () => {
+    expect(money(1248.3)).toBe('+$1,248.30');
   });
 });
