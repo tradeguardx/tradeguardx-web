@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
+import ReelPreviewPage from './pages/ReelPreviewPage';
 import CryptoHomePage from './pages/CryptoHomePage';
 import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
@@ -71,6 +72,9 @@ function App() {
                 <Route path="/" element={<Layout />}>
                   <Route index element={<CryptoHomePage />} />
                   <Route path="home-classic" element={<HomePage noindex />} />
+                  {/* Review harness for the share reel. Excluded from the
+                      sitemap and prerender — see publicRoutes.js. */}
+                  <Route path="reel-preview" element={<ReelPreviewPage />} />
                   {/* Prop-firm page hidden for launch — redirect to the crypto home. */}
                   <Route path="prop-firm" element={<Navigate to="/" replace />} />
                   <Route path="pricing" element={<PricingPage />} />

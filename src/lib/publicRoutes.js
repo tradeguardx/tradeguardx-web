@@ -113,6 +113,7 @@ export const EXCLUDED_ROUTES = {
   '/docs': 'Redirects to /help.',
   '/docs/:slug': 'Redirects to /help/:slug, keeping the slug. A redirect is not content.',
   '/home-classic': 'A second copy of the homepage. Rendered noindex; kept only as a reference layout.',
+  '/reel-preview': 'A harness for reviewing the share reel. Not a page, not content, and it renders a 17-second animation — indexing it would put a loading loop in front of a search result.',
 };
 
 /**
