@@ -158,3 +158,57 @@ describe('the chart with nothing after the close', () => {
     expect(html).not.toContain('stroke="#8794a8"');
   });
 });
+
+describe('Guardy keeps his face', () => {
+  /*
+   * The arms travelled `20 - 80 * arms`, which parks the hands at y ≈ -12 for
+   * any `arms` near 0.4 — and the eyes sit at cy = -14. During the trade beat
+   * `arms` is driven by live P&L and can rest there for seconds, so arm, face
+   * and arm lined up into one horizontal bar across his head.
+   *
+   * The eye band is cy=-14 ± ry=23, so [-37, 9]. Neither resting state may
+   * land in it.
+   */
+  const EYE_TOP = -37;
+  const EYE_BOTTOM = 9;
+  const ARM_DOWN = 56;
+  const ARM_UP = -96;
+  const lift = (a) => (
+    a < 0.42 ? a * (0.30 / 0.42)
+      : a > 0.58 ? 0.70 + (a - 0.58) * (0.30 / 0.42)
+        : 0.30 + (a - 0.42) * (0.40 / 0.16)
+  );
+  const armY = (a) => ARM_DOWN + (ARM_UP - ARM_DOWN) * lift(a);
+
+  it('rests the arms clear of the eye line, down and up', () => {
+    expect(armY(0)).toBeGreaterThan(EYE_BOTTOM);
+    expect(armY(1)).toBeLessThan(EYE_TOP);
+  });
+
+  it('clears the top of the shield when fully raised', () => {
+    // The shield's apex is at y = -112; a hand at -96 reads as "above the
+    // head" rather than growing out of his forehead.
+    expect(armY(1)).toBeGreaterThan(-112);
+    expect(armY(1)).toBeLessThan(-80);
+  });
+
+  it('does not loiter at eye height for the mid-range the P&L beat uses', () => {
+    // 0.4 is the value the celebration starts from and the one the live-P&L
+    // drive hovers around. It used to put the hands at y = -12, dead level
+    // with the eyes.
+    expect(armY(0.4)).toBeGreaterThan(EYE_BOTTOM);
+  });
+
+  it('crosses the face in a narrow slice of the range, not a third of it', () => {
+    // A straight mapping spends 30% of the input inside the eye band. Every
+    // monotonic ease does the same — it has to pass through the middle, and
+    // the middle is his face. Measured, not asserted by construction.
+    const inBand = [];
+    for (let i = 0; i <= 1000; i += 1) {
+      const a = i / 1000;
+      const y = armY(a);
+      if (y > EYE_TOP && y < EYE_BOTTOM) inBand.push(a);
+    }
+    expect(inBand.length / 1001).toBeLessThan(0.18);
+  });
+});

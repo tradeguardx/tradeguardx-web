@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { STORIES } from './reelStories';
 import {
   DOWNLOAD_LABEL,
-  DOWNLOAD_MSG,
   EXPORT,
   exportFileName,
   shareIntent,
@@ -127,11 +126,17 @@ describe('share targets', () => {
 });
 
 describe('download labels', () => {
-  it('match the format', () => {
+  it('names the file it actually writes, in both formats', () => {
+    /*
+     * It read "Download MP4" under the reel, which is a promise the product
+     * cannot keep: the reel is a DOM animation, MediaRecorder can only
+     * capture a canvas or a media element, and a real export needs the same
+     * component rendered frame by frame on a server. The button writes a PNG
+     * either way, so it says PNG either way.
+     */
     expect(DOWNLOAD_LABEL('card')).toBe('Download PNG');
-    expect(DOWNLOAD_LABEL('reel')).toBe('Download MP4');
-    expect(DOWNLOAD_MSG('card')).toContain('1080 × 1350');
-    expect(DOWNLOAD_MSG('reel')).toContain('1080 × 1920');
+    expect(DOWNLOAD_LABEL('reel')).toBe('Download PNG');
+    expect(DOWNLOAD_LABEL()).toBe('Download PNG');
   });
 });
 

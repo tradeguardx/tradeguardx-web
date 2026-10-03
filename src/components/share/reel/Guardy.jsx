@@ -26,10 +26,46 @@ export default function Guardy({ x, y, s, mood, arms, sweat, blink, look, wave, 
   const curve = m * 30;
   const k = Math.max(0, -m) * 11; // brow furrow, sad only
   const lift = Math.max(0, m) * 7; // brow lift, happy only
-  const armL = { x: -150, y: 20 - 80 * arms };
+  /*
+   * ARMS REST BELOW THE FACE AND RAISE ABOVE THE HEAD.
+   *
+   * They used to travel `20 - 80 * arms`, which puts the hands at y ≈ -12 for
+   * any `arms` near 0.4 — and the eyes are at cy = -14. During the trade beat
+   * `arms` is driven by live P&L and can sit there for seconds, so arm, face
+   * and arm lined up into one horizontal bar straight across his face. He
+   * read as a character with a line through his head rather than one holding
+   * his arms out.
+   *
+   * The band to stay out of is roughly y ∈ [-37, 9] (eye centre ± the 23px
+   * radius). Resting at 56 is beside the mouth; fully raised at -96 clears
+   * the top of the shield at -112. The hands still pass through the band
+   * while moving, which is motion and reads as motion.
+   */
+  const ARM_DOWN = 56;
+  const ARM_UP = -96;
+  /*
+   * ...and they cross face height QUICKLY rather than resting in it.
+   *
+   * Moving the two endpoints is not enough on its own: a straight mapping
+   * still parks the hands at y ≈ -5 for `arms` ≈ 0.4, which is the value the
+   * live-P&L drive hovers around and the one the celebration starts from.
+   * Any monotonic ease has the same problem — it has to pass through the
+   * middle, and the middle is his face.
+   *
+   * So the middle is a ramp, not a resting place. The band maps to a 16%
+   * slice of the input instead of 30%, traversed 2.5x faster, and the two
+   * plateaus either side are where the arms actually sit.
+   */
+  const armLift = (a) => (
+    a < 0.42 ? a * (0.30 / 0.42)
+      : a > 0.58 ? 0.70 + (a - 0.58) * (0.30 / 0.42)
+        : 0.30 + (a - 0.42) * (0.40 / 0.16)
+  );
+  const armY = (a) => ARM_DOWN + (ARM_UP - ARM_DOWN) * armLift(a);
+  const armL = { x: -150, y: armY(arms) };
   // The right arm takes the wave on top of the shared arm position, so he can
   // wave with one hand while both are up.
-  const armR = { x: 150, y: 20 - 80 * clamp(arms + wave, 0, 1.3) };
+  const armR = { x: 150, y: armY(clamp(arms + wave, 0, 1.3)) };
   const eh = 23 * (1 - blink * 0.92);
 
   return (
@@ -51,14 +87,14 @@ export default function Guardy({ x, y, s, mood, arms, sweat, blink, look, wave, 
         </defs>
         <ellipse cx="0" cy="136" rx="78" ry="10" fill="rgba(0,0,0,.45)" />
         <path
-          d={`M-92 10 Q-125 ${armL.y * 0.6} ${armL.x} ${armL.y}`}
+          d={`M-92 34 Q-125 ${armL.y * 0.6 + 14} ${armL.x} ${armL.y}`}
           stroke={c2}
           strokeWidth="16"
           strokeLinecap="round"
           fill="none"
         />
         <path
-          d={`M92 10 Q125 ${armR.y * 0.6} ${armR.x} ${armR.y}`}
+          d={`M92 34 Q125 ${armR.y * 0.6 + 14} ${armR.x} ${armR.y}`}
           stroke={c2}
           strokeWidth="16"
           strokeLinecap="round"

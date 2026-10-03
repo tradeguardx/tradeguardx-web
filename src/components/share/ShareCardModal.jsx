@@ -53,8 +53,26 @@ export default function ShareCardModal({
   stories = null,
   currency = 'USD',
 }) {
+  /*
+   * Whether a kind can play a reel. One definition, used by the opening
+   * format and by the tab switch, so the two cannot drift apart.
+   */
+  const hasReel = (k) => Boolean((stories ?? STORIES)[(cards?.[k] ?? SHARE_CARDS[k])?.reelStory]);
+
   const [kind, setKind] = useState(initialKind);
-  const [fmt, setFmt] = useState('card');
+  /*
+   * THE REEL OPENS FIRST WHEN THERE IS ONE.
+   *
+   * It is the thing worth seeing — eighteen seconds of the rule doing its job
+   * — and it was behind a tab nobody pressed, because the card was already on
+   * screen and looked finished. Opening on the reel shows the story and still
+   * leaves the toggle one click away; a card nobody had to ask for is a worse
+   * default than a reel they can dismiss.
+   *
+   * Only where one exists. Falling back to the card is handled on every path:
+   * here, on the tab switch, and by `reelReady` disabling the segment.
+   */
+  const [fmt, setFmt] = useState(() => (hasReel(initialKind) ? 'reel' : 'card'));
   const [amounts, setAmounts] = useState(true);
   const [rulesOn, setRulesOn] = useState(true);
   // { text, ok } — `ok` false is a plain note, not a green tick. The reel has
@@ -81,6 +99,7 @@ export default function ShareCardModal({
     setPrev({ open, initialKind });
     if (open) {
       setKind(initialKind);
+      setFmt(hasReel(initialKind) ? 'reel' : 'card');
       setDone(null);
     }
   }
@@ -128,6 +147,13 @@ export default function ShareCardModal({
         ? 'No reel for this week yet — it needs at least two trading days. This card shares as a PNG.'
         : `There is no reel for ${(cards?.[kind] ?? SHARE_CARDS[kind]).tab.toLowerCase()} — it would need an intraday equity curve we do not record. This card shares as a PNG.`;
   // Reel format can be previewed but not yet exported or posted.
+  /*
+   * There is no MP4 yet: the reel is a DOM animation, and MediaRecorder can
+   * only capture a canvas or a media element — there is no "record this div".
+   * A real export needs the same component rendered frame by frame on a
+   * server. Until then this drives one line of copy, and nothing else: it no
+   * longer disables the buttons.
+   */
   const noVideo = fmt === 'reel';
 
   // Any change clears the success line: it refers to the thing that was just
@@ -175,15 +201,30 @@ export default function ShareCardModal({
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }, []);
 
+  /*
+   * THE ACTIONS WORK IN BOTH FORMATS.
+   *
+   * They used to bail out on sight of the reel, which left the whole bottom
+   * half of the panel dead: five greyed share icons and a greyed Download
+   * button that, if you got past the opacity and clicked anyway, apologised.
+   * Nothing on a screen should look like a control and not be one.
+   *
+   * There is still no MP4 — see the note on `noVideo` — but the card canvas is
+   * mounted off-screen the whole time regardless of format, so the PNG is
+   * always available. Under Reel these save and share the CARD, and say so.
+   * A working button that does slightly less than its format implies beats a
+   * dead one that does nothing.
+   */
   const download = useCallback(async () => {
-    if (fmt === 'reel') {
-      setDone({ text: 'The reel has no downloadable video yet — switch to Card · PNG.', ok: false });
-      return;
-    }
     setBusy(true);
     try {
       saveFile(await renderFile());
-      setDone({ text: `Saved ${exportFileName(kind)} (${SHARE_SIZE.w} × ${SHARE_SIZE.h})`, ok: true });
+      setDone({
+        text: fmt === 'reel'
+          ? `Saved the card as ${exportFileName(kind)} — the video export is not ready yet`
+          : `Saved ${exportFileName(kind)} (${SHARE_SIZE.w} × ${SHARE_SIZE.h})`,
+        ok: true,
+      });
     } catch {
       setDone({ text: 'Could not build the image. Try again, or screenshot the card.', ok: false });
     } finally {
@@ -205,11 +246,6 @@ export default function ShareCardModal({
    * therefore opened first and the file built afterwards.
    */
   const shareTo = useCallback(async (name) => {
-    if (fmt === 'reel') {
-      setDone({ text: 'The reel cannot be posted from here yet — switch to Card · PNG.', ok: false });
-      return;
-    }
-
     let canShareFiles = false;
     try {
       canShareFiles = !!navigator.canShare?.({ files: [new File([new Blob()], 'probe.png', { type: 'image/png' })] });
@@ -244,7 +280,7 @@ export default function ShareCardModal({
     } finally {
       setBusy(false);
     }
-  }, [caption, fmt, referral, renderFile, saveFile]);
+  }, [caption, referral, renderFile, saveFile]);
 
   if (!open) return null;
 
@@ -280,7 +316,7 @@ export default function ShareCardModal({
             {kinds.map((k) => {
               const s = segment(kind, 'kind', k);
               return (
-                <button key={k} type="button" onClick={change(() => { setKind(k); if (!(stories ?? STORIES)[(cards?.[k] ?? SHARE_CARDS[k]).reelStory]) setFmt('card'); })} style={{ padding: '7px 14px', border: 0, borderRadius: 999, background: s.bg, color: s.fg, boxShadow: s.sh, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+                <button key={k} type="button" onClick={change(() => { setKind(k); if (!hasReel(k)) setFmt('card'); })} style={{ padding: '7px 14px', border: 0, borderRadius: 999, background: s.bg, color: s.fg, boxShadow: s.sh, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
                   {(cards?.[k] ?? SHARE_CARDS[k]).tab}
                 </button>
               );
@@ -341,7 +377,7 @@ export default function ShareCardModal({
               <div style={label()}>Share to</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,minmax(0,1fr))', gap: 8 }}>
                 {targets.map((t) => (
-                  <button key={t.name} type="button" onClick={() => shareTo(t.name)} disabled={busy || noVideo} className="tgx-share-target" aria-disabled={busy || noVideo} style={{ display: 'grid', justifyItems: 'center', gap: 6, padding: '10px 4px', border: '1px solid var(--line)', borderRadius: 12, background: 'var(--surface-2)', color: 'var(--ink-2)', fontSize: 11, fontWeight: 600, minHeight: 44, cursor: busy || noVideo ? 'not-allowed' : 'pointer', opacity: noVideo ? 0.45 : 1 }}>
+                  <button key={t.name} type="button" onClick={() => shareTo(t.name)} disabled={busy} className="tgx-share-target" aria-disabled={busy} style={{ display: 'grid', justifyItems: 'center', gap: 6, padding: '10px 4px', border: '1px solid var(--line)', borderRadius: 12, background: 'var(--surface-2)', color: 'var(--ink-2)', fontSize: 11, fontWeight: 600, minHeight: 44, cursor: busy ? 'progress' : 'pointer' }}>
                     <span style={{ width: 38, height: 38, borderRadius: 11, background: t.bg, color: t.fg, display: 'grid', placeItems: 'center', boxShadow: '0 6px 14px -6px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.25)' }}>
                       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                         {t.s && <path d={t.s} />}
@@ -359,9 +395,9 @@ export default function ShareCardModal({
                   apologising on click. The reel has no video export yet, and a
                   button that names a file it cannot write is the one thing the
                   simulated version of this modal did that we cannot keep. */}
-              <button type="button" onClick={download} disabled={busy || noVideo} style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, padding: '11px 14px', border: 0, borderRadius: 11, background: 'var(--mint-solid)', color: '#02241d', fontSize: 13, fontWeight: 700, cursor: busy ? 'progress' : noVideo ? 'not-allowed' : 'pointer', opacity: busy ? 0.75 : noVideo ? 0.45 : 1 }}>
+              <button type="button" onClick={download} disabled={busy} style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, padding: '11px 14px', border: 0, borderRadius: 11, background: 'var(--mint-solid)', color: '#02241d', fontSize: 13, fontWeight: 700, cursor: busy ? 'progress' : 'pointer', opacity: busy ? 0.75 : 1 }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12M7 10l5 5 5-5" /><path d="M5 19h14" /></svg>
-                {busy ? 'Building…' : DOWNLOAD_LABEL(fmt)}
+                {busy ? 'Building…' : DOWNLOAD_LABEL()}
               </button>
               <button type="button" onClick={copyCaption} style={{ flex: '1 1 150px', minHeight: 44, padding: '11px 14px', border: '1px solid var(--line-strong)', borderRadius: 11, background: 'var(--surface-2)', color: 'var(--ink)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 Copy caption
@@ -369,7 +405,7 @@ export default function ShareCardModal({
             </div>
             {noVideo && (
               <div style={{ marginTop: -8, fontSize: 11.5, lineHeight: 1.5, color: 'var(--ink-3)' }}>
-                Saving the reel as a video is not wired up yet — switch to <b style={{ color: 'var(--ink-2)' }}>Card · PNG</b> to download or post this one.
+                The reel plays here, but saving it as a video isn’t ready yet — these save and share the <b style={{ color: 'var(--ink-2)' }}>card image</b>.
               </div>
             )}
 

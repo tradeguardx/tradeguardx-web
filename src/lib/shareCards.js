@@ -268,7 +268,14 @@ export function shareTargets(fmt = 'card') {
   ];
 }
 
-export const DOWNLOAD_LABEL = (fmt) => (fmt === 'card' ? 'Download PNG' : 'Download MP4');
+/*
+ * Always PNG, because that is always what you get.
+ *
+ * It read "Download MP4" under the reel, which is a promise the product
+ * cannot keep: the reel is a DOM animation and there is no video export yet.
+ * The button now names the file it actually writes in both formats.
+ */
+export const DOWNLOAD_LABEL = () => 'Download PNG';
 /**
  * The prototype's success lines. Kept for the sizes they name — the modal now
  * builds its own message from the file it actually wrote, because the reel's
