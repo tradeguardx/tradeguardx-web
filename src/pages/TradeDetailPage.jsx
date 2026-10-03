@@ -288,6 +288,11 @@ function useNarrativeTTS(text) {
 // ─── Event type meta ─────────────────────────────────────────────────────────
 const EVENT_META = {
   OPEN:        { label: 'Opened',           color: '#00d4aa', dot: '●', bg: 'rgba(0,212,170,0.12)' },
+  // An execution the venue reported, not something the engine watched happen.
+  // These appear on trades the engine joined late — a position already open
+  // when it started watching is journalled CLOSE-only, and its opening fill
+  // comes back from the importer afterwards.
+  FILL:        { label: 'Filled',           color: '#7dd3fc', dot: '◇', bg: 'rgba(125,211,252,0.1)' },
   SNAPSHOT:    { label: 'Snapshot',         color: '#60a5fa', dot: '◈', bg: 'rgba(96,165,250,0.1)' },
   SL_UPDATE:   { label: 'SL Updated',       color: '#f87171', dot: '▼', bg: 'rgba(248,113,113,0.1)' },
   TP_UPDATE:   { label: 'TP Updated',       color: '#fb923c', dot: '△', bg: 'rgba(251,146,60,0.1)' },
@@ -515,7 +520,7 @@ function EventTimeline({ events, currency }) {
     <div style={sx('padding:30px 21px;font-size:13px;color:var(--ink-3)')}>No events recorded on this trade yet.</div>
   );
   const clock = (v) => (v ? new Date(v).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }) : '—');
-  const dotOf = (type) => (type === 'RULE_BLOCK' || type === 'SL_UPDATE' ? 'var(--red)' : type === 'OPEN' ? 'var(--mint)' : type === 'CLOSE' ? 'var(--ink-faint)' : type === 'PARTIAL_CLOSE' || type === 'SIZE_UPDATE' ? 'var(--amber)' : 'var(--line-strong)');
+  const dotOf = (type) => (type === 'RULE_BLOCK' || type === 'SL_UPDATE' ? 'var(--red)' : type === 'OPEN' || type === 'FILL' ? 'var(--mint)' : type === 'CLOSE' ? 'var(--ink-faint)' : type === 'PARTIAL_CLOSE' || type === 'SIZE_UPDATE' ? 'var(--amber)' : 'var(--line-strong)');
 
   return events.map((e, i) => {
     const meta = EVENT_META[e.eventType] || { label: e.eventType };
@@ -524,6 +529,7 @@ function EventTimeline({ events, currency }) {
     if (e.slBefore && e.slAfter) detail.push(`Stop ${fmtNum(e.slBefore)} → ${fmtNum(e.slAfter)}`);
     if (e.tpBefore && e.tpAfter) detail.push(`Target ${fmtNum(e.tpBefore)} → ${fmtNum(e.tpAfter)}`);
     if (e.quantity) detail.push(`Qty ${e.quantity}`);
+    if (e.eventType === 'FILL' && e.payload?.side) detail.unshift(String(e.payload.side).toUpperCase());
     const note = e.payload?.reason || e.payload?.rule || null;
     const cost = e.pnl != null && Number.isFinite(Number(e.pnl)) ? Number(e.pnl) : null;
     return (
