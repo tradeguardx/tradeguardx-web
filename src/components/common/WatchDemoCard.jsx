@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { trackCtaClick } from '../../lib/analytics';
-import { DEMO_VIDEO_ID, demoVideoPoster, demoVideoEmbedUrl } from '../../lib/demoVideo';
+import { DEMO_VIDEO, DEMO_VIDEO_ID, demoVideoPoster, demoVideoEmbedUrl } from '../../lib/demoVideo';
 
 function YouTubeGlyph({ className }) {
   return (
@@ -23,13 +23,24 @@ function YouTubeGlyph({ className }) {
  * YouTube player or its cookies.
  */
 export default function WatchDemoCard({
-  title = 'Watch the setup walkthrough',
-  subtitle = 'The whole flow — API key, rules, and the kill switch firing — in about three minutes.',
+  /**
+   * Which video this card plays — see videoFor() in demoVideo.js. Defaults to
+   * the general walkthrough, which is the Delta one; a venue guide passes its
+   * own, because a Shark reader pressing play on a Delta screencast is worse
+   * than no video at all.
+   */
+  video = DEMO_VIDEO,
+  title,
+  subtitle,
   source = 'guides_demo_video',
   className = '',
 }) {
+  const vid = video?.id ?? DEMO_VIDEO_ID;
+  const heading = title ?? video?.title ?? DEMO_VIDEO.title;
+  const sub = subtitle ?? video?.subtitle ?? DEMO_VIDEO.subtitle;
+
   const [open, setOpen] = useState(false);
-  const [poster, setPoster] = useState(() => demoVideoPoster('maxres'));
+  const [poster, setPoster] = useState(() => demoVideoPoster('maxres', vid));
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -68,7 +79,7 @@ export default function WatchDemoCard({
           <span className="block aspect-video w-full bg-black">
             <img
               src={poster}
-              onError={() => setPoster(demoVideoPoster('hq'))}
+              onError={() => setPoster(demoVideoPoster('hq', vid))}
               alt=""
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
@@ -86,10 +97,12 @@ export default function WatchDemoCard({
 
         <span className="min-w-0">
           <span className="block text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--accent, #00d4aa)' }}>
-            Video guide
+            {/* The language belongs here, not inside the lightbox. Someone who
+                does not speak it should find out before they commit a click. */}
+            {video?.lang ? `Video guide · ${video.lang}` : 'Video guide'}
           </span>
-          <span className="mt-1 block text-[15px] font-bold leading-snug text-white">{title}</span>
-          <span className="mt-1 hidden text-[13px] leading-relaxed text-slate-400 sm:block">{subtitle}</span>
+          <span className="mt-1 block text-[15px] font-bold leading-snug text-white">{heading}</span>
+          <span className="mt-1 hidden text-[13px] leading-relaxed text-slate-400 sm:block">{sub}</span>
         </span>
       </button>
 
@@ -100,7 +113,7 @@ export default function WatchDemoCard({
           onClick={close}
           role="dialog"
           aria-modal="true"
-          aria-label="TradeGuardX setup walkthrough"
+          aria-label={heading}
         >
           <div
             className="relative w-full max-w-5xl overflow-hidden rounded-2xl border"
@@ -110,8 +123,8 @@ export default function WatchDemoCard({
             <div className="aspect-video w-full">
               <iframe
                 className="h-full w-full"
-                src={demoVideoEmbedUrl({ autoplay: true })}
-                title="TradeGuardX setup walkthrough"
+                src={demoVideoEmbedUrl({ autoplay: true, id: vid, start: video?.start ?? 0 })}
+                title={heading}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen

@@ -13,7 +13,7 @@ import WatchDemoCard from '../common/WatchDemoCard';
  * `headingLevel` exists because the venue guide pages already carry their own
  * H1 from the route, and a second H1 in the body would leave the page with two.
  */
-export default function ArticleBody({ article, showDemo = false, children, headingLevel = 'h1' }) {
+export default function ArticleBody({ article, showDemo = false, video, children, headingLevel = 'h1' }) {
   const Heading = headingLevel;
   return (
     <article className="min-w-0">
@@ -21,8 +21,10 @@ export default function ArticleBody({ article, showDemo = false, children, headi
       {article.intro && <p className="mt-4 text-[15px] leading-relaxed text-slate-400">{article.intro}</p>}
 
       {/* Setup guides lead with the video — most people would rather watch the
-          key-generation step than read it. Plays in a lightbox, not on YouTube. */}
-      {showDemo && <WatchDemoCard className="mt-6" />}
+          key-generation step than read it. Plays in a lightbox, not on YouTube.
+          `video` is the venue's own where it has one: this card used to play
+          the Delta screencast on every venue's guide. */}
+      {showDemo && <WatchDemoCard video={video} className="mt-6" />}
 
       {children}
 

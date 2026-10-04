@@ -6,6 +6,7 @@ import { venuePageFor } from '../../lib/venueSeo';
 import { guideFor, guidesFor } from '../../lib/venueGuides';
 import { venueFor } from '../../lib/venues';
 import ArticleBody from '../../components/docs/ArticleBody';
+import { videoFor } from '../../lib/demoVideo';
 import NotFoundPage from '../NotFoundPage';
 
 /**
@@ -158,7 +159,7 @@ export default function ExchangeGuidePage() {
           {/* The venue's own step list is the article; the screenshots slot in
               after the intro, before the numbered steps, so the page reads
               "here is the flow" then "here is each step in words". */}
-          <ArticleBody article={guide} showDemo={Boolean(guide.imagesFrom)}>
+          <ArticleBody article={guide} showDemo={Boolean(guide.imagesFrom)} video={videoFor(venue.slug)}>
             <GuideShots steps={shots} venueName={venue.name} />
           </ArticleBody>
 
