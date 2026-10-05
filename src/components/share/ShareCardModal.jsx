@@ -51,6 +51,8 @@ export default function ShareCardModal({
   /** This account's reel stories, keyed like the cards. Omitted by the
       preview page, which plays the handoff's demo reels instead. */
   stories = null,
+  /** True while the trade's chart is still being priced — see useShareData. */
+  pricing = false,
   currency = 'USD',
 }) {
   /*
@@ -139,10 +141,25 @@ export default function ShareCardModal({
    * Binance does not list the venue's symbol. Saying "you closed this one
    * yourself" was describing a restriction that no longer exists.
    */
+  const reelPending = !reelReady && kind === 'trade' && pricing;
   const reelWhy = reelReady
     ? ''
-    : kind === 'trade'
-      ? 'No reel for this trade: we could not price its chart — the venue’s symbol is not one we can pull candles for, and the chart is what the reel animates. The card is ready.'
+    : reelPending
+      /*
+       * Not a verdict. Pass 1's `loading` goes false as soon as the trades
+       * land, so this sentence used to appear during the Binance round-trip
+       * and then be contradicted a second later by the reel showing up.
+       */
+      ? 'Pricing this trade’s chart from public candle data — the reel appears as soon as it lands.'
+      : kind === 'trade'
+      /*
+       * And when it really did fail, it failed for one of about ten reasons:
+       * the symbol is not listed, the window is too short to sample, entry
+       * and exit are the same price so there is nothing to calibrate against,
+       * Binance refused the request. Naming one of them was a guess dressed
+       * as a diagnosis, so this says what is true of all of them.
+       */
+        ? 'No reel for this trade — its chart could not be priced from public candle data, and the chart is what the reel animates. The card is ready.'
       : kind === 'week'
         ? 'No reel for this week yet — it needs at least two trading days. This card shares as a PNG.'
         : `There is no reel for ${(cards?.[kind] ?? SHARE_CARDS[kind]).tab.toLowerCase()} — it would need an intraday equity curve we do not record. This card shares as a PNG.`;

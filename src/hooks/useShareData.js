@@ -180,6 +180,24 @@ export function useShareData({ accessToken, tradingAccountId, currency = 'USD', 
 
   const counter = useMemo(() => (activeUid ? priced.get(activeUid) ?? null : null), [priced, activeUid]);
 
+  /*
+   * STILL PRICING IS NOT THE SAME ANSWER AS CANNOT PRICE.
+   *
+   * `priced` already distinguishes the two and nothing read the difference:
+   *
+   *   key absent      -> not attempted yet, or the fetch is in the air
+   *   key -> null     -> attempted, and it genuinely could not be priced
+   *   key -> object   -> priced
+   *
+   * Pass 1's `loading` goes false as soon as the trades land, so between that
+   * and Binance answering there is a window where the modal had a card, no
+   * story, and no way to know which of the two it was looking at. It told the
+   * user "we could not price its chart" — a verdict, stated before the data
+   * that decides it had arrived, about a reel that then appeared a second
+   * later.
+   */
+  const pricing = Boolean(activeUid) && !priced.has(activeUid);
+
   // Two shapes, deliberately — see ruleLabels() in shareData.js. `labels` are
   // the card's chips; `blocks` are the reel's rail.
   const labels = useMemo(() => ruleLabels(rules, currency), [rules, currency]);
@@ -250,6 +268,8 @@ export function useShareData({ accessToken, tradingAccountId, currency = 'USD', 
     referral,
     counter,
     loading: raw.loading,
+    /** Pass 2 is still out. See the note above `pricing`. */
+    pricing,
     /** Nothing real to share yet — the UI hides its entry points rather than
         showing the design's demo trade under this user's name. */
     empty: !raw.loading && kinds.length === 0,

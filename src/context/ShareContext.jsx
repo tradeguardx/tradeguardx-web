@@ -107,6 +107,7 @@ export function ShareProvider({ children }) {
         handle={data.handle}
         referral={data.referral}
         counter={data.counter}
+        pricing={data.pricing}
         stories={data.stories}
         currency={currency}
       />
