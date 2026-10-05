@@ -33,7 +33,11 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets/).*)",
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?:about|beta-testers|beta-traders|crypto-kill-switch|crypto-tax-india|dashboard|docs|exchanges|forgot-password|help|home-classic|influencer|login|partner-with-us|pricing|privacy|prop-firm|reel-preview|refund|reset-password|risk-disclosure|roadmap|security|signup|support|terms|verify-email)(?:/.*)?)",
       "destination": "/index.html"
     }
   ],
