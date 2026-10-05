@@ -222,9 +222,31 @@ export function buildTradeCard({ trades, breaches, currency = 'USD', tradeUid, c
   const meta = [long ? 'Long' : 'Short', lev ? `${lev}x` : null].filter(Boolean).join(' · ');
   const green = realized >= 0;
 
+  /*
+   * ENOUGH DECIMALS THAT TWO DIFFERENT PRICES NEVER RENDER THE SAME.
+   *
+   * Four was hard-coded, which on XRP at 1.07 is a resolution of 0.01%. A
+   * two-hour position that round-tripped and lost $49.98 to fees and funding
+   * therefore printed "Entry 1.0684 / Exit 1.0684" beside "−$49.98" — three
+   * true figures arranged to look like a bug, on the artefact the user posts.
+   *
+   * Widen until the two separate, or until eight places prove they really are
+   * equal. Only the trade's own pair of prices decides this, so a BTC card is
+   * unaffected and still reads 61,245.5.
+   */
+  const pxDecimals = (() => {
+    const a = Number(t.entryPrice);
+    const b = Number(t.exitPrice);
+    if (!Number.isFinite(a) || !Number.isFinite(b) || a === b) return 4;
+    for (let d = 4; d <= 8; d += 1) {
+      if (a.toFixed(d) !== b.toFixed(d)) return d;
+    }
+    return 8;
+  })();
+
   const fmtPx = (v) => {
     const n = Number(v);
-    return Number.isFinite(n) && n > 0 ? n.toLocaleString('en-US', { maximumFractionDigits: 4 }) : '—';
+    return Number.isFinite(n) && n > 0 ? n.toLocaleString('en-US', { maximumFractionDigits: pxDecimals }) : '—';
   };
 
   const base = {

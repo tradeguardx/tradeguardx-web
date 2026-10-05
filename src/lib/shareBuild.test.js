@@ -517,6 +517,51 @@ describe('tiers are earned', () => {
   });
 });
 
+describe('two different prices never render as one', () => {
+  /*
+   * Four decimal places were hard-coded. On XRP at 1.07 that is a resolution
+   * of 0.01%, so a two-hour position that round-tripped and lost $49.98 to
+   * fees and funding printed "Entry 1.0684 / Exit 1.0684" beside "−$49.98" —
+   * three true figures arranged to look like a bug, on the thing the user
+   * posts under their own name.
+   */
+  const facts = (c) => Object.fromEntries((c.facts ?? []).map((f) => [f.k, f.v]));
+
+  it('widens until a near-flat trade shows its real exit', () => {
+    const c = buildTradeCard({
+      trades: [CLOSED({ pnl: -49.98, entryPrice: 1.06841, exitPrice: 1.06838 })],
+      breaches: [],
+      dailyLoss: 200,
+    });
+    const f = facts(c);
+    expect(f.Entry).not.toBe(f.Exit);
+    expect(f.Entry).toBe('1.06841');
+    expect(f.Exit).toBe('1.06838');
+  });
+
+  it('leaves an ordinary pair at four places', () => {
+    const c = buildTradeCard({
+      trades: [CLOSED({ pnl: -333.8, entryPrice: 0.5412, exitPrice: 0.5488 })],
+      breaches: [],
+      dailyLoss: 200,
+    });
+    const f = facts(c);
+    expect(f.Entry).toBe('0.5412');
+    expect(f.Exit).toBe('0.5488');
+  });
+
+  it('stops at eight places when the two really are equal', () => {
+    const c = buildTradeCard({
+      trades: [CLOSED({ pnl: -49.98, entryPrice: 1.0684, exitPrice: 1.0684 })],
+      breaches: [],
+      dailyLoss: 200,
+    });
+    const f = facts(c);
+    expect(f.Entry).toBe('1.0684');
+    expect(f.Exit).toBe('1.0684');
+  });
+});
+
 describe('the after-path is a claim, not a decoration', () => {
   /*
    * The red dashed tail and the red wedge under it say one thing: "the price
