@@ -115,16 +115,43 @@ export async function tradePaths(trade, { signal, points = 14 } = {}) {
    * from this estimate — it only decides how many rupees a dollar of spot
    * movement was worth on this position.
    */
-  const modelledExit = Number.isFinite(exit) && exit > 0
-    ? exit
-    : during[during.length - 1].close;
-  if (!Number.isFinite(modelledExit)) return null;
-
-  const modelledClose = pnlAt(entry, modelledExit, qty, long);
-  // Relative to the notional, so the threshold means the same thing on a
-  // ₹500 position and a ₹5,00,000 one.
   const notional = Math.abs(entry * qty);
-  if (!notional || Math.abs(modelledClose) / notional < 1e-4) return null;
+  if (!notional) return null;
+
+  /*
+   * An exit is usable when it is a real price AND it implies the position
+   * actually moved. Relative to the notional, so the threshold means the same
+   * thing on a ₹500 position and a ₹5,00,000 one.
+   */
+  const rawPnl = (px) => pnlAt(entry, px, qty, long);
+  const usable = (px) => {
+    if (!Number.isFinite(px) || px <= 0) return false;
+    const m = rawPnl(px);
+    return Number.isFinite(m) && Math.abs(m) / notional >= 1e-4;
+  };
+
+  /*
+   * ...AND THE LEDGER'S EXIT CAN BE PRESENT AND STILL WRONG.
+   *
+   * A Delta XRPUSD trade arrives as entry 1.0684, exit 1.0684, P&L −$49.98
+   * over two hours. Those cannot all be true: a position that closes at its
+   * entry price does not lose fifty dollars. The exit is the entry echoed
+   * back — the same shape of bug the engine had on Shark — and the P&L is the
+   * figure the exchange actually settled.
+   *
+   * So the fallback is not only for a MISSING exit. It is for an exit we can
+   * prove is not telling the truth, and the proof is arithmetic rather than a
+   * guess: the ledger contradicts itself, and of the two numbers the one that
+   * moved money is the one to keep.
+   *
+   * If the candle close ALSO models no movement, the price genuinely did not
+   * move and there is nothing to calibrate — that returns null, as before.
+   */
+  const candleExit = during[during.length - 1].close;
+  const modelledExit = usable(exit) ? exit : candleExit;
+  if (!usable(modelledExit)) return null;
+
+  const modelledClose = rawPnl(modelledExit);
 
   const k = realized / modelledClose;
   // A ratio this far from 1 means the two numbers are not measuring the same

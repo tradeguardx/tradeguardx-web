@@ -45,11 +45,37 @@ describe('units', () => {
     expect(p.scale).toBeGreaterThan(1);
   });
 
-  it('still refuses a trade that genuinely closed where it opened', async () => {
-    // A reported exit equal to the entry models a close of zero, so there is
-    // nothing to calibrate against. The old fallback used a scale of 1 and
-    // emitted raw USDT as though it were rupees — "₹210.57 saved" on a trade
+  it('prices from the candles when the ledger exit contradicts the ledger P&L', async () => {
+    /*
+     * A Delta XRPUSD trade arrives as entry 1.0684, exit 1.0684, P&L −$49.98
+     * over two hours. Those cannot all be true: a position that closes at its
+     * entry price does not lose fifty dollars. The exit is the entry echoed
+     * back — the same shape of bug the engine had on Shark — and the P&L is
+     * what the exchange actually settled.
+     *
+     * This used to return null, so the trade got no chart and the modal said
+     * there was no reel for it. The contradiction is arithmetic, not a guess,
+     * so of the two numbers we keep the one that moved money.
+     */
+    const p = await tradePaths(TRADE({ exitPrice: 118.28 }));
+    expect(p).not.toBeNull();
+    // Still ends exactly on the ledger's figure — that is the number printed
+    // above the chart.
+    expect(p.P[p.P.length - 1]).toBe(61496.54);
+    // And the scale is still DERIVED. A fallback of 1 was the original bug:
+    // raw USDT emitted as though it were rupees, "₹210.57 saved" on a trade
     // the ledger says made ₹61,496.
+    expect(p.scale).not.toBe(1);
+    expect(p.scale).toBeGreaterThan(1);
+  });
+
+  it('still refuses when the price genuinely did not move', async () => {
+    // Every candle at one price: neither the ledger's exit nor the candles
+    // give anything to calibrate against, so there is no honest path to draw.
+    const openMs = Date.parse('2026-09-30T04:00:00Z');
+    const endMs = Date.parse('2026-09-30T18:29:59Z');
+    const flat = klines(openMs, endMs, new Array(10).fill(118.28));
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => flat })));
     expect(await tradePaths(TRADE({ exitPrice: 118.28 }))).toBeNull();
   });
 
