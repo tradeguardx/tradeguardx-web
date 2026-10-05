@@ -64,8 +64,33 @@ function normalizeBaseUrl(url) {
   return url.replace(/\/+$/, '');
 }
 
+/*
+ * STATIC LOOKUP, BECAUSE A DYNAMIC ONE SHIPS THE WHOLE ENVIRONMENT.
+ *
+ * This read `import.meta.env[key]`. Vite cannot statically analyse a computed
+ * key, so it stops replacing individual variables and inlines the ENTIRE
+ * `import.meta.env` object into the client bundle — every VITE_* the build
+ * environment defines, not the five this file actually reads.
+ *
+ * On Vercel, with "Automatically expose System Environment Variables" on,
+ * that shipped to every visitor: the full git commit message, the committer's
+ * name and GitHub login, the branch, and the repo, project and deployment
+ * ids. None of that is secret, and none of it belongs in a public bundle
+ * either — commit messages describe bugs in detail, which is reconnaissance
+ * handed out for free.
+ *
+ * Naming the keys lets Vite substitute each one and drop everything else.
+ */
+const OVERRIDES = {
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  VITE_SUBSCRIPTION_API_BASE_URL: import.meta.env.VITE_SUBSCRIPTION_API_BASE_URL,
+  VITE_PAYMENTS_API_BASE_URL: import.meta.env.VITE_PAYMENTS_API_BASE_URL,
+  VITE_TRADE_API_BASE_URL: import.meta.env.VITE_TRADE_API_BASE_URL,
+  VITE_ANALYTICS_API_BASE_URL: import.meta.env.VITE_ANALYTICS_API_BASE_URL,
+};
+
 function readOverride(key) {
-  const raw = import.meta.env[key];
+  const raw = OVERRIDES[key];
   if (raw == null) return '';
   const s = String(raw).trim();
   return s.length > 0 ? s : '';
