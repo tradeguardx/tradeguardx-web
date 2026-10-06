@@ -121,7 +121,7 @@ export default function ShareCardsStrip({ show = true, onOpenShare, items = null
       <div
         ref={railRef}
         onScroll={rail ? onScroll : undefined}
-        className={rail ? 'tgx-strip-rail' : undefined}
+        className={`tgx-strip-grid${rail ? ' tgx-strip-rail' : ''}`}
         style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,232px),320px))', gap: 16, padding: '18px 18px 6px' }}
       >
         {cards.map((it) => (

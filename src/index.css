@@ -1339,6 +1339,28 @@
 
 }
 
+/* All four cards on one row, once there is room for them.
+
+   The inline grid is auto-fill with a 320px ceiling on each track. The ceiling
+   is there so a single card does not stretch across the whole panel — but it
+   also means four cards need 4x320 + 3 gaps = 1328px, and the panel has about
+   1120px at a typical desktop width. The fourth wrapped to a row of its own,
+   which reads as "three cards and a leftover" rather than a set.
+
+   Four explicit tracks share whatever width there is instead, so the cards
+   size themselves to fit (~268px here, inside the 232-320 range they were
+   drawn for). Fewer than four cards still occupy one track each and leave the
+   rest empty, which is the behaviour auto-fill was chosen for in the first
+   place — a lone card must not blow up to full width.
+
+   1360px is where the content column clears 4x232 + gaps with room to spare,
+   after the sidebar and the page padding are taken out. */
+@media (min-width: 1360px) {
+  [data-tgx] .tgx-strip-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
 /* "Your cards & achievements", on a phone.
 
    Four cards at full width is four screens of scrolling to see what you have,
