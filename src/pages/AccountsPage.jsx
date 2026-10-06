@@ -178,6 +178,18 @@ export default function AccountsPage() {
         const d = st.describe;
         const tone = d.tone;
         const locked = st.guard === 'locked';
+        /*
+         * Whether the key can be released, computed by the SERVER (keyLock.ts)
+         * and rendered here. Deliberately not derived on the client: the rule
+         * would then exist twice and the button could disagree with the API
+         * that enforces it — the same drift that let the dashboard read ARMED
+         * over an engine that would not act.
+         */
+        const kl = a.keyLock ?? null;
+        const keyHeld = Boolean(kl?.locked);
+        const keyHeldWhy = kl?.reason === 'position_open'
+          ? 'You have an open position. The kill switch stays connected until you are flat — close the position and you can disconnect straight away.'
+          : `You have traded today, so the key stays connected until your next daily reset${a.dailyResetTimeLocal ? ` at ${a.dailyResetTimeLocal}` : ''}. This is the same lock your rules are under.`;
         const venue = a.propFirmSlug ? brokerLabel(a.propFirmSlug) : 'No venue yet';
         const conn = st.connection;
         const hasKey = conn && conn.status === 'active';
@@ -264,8 +276,20 @@ export default function AccountsPage() {
                   {!locked && (
                     <div style={sx('display:flex;gap:9px;margin-top:13px;flex-wrap:wrap')}>
                       <button type="button" onClick={() => go(a.id, '/dashboard/connect')} style={sx('padding:9px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:600')}>Replace key</button>
-                      <button type="button" onClick={() => setDc(a)} style={sx('padding:9px 14px;border:1px solid var(--red-line);border-radius:9px;background:transparent;color:var(--red);font-size:12.5px;font-weight:600')}>Disconnect</button>
+                      <button
+                        type="button"
+                        onClick={() => setDc(a)}
+                        disabled={keyHeld}
+                        title={keyHeld ? keyHeldWhy : undefined}
+                        style={sx('padding:9px 14px;border:1px solid var(--red-line);border-radius:9px;background:transparent;color:var(--red);font-size:12.5px;font-weight:600', keyHeld ? { opacity: 0.45, cursor: 'not-allowed' } : null)}
+                      >Disconnect</button>
                     </div>
+                  )}
+                  {/* Say it before the click, not as a 409 after it. */}
+                  {!locked && keyHeld && (
+                    <p style={sx('margin:10px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12px;line-height:1.55;color:var(--ink-2)')}>
+                      {keyHeldWhy}
+                    </p>
                   )}
                   {key.note && <p style={sx('margin:12px 0 0;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12px;line-height:1.55;color:var(--ink-2)')}>{key.note}</p>}
                 </div>
