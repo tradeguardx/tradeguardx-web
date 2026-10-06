@@ -187,9 +187,29 @@ export default function AccountsPage() {
          */
         const kl = a.keyLock ?? null;
         const keyHeld = Boolean(kl?.locked);
+        /*
+         * The release time, in the READER'S clock.
+         *
+         * This printed `dailyResetTimeLocal` raw — the stored "HH:MM" with no
+         * zone attached. On an account configured 00:00 UTC that renders as
+         * "at 00:00" to someone in India, who reasonably reads it as midnight
+         * tonight when the key actually releases at 05:30 their time.
+         *
+         * `keyLock.until` is a real instant, so the browser can say what the
+         * reader's own clock will say. Falls back to no time rather than to a
+         * zoneless one: saying nothing beats saying the wrong hour.
+         */
+        const releaseAt = (() => {
+          if (!kl?.until) return '';
+          const t = new Date(kl.until);
+          if (Number.isNaN(t.getTime())) return '';
+          try {
+            return t.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+          } catch { return ''; }
+        })();
         const keyHeldWhy = kl?.reason === 'position_open'
           ? 'You have an open position. The kill switch stays connected until you are flat — close the position and you can disconnect straight away.'
-          : `You have traded today, so the key stays connected until your next daily reset${a.dailyResetTimeLocal ? ` at ${a.dailyResetTimeLocal}` : ''}. This is the same lock your rules are under.`;
+          : `You have traded today, so the key stays connected until your next daily reset${releaseAt ? ` — ${releaseAt} your time` : ''}. This is the same lock your rules are under.`;
         const venue = a.propFirmSlug ? brokerLabel(a.propFirmSlug) : 'No venue yet';
         const conn = st.connection;
         const hasKey = conn && conn.status === 'active';
