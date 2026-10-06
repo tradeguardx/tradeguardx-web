@@ -38,7 +38,16 @@ function settle(p) {
 }
 
 export function GuardProvider({ children }) {
-  const { session, user } = useAuth();
+  const { session, user, access } = useAuth();
+  /*
+   * Entitlement, mirroring isEntitled() in the engine's exchange/credentials.ts
+   * and the `access` the subscription API computes. The engine stopped acting
+   * for lapsed plans; this screen must not keep claiming it does.
+   *
+   * `access` is null until the subscription call lands, and unknown must never
+   * read as unprotected — same rule as `loaded` everywhere else in this file.
+   */
+  const entitled = access == null ? true : access === 'trial' || access === 'active';
   const { accounts, accountsLoading, selectedTradingAccountId, refreshTradingAccounts } = useTradingAccounts();
   const accessToken = session?.access_token;
 
@@ -159,7 +168,7 @@ export function GuardProvider({ children }) {
       // `loaded` rides along so nothing downstream mistakes "not fetched yet"
       // for "not connected" — see guard.js.
       const isLoaded = slice.loaded && loaded;
-      const input = { account, connection: slice.connection, rules: slice.rules, notifications, loaded: isLoaded };
+      const input = { account, connection: slice.connection, rules: slice.rules, notifications, loaded: isLoaded, entitled };
       const enforcement = enforcementOf(input);
       const guard = guardOf(input, now);
       const gaps = gapsOf(input);
@@ -181,7 +190,7 @@ export function GuardProvider({ children }) {
         lockUntil,
         lockReason: account?.cooldownReason ?? null,
         lockRemainingMs: lockUntil ? Math.max(0, lockUntil - now) : 0,
-        describe: describeGuard(guard, { on, total, gap: gaps[0] ?? null, label: account?.name ?? '', readOnly: slice.connection?.enforcementCapable === false }),
+        describe: describeGuard(guard, { on, total, gap: gaps[0] ?? null, label: account?.name ?? '', readOnly: slice.connection?.enforcementCapable === false, entitled }),
         copy: enforcementCopy(enforcement),
         setupDone: gaps.filter((g) => g.key !== 'alerts').length === 0,
         readOnly: slice.connection?.enforcementCapable === false,
@@ -189,7 +198,7 @@ export function GuardProvider({ children }) {
         canLockOut: canLockOutOf(input),
       };
     },
-    [accounts, perAccount, notifications, now, loaded],
+    [accounts, perAccount, notifications, now, loaded, entitled],
   );
 
   const value = useMemo(

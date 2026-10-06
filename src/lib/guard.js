@@ -131,11 +131,29 @@ export function gapsOf({ account, connection, rules, notifications, loaded = tru
   return gaps;
 }
 
-export function enforcementOf({ account, connection, rules, loaded = true }) {
+export function enforcementOf({ account, connection, rules, loaded = true, entitled = true }) {
   if (!loaded) return ENFORCEMENT.LOADING;
   if (!setupCompleteOf(account)) return ENFORCEMENT.UNPROTECTED;
   if (!connection || connection.status !== 'active') return ENFORCEMENT.UNPROTECTED;
   if (enabledRuleCount(rules) === 0) return ENFORCEMENT.UNPROTECTED;
+  /*
+   * ENTITLEMENT, BEFORE CAPABILITY.
+   *
+   * The engine stopped acting for accounts whose plan has lapsed — it has no
+   * agreement to place a close order on them. This screen has to agree with
+   * it. A dashboard reading ARMED over an engine that will not act is the most
+   * dangerous state this product can produce: someone sizes a position
+   * believing a killswitch is behind it.
+   *
+   * WATCHING is the honest word for it, and it is already the word for a
+   * read-only key: data still flows, alerts still arrive, nothing intervenes.
+   * Checked BEFORE capability so the copy can say "your plan lapsed" rather
+   * than sending someone to replace a key that works perfectly.
+   *
+   * Defaults to true, so an account whose plan is not loaded yet is never
+   * shown as unprotected on a guess.
+   */
+  if (entitled === false) return ENFORCEMENT.WATCHING;
   if (connection.enforcementCapable === false) return ENFORCEMENT.WATCHING;
   return ENFORCEMENT.ARMED;
 }
@@ -166,7 +184,7 @@ export function guardOf(input, now = Date.now()) {
  * Pill, band and hero copy per guard state — transcribed from the reference's
  * guardFor(). `label` is the account-row word (stateOf), `pill` the header word.
  */
-export function describeGuard(guard, { on = 0, total = 0, gap = null, label = '', readOnly = false } = {}) {
+export function describeGuard(guard, { on = 0, total = 0, gap = null, label = '', readOnly = false, entitled = true } = {}) {
   switch (guard) {
     case GUARD.LOADING:
       // Deliberately says nothing about protection: we do not know yet, and a
@@ -197,6 +215,18 @@ export function describeGuard(guard, { on = 0, total = 0, gap = null, label = ''
         showBand: false, bandTitle: '', bandBody: '', cta: '', to: '/dashboard/live', action: 'Manage',
       };
     case GUARD.WATCHING:
+      // Same state, two causes, and the fix for one is useless for the other.
+      if (entitled === false) {
+        return {
+          pill: 'Watching only', label: 'Watching only', tone: 'amber', pillNote: 'your plan has lapsed',
+          title: 'Watching only. Your plan ended, so nothing is being enforced.',
+          sub: 'Your trades and journal keep updating, and your rules are still here exactly as you left them. What has stopped is the acting: we will not cancel an order or close a position on this account while the plan is lapsed.',
+          showBand: true,
+          bandTitle: 'The killswitch is off — this is not a key problem',
+          bandBody: 'Your API key is fine. Enforcement needs an active plan, and this one has run out. Restart it and the guard arms again on the next fill — nothing needs reconnecting.',
+          cta: 'See plans', to: '/dashboard/account/billing', action: 'See plans',
+        };
+      }
       return {
         pill: 'Watching only', label: 'Watching only', tone: 'amber', pillNote: 'cannot close positions',
         title: 'Watching only. We can see a breach — we cannot stop it.',
