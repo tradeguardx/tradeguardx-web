@@ -129,3 +129,33 @@ describe('guard state before data arrives', () => {
     expect(guardOf({ ...armedInput, connection: null, loaded: true })).toBe('unprotected');
   });
 });
+
+describe('gapsOf — billing', () => {
+  /* The module-level fixtures, so this block cannot drift into testing a
+     shape the rest of the file does not use. */
+  const noRulesOn = noRules;
+
+  it('is a gap when the guard is not paid for, however complete everything else is', () => {
+    // Account, live key, rules on, alerts connected — and the engine still
+    // arms nothing. Every line used to say they were done.
+    const keys = gapsOf({ account, connection: key, rules, notifications: alerts, entitled: false }).map((g) => g.key);
+    expect(keys).toEqual(['billing']);
+  });
+
+  it('sits before rules, so nobody writes rules nothing will enforce', () => {
+    const keys = gapsOf({ account, connection: key, rules: noRulesOn, notifications: alerts, entitled: false }).map((g) => g.key);
+    expect(keys).toEqual(['billing', 'rules']);
+  });
+
+  /* Unknown entitlement must never read as unpaid — the same fail-open rule
+     the key and rules gaps follow. */
+  it('is not a gap while entitlement is unknown', () => {
+    expect(gapsOf({ account, connection: key, rules, notifications: alerts }).map((g) => g.key)).toEqual([]);
+  });
+
+  it('stops promising the guard arms itself when it will not', () => {
+    const g = gapsOf({ account, connection: key, rules: noRulesOn, notifications: alerts, entitled: false })
+      .find((x) => x.key === 'rules');
+    expect(g.body).not.toMatch(/arms itself/);
+  });
+});

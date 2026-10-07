@@ -35,6 +35,13 @@ vi.mock('../../pages/ConnectKeyPage', () => ({
 vi.mock('../../pages/AlertsPage', () => ({
   AlertsSettings: ({ embedded }) => <span>alerts embedded={String(embedded)}</span>,
 }));
+vi.mock('./ActivateGuardCard', () => ({
+  default: ({ embedded }) => <span>activate embedded={String(embedded)}</span>,
+}));
+/* Unentitled by default — the state a brand-new account is actually in, and
+   the only one where the billing stage shows. */
+const auth = { user: { access: 'none', isTrial: false } };
+vi.mock('../../context/AuthContext', () => ({ useAuth: () => auth }));
 
 const { default: AddVenueWizard } = await import('./AddVenueWizard');
 
@@ -61,12 +68,32 @@ describe('adding a venue', () => {
     expect(screen.queryByText(/connect-flow/)).toBeNull();
   });
 
-  it('goes account → key → alerts, in that order', async () => {
+  it('goes account → key → switch on → alerts, in that order', async () => {
     mount();
     fireEvent.click(screen.getByText('create account'));
     expect(await screen.findByText('Connect the key')).toBeTruthy();
     fireEvent.click(screen.getByText('connect'));
+    /* Billing sits after the key because that is the first point the ask is
+       worth anything: the balance is read from the key, so the price screen
+       can name their own daily limit instead of reciting features. */
+    expect(await screen.findByText(/activate embedded=true/)).toBeTruthy();
+    fireEvent.click(screen.getByText(/leave the guard off/i));
     expect(await screen.findByText(/alerts embedded=true/)).toBeTruthy();
+  });
+
+  it('skips the billing stage for someone already on a trial', async () => {
+    auth.user = { access: 'trial', isTrial: true };
+    try {
+      mount();
+      fireEvent.click(screen.getByText('create account'));
+      fireEvent.click(await screen.findByText('connect'));
+      /* Nothing to sell. Showing a price to a paying customer and making them
+         dismiss it is worse than not showing it at all. */
+      expect(await screen.findByText(/alerts embedded=true/)).toBeTruthy();
+      expect(screen.queryByText(/activate embedded/)).toBeNull();
+    } finally {
+      auth.user = { access: 'none', isTrial: false };
+    }
   });
 
   it('uses the real connect screen, embedded — not a second copy of it', async () => {
@@ -90,6 +117,7 @@ describe('adding a venue', () => {
     const { onDone } = mount();
     fireEvent.click(screen.getByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
+    fireEvent.click(await screen.findByText(/leave the guard off/i));
     fireEvent.click(await screen.findByText('Done'));
     expect(onDone).toHaveBeenCalled();
   });

@@ -4,6 +4,8 @@ import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { AddAccountForm } from '../../pages/TradingAccountsPage';
 import { ConnectKeyFlow } from '../../pages/ConnectKeyPage';
 import { AlertsSettings } from '../../pages/AlertsPage';
+import ActivateGuardCard from './ActivateGuardCard';
+import { useAuth } from '../../context/AuthContext';
 import { venueFor } from '../../lib/venues';
 import VenueMark from './VenueMark';
 import { sx } from './shell/sx';
@@ -23,16 +25,24 @@ import { sx } from './shell/sx';
  * implementation of the most important step in the product, and it would drift
  * from the real one within a release.
  *
- * ORDER IS THE ARGUMENT. Account, then key, then alerts — each stage is
- * useless without the one before, and the middle one is the only one that
- * makes the guard real. Alerts are last because they are the only optional
+ * ORDER IS THE ARGUMENT. Account, then key, then switch it on, then alerts —
+ * each stage is useless without the one before, and the middle two are what
+ * make the guard real. Alerts are last because they are the only optional
  * step: the guard acts whether or not you can be told about it.
+ *
+ * BILLING IS A STAGE, NOT A WALL. It sits after the key because that is the
+ * first moment we have anything to show for it: their balance is read from
+ * the key, so the ask can name their own daily limit in rupees instead of
+ * reciting features. Before the key there is no account worth guarding and
+ * no number to put on the screen — asking there is just a price in front of
+ * a stranger. Users who are already on a trial or paying skip it entirely.
  */
 
 const STAGES = [
   { n: 1, key: 'account', label: 'Account' },
   { n: 2, key: 'key', label: 'Connect key' },
-  { n: 3, key: 'alerts', label: 'Alerts' },
+  { n: 3, key: 'billing', label: 'Start trial' },
+  { n: 4, key: 'alerts', label: 'Alerts' },
 ];
 
 function Rail({ at }) {
@@ -88,7 +98,13 @@ function Rail({ at }) {
 
 export default function AddVenueWizard({ accessToken, supportedProps, propsLoading, onDone, onCancel, toast, presetSlug = '' }) {
   const { refreshTradingAccounts, setSelectedTradingAccountId } = useTradingAccounts();
+  const { user } = useAuth();
   const [at, setAt] = useState(1);
+
+  /* Entitled already — on a trial or paying. There is nothing to sell, so the
+     billing stage is skipped rather than shown and dismissed. */
+  const entitled = Boolean(user?.isTrial) || user?.access === 'active';
+  const afterKey = () => setAt(entitled ? 4 : 3);
   const venue = presetSlug ? venueFor(presetSlug) : null;
 
   // Stage 2 and 3 read the SELECTED account, not a prop — that is how the real
@@ -107,7 +123,9 @@ export default function AddVenueWizard({ accessToken, supportedProps, propsLoadi
       ? { h: 'Name the account', p: 'Just a label so you can tell this account from the others. The key comes next.' }
       : at === 2
         ? { h: 'Connect the key', p: 'This is the step that makes your rules real. Until it is done the account is listed here but nothing is watching it.' }
-        : { h: 'How you hear about it', p: 'The guard acts whether or not you are watching. This is how you find out it did — and it is the one step you can skip.' };
+        : at === 3
+          ? { h: 'Switch on your guard', p: 'Your key is in. This turns the guard on — free for 7 days, and nothing is charged today.' }
+          : { h: 'How you hear about it', p: 'The guard acts whether or not you are watching. This is how you find out it did — and it is the one step you can skip.' };
 
   return (
     /*
@@ -176,9 +194,11 @@ export default function AddVenueWizard({ accessToken, supportedProps, propsLoadi
           )
         )}
 
-        {at === 2 && <ConnectKeyFlow embedded onConnected={() => setAt(3)} />}
+        {at === 2 && <ConnectKeyFlow embedded onConnected={afterKey} />}
 
-        {at === 3 && <AlertsSettings embedded />}
+        {at === 3 && <ActivateGuardCard embedded />}
+
+        {at === 4 && <AlertsSettings embedded />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -194,11 +214,18 @@ export default function AddVenueWizard({ accessToken, supportedProps, propsLoadi
           {at === 2 && (
             /* Leaving without a key is a real choice — they may not have the
                venue open. Named for what it costs rather than "Skip". */
-            <button type="button" onClick={() => setAt(3)} style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
+            <button type="button" onClick={afterKey} style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
               I&apos;ll connect the key later
             </button>
           )}
           {at === 3 && (
+            /* The guard stays off if they leave here, and the checklist keeps
+               saying so. Named for the consequence, not "Skip". */
+            <button type="button" onClick={() => setAt(4)} style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
+              Not now — leave the guard off
+            </button>
+          )}
+          {at === 4 && (
             <button type="button" onClick={onDone} style={sx('padding:10px 16px;border:1px solid var(--ink);border-radius:10px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700;cursor:pointer')}>
               Done
             </button>

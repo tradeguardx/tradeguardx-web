@@ -95,15 +95,27 @@ export default function OverviewPage() {
         : [
           { k: 'Protecting', v: 'Nothing', note: g.gap?.short || 'setup unfinished', fg: 'var(--red)' },
           { k: 'Rules on', v: `${g.rulesOn}/${g.rulesTotal}`, note: g.rulesOn > 0 ? 'ready to go' : 'none switched on', fg: 'var(--ink)' },
-          { k: 'Setup', v: `${4 - g.gaps.length}/4`, note: 'steps done', fg: 'var(--amber)' },
+          { k: 'Setup', v: `${5 - g.gaps.length}/5`, note: 'steps done', fg: 'var(--amber)' },
         ];
 
   // ── setup steps ─────────────────────────────────────────────────────
-  const preds = [!g.gaps.some((x) => x.key === 'setup'), !g.gaps.some((x) => x.key === 'key'), !g.gaps.some((x) => x.key === 'rules'), !g.gaps.some((x) => x.key === 'alerts')];
+  /* Billing sits third: after the key, because that is the first point the ask
+     is worth anything — the balance is read from the key, so the price screen
+     can name their own daily limit — and before rules, because writing rules
+     nothing will enforce is the most disheartening way to spend ten minutes
+     here. */
+  const preds = [
+    !g.gaps.some((x) => x.key === 'setup'),
+    !g.gaps.some((x) => x.key === 'key'),
+    !g.gaps.some((x) => x.key === 'billing'),
+    !g.gaps.some((x) => x.key === 'rules'),
+    !g.gaps.some((x) => x.key === 'alerts'),
+  ];
   const firstUndone = preds.indexOf(false);
   const steps = [
     { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.bank, to: '/dashboard/account/trading', cta: 'Add an account' },
     { title: 'Connect your API key', body: 'It needs permission to trade. That is what lets us close a position for you.', accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.connect, to: '/dashboard/connect', cta: 'Connect the key' },
+    { title: 'Switch on your guard', body: 'Free for 7 days, nothing charged today. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.connect, to: '/dashboard/activate', cta: 'Start 7 days free' },
     { title: 'Set your rules', body: 'Written while calm. Two are enough to start: a daily loss limit and a trade cap.', accent: 'var(--violet)', tint: 'rgba(109,63,212,0.12)', d: ICON.rules, to: '/dashboard/rules', cta: 'Choose rules' },
     { title: 'Turn on alerts', body: 'Telegram is the fast one. Without a channel a breach happens silently.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.bell, to: '/dashboard/alerts', cta: 'Set up alerts' },
   ].map((st, i) => {
@@ -112,7 +124,7 @@ export default function OverviewPage() {
     return { ...st, done, status: done ? 'Done' : next ? 'Do this next' : 'Not done', statusFg: done ? 'var(--mint)' : next ? 'var(--amber)' : 'var(--ink-3)' };
   });
   const doneCount = preds.filter(Boolean).length;
-  const showSetup = selectedAccount && doneCount < 4;
+  const showSetup = selectedAccount && doneCount < steps.length;
 
   // ── stat cards ──────────────────────────────────────────────────────
   const fresh = s.pnl == null;
@@ -185,9 +197,9 @@ export default function OverviewPage() {
           <div style={sx('padding:20px 22px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--mint-tint),transparent)')}>
             <div style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap')}>
               <h2 style={sx("margin:0;font:600 19px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.01em")}>Finish setup to turn the guard on</h2>
-              <span style={sx('font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink-2)')}>{doneCount} of 4 done</span>
+              <span style={sx('font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink-2)')}>{doneCount} of {steps.length} done</span>
             </div>
-            <p style={sx('margin:7px 0 0;font-size:13px;color:var(--ink-2);max-width:78ch')}>Until all four are done your rules are written down but nothing enforces them. Step 2 is the one that matters most — it is what lets us close a position for you.</p>
+            <p style={sx('margin:7px 0 0;font-size:13px;color:var(--ink-2);max-width:78ch')}>Until all five are done your rules are written down but nothing enforces them. Steps 2 and 3 are the ones that matter — the key is what lets us close a position for you, and the guard only runs once it is switched on.</p>
             <div style={sx('margin-top:14px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>
               <div style={sx('height:100%;border-radius:999px;background:var(--mint-solid)', { width: `${(doneCount / 4) * 100}%` })} />
             </div>

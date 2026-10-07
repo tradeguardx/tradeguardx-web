@@ -79,7 +79,7 @@ export function hasAlertChannel(settings) {
  * Ordered gaps. Each is { key, title, body, cta, to }. `to` is a dashboard
  * route the CTA navigates to. Returns [] when nothing is missing.
  */
-export function gapsOf({ account, connection, rules, notifications, loaded = true }) {
+export function gapsOf({ account, connection, rules, notifications, entitled = true, loaded = true }) {
   // Copy verbatim from the reference's gapOf(). Read-only is not a gap here —
   // it is the 'watching' state, with its own band copy (see describeGuard).
   //
@@ -108,12 +108,43 @@ export function gapsOf({ account, connection, rules, notifications, loaded = tru
       to: '/dashboard/connect',
     });
   }
+  /*
+   * BILLING IS A GAP LIKE ANY OTHER.
+   *
+   * The engine will not arm without an entitlement, so a user with an account,
+   * a live key and five rules switched on is protected by exactly nothing —
+   * and every line on this list used to tell them they were done. The rules
+   * gap below even promised "switch on a rule and the guard arms itself",
+   * which for an unentitled user was simply false.
+   *
+   * It sits third on purpose: after the key, because that is the first point
+   * the ask is worth anything (their balance is read from the key, so the
+   * price screen can name their own daily limit), and before rules, because
+   * writing rules nothing will enforce is the most disheartening way to spend
+   * ten minutes in this product.
+   *
+   * `entitled` defaults true so a caller that has not loaded a subscription
+   * yet cannot flash "you have not paid" at someone who has — the same
+   * fail-open rule the key and rules gaps follow.
+   */
+  if (!entitled) {
+    gaps.push({
+      key: 'billing',
+      short: 'guard not switched on',
+      title: 'Your guard is not switched on',
+      body: 'Rules are written down but nothing enforces them until the guard is on. The first 7 days are free and nothing is charged today.',
+      cta: 'Start 7 days free',
+      to: '/dashboard/activate',
+    });
+  }
   if (enabledRuleCount(rules) === 0) {
     gaps.push({
       key: 'rules',
       short: 'no rules on',
       title: 'No rules are switched on',
-      body: 'Your key is connected and verified — there is simply nothing for the engine to enforce. Switch on a rule and the guard arms itself.',
+      body: entitled
+        ? 'Your key is connected and verified — there is simply nothing for the engine to enforce. Switch on a rule and the guard arms itself.'
+        : 'Nothing is enforced yet. Switch on a rule here, and switch the guard on to make it act.',
       cta: 'Choose rules',
       to: '/dashboard/rules',
     });
