@@ -242,7 +242,7 @@ function fieldDisplay(field, value, sym = '$') {
   return `${pre ? `${pre}` : ''}${value}${field.suffix ? ` ${field.suffix}` : ''}`;
 }
 
-function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, expanded, onToggleExpand, enforcement, currency }) {
+function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, frozenNote, expanded, onToggleExpand, enforcement, currency }) {
   // The account's settlement currency, not a constant: rule templates are
   // shared across venues but an amount is only meaningful in the currency the
   // account actually settles in.
@@ -472,9 +472,21 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
               )}
             </div>
           ) : frozen ? (
-            <div style={sx('display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--mint-line);border-radius:9px;background:var(--mint-tint);font-size:12.5px;color:var(--mint);font-weight:600')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M7 11V8.4a5 5 0 0110 0V11" /><path d="M6 11h12v8H6z" /></svg>
-              On and frozen by your rule lock — you chose this window
+            <div style={sx('display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border:1px solid var(--mint-line);border-radius:9px;background:var(--mint-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:74ch')}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--mint)" strokeWidth="1.8" strokeLinecap="round" style={{ flex: 'none', marginTop: 1 }}><path d="M7 11V8.4a5 5 0 0110 0V11" /><path d="M6 11h12v8H6z" /></svg>
+              <span>
+                <strong style={sx('color:var(--mint);font-weight:700')}>{frozenNote?.title ?? 'Frozen by your rule lock'}</strong>{' '}
+                {frozenNote?.body}
+                <br />
+                <button
+                  type="button"
+                  onClick={() => openSupport('I would like my rule lock released early.\n\nReason: ')}
+                  style={sx('margin-top:7px;padding:0;border:0;background:none;font:inherit;font-weight:700;color:var(--mint);text-decoration:underline;cursor:pointer')}
+                >
+                  Need it released sooner? Ask support
+                </button>
+                <span style={sx('color:var(--ink-3)')}> &middot; we usually reply within 30 minutes</span>
+              </span>
             </div>
           ) : isCooled ? (
             <div style={sx('display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:74ch')}>
@@ -587,6 +599,33 @@ export default function RulesTerminal() {
         : ruleLock?.days
           ? `Saving starts a 15-minute window, then locks all rules for ${ruleLock.days} days`
           : '';
+  /*
+   * THE FROZEN CARD SAYS WHAT YOU CHOSE, AND WHEN IT ENDS.
+   *
+   * It used to read "On and frozen by your rule lock — you chose this window",
+   * which is true and useless: it names neither the window nor the date, so
+   * someone looking at a rule they cannot edit learns nothing they can act on
+   * and has no idea how long they are waiting.
+   *
+   * Three facts, in the order they are wanted: how long it releases in, that
+   * THEY picked that length and when, and the way out if they picked wrong.
+   * Leading with their own decision matters — a lock reads as the product
+   * doing something to you unless the sentence reminds you it was your call.
+   */
+  const frozenNote = dayMode
+    ? {
+        title: 'Set for today\u2019s session',
+        body: 'You have traded today, so the rules that are on hold until your daily reset. Tomorrow, set them before your first trade.',
+      }
+    : {
+        title: ruleLock?.lockedUntil
+          ? `Frozen until ${fmtLockDate(ruleLock.lockedUntil)}`
+          : 'Frozen by your rule lock',
+        body: ruleLock?.days
+          ? `You chose a ${ruleLock.days}-day lock the last time you saved your rules.`
+          : 'You chose this window the last time you saved your rules.',
+      };
+
   const firstLock = (bundle?.instances ?? []).length <= 1;
   const graceSec = Math.floor(lockMs / 1000);
   // MM:SS inside the hour; d/h/m beyond it (never a five-digit minute count).
@@ -597,7 +636,7 @@ export default function RulesTerminal() {
 
   const rowProps = (rule) => ({
     key: `${rule.id}-${reloadNonce}`, rule, accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId,
-    isRetail: bundle?.isRetail, onSaved: load, cooled, ruleLocked, lockNote, enforcement: guardSel.enforcement,
+    isRetail: bundle?.isRetail, onSaved: load, cooled, ruleLocked, lockNote, frozenNote, enforcement: guardSel.enforcement,
     expanded: expandedRuleId === rule.id, onToggleExpand: () => toggleExpandedRule(rule.id),
     // Shark settles in INR. Without this the amount fields and summaries show
     // a dollar sign beside a number the engine enforces as rupees.
