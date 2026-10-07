@@ -22,6 +22,7 @@ import CryptoTaxIndiaPage from './pages/CryptoTaxIndiaPage';
 import RiskDisclosurePage from './pages/RiskDisclosurePage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardLayout from './components/dashboard/DashboardLayout';
+import ActivateGuardPage from './pages/ActivateGuardPage';
 import InfluencerLayout from './components/influencer/InfluencerLayout';
 import InfluencerOverview from './pages/influencer/InfluencerOverview';
 import InfluencerCommissions from './pages/influencer/InfluencerCommissions';
@@ -122,6 +123,10 @@ function App() {
                   <Route index element={<RedirectWithSearch to="/dashboard/overview" />} />
                   <Route path="overview" element={<OverviewPage />} />
                   <Route path="live" element={<LiveGuardPage />} />
+                  {/* The paywall. Sits inside the dashboard shell on purpose —
+                      they have an account and a key by now, so this is a step
+                      in their setup, not a wall thrown across the product. */}
+                  <Route path="activate" element={<ActivateGuardPage />} />
                   <Route path="rules" element={<RulesTerminal />} />
                   <Route path="journal" element={<JournalPage />} />
                   <Route path="calendar" element={<EconomicCalendarPage />} />

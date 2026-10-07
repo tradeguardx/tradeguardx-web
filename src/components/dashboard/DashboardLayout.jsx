@@ -6,7 +6,7 @@ import { DashboardThemeProvider, useDashboardTheme } from '../../context/Dashboa
 import { GuardProvider } from '../../context/GuardContext';
 import { PrefsProvider, usePrefs } from '../../context/PrefsContext';
 import SupportChat from '../support/SupportChat';
-import { TrialBanner, UpgradeWall } from './TrialGate';
+import { SetupBanner, TrialBanner, UpgradeWall } from './TrialGate';
 import WelcomeCelebration from './WelcomeCelebration';
 import PhonePrompt from './PhonePrompt';
 import BreachToast from './shell/BreachToast';
@@ -54,11 +54,22 @@ function Shell() {
   const killBtnRef = useRef(null);
 
   const billingArea = pathname.includes('/account') || pathname.includes('/billing');
-  /* `needsMandate` locks for the same reason `isExpired` does — no
-     entitlement — but the wall it shows says something completely different.
-     Billing stays reachable in both cases so the way out is never behind the
-     wall itself. */
-  const locked = Boolean(user?.isExpired || user?.needsMandate) && !billingArea;
+  /*
+   * `needsMandate` deliberately does NOT lock the dashboard.
+   *
+   * These users have signed up and nothing else. Walling the whole product
+   * means they cannot add a trading account or connect a key — the two steps
+   * that have to happen BEFORE the ask makes any sense, and the two steps
+   * that cost us nothing. They would be staring at a paywall for a product
+   * they have not seen a single number of their own in.
+   *
+   * The gate that matters is server-side and unchanged: rulesService refuses
+   * `none`, and the engine never arms without entitlement. So they can set
+   * everything up and go precisely as far as switching it on, which is where
+   * ActivateGuardPage meets them. A banner keeps the way forward visible on
+   * every page.
+   */
+  const locked = Boolean(user?.isExpired) && !billingArea;
 
   useEffect(() => {
     if (!drawer) return undefined;
@@ -154,6 +165,7 @@ function Shell() {
 
         <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;margin:0 auto;animation:tgxSlide .22s ease-out')}>
           <VerifyEmailBanner />
+          <SetupBanner />
           <TrialBanner />
           {locked ? <UpgradeWall /> : <Outlet />}
         </main>

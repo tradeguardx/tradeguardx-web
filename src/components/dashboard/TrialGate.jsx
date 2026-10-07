@@ -11,6 +11,39 @@ function fmtDay(iso) {
 }
 
 /**
+ * The way back for anyone who never finished paying.
+ *
+ * Shown on every dashboard page while access is `none` — which now covers two
+ * people: someone who has just signed up, and someone who opened checkout and
+ * did not complete it (abandoned the page, or a mandate the bank refused).
+ *
+ * The second case is the one this exists for. Their account is set up, their
+ * key is connected, and nothing is protecting them. Without a standing prompt
+ * they have no route back except remembering a URL — which is exactly how a
+ * user ended up trading on a live account for six weeks with no enforcement
+ * and nothing anywhere asking him to fix it.
+ */
+export function SetupBanner() {
+  const { user } = useAuth();
+  if (!user?.needsMandate) return null;
+
+  return (
+    <div className="guard-band" style={sx('align-items:center;gap:14px;padding:12px 15px;margin-bottom:16px;border:1px solid var(--amber-line,rgba(245,158,11,.3));border-radius:14px;background:var(--amber-tint,rgba(245,158,11,.1))')}>
+      <div className="guard-band__main" style={sx('flex:1;min-width:0;align-items:center;gap:12px')}>
+        <span style={sx('flex:none;width:28px;height:28px;border-radius:8px;background:var(--surface);display:grid;place-items:center;color:#f59e0b')}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>
+        </span>
+        <p style={sx('flex:1;min-width:0;margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)')}>
+          <strong style={sx('color:var(--ink);font-weight:700')}>Your guard is off.</strong>{' '}
+          Nothing is watching this account yet. Finish setup to switch it on — 7 days free, nothing charged today.
+        </p>
+      </div>
+      <Link className="guard-band__cta" to="/dashboard/activate" style={sx('flex:none;padding:8px 13px;border:1px solid var(--mint-solid);border-radius:9px;background:var(--mint-solid);color:#05221c;font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap')}>Finish setup</Link>
+    </div>
+  );
+}
+
+/**
  * Thin banner shown while the free full-access trial is running.
  * Renders nothing for paid, free, or expired users.
  *
@@ -28,6 +61,27 @@ export function TrialBanner() {
   const left =
     days == null ? 'Your free trial is active' : days <= 0 ? 'Your trial ends today' : `${days} day${days === 1 ? '' : 's'} left`;
   const chargeOn = fmtDay(user.trialEndsAt);
+
+  /*
+   * Cancelled, but the window they were promised is still running. They keep
+   * access to the end of it and are never charged — and the banner must stop
+   * naming a payment date, because the whole point of what they just did was
+   * that there will not be one.
+   */
+  if (user.subscriptionCanceled) {
+    return (
+      <div className="guard-band" style={sx('align-items:center;gap:14px;padding:12px 15px;margin-bottom:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2,rgba(255,255,255,.03))')}>
+        <div className="guard-band__main" style={sx('flex:1;min-width:0;align-items:center;gap:12px')}>
+          <p style={sx('flex:1;min-width:0;margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)')}>
+            <strong style={sx('color:var(--ink);font-weight:700')}>Cancelled.</strong>{' '}
+            {chargeOn ? <>Your access runs until <strong style={sx('color:var(--ink);font-weight:700')}>{chargeOn}</strong>.</> : <>Your access runs to the end of the trial.</>}{' '}
+            You won&rsquo;t be charged.
+          </p>
+        </div>
+        <Link className="guard-band__cta" to="/dashboard/account/billing" style={sx('flex:none;padding:8px 13px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap')}>Resubscribe</Link>
+      </div>
+    );
+  }
 
   if (user.trialAutoRenews) {
     return (

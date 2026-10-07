@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   connectExchangeCredentials,
   disconnectExchangeCredentials,
@@ -30,6 +32,8 @@ function formatDateTime(iso) {
  * safe to drop into any account context (Accounts page, Pairing page).
  */
 export default function ExchangeConnectionPanel({ account, accessToken, toast }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const exchangeSlug = exchangeFromBrokerSlug(account.propFirmSlug);
   // While an active kill-switch cooldown is running, the backend blocks
   // disconnect/replace to keep enforcement alive. Reflect that in the UI so the
@@ -132,6 +136,16 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
     setApiSecret('');
     setShowForm(false);
     setConnectOutcome(null);
+    /*
+     * The key is in and nothing is guarding it yet. This is the moment the
+     * paywall belongs to: highest intent in the whole product, and until now
+     * dead space — a confirmation and then nothing.
+     *
+     * Only for users with no entitlement. Someone already on a trial or a
+     * paid plan is replacing a key, and sending them to a checkout page for
+     * something they have already bought would be absurd.
+     */
+    if (user?.needsMandate) navigate('/dashboard/activate');
   };
 
   const openForm = () => {

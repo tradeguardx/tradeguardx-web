@@ -90,7 +90,13 @@ export default function BillingPage() {
   } Cancel before then and you won't be charged anything. Prices include 18% GST.`;
 
   const sub = user?.isTrial
-    ? user?.trialAutoRenews
+    ? user?.subscriptionCanceled
+      /* Cancelled mid-trial. This page is where they come to check it worked,
+         so it must confirm the cancellation and name the date access ends —
+         and must NOT mention a next charge, which is the thing they just made
+         sure would never happen. */
+      ? `Cancelled. Your access runs until ${trialEndLabel ?? 'the end of your trial'} and you won't be charged. You can resubscribe any time.`
+      : user?.trialAutoRenews
       ? mandateTrialLine
       : `You are on a free trial with everything unlocked${trialDaysSuffix}. Set up payment to keep access — you keep the days you have left.`
     : user?.needsMandate

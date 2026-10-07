@@ -115,6 +115,9 @@ export function AuthProvider({ children }) {
        * charge that is not coming or hides one that is.
        */
       const trialAutoRenews = trial?.autoRenews === true;
+      /* Cancelled, but still inside a window they already hold. Every
+         "you will be charged on X" sentence has to go quiet when this is on. */
+      const subscriptionCanceled = subData?.canceled === true;
 
       const accessFields = {
         access,
@@ -124,6 +127,7 @@ export function AuthProvider({ children }) {
         trialDaysLeft,
         trialEndsAt,
         trialAutoRenews,
+        subscriptionCanceled,
       };
 
       if (!subData?.plan) {
