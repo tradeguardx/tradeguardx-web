@@ -1,8 +1,33 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
 
-const TOKEN = readFileSync('/tmp/gp/token.txt', 'utf8').trim();
 const UID = 'ae6a2cc4-181c-4284-9a5a-a4479e967f9d';
+
+/**
+ * A mirror token, built here.
+ *
+ * It was read from a file in /tmp that a script happened to have written,
+ * which passed on the machine that wrote it and failed everywhere else,
+ * including the next checkout of this repo.
+ *
+ * The signature is nonsense on purpose: `adoptMirrorFromUrl` does not verify
+ * one and must not — the claim is only ever used to DECIDE WHAT TO RENDER, and
+ * every service re-verifies properly before trusting it for anything. A test
+ * that signed it would be testing jose, not this.
+ */
+const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+const TOKEN = [
+  b64({ alg: 'HS256', typ: 'JWT' }),
+  b64({
+    sub: UID,
+    email: 'iamdeep.mk@gmail.com',
+    aud: 'authenticated',
+    role: 'authenticated',
+    tgx_mirror: true,
+    tgx_mirror_by: 'Prashant',
+    exp: Math.floor(Date.now() / 1000) + 900,
+  }),
+  'signature-not-checked-here',
+].join('.');
 
 function stubBrowserAt(hash) {
   const replaceState = vi.fn((_a, _b, url) => {
