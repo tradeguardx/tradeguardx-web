@@ -5,6 +5,7 @@ import { useTradingAccounts } from '../context/TradingAccountContext';
 import { createCheckoutSession } from '../api/paymentsApi';
 import { getPricingPlans } from '../api/pricingApi';
 import { trialDaysOnOffer, firstChargeDate } from '../lib/trialOffer';
+import { useSetupStep } from '../hooks/useSetupStep';
 
 /**
  * The paywall, at the only place in the journey it belongs: straight after
@@ -44,6 +45,7 @@ export default function ActivateGuardPage() {
   const navigate = useNavigate();
   const { user, session, refetchSubscription } = useAuth();
   const { selectedAccount } = useTradingAccounts();
+  const { step, loading: stepLoading } = useSetupStep();
   const [plans, setPlans] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -57,6 +59,20 @@ export default function ActivateGuardPage() {
       navigate('/dashboard/live', { replace: true });
     }
   }, [user?.planKnown, user?.isTrial, user?.access, navigate]);
+
+  /*
+   * NOTHING TO PROTECT YET — DO NOT ASK FOR MONEY.
+   *
+   * Reached directly, or from a stale link, before there is an account or a
+   * connected key. Without this the page renders a price with no balance on
+   * it, which is both a weaker ask and a dishonest one: we would be charging
+   * to guard an account that does not exist. Send them to the step they are
+   * actually on instead.
+   */
+  useEffect(() => {
+    if (stepLoading || !step) return;
+    if (step.key !== 'pay') navigate(step.to, { replace: true });
+  }, [stepLoading, step, navigate]);
 
   const freeDays = trialDaysOnOffer(user);
   const chargeOn = useMemo(
@@ -91,6 +107,10 @@ export default function ActivateGuardPage() {
       setBusy(false);
     }
   };
+
+  /* Hold the frame rather than flashing a price we are about to navigate
+     away from. */
+  if (stepLoading || step?.key !== 'pay') return null;
 
   return (
     <div className="mx-auto w-full max-w-lg py-6">

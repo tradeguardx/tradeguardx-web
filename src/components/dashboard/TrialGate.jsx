@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { sx } from './shell/sx';
 import { useAuth } from '../../context/AuthContext';
+import { useSetupStep } from '../../hooks/useSetupStep';
 
 /** "14 Oct" — short, unambiguous, and the same shape everywhere. */
 function fmtDay(iso) {
@@ -25,7 +26,18 @@ function fmtDay(iso) {
  */
 export function SetupBanner() {
   const { user } = useAuth();
+  const { step, loading } = useSetupStep();
   if (!user?.needsMandate) return null;
+
+  /*
+   * Nothing until we know where they are. The banner's whole job is to name
+   * the next step, and a banner that guesses sends a brand-new user straight
+   * to a price for an account they have not created yet — which is exactly
+   * what it used to do.
+   */
+  if (loading || !step) return null;
+
+  const payNext = step.key === 'pay';
 
   return (
     <div className="guard-band" style={sx('align-items:center;gap:14px;padding:12px 15px;margin-bottom:16px;border:1px solid var(--amber-line,rgba(245,158,11,.3));border-radius:14px;background:var(--amber-tint,rgba(245,158,11,.1))')}>
@@ -35,10 +47,10 @@ export function SetupBanner() {
         </span>
         <p style={sx('flex:1;min-width:0;margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)')}>
           <strong style={sx('color:var(--ink);font-weight:700')}>Your guard is off.</strong>{' '}
-          Nothing is watching this account yet. Finish setup to switch it on — 7 days free, nothing charged today.
+          {step.blurb}{payNext ? ' 7 days free, nothing charged today.' : ''}
         </p>
       </div>
-      <Link className="guard-band__cta" to="/dashboard/activate" style={sx('flex:none;padding:8px 13px;border:1px solid var(--mint-solid);border-radius:9px;background:var(--mint-solid);color:#05221c;font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap')}>Finish setup</Link>
+      <Link className="guard-band__cta" to={step.to} style={sx('flex:none;padding:8px 13px;border:1px solid var(--mint-solid);border-radius:9px;background:var(--mint-solid);color:#05221c;font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap')}>{step.label}</Link>
     </div>
   );
 }
