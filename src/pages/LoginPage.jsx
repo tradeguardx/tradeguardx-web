@@ -76,7 +76,7 @@ export default function LoginPage() {
       >
         <div className="mb-9">
           <h1 className="font-display text-[34px] font-bold tracking-[-0.02em] text-white mb-2">Sign in</h1>
-          <p className="text-slate-400 text-[16px]">Free for 7 days, everything unlocked. No card needed.</p>
+          <p className="text-slate-400 text-[16px]">Free for 7 days, everything unlocked. Nothing charged until day 8.</p>
         </div>
 
         {/* Card */}

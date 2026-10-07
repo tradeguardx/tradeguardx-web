@@ -7,6 +7,7 @@ import { getPricingPlans } from '../api/pricingApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/ToastProvider';
 import { createCheckoutSession } from '../api/paymentsApi';
+import { trialDaysOnOffer, trialOfferLine, firstChargeDate } from '../lib/trialOffer';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch, getPendingCheckoutInterval, normalizeInterval, BILLING_INTERVALS } from '../lib/checkoutIntent';
 import { trackCheckoutStarted } from '../lib/analytics';
 import { getStoredReferralCode } from '../lib/referralCode';
@@ -60,7 +61,7 @@ const PLAN_THEME = {
     badgeBg: 'rgba(100,116,139,0.10)',
     badgeBorder: 'rgba(100,116,139,0.22)',
     badgeText: '#94a3b8',
-    tagline: 'Full access, free for 7 days. No card — then pick a plan.',
+    tagline: 'Full access, free for 7 days. Nothing charged until day 8.',
     ctaBg: 'rgba(255,255,255,0.06)',
     ctaBorder: 'rgba(255,255,255,0.08)',
     ctaText: '#e2e8f0',
@@ -201,7 +202,7 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
       </svg>
     ),
-    label: 'No credit card to start',
+    label: 'Nothing charged for 7 days',
   },
 ];
 
@@ -390,10 +391,39 @@ export default function PricingPage() {
         return <div className={`${baseClass} text-center`} style={currentStyle}>Current plan · billed {currentInterval} ✓</div>;
       }
       if (paidElig && !paidElig.allowed && paidElig.reason === 'downgrade') return <Link to="/dashboard/account/billing" className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>Manage subscription</Link>;
+
+      /*
+       * SAY THE PRICE AND THE DATE BEFORE THE CLICK, NOT AFTER.
+       *
+       * This button now sets up an autopay mandate: nothing is charged today,
+       * and a real debit lands on a real date. Someone who meets that fact for
+       * the first time on Dodo's checkout page — or worse, on their bank
+       * statement — is entitled to feel misled, and will say so in a
+       * chargeback rather than an email. So the offer is stated here, in the
+       * order people actually ask it: what now, what later, when, and how to
+       * stop.
+       */
+      const freeDays = trialDaysOnOffer(user);
+      const line = priceFor(plan);
+      const amount = typeof line?.price === 'number' ? `₹${line.price.toLocaleString('en-IN')}` : null;
+      const startsOn = firstChargeDate(freeDays)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) ?? null;
+      const offer = trialOfferLine(freeDays, amount, startsOn);
+
       return (
-        <button type="button" onClick={() => handlePaidPlanCta(plan)} disabled={checkoutKey === plan.key} className={`${baseClass} disabled:opacity-60`} style={isPrimary ? primaryStyle : secondaryStyle}>
-          {checkoutKey === plan.key ? 'Redirecting…' : plan.cta}
-        </button>
+        <>
+          <button type="button" onClick={() => handlePaidPlanCta(plan)} disabled={checkoutKey === plan.key} className={`${baseClass} disabled:opacity-60`} style={isPrimary ? primaryStyle : secondaryStyle}>
+            {checkoutKey === plan.key
+              ? 'Redirecting…'
+              : freeDays > 0
+                ? `Start ${freeDays} day${freeDays === 1 ? '' : 's'} free`
+                : plan.cta}
+          </button>
+          {offer ? (
+            <p className="mt-2 text-center text-[11.5px] leading-relaxed" style={{ color: t.subtleText || 'rgba(226,232,240,0.6)' }}>
+              {offer}
+            </p>
+          ) : null}
+        </>
       );
     }
 
@@ -439,7 +469,7 @@ export default function PricingPage() {
           </h1>
 
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
-            Every account starts with 7 days of full access — free, no card. Keep it going by picking a plan.
+            Every account starts with 7 days of full access, free. Set up payment first, cancel any time before day 8 and you pay nothing.
           </p>
 
           <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -669,7 +699,7 @@ export default function PricingPage() {
                               </p>
                             )}
                             <p className="text-[11px] mb-6 font-medium" style={{ color: '#475569' }}>
-                              {price === 0 ? 'No credit card required' : `${billedLabel} · incl. 18% GST · ${line.interval === 'monthly' ? 'cancel anytime' : `${plan.refundDays}-day money-back`}`}
+                              {price === 0 ? 'Free plan · nothing to pay' : `${billedLabel} · incl. 18% GST · ${line.interval === 'monthly' ? 'cancel anytime' : `${plan.refundDays}-day money-back`}`}
                             </p>
                           </>
                         )}
@@ -801,7 +831,7 @@ export default function PricingPage() {
               <p className="text-base mb-10 max-w-md mx-auto" style={{ color: '#475569' }}>
                 {session?.access_token && !subscriptionLoading && isPaidPlan(user?.billingPlan)
                   ? 'You are on a paid plan. Manage billing anytime from your account.'
-                  : 'Join traders who trust TradeGuardX. Start free — no card required.'}
+                  : 'Join traders who trust TradeGuardX. 7 days free — nothing charged until day 8.'}
               </p>
               <motion.div
                 className="inline-block"

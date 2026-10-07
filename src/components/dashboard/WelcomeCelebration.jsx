@@ -73,7 +73,7 @@ export default function WelcomeCelebration() {
       ? `Welcome — you're all set`
       : `Welcome to TradeGuardX`;
   const sub = isTrial
-    ? `You've got everything unlocked${trialDaysLeft != null ? ` for ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}` : ''} — no card needed. Add a trading account, connect your exchange, and set your rules.`
+    ? `You've got everything unlocked${trialDaysLeft != null ? ` for ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}` : ''}. Add a trading account, connect your exchange, and set your rules.`
     : isPaid
       ? `Your ${planLabel} access is unlocked. Start setting up your trading rules and protect your next session.`
       : `You're in. Start by adding a trading account and configuring your first risk rules.`;

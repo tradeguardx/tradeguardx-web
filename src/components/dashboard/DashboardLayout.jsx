@@ -54,7 +54,11 @@ function Shell() {
   const killBtnRef = useRef(null);
 
   const billingArea = pathname.includes('/account') || pathname.includes('/billing');
-  const locked = Boolean(user?.isExpired) && !billingArea;
+  /* `needsMandate` locks for the same reason `isExpired` does — no
+     entitlement — but the wall it shows says something completely different.
+     Billing stays reachable in both cases so the way out is never behind the
+     wall itself. */
+  const locked = Boolean(user?.isExpired || user?.needsMandate) && !billingArea;
 
   useEffect(() => {
     if (!drawer) return undefined;

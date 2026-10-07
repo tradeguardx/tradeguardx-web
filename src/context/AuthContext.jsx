@@ -95,12 +95,36 @@ export function AuthProvider({ children }) {
 
       const isTrial = access === 'trial';
       const isExpired = access === 'expired';
+      /*
+       * `none` — signed up, no autopay set up yet. Deliberately separate from
+       * `isExpired`: nothing was lost, so "your trial has ended" would be a
+       * lie, and separate from free, which shows no prompt at all. These users
+       * have to be sent somewhere, loudly, or they sit on a dashboard that
+       * quietly does nothing.
+       */
+      const needsMandate = access === 'none';
       const hasFullAccess = access === 'trial' || access === 'active';
       const exposedStatus = isExpired ? 'expired' : isTrial ? 'trialing' : status;
       const trialEndsAt = trial?.endsAt ?? (isTrial ? periodEnd : null);
       const trialDaysLeft = typeof trial?.daysLeft === 'number' ? trial.daysLeft : null;
+      /*
+       * Whether this trial CONVERTS or LAPSES — the single fact that decides
+       * what every trial surface says. A mandate-backed trial is going to
+       * charge them on a date they need to know; a no-card trial is going to
+       * stop. Telling one of them the other's sentence either threatens a
+       * charge that is not coming or hides one that is.
+       */
+      const trialAutoRenews = trial?.autoRenews === true;
 
-      const accessFields = { access, isTrial, isExpired, trialDaysLeft, trialEndsAt };
+      const accessFields = {
+        access,
+        isTrial,
+        isExpired,
+        needsMandate,
+        trialDaysLeft,
+        trialEndsAt,
+        trialAutoRenews,
+      };
 
       if (!subData?.plan) {
         return {

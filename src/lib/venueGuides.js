@@ -19,7 +19,7 @@ import { DELTA_EGRESS_IP } from '../api/config';
 const SHARK_STEPS = [
   {
     title: 'Create your TradeGuardX account',
-    body: 'Sign up at tradeguardx.com/signup with email or Google. No card is needed to start.',
+    body: 'Sign up at tradeguardx.com/signup with email or Google, then set up payment to start your 7 free days. Nothing is charged until day 8.',
   },
   {
     title: 'Start adding your Shark account',
@@ -66,7 +66,7 @@ const SHARK_STEPS = [
 const DELTA_STEPS = [
   {
     title: 'Create your TradeGuardX account',
-    body: 'Sign up at tradeguardx.com/signup with email or Google. No card is needed to start.',
+    body: 'Sign up at tradeguardx.com/signup with email or Google, then set up payment to start your 7 free days. Nothing is charged until day 8.',
   },
   {
     title: 'Start adding your Delta account',
@@ -124,7 +124,7 @@ const DELTA_STEPS = [
 const COINDCX_STEPS = [
   {
     title: 'Create your TradeGuardX account',
-    body: 'Sign up at tradeguardx.com/signup with email or Google. No card is needed to start.',
+    body: 'Sign up at tradeguardx.com/signup with email or Google, then set up payment to start your 7 free days. Nothing is charged until day 8.',
   },
   {
     title: 'Start adding your CoinDCX account',

@@ -55,8 +55,46 @@ export default function BillingPage() {
   const interval = subscription?.subscription?.billingInterval || 'monthly';
   const billedLabel = interval === 'yearly' ? 'billed yearly' : interval === 'quarterly' ? 'billed quarterly' : 'billed monthly';
 
+  /*
+   * The amount of the first debit, from the live pricing list rather than a
+   * constant — a price that drifts out of step with what Dodo actually
+   * charges is worse on this page than no price at all. Null until the
+   * pricing call lands, and every use of it is guarded, so the sentence
+   * degrades to "your first payment is on the 14th" rather than flashing a
+   * wrong number.
+   */
+  const priceLabel = (() => {
+    const slug = String(user?.subscribedPlanSlug || '').toLowerCase();
+    const plan = plans.find((pl) => String(pl.slug || '').toLowerCase() === slug);
+    const row = plan?.intervals?.find((i) => i.interval === interval);
+    return typeof row?.price === 'number' ? `₹${row.price.toLocaleString('en-IN')}` : null;
+  })();
+
+  /*
+   * The trial sentence on the BILLING page carries more weight than anywhere
+   * else: this is the screen someone opens when they are deciding whether to
+   * cancel. A mandate-backed trial must state the amount, the date and the
+   * fact that cancelling before it costs nothing — all three, in that order,
+   * because this is the page where "I didn't know I'd be charged" turns into
+   * a chargeback. A no-card trial must not imply any charge is coming.
+   */
+  const trialEndLabel = fmtDate(user?.trialEndsAt);
+  const trialDaysSuffix =
+    user?.trialDaysLeft != null
+      ? ` — ${user.trialDaysLeft} day${user.trialDaysLeft === 1 ? '' : 's'} left`
+      : '';
+  const mandateTrialLine = `Your free trial is running${trialDaysSuffix}. ${
+    trialEndLabel
+      ? `Your first payment${priceLabel ? ` of ${priceLabel}` : ''} is on ${trialEndLabel}.`
+      : `Your first payment${priceLabel ? ` of ${priceLabel}` : ''} comes when it ends.`
+  } Cancel before then and you won't be charged anything. Prices include 18% GST.`;
+
   const sub = user?.isTrial
-    ? `You are on a free trial with everything unlocked${user?.trialDaysLeft != null ? ` — ${user.trialDaysLeft} day${user.trialDaysLeft === 1 ? '' : 's'} left` : ''}. Pick a plan to keep it after that.`
+    ? user?.trialAutoRenews
+      ? mandateTrialLine
+      : `You are on a free trial with everything unlocked${trialDaysSuffix}. Set up payment to keep access — you keep the days you have left.`
+    : user?.needsMandate
+      ? 'You have not started yet. Set up payment to begin your 7 free days — nothing is charged until day 8, and you can cancel before it.'
     : isAdminComp
       ? `You are on a complimentary ${subscribedLabel} plan as a founding member. No card needed, nothing to cancel.`
       : hasBillingRecord

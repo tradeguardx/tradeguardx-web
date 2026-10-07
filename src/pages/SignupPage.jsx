@@ -19,7 +19,7 @@ const planMeta = {
 export default function SignupPage() {
   useSEO({
     title: 'Sign Up Free',
-    description: 'Create your free TradeGuardX account and start protecting your trades in minutes. No credit card required.',
+    description: 'Create your TradeGuardX account and start protecting your trades in minutes. 7 days free, nothing charged until day 8.',
     url: 'https://tradeguardx.com/signup',
   });
   const [searchParams] = useSearchParams();
@@ -120,7 +120,7 @@ export default function SignupPage() {
       >
         <div className="mb-9">
           <h1 className="font-display text-[34px] font-bold tracking-[-0.02em] text-white mb-2">Create your account</h1>
-          <p className="text-slate-400 text-[16px]">Free for 7 days, everything unlocked. No card needed.</p>
+          <p className="text-slate-400 text-[16px]">Free for 7 days, everything unlocked. Nothing charged until day 8.</p>
           {plan !== 'free' && (
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold border mt-3 ${pm.cls}`}>
               {pm.label} plan

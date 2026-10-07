@@ -263,8 +263,9 @@ function useFeaturedPlan(planName) {
 /**
  * Founding-member AND a discount code, in one strip.
  *
- * This is the offer as it actually works: the trial is free and needs no card,
- * and the coupon only bites on the FIRST PAID month afterwards. Showing them
+ * This is the offer as it actually works: the trial is free (payment is set
+ * up first, nothing is charged until day 8), and the coupon only bites on the
+ * FIRST PAID month afterwards. Showing them
  * separately (as the two original modes did) split one offer into two
  * half-offers, and whichever rendered second was never seen at all.
  *

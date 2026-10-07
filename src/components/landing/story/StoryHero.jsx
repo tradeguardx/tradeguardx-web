@@ -96,7 +96,7 @@ export default function StoryHero() {
             transition={{ delay: 0.3 }}
             className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-[13px] text-slate-500 lg:justify-start"
           >
-            <span>✦ No credit card</span>
+            <span>✦ 7 days free</span>
             <span className="text-slate-700">·</span>
             <span>✦ Setup in 60s</span>
             <span className="text-slate-700">·</span>
