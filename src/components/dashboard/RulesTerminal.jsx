@@ -242,7 +242,7 @@ function fieldDisplay(field, value, sym = '$') {
   return `${pre ? `${pre}` : ''}${value}${field.suffix ? ` ${field.suffix}` : ''}`;
 }
 
-function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, frozenNote, expanded, onToggleExpand, enforcement, currency }) {
+function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, frozenNote, cooldownNote, expanded, onToggleExpand, enforcement, currency }) {
   // The account's settlement currency, not a constant: rule templates are
   // shared across venues but an amount is only meaningful in the currency the
   // account actually settles in.
@@ -492,7 +492,8 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
             <div style={sx('display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:74ch')}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="1.9" strokeLinecap="round" style={{ flex: 'none', marginTop: 1 }}><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
               <span>
-                <strong style={sx('color:var(--red);font-weight:700')}>Editing blocked while your lockout runs.</strong> Different lock, different reason: this one stops you trading, and loosening a rule mid-lockout would be a way around it.
+                <strong style={sx('color:var(--red);font-weight:700')}>{cooldownNote?.title ?? 'Locked out'}</strong>{' '}
+                {cooldownNote?.body}
                 {/*
                   A WAY OUT THAT IS A CONVERSATION, NOT A BUTTON.
                   
@@ -532,7 +533,7 @@ export default function RulesTerminal() {
   const { accounts, accountsLoading, selectedTradingAccountId, selectedAccount } = useTradingAccounts();
   // While the account is locked the API rejects rule edits, so the UI blocks
   // them rather than letting someone type a change that cannot save.
-  const { locked: cooldownLocked } = useCooldown({ accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId, account: selectedAccount });
+  const { locked: cooldownLocked, untilMs: cooldownUntilMs, reason: cooldownReason } = useCooldown({ accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId, account: selectedAccount });
   const { selected: guardSel, now: guardNow, subscribeTick } = useGuard();
   const cooled = cooldownLocked || guardSel.guard === 'locked';
   const [bundle, setBundle] = useState(null);
@@ -626,6 +627,31 @@ export default function RulesTerminal() {
           : 'You chose this window the last time you saved your rules.',
       };
 
+  /*
+   * THE LOCKOUT CARD, SAID WITHOUT REFERENCE TO ANOTHER FEATURE.
+   *
+   * It read "Different lock, different reason: this one stops you trading…",
+   * which only parses if you already know there are two kinds of lock and that
+   * the other one is explained on a different card. Someone who has never set
+   * a rule lock has nothing to compare it to — it is a sentence written by
+   * someone holding both concepts at once.
+   *
+   * And it never said when the lockout ends, which is the only thing a
+   * locked-out person actually wants to know.
+   */
+  const cooldownNote = {
+    title: cooldownUntilMs
+      ? `Locked out until ${fmtLockDate(new Date(cooldownUntilMs).toISOString())}`
+      : 'Locked out',
+    body: `${
+      cooldownReason === 'manual' || cooldownReason === 'manual_lock'
+        ? 'You armed the kill switch yourself.'
+        : cooldownReason
+          ? `Your ${String(cooldownReason).replace(/[_-]+/g, ' ')} rule stopped trading on this account.`
+          : 'A rule stopped trading on this account.'
+    } Rules cannot be edited while a lockout runs \u2014 raising the limit that locked you would be a way straight out of it.`,
+  };
+
   const firstLock = (bundle?.instances ?? []).length <= 1;
   const graceSec = Math.floor(lockMs / 1000);
   // MM:SS inside the hour; d/h/m beyond it (never a five-digit minute count).
@@ -636,7 +662,7 @@ export default function RulesTerminal() {
 
   const rowProps = (rule) => ({
     key: `${rule.id}-${reloadNonce}`, rule, accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId,
-    isRetail: bundle?.isRetail, onSaved: load, cooled, ruleLocked, lockNote, frozenNote, enforcement: guardSel.enforcement,
+    isRetail: bundle?.isRetail, onSaved: load, cooled, ruleLocked, lockNote, frozenNote, cooldownNote, enforcement: guardSel.enforcement,
     expanded: expandedRuleId === rule.id, onToggleExpand: () => toggleExpandedRule(rule.id),
     // Shark settles in INR. Without this the amount fields and summaries show
     // a dollar sign beside a number the engine enforces as rupees.
