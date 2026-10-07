@@ -19,6 +19,8 @@
  * tradeguardx-analytics-service/src/events/types.ts.
  */
 
+import { isMirroring } from './mirror';
+
 const INGEST_URL = (import.meta.env.VITE_ANALYTICS_INGEST_URL || '').trim();
 
 const VID_KEY = 'tgx_vid';
@@ -201,6 +203,20 @@ function send(envelope) {
 
 function emit(type, extra = {}) {
   if (!INGEST_URL) return;
+  /*
+   * A MIRROR SESSION EMITS NOTHING. Not a pageview, not anything.
+   *
+   * Skipping `setAnalyticsUser` already kept the operator's browsing off the
+   * user's record — events would have gone out with no `userId`. But they
+   * would still have gone out, counted against the operator's own visitor id,
+   * quietly inflating pageviews and session counts in the funnel.
+   *
+   * The whole promise of a mirror is that looking leaves no trace anywhere, so
+   * the honest behaviour is to emit nothing at all rather than nothing
+   * attributable. It also keeps the analytics clean: support traffic is not
+   * product traffic, and a funnel that counts it is lying about itself.
+   */
+  if (isMirroring()) return;
   // First-touch rides on EVERY event — that's what lets the backend answer
   // "which campaign produced paying customers", not just "which page got hits".
   const a = firstTouch();

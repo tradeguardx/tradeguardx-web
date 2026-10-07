@@ -36,7 +36,10 @@ export default function MirrorBar() {
     <div
       role="status"
       style={sx(
-        'position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid rgba(124,58,237,.4)',
+        /* Normal flow, not sticky. It sat on top of the guard band and made
+           the top of the page unreadable — see DashboardLayout. It is the
+           first thing on the page, so it does not need to float to be seen. */
+        'display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid rgba(124,58,237,.4)',
         { background: dead ? 'rgba(239,68,68,.16)' : 'rgba(124,58,237,.16)' },
       )}
     >

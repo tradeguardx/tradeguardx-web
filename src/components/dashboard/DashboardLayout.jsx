@@ -112,6 +112,17 @@ function Shell() {
       </aside>
 
       <div style={sx('flex:1;min-width:0;display:flex;flex-direction:column')}>
+        {/*
+          ABOVE THE HEADER, IN NORMAL FLOW.
+          
+          It was sticky inside <main>, which put it on top of the guard band —
+          the two overlapped and the top of the page became unreadable, which
+          is a poor result for a bar whose whole job is to be unmissable.
+          Whose account this is outranks everything, so it goes first and
+          pushes the rest down rather than covering it.
+        */}
+        <MirrorBar />
+
         <header style={sx('position:sticky;top:0;z-index:20;background:var(--bg-header);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--line)')}>
           <div data-tgx-headbar="1" style={sx('display:flex;align-items:center;gap:14px;padding:11px 24px')}>
             <button type="button" data-tgx-burger="1" onClick={() => setDrawer(true)} aria-label="Menu" style={sx('flex:none;place-items:center;width:36px;height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink-2)')}>
@@ -138,9 +149,6 @@ function Shell() {
         <BreachToast />
 
         <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;margin:0 auto;animation:tgxSlide .22s ease-out')}>
-          {/* Above everything, including the trial banner: whose account this
-              is outranks anything the account itself has to say. */}
-          <MirrorBar />
           <VerifyEmailBanner />
           <TrialBanner />
           {locked ? <UpgradeWall /> : <Outlet />}
