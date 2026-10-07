@@ -36,7 +36,11 @@ function payloadOf(jwt) {
   try {
     const part = String(jwt).split('.')[1];
     if (!part) return null;
-    return JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
+    // base64url, and JWTs drop the `=` padding. `atob` rejects some unpadded
+    // lengths outright, so put it back — this token happened to be a multiple
+    // of four, and the next one would not have been.
+    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)));
   } catch {
     return null;
   }
@@ -50,6 +54,21 @@ function payloadOf(jwt) {
  */
 export function adoptMirrorFromUrl() {
   if (typeof window === 'undefined') return false;
+
+  /*
+   * IDEMPOTENT, AND THAT IS LOAD-BEARING.
+   *
+   * React StrictMode double-invokes effects in development. The first run
+   * adopted the token and stripped the fragment; the second found no fragment,
+   * returned false, and the caller fell through to Supabase — which has no
+   * session for this operator's tab, so the app set `user` to null and the
+   * route guard bounced to /login. The mirror worked and then undid itself,
+   * about 200ms later.
+   *
+   * An already-adopted mirror is still a mirror, so say so.
+   */
+  if (token) return true;
+
   const hash = window.location.hash ?? '';
   if (!hash.includes('mirror=')) return false;
 

@@ -240,9 +240,21 @@ export function AuthProvider({ children }) {
       setSession(ms);
       setUser(toAppUser(ms.user));
       setAuthReady(true);
-      // No `setAnalyticsUser`: an operator looking at an account is not that
-      // user doing anything, and counting it would corrupt their activity.
-      bootstrapSession(ms);
+      /*
+       * `loadSubscription`, NOT `bootstrapSession`.
+       *
+       * A mirror must leave no trace on the account being looked at. Bootstrap
+       * also runs `initializeProfileIfNeeded`, which POSTs to create or update
+       * the user's profile — an operator opening a page is not the user
+       * updating their own name, and the write would be refused by the mirror
+       * guard anyway, so the only thing it could produce is a 403 in the
+       * console. The subscription read is a GET and is all this needs.
+       *
+       * No `setAnalyticsUser` and no `trackLogin` either: looking at an account
+       * is not a login, and counting it would corrupt that user's own activity
+       * — which is exactly the data an operator opens this to read.
+       */
+      loadSubscription(ms);
       return () => {
         mounted = false;
       };
