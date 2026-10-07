@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { adoptMirrorFromUrl, isMirroring, mirrorInfo, mirrorSession } from '../lib/mirror';
 import { supabase } from '../lib/supabaseClient';
 import { initUserProfile } from '../api/userApi';
 import { getCurrentSubscription } from '../api/subscriptionApi';
@@ -221,6 +222,32 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true;
 
+    /*
+     * A MIRROR SESSION SHORT-CIRCUITS SUPABASE ENTIRELY.
+     *
+     * The token in the URL fragment already identifies the user, so there is
+     * nothing to ask Supabase for — and asking would be wrong twice over: the
+     * operator's own session would win the race on a machine where they are
+     * logged in, and `onAuthStateChange` would then overwrite the mirror with
+     * it mid-session.
+     *
+     * So we adopt the mirror, skip the Supabase bootstrap and never subscribe
+     * to its listener. Nothing is written to storage, so a refresh drops
+     * straight back to whoever is actually logged in. See lib/mirror.js.
+     */
+    if (adoptMirrorFromUrl()) {
+      const ms = mirrorSession();
+      setSession(ms);
+      setUser(toAppUser(ms.user));
+      setAuthReady(true);
+      // No `setAnalyticsUser`: an operator looking at an account is not that
+      // user doing anything, and counting it would corrupt their activity.
+      bootstrapSession(ms);
+      return () => {
+        mounted = false;
+      };
+    }
+
     async function loadSession() {
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
@@ -408,6 +435,11 @@ export function AuthProvider({ children }) {
         user,
         session,
         authReady,
+        /* True while this tab is a read-only mirror of someone's account.
+           Screens read it to disable their own write affordances; the actual
+           refusal happens server-side. See lib/mirror.js. */
+        mirroring: isMirroring(),
+        mirror: mirrorInfo(),
         subscription,
         subscriptionLoading,
         subscriptionError,

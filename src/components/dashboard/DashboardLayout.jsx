@@ -12,6 +12,7 @@ import PhonePrompt from './PhonePrompt';
 import BreachToast from './shell/BreachToast';
 import { ShareProvider } from '../../context/ShareContext';
 import VerifyEmailBanner from './VerifyEmailBanner';
+import MirrorBar from './MirrorBar';
 import Sidebar from './shell/Sidebar';
 import AccountSwitcher from './shell/AccountSwitcher';
 import GuardPill from './shell/GuardPill';
@@ -137,6 +138,9 @@ function Shell() {
         <BreachToast />
 
         <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;margin:0 auto;animation:tgxSlide .22s ease-out')}>
+          {/* Above everything, including the trial banner: whose account this
+              is outranks anything the account itself has to say. */}
+          <MirrorBar />
           <VerifyEmailBanner />
           <TrialBanner />
           {locked ? <UpgradeWall /> : <Outlet />}
