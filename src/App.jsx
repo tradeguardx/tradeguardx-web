@@ -23,6 +23,7 @@ import RiskDisclosurePage from './pages/RiskDisclosurePage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import ActivateGuardPage from './pages/ActivateGuardPage';
+import SetupPage from './pages/SetupPage';
 import InfluencerLayout from './components/influencer/InfluencerLayout';
 import InfluencerOverview from './pages/influencer/InfluencerOverview';
 import InfluencerCommissions from './pages/influencer/InfluencerCommissions';
@@ -46,6 +47,7 @@ import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import TaxPage from './pages/TaxPage';
 import AlertsPage from './pages/AlertsPage';
 import RedirectWithSearch from './pages/RedirectWithSearch';
+import DashboardLanding from './pages/DashboardLanding';
 import BillingPage from './pages/BillingPage';
 import ConnectKeyPage from './pages/ConnectKeyPage';
 import PreferencesPage from './pages/PreferencesPage';
@@ -120,13 +122,22 @@ function App() {
                 <Route path="dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   {/* Preserve the query string — signup lands on /dashboard?welcome=1
                       and a bare Navigate would drop it, so the welcome never fired. */}
-                  <Route index element={<RedirectWithSearch to="/dashboard/overview" />} />
+                  {/* Overview for an account that exists, setup for one that
+                      does not — see DashboardLanding. The query string still
+                      rides along, so signup's ?welcome=1 survives. */}
+                  <Route index element={<DashboardLanding />} />
                   <Route path="overview" element={<OverviewPage />} />
                   <Route path="live" element={<LiveGuardPage />} />
                   {/* The paywall. Sits inside the dashboard shell on purpose —
                       they have an account and a key by now, so this is a step
                       in their setup, not a wall thrown across the product. */}
                   <Route path="activate" element={<ActivateGuardPage />} />
+                  {/* Setup as a page, not a dialog: six steps, one of which
+                      asks for an API key and another for a payment mandate.
+                      That is not an interruption to what someone was doing —
+                      for a new account it is the whole product until it is
+                      finished. */}
+                  <Route path="setup" element={<SetupPage />} />
                   <Route path="rules" element={<RulesTerminal />} />
                   <Route path="journal" element={<JournalPage />} />
                   <Route path="calendar" element={<EconomicCalendarPage />} />

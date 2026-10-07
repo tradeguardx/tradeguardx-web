@@ -1,6 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useGuard } from '../context/GuardContext';
@@ -10,7 +9,6 @@ import { disconnectExchangeCredentials } from '../api/exchangeCredentialsApi';
 import { checkAccountDeletable, deleteTradingAccount } from '../api/tradingAccountsApi';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel } from '../lib/labels';
-import AddVenueWizard from '../components/dashboard/AddVenueWizard';
 import VenueMark, { VenueBetaBadge } from '../components/dashboard/VenueMark';
 import { sx } from '../components/dashboard/shell/sx';
 
@@ -37,9 +35,7 @@ export default function AccountsPage() {
   const navigate = useNavigate();
   const accessToken = session?.access_token;
 
-  const [showAdd, setShowAdd] = useState(false);
   const [supportedProps, setSupportedProps] = useState([]);
-  const [propsLoading, setPropsLoading] = useState(false);
   const [dc, setDc] = useState(null); // account pending disconnect
   const [dcBusy, setDcBusy] = useState(false);
   /**
@@ -83,7 +79,6 @@ export default function AccountsPage() {
     }
   };
   /** Venue chosen from the picker; opening the wizard modal. */
-  const [addSlug, setAddSlug] = useState('');
 
   /**
    * One connection block open at a time — the account you are actually on.
@@ -121,11 +116,9 @@ export default function AccountsPage() {
   useEffect(() => {
     if (!accessToken || supportedProps.length) return undefined;
     let cancelled = false;
-    setPropsLoading(true);
     fetchSupportedProps({ accessToken })
       .then((rows) => { if (!cancelled) setSupportedProps(rows); })
-      .catch((e) => { if (!cancelled) toast.error('Could not load exchanges', e?.message); })
-      .finally(() => { if (!cancelled) setPropsLoading(false); });
+      .catch((e) => { if (!cancelled) toast.error('Could not load exchanges', e?.message); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
@@ -332,133 +325,20 @@ export default function AccountsPage() {
         );
       })}
 
-      {showAdd ? (
-        /* The picker stays on the page; choosing a venue opens the rest in a
-           modal. Adding an account is a short, complete task — inline it sat
-           under the existing accounts and the page kept growing beneath it,
-           so the thing you were doing was never the thing in front of you. */
-        <section style={sx('padding:19px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card)')}>
-          <p style={sx("margin:0 0 12px;font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)")}>Choose your exchange</p>
-          {propsLoading && supportedProps.length === 0 ? (
-            <p style={sx('margin:0;font-size:12.5px;color:var(--ink-3)')}>Loading exchanges…</p>
-          ) : (
-            <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:9px')}>
-              {supportedProps.map((pf) => {
-                const planned = pf.status === 'planned';
-                return (
-                  <button
-                    key={pf.brokerId}
-                    type="button"
-                    disabled={planned}
-                    onClick={() => setAddSlug(pf.brokerId)}
-                    style={sx('display:flex;align-items:center;gap:10px;padding:12px 13px;border:1px solid var(--line);border-radius:13px;background:var(--surface-2);text-align:left;cursor:pointer', planned ? { opacity: 0.5, cursor: 'not-allowed' } : {})}
-                  >
-                    <VenueMark slug={pf.brokerId} name={pf.name} size={30} radius={9} />
-                    <span style={sx('flex:1;min-width:0')}>
-                      <span style={sx('display:block;font-size:13px;font-weight:600')}>{pf.name}</span>
-                      <span style={sx('display:block;margin-top:2px;font-size:11.5px;color:var(--ink-3)')}>{planned ? 'Coming soon' : 'Runs on our servers'}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <button type="button" onClick={() => setShowAdd(false)} style={sx('margin-top:13px;padding:0;border:0;background:none;color:var(--ink-3);font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer')}>Cancel</button>
-        </section>
-      ) : (
-        <section style={sx('padding:20px;border:1px dashed var(--line-strong);border-radius:16px;background:var(--surface-2)')}>
-          <div style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap')}>
-            <div style={sx('font-size:14.5px;font-weight:600')}>Add another account</div>
-            {/* The venues, shown rather than listed — the marks answer "is my
-                exchange here?" faster than the sentence below does. */}
-            <div style={sx('display:flex;align-items:center;gap:6px')}>
-              {supportedProps.filter((pf) => pf.status !== 'planned').map((pf) => (
-                <VenueMark key={pf.brokerId} slug={pf.brokerId} name={pf.name} size={22} radius={7} />
-              ))}
-            </div>
+      <section style={sx('padding:20px;border:1px dashed var(--line-strong);border-radius:16px;background:var(--surface-2)')}>
+        <div style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap')}>
+          <div style={sx('font-size:14.5px;font-weight:600')}>Add another account</div>
+          {/* The venues, shown rather than listed — the marks answer "is my
+              exchange here?" faster than the sentence below does. */}
+          <div style={sx('display:flex;align-items:center;gap:6px')}>
+            {supportedProps.filter((pf) => pf.status !== 'planned').map((pf) => (
+              <VenueMark key={pf.brokerId} slug={pf.brokerId} name={pf.name} size={22} radius={7} />
+            ))}
           </div>
-          <p style={sx('margin:7px 0 13px;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:70ch')}>{capLine} Pick your exchange and we will walk you through creating the key.</p>
-          <button type="button" disabled={atCap} onClick={() => setShowAdd(true)} style={sx('padding:10px 15px;border-radius:10px;font-size:12.5px;font-weight:700', atCap ? { border: '1px solid var(--surface-3)', background: 'var(--surface-3)', color: 'var(--ink-3)', cursor: 'not-allowed' } : { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' })}>{atCap ? `Plan limit reached (${maxAccounts})` : 'Choose an exchange'}</button>
-        </section>
-      )}
-
-      {addSlug && (
-        /* The wizard in a modal. Adding a venue is a short task with a clear
-           end, and inline it sat below the existing accounts with the page
-           growing beneath it — so the thing being done was never the thing in
-           front of you. The backdrop does NOT close it: three stages in, a
-           stray tap outside would discard a created account and a pasted key. */
-        <motion.div
-          data-tgx-modal="1"
-          className="wiz-modal"
-          role="presentation"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.16 }}
-          /*
-           * A FULL TAKEOVER, NOT A DIALOG ON TOP OF THE DASHBOARD.
-           *
-           * This flow is four stages long and one of them asks for an API key
-           * and another for money. A translucent card floating over a blurred
-           * dashboard reads as an interruption you are meant to dismiss —
-           * exactly the wrong posture for the most important ten minutes a
-           * user spends here. Opaque, edge to edge, so it reads as where you
-           * are rather than what is in your way.
-           */
-          style={sx('position:fixed;inset:0;z-index:70;background:var(--bg);display:grid;place-items:start center;padding:0;overflow-y:auto')}
-        >
-          {/* Rises slightly rather than appearing. A dialog that snaps into
-              existence reads as a page change; a short lift reads as something
-              opening on top of what you were doing — which is what it is. */}
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Add a venue"
-            className="wiz-dialog"
-            onClick={(e) => e.stopPropagation()}
-            /* A page arrives, it does not pop. The old lift-and-scale said
-               "something opened on top of what you were doing"; this is the
-               thing you are doing now, so it simply comes forward. */
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            /*
-             * 880, not 720. Stage 2 is the widest thing this dialog ever shows
-             * — the venue's own step list, then two permission cards side by
-             * side ("Trade Futures — required" against "Read-only — looks fine,
-             * does nothing"). At 720 those two cards were narrow enough that
-             * the sentence explaining the quiet failure wrapped to three lines,
-             * and that sentence is the one doing the work on this screen.
-             *
-             * Still `min(…, 100%)`, and mobile overrides this to a full-width
-             * bottom sheet with !important, so this number only ever applies on
-             * a desktop viewport.
-             */
-            style={sx('position:relative;width:min(1040px,100%);min-height:100%;padding:30px 24px 64px')}
-          >
-            {/* Top right, matching the kill-switch modal — the corner is where
-                people look to leave a dialog, and it stays reachable at any
-                stage without scrolling to the bottom of a three-stage form. */}
-            <button
-              type="button"
-              onClick={() => setAddSlug('')}
-              aria-label="Close"
-              style={sx('position:absolute;top:34px;right:28px;z-index:2;width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink-3);display:grid;place-items:center;cursor:pointer')}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            </button>
-            <AddVenueWizard
-              accessToken={accessToken}
-              supportedProps={supportedProps}
-              propsLoading={propsLoading}
-              toast={toast}
-              presetSlug={addSlug}
-              onCancel={() => setAddSlug('')}
-              onDone={async () => { setAddSlug(''); setShowAdd(false); await refreshTradingAccounts(); await guard.refresh(); }}
-            />
-          </motion.div>
-        </motion.div>
-      )}
+        </div>
+        <p style={sx('margin:7px 0 13px;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:70ch')}>{capLine} Pick your exchange and we will walk you through creating the key.</p>
+        <button type="button" disabled={atCap} onClick={() => navigate('/dashboard/setup')} style={sx('padding:10px 15px;border-radius:10px;font-size:12.5px;font-weight:700', atCap ? { border: '1px solid var(--surface-3)', background: 'var(--surface-3)', color: 'var(--ink-3)', cursor: 'not-allowed' } : { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' })}>{atCap ? `Plan limit reached (${maxAccounts})` : 'Choose an exchange'}</button>
+      </section>
 
       {del && (
         <div data-tgx-modal="1" onClick={() => !delBusy && setDel(null)} role="presentation" style={sx('position:fixed;inset:0;z-index:70;background:rgba(3,5,10,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px')}>

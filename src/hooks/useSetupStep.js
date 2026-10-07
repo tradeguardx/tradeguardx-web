@@ -32,7 +32,11 @@ export const SETUP_STEPS = {
   account: {
     key: 'account',
     label: 'Add your trading account',
-    to: '/dashboard/account/trading',
+    /* Straight into step one, not to a page that asks them to press "choose
+       an exchange" before the exchanges appear. A button called "add an
+       account" that produces another button called "add an account" is a step
+       that exists only because of how the pages were split. */
+    to: '/dashboard/setup',
     blurb: 'Add the account you trade on so the guard knows what to watch.',
   },
   key: {

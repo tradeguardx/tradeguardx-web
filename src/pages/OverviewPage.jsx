@@ -172,16 +172,16 @@ export default function OverviewPage() {
         !g.gaps.some((x) => x.key === 'setup'),
         !g.gaps.some((x) => x.key === 'key'),
         !g.gaps.some((x) => x.key === 'billing'),
-        !g.gaps.some((x) => x.key === 'rules'),
         !g.gaps.some((x) => x.key === 'alerts'),
+        !g.gaps.some((x) => x.key === 'rules'),
       ];
   const firstUndone = preds.indexOf(false);
   const steps = [
-    { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.bank, to: '/dashboard/account/trading', cta: 'Add an account' },
+    { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.bank, to: '/dashboard/setup', cta: 'Add an account' },
     { title: 'Connect your API key', body: 'It needs permission to trade. That is what lets us close a position for you.', accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.connect, to: '/dashboard/connect', cta: 'Connect the key' },
     { title: 'Set up billing', body: 'Free for 7 days, nothing charged today. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Start 7 days free' },
-    { title: 'Set your rules', body: 'Written while calm. Two are enough to start: a daily loss limit and a trade cap.', accent: 'var(--violet)', tint: 'rgba(109,63,212,0.12)', d: ICON.rules, to: '/dashboard/rules', cta: 'Choose rules' },
     { title: 'Turn on alerts', body: 'Telegram is the fast one. Without a channel a breach happens silently.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.bell, to: '/dashboard/alerts', cta: 'Set up alerts' },
+    { title: 'Set your rules', body: 'Written while calm. Two are enough to start: a daily loss limit and a trade cap.', accent: 'var(--violet)', tint: 'rgba(109,63,212,0.12)', d: ICON.rules, to: '/dashboard/rules', cta: 'Choose rules' },
   ].map((st, i) => {
     const done = preds[i];
     const next = !done && firstUndone === i;
