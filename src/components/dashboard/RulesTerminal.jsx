@@ -479,7 +479,33 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
           ) : isCooled ? (
             <div style={sx('display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:74ch')}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="1.9" strokeLinecap="round" style={{ flex: 'none', marginTop: 1 }}><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
-              <span><strong style={sx('color:var(--red);font-weight:700')}>Editing blocked while your lockout runs.</strong> Different lock, different reason: this one stops you trading, and loosening a rule mid-lockout would be a way around it.</span>
+              <span>
+                <strong style={sx('color:var(--red);font-weight:700')}>Editing blocked while your lockout runs.</strong> Different lock, different reason: this one stops you trading, and loosening a rule mid-lockout would be a way around it.
+                {/*
+                  A WAY OUT THAT IS A CONVERSATION, NOT A BUTTON.
+                  
+                  A lockout you can end yourself is not a lockout — the whole
+                  value is that the person who set it does not get a vote
+                  later. But people do lock themselves out by mistake: a limit
+                  typed in the wrong units, a rule set on the wrong account.
+                  Without a stated route out, that person is left guessing
+                  whether anyone will answer, which is how a safety feature
+                  turns into a support ticket written in anger.
+                  
+                  So: one tap, the message already written, and a stated
+                  response time — because "contact support" with no timeframe
+                  reads as "you are stuck".
+                */}
+                <br />
+                <button
+                  type="button"
+                  onClick={() => openSupport("My account is locked out and I would like it released early.\n\nReason: ")}
+                  style={sx('margin-top:7px;padding:0;border:0;background:none;font:inherit;font-weight:700;color:var(--red);text-decoration:underline;cursor:pointer')}
+                >
+                  Ask support to release it
+                </button>
+                <span style={sx('color:var(--ink-3)')}> &middot; we usually reply within 30 minutes, here or at <a href="mailto:support@tradeguardx.com" style={sx('color:var(--ink-3)')}>support@tradeguardx.com</a></span>
+              </span>
             </div>
           ) : null}
         </div>
@@ -645,6 +671,7 @@ export default function RulesTerminal() {
               ? 'You have traded today, so the rules that are on hold until the daily reset. You can still turn on a rule that is off. Tomorrow, set your rules before your first trade.'
               : 'You can read every rule and see exactly what is armed. You cannot change one — including making it stricter, because the point of the freeze is not touching them at all. This is the rule lock you set on Live guard.'}</p>
             <button type="button" onClick={() => openSupport(`I'd like my rule lock released early. It's locked until ${fmtLockDate(ruleLock?.lockedUntil)}. Reason: `)} style={sx('margin-top:8px;padding:0;border:0;background:none;font-size:12px;color:var(--ink-3);text-decoration:underline')}>Need it lifted? Ask support</button>
+            <span style={sx('display:block;margin-top:4px;font-size:11.5px;color:var(--ink-faint)')}>We usually reply within 30 minutes, here or at support@tradeguardx.com</span>
           </div>
         </div>
       )}
