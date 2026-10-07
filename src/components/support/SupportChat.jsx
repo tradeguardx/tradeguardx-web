@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { sendSupportMessage, SUGGESTED_QUESTIONS } from '../../api/supportApi';
 import { submitSupportRequest, supportFormConfigured } from '../../api/supportRequestApi';
+import { fetchNotificationSettings } from '../../api/notificationsApi';
 import { CHAT_THEMES, useChatTheme } from './chatThemes';
 import { renderReply } from './supportMarkdown';
 import { OPEN_SUPPORT_EVENT } from './supportBus';
@@ -62,13 +63,44 @@ function useSessionFlag(key, initial) {
  */
 function ContactSupportView({ session, selectedAccount, transcript, onBack, onSent, prefill = '', theme }) {
   const [message, setMessage] = useState(prefill);
+  const [phone, setPhone] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '';
 
+  /*
+   * PREFILLED, NOT ASKED COLD.
+   *
+   * Most people here already gave us a number for alerts, and re-typing it
+   * while locked out of your own account and annoyed is exactly the friction
+   * that turns a ticket into a cancellation. It stays editable: the number on
+   * file is for alerts, and the one to call back on today may differ.
+   */
+  useEffect(() => {
+    const token = session?.access_token;
+    if (!token) return undefined;
+    const ac = new AbortController();
+    fetchNotificationSettings({ accessToken: token, signal: ac.signal })
+      .then((s) => {
+        // Never clobber something already typed — this resolves after a paint.
+        if (s?.phone) setPhone((cur) => cur || s.phone);
+      })
+      .catch(() => {
+        // No number on file is the normal case for a new account, not an error.
+      });
+    return () => ac.abort();
+  }, [session?.access_token]);
+
   async function submit(e) {
     e.preventDefault();
     if (!message.trim() || sending) return;
+    /* Seven digits is the shortest real number anywhere. The check is this
+       loose on purpose: the point is to catch a half-typed number, not to
+       validate dialling plans and refuse somebody's actual phone. */
+    if ((phone.match(/\d/g) ?? []).length < 7) {
+      setError('Add a phone number we can reach you on — it is the fastest way to close this. If you would rather not, email support@tradeguardx.com instead.');
+      return;
+    }
     setSending(true);
     setError('');
     try {
@@ -77,6 +109,7 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
         accountId: selectedAccount?.id || '',
         message: message.trim(),
         name,
+        phone: phone.trim(),
         accountName: selectedAccount?.name || selectedAccount?.propFirmSlug || '',
         transcript,
       });
@@ -107,6 +140,27 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
         className="w-full resize-none rounded-xl border px-3.5 py-3 text-[13px] leading-relaxed outline-none focus:border-[color:var(--accent,#00d4aa)]"
         style={{ backgroundColor: 'var(--dash-bg-input)', borderColor: 'var(--dash-border)', color: 'var(--dash-text-primary)' }}
       />
+
+      <div>
+        <label htmlFor="tgx-support-phone" className="text-[12px] font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
+          Phone number
+        </label>
+        <input
+          id="tgx-support-phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="+91 98765 43210"
+          maxLength={24}
+          className="mt-1.5 w-full rounded-xl border px-3.5 py-2.5 text-[13px] outline-none focus:border-[color:var(--accent,#00d4aa)]"
+          style={{ backgroundColor: 'var(--dash-bg-input)', borderColor: 'var(--dash-border)', color: 'var(--dash-text-primary)' }}
+        />
+        <p className="mt-1 text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
+          So we can call or WhatsApp you if that is quicker than typing.
+        </p>
+      </div>
 
       {transcript.length > 0 && (
         <p className="text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>

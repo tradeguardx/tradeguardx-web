@@ -23,10 +23,11 @@ export function supportFormConfigured() {
  * @param {string} p.accountId     trading account the ticket is about
  * @param {string} p.message       what the user typed
  * @param {string} [p.name]        display name
+ * @param {string} [p.phone]       number to call back on
  * @param {string} [p.accountName]
  * @param {Array<{role:string,content:string}>} [p.transcript]  recent chat, for context
  */
-export async function submitSupportRequest({ accessToken, accountId, message, name, accountName, transcript = [] }) {
+export async function submitSupportRequest({ accessToken, accountId, message, name, phone, accountName, transcript = [] }) {
   if (!accessToken) throw new Error('You need to be signed in');
   if (!accountId) throw new Error('Select a trading account first');
   const q = new URLSearchParams({ tradingAccountId: accountId });
@@ -34,6 +35,10 @@ export async function submitSupportRequest({ accessToken, accountId, message, na
     await apiPost(`/support/request?${q.toString()}`, {
       message,
       name: name || '',
+      // The fastest way to close a ticket is usually a phone call, and the
+      // tickets that reach this form are the urgent ones — someone locked out
+      // of their own account. The server caps it; we send it as typed.
+      phone: phone || '',
       accountName: accountName || '',
       page: typeof window !== 'undefined' ? window.location.pathname : '',
       // The assistant transcript is the most useful context a ticket can
