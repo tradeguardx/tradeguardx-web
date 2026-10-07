@@ -26,8 +26,6 @@ vi.mock('./ConnectKeyPage', () => ({
     </div>
   ),
 }));
-vi.mock('./AlertsPage', () => ({ AlertsSettings: ({ embedded }) => <span>alerts embedded={String(embedded)}</span> }));
-vi.mock('../components/dashboard/RulesTerminal', () => ({ default: () => <span>rules screen</span> }));
 vi.mock('../components/dashboard/ActivateGuardCard', () => ({
   default: ({ embedded }) => <span>activate embedded={String(embedded)}</span>,
 }));
@@ -60,7 +58,7 @@ describe('setup, as a page', () => {
     expect(screen.queryByText(/connect-flow/)).toBeNull();
   });
 
-  it('goes venue → name → key → billing → alerts → rules, in that order', async () => {
+  it('goes venue → name → key → billing, in that order', async () => {
     mount();
     fireEvent.click(await screen.findByText('Delta'));
     expect(await screen.findByText('create account')).toBeTruthy();
@@ -70,10 +68,19 @@ describe('setup, as a page', () => {
     /* Billing sits after the key: the balance is read from the key, so this is
        the first point the ask can name their own daily limit. */
     expect(await screen.findByText(/activate embedded=true/)).toBeTruthy();
-    fireEvent.click(screen.getByText(/leave the guard off/i));
-    expect(await screen.findByText(/alerts embedded=true/)).toBeTruthy();
-    fireEvent.click(screen.getByText('Next'));
-    expect(await screen.findByText('rules screen')).toBeTruthy();
+  });
+
+  /* Rules and alerts are editable afterwards and alerts are optional by
+     design, so they are Overview's job. Putting them here made onboarding
+     half as long again for the two steps that lose nothing by waiting. */
+  it('stops at billing — rules and alerts are not part of it', async () => {
+    mount();
+    fireEvent.click(await screen.findByText('Delta'));
+    fireEvent.click(await screen.findByText('create account'));
+    fireEvent.click(await screen.findByText('connect'));
+    await screen.findByText(/activate embedded=true/);
+    expect(screen.queryByText(/Alerts/)).toBeNull();
+    expect(screen.queryByText(/^Rules$/)).toBeNull();
   });
 
   it('uses the real screens, embedded — not simplified copies', async () => {
@@ -86,12 +93,14 @@ describe('setup, as a page', () => {
   });
 
   it('skips billing for someone already on a trial', async () => {
+    // Nothing to sell. Showing a price to a paying customer and making them
+    // dismiss it is worse than not showing it at all.
     auth.user = { access: 'trial', isTrial: true };
     mount();
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
-    expect(await screen.findByText(/alerts embedded=true/)).toBeTruthy();
+    await screen.findByText('Set up your guard');
     expect(screen.queryByText(/activate embedded/)).toBeNull();
   });
 

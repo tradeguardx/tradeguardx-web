@@ -6,8 +6,6 @@ import { useTradingAccounts } from '../context/TradingAccountContext';
 import { fetchSupportedProps } from '../api/tradingAccountsApi';
 import { AddAccountForm } from './TradingAccountsPage';
 import { ConnectKeyFlow } from './ConnectKeyPage';
-import { AlertsSettings } from './AlertsPage';
-import RulesTerminal from '../components/dashboard/RulesTerminal';
 import ActivateGuardCard from '../components/dashboard/ActivateGuardCard';
 import VenuePicker from '../components/dashboard/VenuePicker';
 import VenueMark from '../components/dashboard/VenueMark';
@@ -42,13 +40,25 @@ import { sx } from '../components/dashboard/shell/sx';
  * what is still undone rather than at the beginning.
  */
 
+/*
+ * FOUR STEPS, AND THEY ARE THE FOUR THAT CANNOT HAPPEN LATER.
+ *
+ * Rules and alerts used to be steps five and six here. They are genuinely
+ * editable afterwards — rules are meant to be revisited, and alerts are the
+ * one part of the product that is optional by design — so putting them in the
+ * flow made onboarding 50% longer with the two steps that lose nothing by
+ * waiting. Overview carries them instead: `gapsOf` reports both, and "what to
+ * do next" names whichever is outstanding.
+ *
+ * What is left is the four that are load-bearing. Without an exchange, an
+ * account, a key and a subscription the engine arms nothing at all, so a user
+ * who stops short of any of them is unprotected and does not know it.
+ */
 const STEPS = [
   { key: 'venue', label: 'Choose exchange', h: 'Which exchange do you trade on?', p: 'This is the account the guard will watch. You can add others later.' },
   { key: 'name', label: 'Name account', h: 'Name the account', p: 'Just a label so you can tell this account from the others. The key comes next.' },
   { key: 'key', label: 'Connect key', h: 'Connect the key', p: 'This is the step that makes your rules real. Until it is done the account is listed here but nothing is watching it.' },
   { key: 'billing', label: 'Set up billing', h: 'Set up billing', p: 'Free for 7 days and nothing is charged today. The guard only runs once this is done.' },
-  { key: 'alerts', label: 'Alerts', h: 'How you hear about it', p: 'The guard acts whether or not you are watching. This is how you find out it did.' },
-  { key: 'rules', label: 'Rules', h: 'Set your rules', p: 'Written while calm. Two are enough to start: a daily loss limit and a trade cap.' },
 ];
 
 function Rail({ at, done }) {
@@ -122,8 +132,6 @@ export default function SetupPage() {
       hasAccount,
       hasAccount && noGap('key'),
       entitled,
-      hasAccount && noGap('alerts'),
-      hasAccount && noGap('rules'),
     ];
   }, [slug, hasAccount, entitled, g]);
 
@@ -145,8 +153,8 @@ export default function SetupPage() {
   };
 
   /* Entitled users have nothing to buy, so billing is skipped rather than
-     shown and dismissed — the same rule the Overview card follows. */
-  const afterKey = () => go(entitled ? 4 : 3);
+     shown and dismissed. With billing last, that means they are done. */
+  const afterKey = () => (entitled ? finish() : go(3));
 
   const finish = async () => {
     await refreshTradingAccounts();
@@ -161,7 +169,7 @@ export default function SetupPage() {
       <header style={sx('margin-bottom:20px')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Set up your guard</h1>
         <p style={sx('margin:7px 0 0;font-size:13.5px;color:var(--ink-3)')}>
-          Six steps. Until they are done your rules are written down but nothing enforces them.
+          Four steps. Until they are done nothing is watching your account. Rules and alerts come after.
         </p>
         {venue && (
           <div style={sx('display:flex;align-items:center;gap:10px;margin-top:16px')}>
@@ -206,8 +214,6 @@ export default function SetupPage() {
 
       {at === 2 && <ConnectKeyFlow embedded onConnected={afterKey} />}
       {at === 3 && <ActivateGuardCard embedded />}
-      {at === 4 && <AlertsSettings embedded />}
-      {at === 5 && <RulesTerminal />}
 
       {at > 0 && (
         <footer style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:30px;padding-top:18px;border-top:1px solid var(--line)')}>
@@ -224,7 +230,7 @@ export default function SetupPage() {
             </button>
           )}
           {at === 3 && (
-            <button type="button" onClick={() => go(4)} style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
+            <button type="button" onClick={finish} style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
               Not now — leave the guard off
             </button>
           )}

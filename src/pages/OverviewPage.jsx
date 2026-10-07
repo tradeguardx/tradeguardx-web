@@ -134,7 +134,7 @@ export default function OverviewPage() {
     ? []
     : g.guard !== 'armed'
     ? [
-      { title: g.gap?.title ?? 'Finish setup', body: g.gap?.body ?? 'A few steps remain before anything is enforced.', to: g.gap?.to ?? '/dashboard/account/trading', accent: 'var(--red)', tint: 'var(--red-tint)', d: ICON.rules },
+      { title: g.gap?.title ?? 'Finish setup', body: g.gap?.body ?? 'A few steps remain before anything is enforced.', to: g.gap?.to ?? '/dashboard/setup', accent: 'var(--red)', tint: 'var(--red-tint)', d: ICON.rules },
       { title: 'Decide your rule-lock window while calm', body: 'Seven days is the default. Choosing the length before you need it is the whole point of the device.', to: '/dashboard/live', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.security },
       { title: 'Read what the guard can and cannot do', body: 'We cannot stop an order being placed on the exchange — we close the position straight after and verify you are flat.', to: '/dashboard/rules', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.journal },
     ]
