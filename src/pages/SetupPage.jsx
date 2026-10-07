@@ -162,6 +162,17 @@ export default function SetupPage() {
     navigate('/dashboard/overview');
   };
 
+  /*
+   * Once the guard can actually act, forget that they ever said "not now".
+   * The flag exists to stop Overview looping someone who declined; a user who
+   * has since finished has not declined anything, and if they later
+   * disconnect the key the redirect should come back on its own.
+   */
+  useEffect(() => {
+    if (!done.every(Boolean)) return;
+    try { window.localStorage?.removeItem('tgx_setup_dismissed'); } catch { /* blocked storage */ }
+  }, [done]);
+
   const venue = slug ? venueFor(slug) : null;
 
   return (
@@ -225,12 +236,29 @@ export default function SetupPage() {
               of these undone means nothing is enforced, and the user should
               read that in the button they are about to press. */}
           {at === 2 && (
-            <button type="button" onClick={afterKey} style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
+            <button
+              type="button"
+              onClick={() => {
+                try { window.localStorage?.setItem('tgx_setup_dismissed', '1'); } catch { /* blocked storage */ }
+                afterKey();
+              }}
+              style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}
+            >
               I&apos;ll connect the key later
             </button>
           )}
           {at === 3 && (
-            <button type="button" onClick={finish} style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
+            <button
+              type="button"
+              onClick={() => {
+                /* An explicit decision, remembered. Overview hands people back
+                   to this flow until the guard can act; without a record of
+                   "not now" that help becomes a loop they cannot get out of. */
+                try { window.localStorage?.setItem('tgx_setup_dismissed', '1'); } catch { /* blocked storage */ }
+                finish();
+              }}
+              style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}
+            >
               Not now — leave the guard off
             </button>
           )}

@@ -64,6 +64,29 @@ export default function OverviewPage() {
   }, [accessToken, selectedTradingAccountId]);
 
   const noAccount = !accountsLoading && !selectedAccount;
+
+  /*
+   * ONBOARDING IS NOT DONE UNTIL THE GUARD CAN ACT.
+   *
+   * Having an account is step two of four. Treating it as the finish line
+   * meant someone who created one and clicked Overview was dropped here with
+   * the flow gone — an account, no key, no subscription, and nothing watching
+   * anything. The three gaps below are the remaining steps, so Overview hands
+   * them back to the flow until all of them are closed.
+   *
+   * `tgx_setup_dismissed` is the escape. Someone who pressed "Not now — leave
+   * the guard off" has made a decision, and bouncing them to a price every
+   * time they click Overview would be badgering rather than helping. The
+   * banner keeps saying so; the redirect stops.
+   */
+  const setupGaps = ['setup', 'key', 'billing'];
+  const setupIncomplete = Boolean(g?.gaps?.some((x) => setupGaps.includes(x.key)));
+  let setupDismissed = false;
+  try {
+    setupDismissed = typeof window !== 'undefined' && window.localStorage?.getItem('tgx_setup_dismissed') === '1';
+  } catch {
+    /* Private window or blocked storage — treat as not dismissed. */
+  }
   const d = g.describe;
   const cur = s.currency;
   const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'your exchange';
@@ -95,7 +118,11 @@ export default function OverviewPage() {
         : [
           { k: 'Protecting', v: 'Nothing', note: g.gap?.short || 'setup unfinished', fg: 'var(--red)' },
           { k: 'Rules on', v: `${g.rulesOn}/${g.rulesTotal}`, note: g.rulesOn > 0 ? 'ready to go' : 'none switched on', fg: 'var(--ink)' },
-          { k: 'Setup', v: `${5 - g.gaps.length}/5`, note: 'steps done', fg: 'var(--amber)' },
+          /* The four steps the flow actually walks. Choosing an exchange and
+             naming the account are both satisfied by having one, so they
+             count two. It said 5 while the flow said four, which is the kind
+             of mismatch that makes someone recount. */
+          { k: 'Setup', v: `${(selectedAccount ? 2 : 0) + (g.gaps.some((x) => x.key === 'key') ? 0 : 1) + (g.gaps.some((x) => x.key === 'billing') ? 0 : 1)}/4`, note: 'steps done', fg: 'var(--amber)' },
         ];
 
   // ── setup steps ─────────────────────────────────────────────────────
@@ -159,7 +186,7 @@ export default function OverviewPage() {
    * works and every other route stays reachable. A setup flow you cannot
    * leave is how someone who was merely curious gets stuck.
    */
-  if (noAccount) {
+  if (noAccount || (setupIncomplete && !setupDismissed && g?.loaded !== false)) {
     return <Navigate to="/dashboard/setup" replace />;
   }
 
