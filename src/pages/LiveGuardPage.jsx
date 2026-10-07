@@ -179,7 +179,7 @@ export default function LiveGuardPage() {
     [rl?.locked, rl?.settling, g.guard, subscribeTick],
   );
   const [pick_, setPick] = useState(null);
-  const rlPick = pick_ ?? rl?.days ?? 7;
+  const rlPick = pick_ ?? rl?.days ?? 0;
   const rlLocked = Boolean(rl?.locked);
   const [rlBusy, setRlBusy] = useState(false);
   const applyLock = async () => {
@@ -758,7 +758,7 @@ export default function LiveGuardPage() {
                     <p style={sx('margin:4px 0 0;padding-top:9px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-2);line-height:1.5')}>{rlPick === 0 ? 'Off does not mean always editable. Rules stay editable until your first trade of the day — after that they hold until the next daily reset.' : `Active rules lock for ${rlPick} days. You cannot shorten the window once it is running, and you cannot edit a rule until it expires.`}</p>
                   </div>
                 )}
-                <button type="button" className="rl-arm" disabled={rlBusy || rlPick === (rl?.days ?? 7)} onClick={applyLock} style={sx('width:100%;padding:11px;border:1px solid var(--mint-line);border-radius:10px;background:var(--mint-tint);color:var(--mint);font-size:13px;font-weight:700')}>{rlBusy ? 'Saving…' : rlPick === 0 ? 'Use the daily setting' : `Lock active rules for ${rlPick} days`}</button>
+                <button type="button" className="rl-arm" disabled={rlBusy || rlPick === (rl?.days ?? 0)} onClick={applyLock} style={sx('width:100%;padding:11px;border:1px solid var(--mint-line);border-radius:10px;background:var(--mint-tint);color:var(--mint);font-size:13px;font-weight:700')}>{rlBusy ? 'Saving…' : rlPick === 0 ? 'Use the daily setting' : `Lock active rules for ${rlPick} days`}</button>
               </div>
             )}
           </div>
