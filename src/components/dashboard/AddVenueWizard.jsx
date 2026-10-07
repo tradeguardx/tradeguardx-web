@@ -135,7 +135,10 @@ export default function AddVenueWizard({ accessToken, supportedProps, propsLoadi
      * (alerts) never pushes the rail off screen and leaves you unsure where
      * you are.
      */
-    <section className="wiz-card" style={sx('display:flex;flex-direction:column;max-height:calc(100vh - 96px);border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+    /* No card chrome: the shell is a full-page takeover now, so a bordered,
+       shadowed box inside it would be a card drawn on a page that is already
+       the card. The internal scroll goes with it — the page scrolls. */
+    <section className="wiz-card" style={sx('display:flex;flex-direction:column;background:transparent')}>
       {/*
         * The dialog has a SUBJECT, not just a progress rail. A header of three
         * bare numbers could belong to any flow in the product; the venue's mark
@@ -146,12 +149,12 @@ export default function AddVenueWizard({ accessToken, supportedProps, propsLoadi
         * Right padding leaves the close button its corner — without it the
         * third stage label runs under the X on a narrow modal.
         */}
-      <header style={sx('flex:none;padding:14px 52px 12px 18px;border-bottom:1px solid var(--line);background:var(--surface-2)')}>
+      <header style={sx('flex:none;padding:0 52px 20px 0;border-bottom:1px solid var(--line);background:transparent')}>
         {venue && (
           <div style={sx('display:flex;align-items:center;gap:10px;margin-bottom:12px')}>
             <VenueMark slug={presetSlug} name={venue.name} size={28} radius={9} />
             <span style={sx('display:flex;flex-direction:column;min-width:0')}>
-              <span style={sx('font-size:13.5px;font-weight:600;letter-spacing:-.006em')}>{venue.longName ?? venue.name}</span>
+              <span style={sx('font-size:16px;font-weight:600;letter-spacing:-.012em')}>{venue.longName ?? venue.name}</span>
               <span style={sx("font:600 9px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px")}>Adding an account</span>
             </span>
           </div>
@@ -159,7 +162,7 @@ export default function AddVenueWizard({ accessToken, supportedProps, propsLoadi
         <Rail at={at} />
       </header>
 
-      <div className="wiz-body" style={sx('flex:1;min-height:0;overflow-y:auto;padding:18px 20px')}>
+      <div className="wiz-body" style={sx('flex:1;min-height:0;padding:26px 0 0')}>
         {/* Each stage animates in rather than snapping. The direction is
             always forward-on-advance, back-on-Back, so the motion says which
             way you moved — a cross-fade alone would not. */}
@@ -172,8 +175,8 @@ export default function AddVenueWizard({ accessToken, supportedProps, propsLoadi
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           >
         <div style={sx('margin-bottom:16px;max-width:74ch')}>
-          <h2 style={sx("margin:0;font:600 18px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>{heading.h}</h2>
-          <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-3)')}>{heading.p}</p>
+          <h2 style={sx("margin:0;font:600 25px/1.18 'Space Grotesk',sans-serif;letter-spacing:-.028em")}>{heading.h}</h2>
+          <p style={sx('margin:8px 0 0;font-size:13.5px;line-height:1.6;color:var(--ink-3)')}>{heading.p}</p>
         </div>
 
         {at === 1 && (
@@ -206,7 +209,7 @@ export default function AddVenueWizard({ accessToken, supportedProps, propsLoadi
       {/* The footer is the wizard's, so every stage ends the same way and the
           actions stay put instead of moving with the content above them. */}
       {at > 1 && (
-        <footer style={sx('flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 20px;border-top:1px solid var(--line);background:var(--surface-2)')}>
+        <footer style={sx('flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:28px;padding:18px 0 0;border-top:1px solid var(--line);background:transparent')}>
           <button type="button" onClick={() => setAt(at - 1)} style={sx('padding:9px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer')}>
             Back
           </button>

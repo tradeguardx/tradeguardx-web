@@ -395,7 +395,17 @@ export default function AccountsPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.16 }}
-          style={sx('position:fixed;inset:0;z-index:70;background:rgba(3,5,10,.72);backdrop-filter:blur(6px);display:grid;place-items:start center;padding:24px;overflow-y:auto')}
+          /*
+           * A FULL TAKEOVER, NOT A DIALOG ON TOP OF THE DASHBOARD.
+           *
+           * This flow is four stages long and one of them asks for an API key
+           * and another for money. A translucent card floating over a blurred
+           * dashboard reads as an interruption you are meant to dismiss —
+           * exactly the wrong posture for the most important ten minutes a
+           * user spends here. Opaque, edge to edge, so it reads as where you
+           * are rather than what is in your way.
+           */
+          style={sx('position:fixed;inset:0;z-index:70;background:var(--bg);display:grid;place-items:start center;padding:0;overflow-y:auto')}
         >
           {/* Rises slightly rather than appearing. A dialog that snaps into
               existence reads as a page change; a short lift reads as something
@@ -406,9 +416,12 @@ export default function AccountsPage() {
             aria-label="Add a venue"
             className="wiz-dialog"
             onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, y: 10, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            /* A page arrives, it does not pop. The old lift-and-scale said
+               "something opened on top of what you were doing"; this is the
+               thing you are doing now, so it simply comes forward. */
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             /*
              * 880, not 720. Stage 2 is the widest thing this dialog ever shows
              * — the venue's own step list, then two permission cards side by
@@ -421,7 +434,7 @@ export default function AccountsPage() {
              * bottom sheet with !important, so this number only ever applies on
              * a desktop viewport.
              */
-            style={sx('position:relative;width:min(880px,100%);margin:auto 0')}
+            style={sx('position:relative;width:min(1040px,100%);min-height:100%;padding:30px 24px 64px')}
           >
             {/* Top right, matching the kill-switch modal — the corner is where
                 people look to leave a dialog, and it stays reachable at any
@@ -430,7 +443,7 @@ export default function AccountsPage() {
               type="button"
               onClick={() => setAddSlug('')}
               aria-label="Close"
-              style={sx('position:absolute;top:14px;right:14px;z-index:2;width:28px;height:28px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink-3);display:grid;place-items:center;cursor:pointer')}
+              style={sx('position:absolute;top:34px;right:28px;z-index:2;width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink-3);display:grid;place-items:center;cursor:pointer')}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>

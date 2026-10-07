@@ -131,7 +131,7 @@ export function gapsOf({ account, connection, rules, notifications, entitled = t
     gaps.push({
       key: 'billing',
       short: 'guard not switched on',
-      title: 'Your guard is not switched on',
+      title: 'Billing is not set up',
       body: 'Rules are written down but nothing enforces them until the guard is on. The first 7 days are free and nothing is charged today.',
       cta: 'Start 7 days free',
       to: '/dashboard/activate',
