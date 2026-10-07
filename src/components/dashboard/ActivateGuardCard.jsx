@@ -4,6 +4,8 @@ import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { createCheckoutSession } from '../../api/paymentsApi';
 import { getPricingPlans } from '../../api/pricingApi';
 import { trialDaysOnOffer, firstChargeDate } from '../../lib/trialOffer';
+import { brokerLabel } from '../../lib/labels';
+import { fmtMoney } from '../../lib/session';
 
 /**
  * The ask itself: their balance, their limit in rupees, the date, the amount.
@@ -18,9 +20,26 @@ import { trialDaysOnOffer, firstChargeDate } from '../../lib/trialOffer';
 
 const DEFAULT_LIMIT_PCT = 0.02;
 
+/* The PLAN price, which really is in rupees. */
 function inr(n) {
-  if (typeof n !== 'number' || !Number.isFinite(n)) return null;
+  if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return null;
   return `₹${Math.round(n).toLocaleString('en-IN')}`;
+}
+
+/*
+ * THE BALANCE IS IN THE ACCOUNT'S OWN CURRENCY, NOT RUPEES.
+ *
+ * Delta and CoinDCX settle in USD and USDT; a ₹ in front of 35.37 would tell
+ * someone with $35 that they hold thirty-five rupees. The plan price beside
+ * it is genuinely ₹1,299, so the two figures on this card are in different
+ * currencies and both have to say which.
+ *
+ * Null unless it is a real positive number, so the card falls back to the
+ * general promise rather than printing a zero it cannot stand behind.
+ */
+function money(n, currency) {
+  if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return null;
+  return fmtMoney(n, currency || 'USD', { decimals: n < 100 ? 2 : 0 });
 }
 
 export default function ActivateGuardCard({ embedded = false, onLater }) {
@@ -42,10 +61,25 @@ export default function ActivateGuardCard({ embedded = false, onLater }) {
   const monthly = pro?.intervals?.find((i) => i.interval === 'monthly');
   const priceLabel = typeof monthly?.price === 'number' ? inr(monthly.price) : null;
 
-  const equity = Number(selectedAccount?.accountSize);
-  const equityLabel = inr(equity);
-  const limitLabel = inr(equity * DEFAULT_LIMIT_PCT);
-  const venue = selectedAccount?.propFirmSlug || selectedAccount?.name || 'your account';
+  /*
+   * THE BALANCE COMES FROM THE KEY, NOT FROM A FIELD THEY TYPED.
+   *
+   * This read `accountSize`, which is only ever set when someone enters it by
+   * hand for a funded prop account. An account created through the setup flow
+   * has it null, so the card rendered "₹0" and told a trader with real money
+   * on the exchange that a 2% limit on their account was ₹0 — worse than
+   * saying nothing, because it looks like we looked and found nothing.
+   *
+   * `connectExchange` seeds currentBalance and startingBalance from the
+   * exchange itself at verification, so those come first.
+   */
+  const equity = [selectedAccount?.currentBalance, selectedAccount?.startingBalance, selectedAccount?.accountSize]
+    .map(Number)
+    .find((n) => Number.isFinite(n) && n > 0);
+  const currency = selectedAccount?.accountCurrency || 'USD';
+  const equityLabel = money(equity, currency);
+  const limitLabel = money(equity * DEFAULT_LIMIT_PCT, currency);
+  const venue = selectedAccount?.name || brokerLabel(selectedAccount?.propFirmSlug) || 'your account';
 
   const start = async () => {
     if (busy) return;

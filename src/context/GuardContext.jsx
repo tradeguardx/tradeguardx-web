@@ -38,15 +38,28 @@ function settle(p) {
 }
 
 export function GuardProvider({ children }) {
-  const { session, user, access } = useAuth();
+  const { session, user } = useAuth();
   /*
    * Entitlement, mirroring isEntitled() in the engine's exchange/credentials.ts
    * and the `access` the subscription API computes. The engine stopped acting
    * for lapsed plans; this screen must not keep claiming it does.
    *
-   * `access` is null until the subscription call lands, and unknown must never
-   * read as unprotected — same rule as `loaded` everywhere else in this file.
+   * ──────────────────────────────────────────────────────────────────────
+   * IT IS READ OFF `user`, BECAUSE THE CONTEXT HAS NO `access` OF ITS OWN.
+   *
+   * This destructured `access` from useAuth(), which does not publish one —
+   * AuthContext puts it on the user object instead. So it was `undefined`,
+   * `undefined == null` is true, and this resolved to `entitled: true` for
+   * everybody, always. Every guard screen has been treating lapsed and unpaid
+   * accounts as entitled since the line was written, which is the same failure
+   * as the user who traded for six weeks with nothing enforcing anything: the
+   * UI claiming a protection that was not there.
+   * ──────────────────────────────────────────────────────────────────────
+   *
+   * Null until the subscription call lands, and unknown must never read as
+   * unprotected — same rule as `loaded` everywhere else in this file.
    */
+  const access = user?.access ?? null;
   const entitled = access == null ? true : access === 'trial' || access === 'active';
   const { accounts, accountsLoading, selectedTradingAccountId, refreshTradingAccounts } = useTradingAccounts();
   const accessToken = session?.access_token;

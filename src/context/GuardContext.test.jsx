@@ -9,6 +9,7 @@
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { gapsOf } from '../lib/guard';
 
 const account = { id: 'acc-1', name: 'Delta main', propFirmSlug: 'delta_india', accountSize: 5000, cooldownUntil: null };
 
@@ -103,5 +104,29 @@ describe('GuardProvider — a failed fetch is not an answer', () => {
     await waitFor(() => expect(screen.getByTestId('breaches')).toHaveTextContent('1'));
     expect(screen.getByTestId('guard')).toHaveTextContent('armed');
     expect(screen.getByTestId('counts')).toHaveTextContent('1/2');
+  });
+});
+
+/**
+ * Entitlement was read from a field the auth context does not publish, so it
+ * was undefined and every account resolved as entitled — the UI claiming a
+ * protection that was not there, which is the exact failure this product
+ * exists to prevent.
+ */
+describe('entitlement reaches the guard', () => {
+  const row = (access) => ({
+    account: { id: 'a', name: 'Delta main', propFirmSlug: 'delta_india', accountSize: 5000, cooldownUntil: null },
+    connection: { status: 'active', enforcementCapable: true },
+    rules: { templates: [{ slug: 'daily-loss' }], instances: [{ templateSlug: 'daily-loss', enabled: true }] },
+    notifications: { telegramConnected: true },
+    entitled: access === 'trial' || access === 'active',
+  });
+
+  it.each(['none', 'expired', 'free'])('reports a billing gap for access=%s', (access) => {
+    expect(gapsOf(row(access)).map((g) => g.key)).toEqual(['billing']);
+  });
+
+  it.each(['trial', 'active'])('reports nothing outstanding for access=%s', (access) => {
+    expect(gapsOf(row(access))).toEqual([]);
   });
 });
