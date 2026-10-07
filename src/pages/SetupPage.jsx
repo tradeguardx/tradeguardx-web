@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGuard } from '../context/GuardContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
@@ -100,13 +100,15 @@ export default function SetupPage() {
   const [params, setParams] = useSearchParams();
   const { session, user } = useAuth();
   const guard = useGuard();
-  const { accounts, selectedAccount, refreshTradingAccounts, setSelectedTradingAccountId } = useTradingAccounts();
+  const { accounts, accountsLoading, selectedAccount, refreshTradingAccounts, setSelectedTradingAccountId } = useTradingAccounts();
 
   const accessToken = session?.access_token;
   const [venues, setVenues] = useState([]);
   const [venuesLoading, setVenuesLoading] = useState(true);
   const [slug, setSlug] = useState(params.get('venue') || '');
-  const [at, setAt] = useState(() => (params.get('venue') ? 1 : 0));
+  /* Null until they navigate. The step shown is derived from what is actually
+     done, and this only overrides it once they move themselves — see `at`. */
+  const [pickedStep, setPickedStep] = useState(() => (params.get('venue') ? 1 : null));
 
   useEffect(() => {
     let alive = true;
@@ -135,10 +137,26 @@ export default function SetupPage() {
     ];
   }, [slug, hasAccount, entitled, g]);
 
+  /*
+   * RESUME WHERE THEY STOPPED.
+   *
+   * Someone who created an account and came back was shown step one again —
+   * two ticked steps above a question they had already answered, offering the
+   * exchange they had already chosen. The first undone step is the only
+   * sensible place to land.
+   *
+   * Derived rather than stored, so there is nothing to keep in sync: on the
+   * first render nothing has loaded and everything reads undone, and the
+   * moment accounts and guard state arrive this lands on the right step by
+   * itself. `pickedStep` takes over as soon as they move, so Back goes back
+   * instead of being yanked forward again.
+   */
+  const firstUndone = done.indexOf(false);
+  const at = pickedStep ?? Math.max(0, firstUndone);
   const step = STEPS[at];
 
   const go = (i) => {
-    setAt(i);
+    setPickedStep(i);
     /* Each step starts at the top. Guarded because jsdom has no scrollTo and
        a setup flow should not be the thing that breaks a test run. */
     if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
@@ -172,6 +190,12 @@ export default function SetupPage() {
     if (!done.every(Boolean)) return;
     try { window.localStorage?.removeItem('tgx_setup_dismissed'); } catch { /* blocked storage */ }
   }, [done]);
+
+  /* Everything already done — they followed a stale link or finished in
+     another tab. There is nothing to set up, so do not pretend otherwise. */
+  if (!accountsLoading && guard.loaded !== false && done.every(Boolean)) {
+    return <Navigate to="/dashboard/overview" replace />;
+  }
 
   const venue = slug ? venueFor(slug) : null;
 
