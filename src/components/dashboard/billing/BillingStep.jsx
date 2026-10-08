@@ -257,9 +257,10 @@ export default function BillingStep({ onStarted }) {
                         <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>
                           <b style={{ color: '#ff8178', fontWeight: 700 }}>Pain:</b> {p.pain}
                         </p>
-                        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#f6f9fc' }}>
-                          <b style={{ color: '#2fe3bd', fontWeight: 700 }}>Fix:</b> {p.fix}
-                        </p>
+                        {/* No "Fix:" label — the summary above already is
+                            the fix. This line is what the summary cannot
+                            carry: the caveat, or the specific. */}
+                        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#f6f9fc' }}>{p.detail}</p>
                         {p.note && (
                           <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: '#7f8ca0' }}>{p.note}</p>
                         )}
@@ -275,7 +276,12 @@ export default function BillingStep({ onStarted }) {
             </p>
           </div>
 
-          <aside style={{ flex: '1 1 340px', maxWidth: 440, minWidth: 0, position: 'sticky', top: 20 }}>
+          {/* Sticky belongs to the two-column arrangement only. Once the
+              panel wraps below the list it is the last thing on the page, and
+              pinning it there left a screen of empty space above it. The
+              class drops `position: sticky` at the same width the columns
+              stack — see index.css. */}
+          <aside className="bs-panel" style={{ flex: '1 1 340px', maxWidth: 440, minWidth: 0 }}>
             <div style={{ position: 'relative', overflow: 'hidden', padding: 22, borderRadius: 24, background: '#0d1422', boxShadow: 'inset 0 0 0 1px rgba(0,212,170,.28),0 30px 70px -40px rgba(0,212,170,.5)' }}>
               <div aria-hidden style={{ position: 'absolute', width: 360, height: 360, left: -140, top: -200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,212,170,.18),transparent 66%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative' }}>

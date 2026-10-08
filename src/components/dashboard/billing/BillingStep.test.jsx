@@ -115,6 +115,18 @@ describe('billing step', () => {
 
   /* Closing something the user did not ask to close is the more annoying of
      the two behaviours, so rows open independently. */
+  /* Expanding has to be worth the click: the detail must say something the
+     summary did not. The first pass restated it and taught people the
+     chevrons were not worth pressing. */
+  it('reveals something the summary does not already say', async () => {
+    render(<BillingStep />);
+    const row = await screen.findByRole('button', { name: /Up to 5 trading accounts/ });
+    const summary = row.textContent;
+    fireEvent.click(row);
+    const detail = screen.getByText(/Nothing is shared between them/);
+    expect(summary).not.toContain(detail.textContent);
+  });
+
   it('lets more than one row stay open', async () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('button', { name: /Rule-based kill switch/ }));

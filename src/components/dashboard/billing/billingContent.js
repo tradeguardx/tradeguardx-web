@@ -7,17 +7,21 @@
  * exists to sell a subscription spent most of its height demonstrating
  * features to someone who had not yet seen the price.
  *
- * One line each, with the pain and the fix behind an accordion. Someone who
- * already knows why they are here never opens one; someone weighing it can
- * read the case for the protection that worries them without the other four
- * arguing at them at the same time.
+ * One line each. The summary IS the fix — what the protection does — so what
+ * hides behind the disclosure is the part the summary cannot carry: why it
+ * matters, and the one caveat or specific that a buyer deserves before
+ * paying rather than after.
+ *
+ * The first pass put a restated "Fix:" down there. Expanding cost a click
+ * and returned the sentence already on screen, which teaches people that the
+ * chevrons are not worth pressing.
  */
 
 export const PROTECTIONS = [
   {
     id: 'kill',
     pain: 'You hit your daily limit, then take “one more” to win it back. One red trade becomes five.',
-    fix: "At your limit we close your positions, cancel open orders and lock the day in about 120ms. It works even when you're not at the screen.",
+    detail: "We cannot stop an order being placed inside the exchange's own app — no exchange gives anyone that switch. We close the position immediately after it opens, then check you are actually flat.",
     n: '01',
     title: 'Rule-based kill switch',
     body: 'At your limit we close your positions, cancel open orders and lock the day — in about 120ms, with the app closed.',
@@ -28,7 +32,7 @@ export const PROTECTIONS = [
   {
     id: 'manual',
     pain: "You know you're tilted, but you can't stop clicking.",
-    fix: "Lock yourself out for 3, 6 or 12 hours. There's no cancel button, only the clock.",
+    detail: 'Rules cannot be loosened while it runs, either. Raising the limit that locked you would be a way straight out of it, so the clock is the only way out.',
     n: '02',
     title: 'Manual kill switch',
     body: 'Lock yourself out for 3, 6 or 12 hours. There is no cancel button, only the clock.',
@@ -39,7 +43,7 @@ export const PROTECTIONS = [
   {
     id: 'tax',
     pain: "A year of trades, and your CA wants a reconciled P&L you've never built.",
-    fix: 'We reconcile every trade into one financial-year P&L, show two illustrative treatments, and export a report for your CA.',
+    detail: 'Two illustrative treatments, side by side. Reconciled per account and never merged — two accounts under one login can be two taxpayers. Export as PDF or CSV.',
     /* Legally careful, and it belongs next to the claim it qualifies rather
        than loose under the list where it qualifies nothing on screen. */
     note: 'Illustrative, not a confirmed liability. Review with your CA.',
@@ -53,7 +57,7 @@ export const PROTECTIONS = [
   {
     id: 'accounts',
     pain: "You scalp in one account and swing in another, but one set of rules can't fit both.",
-    fix: 'Every account gets its own rules, limits and guard. Switch between them in one tap.',
+    detail: 'Rules, limits, guard state and history are per account. Nothing is shared between them, so a lockout on one leaves the others trading.',
     n: '04',
     title: 'Up to 5 trading accounts',
     body: 'Each with its own rules, limits and guard. Switch between them in one tap.',
@@ -64,7 +68,7 @@ export const PROTECTIONS = [
   {
     id: 'journal',
     pain: 'You repeat the same mistake because you never wrote it down.',
-    fix: 'A two-minute guided journal after each session. The AI reads your trades, puts a cost on each habit, and suggests a rule to stop it.',
+    detail: 'It reads your closed trades, not your notes — so a habit you never admitted to still shows up, with a number against it.',
     n: '05',
     title: 'Journal + AI trade analyser',
     body: 'A two-minute journal after each session. The AI puts a cost on each habit and suggests a rule to stop it.',
