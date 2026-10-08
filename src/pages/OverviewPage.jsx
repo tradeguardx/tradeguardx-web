@@ -24,6 +24,62 @@ import { formatRemaining } from '../components/dashboard/shell/format';
 const H3 = "margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em";
 const CARD = 'border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden';
 
+/**
+ * What is still outstanding before anything is enforced.
+ *
+ * Removed once, when it listed the same four steps the setup flow walks and
+ * was a second place to keep in step. It comes back because the flow now
+ * stops at billing: rules and alerts are deliberately left for afterwards,
+ * and without this there was nothing anywhere saying they were still owed —
+ * the dashboard simply reported "not protected" with no account of why.
+ *
+ * All five, including the three already done. The ticks are the point: after
+ * paying, a list of what remains reads very differently from a list that
+ * shows how far you have come.
+ */
+function SetupCard({ steps, doneCount, navigate }) {
+  return (
+        <section style={sx('margin-bottom:20px;border:1px solid var(--mint-line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+          <div style={sx('padding:20px 22px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--mint-tint),transparent)')}>
+            <div style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap')}>
+              <h2 style={sx("margin:0;font:600 19px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.01em")}>Finish setup to turn the guard on</h2>
+              <span style={sx('font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink-2)')}>{doneCount} of {steps.length} done</span>
+            </div>
+            {/* The copy named steps 2 and 3 as the ones that matter, which was
+                true when this card was the whole of setup. By the time anyone
+                sees it now those are already ticked, and what is left is the
+                rules — the engine has a key, an entitlement and nothing to
+                enforce. */}
+            <p style={sx('margin:7px 0 0;font-size:13px;color:var(--ink-2);max-width:78ch')}>The engine acts on rules, so until one is switched on there is nothing for it to do. Alerts are the only optional step — the guard acts whether or not it can reach you.</p>
+            <div style={sx('margin-top:14px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>
+              <div style={sx('height:100%;border-radius:999px;background:var(--mint-solid)', { width: `${(doneCount / steps.length) * 100}%` })} />
+            </div>
+          </div>
+          <div style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))')}>
+            {steps.map((st) => (
+              /* A column with the copy growing and the button pinned to the
+                 bottom. Left to flow, each CTA landed wherever its own body
+                 text ended, so five buttons sat at five heights and the row
+                 read as five unrelated cards rather than one sequence. */
+              <div key={st.title} style={sx('display:flex;flex-direction:column;padding:17px 20px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)')}>
+                <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:9px')}>
+                  <span style={sx('flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center', { background: st.tint, color: st.accent })}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={st.d[0]} /><path d={st.d[1]} /></svg>
+                  </span>
+                  <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase', { color: st.statusFg })}>{st.status}</span>
+                </div>
+                <div style={sx('font-size:14px;font-weight:600;letter-spacing:-.005em')}>{st.title}</div>
+                <p style={sx('flex:1;margin:5px 0 12px;font-size:12.5px;color:var(--ink-3);line-height:1.5')}>{st.body}</p>
+                {!st.done && (
+                  <button type="button" onClick={() => navigate(st.to)} style={sx('align-self:flex-start;padding:7px 12px;border:1px solid var(--ink);border-radius:8px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700')}>{st.cta}</button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+  );
+}
+
 export default function OverviewPage() {
   const { session } = useAuth();
   const { selectedAccount, selectedTradingAccountId, accountsLoading } = useTradingAccounts();
@@ -79,6 +135,44 @@ export default function OverviewPage() {
    * time they click Overview would be badgering rather than helping. The
    * banner keeps saying so; the redirect stops.
    */
+  /*
+   * WITH NO ACCOUNT THE GAPS ARE EMPTY, AND THAT IS NOT "DONE".
+   *
+   * The guard slice never loads for an account that does not exist, and
+   * gapsOf fails open on unloaded data — correctly, so a pending fetch is
+   * never reported as a missing key. The side effect here was that a brand
+   * new user read as five of five done, so the card hid itself at the exact
+   * moment it is the only useful thing on the page.
+   *
+   * Nothing is done before there is an account, except billing, which someone
+   * can genuinely already hold.
+   */
+  const preds = noAccount
+    ? [false, false, false, false, false]
+    : [
+        !g.gaps.some((x) => x.key === 'setup'),
+        !g.gaps.some((x) => x.key === 'key'),
+        !g.gaps.some((x) => x.key === 'billing'),
+        !g.gaps.some((x) => x.key === 'alerts'),
+        !g.gaps.some((x) => x.key === 'rules'),
+      ];
+  const firstUndone = preds.indexOf(false);
+  const steps = [
+    { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.bank, to: '/dashboard/setup', cta: 'Add an account' },
+    { title: 'Connect your API key', body: 'It needs permission to trade. That is what lets us close a position for you.', accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.connect, to: '/dashboard/connect', cta: 'Connect the key' },
+    { title: 'Set up billing', body: 'Free for 7 days, nothing charged today. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Start 7 days free' },
+    { title: 'Turn on alerts', body: 'Telegram is the fast one. Without a channel a breach happens silently.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.bell, to: '/dashboard/alerts', cta: 'Set up alerts' },
+    { title: 'Set your rules', body: 'Written while calm. Two are enough to start: a daily loss limit and a trade cap.', accent: 'var(--violet)', tint: 'rgba(109,63,212,0.12)', d: ICON.rules, to: '/dashboard/rules', cta: 'Choose rules' },
+  ].map((st, i) => {
+    const done = preds[i];
+    const next = !done && firstUndone === i;
+    return { ...st, done, status: done ? 'Done' : next ? 'Do this next' : 'Not done', statusFg: done ? 'var(--mint)' : next ? 'var(--amber)' : 'var(--ink-3)' };
+  });
+  const doneCount = preds.filter(Boolean).length;
+  /* No longer gated on having an account: step one IS adding one, and that is
+     the first thing a new user needs to see laid out. */
+  const showSetup = doneCount < steps.length;
+
   const setupGaps = ['setup', 'key', 'billing'];
   const setupIncomplete = Boolean(g?.gaps?.some((x) => setupGaps.includes(x.key)));
   let setupDismissed = false;
@@ -192,6 +286,8 @@ export default function OverviewPage() {
 
   return (
     <div>
+      {showSetup && <SetupCard steps={steps} doneCount={doneCount} navigate={navigate} />}
+
       <div style={sx('margin-bottom:18px')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Overview</h1>
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>Three questions, in order: is the guard on, what is today costing me, and what should I do next.</p>
