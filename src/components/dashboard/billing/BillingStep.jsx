@@ -179,18 +179,6 @@ export default function BillingStep({ onStarted }) {
           })}
         </ol>
 
-        {/*
-          * Tightened from the reference's 40px and four lines of sub.
-          * At real viewport widths the headline wrapped to two full lines and
-          * the sub to three, so the first protection card started below the
-          * fold — on the one screen whose whole job is to show what the money
-          * buys. The sentence about running on our servers is not lost: card
-          * one makes the same point where it is being demonstrated.
-          */}
-        <div style={{ marginTop: 26, maxWidth: 720 }}>
-          <div style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.18em', textTransform: 'uppercase', color: '#2fe3bd' }}>
-            Step 4 of 4 · Last step
-          </div>
           <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.6vw,30px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.032em', textWrap: 'pretty' }}>
             Accounts aren&rsquo;t lost to one bad trade. <span style={{ color: '#7f8ca0' }}>They&rsquo;re lost to the trades after it.</span>
           </h1>
@@ -199,8 +187,24 @@ export default function BillingStep({ onStarted }) {
           </p>
         </div>
 
-        <div style={{ marginTop: 28, display: 'flex', gap: 26, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        {/* The hero lives in the left column so the panel starts at the top
+            of the row, level with the headline, instead of below it. The
+            space to the right of a 720px headline was empty and the panel was
+            230px further down the page than it needed to be. */}
+        <div style={{ marginTop: 22, display: 'flex', gap: 26, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 460px', minWidth: 0 }}>
+          {/*
+            * Tightened from the reference's 40px and four lines of sub.
+            * At real viewport widths the headline wrapped to two full lines and
+            * the sub to three, so the first protection card started below the
+            * fold — on the one screen whose whole job is to show what the money
+            * buys. The sentence about running on our servers is not lost: card
+            * one makes the same point where it is being demonstrated.
+            */}
+          <div style={{ marginTop: 0, marginBottom: 22, maxWidth: 720 }}>
+            <div style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.18em', textTransform: 'uppercase', color: '#2fe3bd' }}>
+              Step 4 of 4 · Last step
+            </div>
             {/*
               * Summary always, detail on demand. Someone who already knows
               * why they are here never opens a row; someone weighing it can
