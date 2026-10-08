@@ -60,6 +60,26 @@ export default function BillingStep({ onStarted }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const rowRefs = useRef([]);
+  const ctaRef = useRef(null);
+  /*
+   * The phone bar is a stand-in for the real button, not a second one. While
+   * the panel's own CTA is on screen there is no reason for both — two
+   * identical buttons a thumb apart is just noise, and it was happening on
+   * every phone once the panel wrapped below the list.
+   *
+   * Defaults to shown: without IntersectionObserver the bar is the safer of
+   * the two to have, since the alternative is an action nobody can reach.
+   */
+  const [ctaOffScreen, setCtaOffScreen] = useState(true);
+  useEffect(() => {
+    const el = ctaRef.current;
+    if (!el || typeof IntersectionObserver !== 'function') return undefined;
+    const io = new IntersectionObserver(([entry]) => setCtaOffScreen(!entry.isIntersecting), {
+      rootMargin: '-40px 0px 0px 0px',
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const [openRows, setOpenRows] = useState([]);
   const [couponOpen, setCouponOpen] = useState(false);
   const [coupon, setCoupon] = useState('');
@@ -229,7 +249,7 @@ export default function BillingStep({ onStarted }) {
       {/* ONE status band, and no button on it: the panel's button is the only
           action on this page. */}
       {guardOff && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 28px', background: 'rgba(240,180,41,.09)', borderBottom: '1px solid rgba(240,180,41,.28)', flexWrap: 'wrap', margin: '0 -28px' }}>
+        <div className="bs-band" style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(240,180,41,.09)', borderBottom: '1px solid rgba(240,180,41,.28)', flexWrap: 'wrap' }}>
           <span style={{ flex: 'none', width: 30, height: 30, borderRadius: 9, background: 'rgba(240,180,41,.16)', display: 'grid', placeItems: 'center', color: '#fbc94f' }}>
             <Glyph d={GLYPH.warn} size={16} />
           </span>
@@ -244,15 +264,15 @@ export default function BillingStep({ onStarted }) {
           {STEP_NAMES.map((name, i) => {
             const done = i < 3;
             return (
-              <li key={name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <li key={name} className="bs-step" data-done={done ? '1' : '0'} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span
                   aria-current={done ? undefined : 'step'}
                   style={{ width: 26, height: 26, borderRadius: 8, display: 'grid', placeItems: 'center', background: done ? '#00d4aa' : '#f6f9fc', color: done ? '#04140f' : '#070a12', font: "700 12px/1 'Space Grotesk',sans-serif", boxShadow: done ? 'none' : '0 0 0 4px rgba(255,255,255,.12)' }}
                 >
                   {done ? '✓' : '4'}
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: done ? '#a3b0c2' : '#f6f9fc' }}>{name}</span>
-                {i < 3 && <span aria-hidden style={{ width: 26, height: 1, background: 'rgba(255,255,255,.14)' }} />}
+                <span className="bs-step__label" style={{ fontSize: 13, fontWeight: 600, color: done ? '#a3b0c2' : '#f6f9fc' }}>{name}</span>
+                {i < 3 && <span aria-hidden className="bs-step__bar" style={{ width: 26, height: 1, background: 'rgba(255,255,255,.14)' }} />}
               </li>
             );
           })}
@@ -507,6 +527,7 @@ export default function BillingStep({ onStarted }) {
                 </div>
 
                 <button
+                  ref={ctaRef}
                   type="button"
                   onClick={start}
                   disabled={busy}
@@ -533,7 +554,7 @@ export default function BillingStep({ onStarted }) {
         {/* Phone: the panel has wrapped below the cards, so the action would
             be a scroll away. Same handler, same state — not a second button
             with its own idea of what is selected. */}
-        <div className="bs-stickybar">
+        <div className="bs-stickybar" hidden={!ctaOffScreen}>
           <span style={{ flex: 'none' }}>
             <span style={{ display: 'block', fontSize: 11, color: '#7f8ca0' }}>Due today</span>
             <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", color: '#2fe3bd' }}>₹0</span>

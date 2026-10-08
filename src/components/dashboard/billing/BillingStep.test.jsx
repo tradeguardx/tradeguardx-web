@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 
 /**
  * The acceptance checks from the billing-step brief, as tests.
@@ -276,6 +276,33 @@ describe('billing step', () => {
     // Enveloped, this said "We don't recognise that code" for a valid one.
     expect(await screen.findByText(/15% off applied/)).toBeTruthy();
     expect(screen.queryByText(/don’t recognise/)).toBeNull();
+  });
+
+  /*
+   * The phone bar stands in for the real button rather than joining it. Two
+   * identical CTAs a thumb apart was happening on every phone once the panel
+   * wrapped below the list.
+   */
+  it('hides the phone bar while the real button is on screen', async () => {
+    const seen = [];
+    const realIO = global.IntersectionObserver;
+    global.IntersectionObserver = class {
+      constructor(cb) { seen.push(cb); }
+      observe() {}
+      disconnect() {}
+    };
+    try {
+      render(<BillingStep />);
+      await screen.findAllByText('Due today');
+      // Report the CTA as visible, the way a browser would when it is.
+      act(() => seen.forEach((cb) => cb([{ isIntersecting: true }])));
+      expect(screen.getAllByRole('button', { name: /Start 7 days free/ })).toHaveLength(1);
+
+      act(() => seen.forEach((cb) => cb([{ isIntersecting: false }])));
+      expect(screen.getAllByRole('button', { name: /Start 7 days free/ })).toHaveLength(2);
+    } finally {
+      global.IntersectionObserver = realIO;
+    }
   });
 
   it('hides the status band once the guard is on', async () => {
