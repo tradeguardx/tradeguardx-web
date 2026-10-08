@@ -15,7 +15,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
  */
 
 const checkout = vi.fn(async () => ({ checkoutUrl: 'https://test.checkout/x' }));
-vi.mock('../../../api/paymentsApi', () => ({ createCheckoutSession: (...a) => checkout(...a) }));
+const validate = vi.fn(async () => ({ valid: true, code: 'SAVE15', percentOff: 15, cycles: null }));
+vi.mock('../../../api/paymentsApi', () => ({
+  createCheckoutSession: (...a) => checkout(...a),
+  validateCoupon: (...a) => validate(...a),
+}));
 vi.mock('../../../api/pricingApi', () => ({
   getPricingPlans: async () => [{
     slug: 'pro',
@@ -36,6 +40,8 @@ const { default: BillingStep } = await import('./BillingStep');
 
 beforeEach(() => {
   checkout.mockClear();
+  validate.mockClear();
+  validate.mockResolvedValue({ valid: true, code: 'SAVE15', percentOff: 15, cycles: null });
   auth.user = { access: 'none', isTrial: false };
   autoCoupon.value = undefined;
 });
@@ -181,13 +187,73 @@ describe('billing step', () => {
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'MINE' });
   });
 
-  /* Dodo accepts an unknown code silently, so the only honest moment to say
-     it worked is the checkout page, where they see the amount. */
-  it('does not claim the code is valid', async () => {
+  /* Dodo accepts an unknown code silently, so nothing may claim a discount
+     before we have asked Dodo whether the code is real. */
+  it('claims nothing until the code has been checked', async () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
-    expect(screen.getByText(/you’ll see the discounted total before you confirm/i)).toBeTruthy();
-    expect(screen.queryByText(/applied!|valid|saved ₹/i)).toBeNull();
+    expect(screen.getByText(/Press Apply to see the new price/i)).toBeTruthy();
+    expect(screen.queryByText(/% off applied/)).toBeNull();
+    // The full price still stands until something is actually applied.
+    expect(screen.getByText(/First charge of ₹8,999/)).toBeTruthy();
+  });
+
+  it('prices the selected plan after Apply, and the timeline with it', async () => {
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await screen.findByText(/15% off applied/);
+    // Yearly ₹8,999 less 15% = ₹7,649, on the plan row and in the timeline.
+    expect(screen.getAllByText('₹7,649').length).toBeGreaterThan(0);
+    expect(screen.getByText(/First charge of ₹7,649/)).toBeTruthy();
+  });
+
+  it('says how long the discount lasts', async () => {
+    validate.mockResolvedValue({ valid: true, code: 'FIRST', percentOff: 50, cycles: 1 });
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'first' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(await screen.findByText(/Covers your first payment, then the full price/)).toBeTruthy();
+  });
+
+  /* A discount checked against one plan must never be shown against another:
+     a coupon can be restricted to a single product. */
+  it('drops the discount when the plan changes', async () => {
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await screen.findByText(/15% off applied/);
+    fireEvent.click(screen.getByRole('radio', { name: /Monthly/ }));
+    expect(screen.queryByText(/15% off applied/)).toBeNull();
+    expect(screen.getByText(/First charge of ₹1,299/)).toBeTruthy();
+  });
+
+  it.each([
+    ['UNKNOWN', /don’t recognise that code/],
+    ['EXPIRED', /has expired/],
+    ['USED_UP', /fully claimed/],
+    ['WRONG_PLAN', /doesn’t apply to this plan/],
+  ])('explains a refused code (%s)', async (reason, text) => {
+    validate.mockResolvedValue({ valid: false, reason });
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'nope' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(await screen.findByText(text)).toBeTruthy();
+  });
+
+  /* Our lookup failing is not their code being wrong. Sending someone to
+     check a spelling that is fine wastes their time on our problem. */
+  it('blames itself, not the code, when the check fails', async () => {
+    validate.mockRejectedValue(new Error('network'));
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(await screen.findByText(/still be applied at checkout/)).toBeTruthy();
   });
 
   it('hides the status band once the guard is on', async () => {

@@ -81,3 +81,24 @@ export async function createCheckoutSession({ accessToken, planSlug, couponCode,
     }
   );
 }
+
+/**
+ * Ask whether a coupon is real before sending anyone to checkout.
+ *
+ * Dodo accepts an unknown code silently — the session is created, the code
+ * does nothing, and the customer finds out by paying full price. This is what
+ * lets "Apply" mean something and lets the panel show a number we can stand
+ * behind.
+ *
+ * @returns {Promise<{valid:true,code:string,percentOff:number,cycles:number|null}
+ *   |{valid:false,reason:'UNKNOWN'|'EXPIRED'|'USED_UP'|'WRONG_PLAN'|'UNSUPPORTED'}>}
+ */
+export async function validateCoupon({ accessToken, code, planSlug = 'pro', interval = 'monthly' }, options = {}) {
+  if (!accessToken) throw new Error('Missing access token');
+  const baseUrl = options.baseUrl ?? resolvePaymentsApiBaseUrl();
+  return apiPost(
+    '/coupon/validate',
+    { code, planSlug, interval },
+    { ...options, baseUrl, headers: { Authorization: `Bearer ${accessToken}`, ...(options.headers ?? {}) } },
+  );
+}

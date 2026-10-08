@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { createCheckoutSession } from '../../../api/paymentsApi';
+import { createCheckoutSession, validateCoupon } from '../../../api/paymentsApi';
 import { getPricingPlans } from '../../../api/pricingApi';
 import { trackBilling } from '../../../lib/analytics';
 import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
@@ -63,6 +63,10 @@ export default function BillingStep({ onStarted }) {
   const [openRows, setOpenRows] = useState([]);
   const [couponOpen, setCouponOpen] = useState(false);
   const [coupon, setCoupon] = useState('');
+  /* null = not asked yet. Cleared whenever the code or the plan changes, so
+     a discount can never be shown against a price it was not checked for. */
+  const [applied, setApplied] = useState(null);
+  const [couponBusy, setCouponBusy] = useState(false);
 
   const toggleRow = (id) =>
     setOpenRows((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -94,6 +98,61 @@ export default function BillingStep({ onStarted }) {
   const cur = options.find((o) => o.id === plan) ?? options[options.length - 1];
 
   /*
+   * A code they typed beats the one we carry for them.
+   *
+   * `checkoutCouponCode` is the referral or promo picked up from the link
+   * that brought them here, and it was only ever applied on the pricing
+   * page — so anyone who arrived through a referral and subscribed from
+   * setup lost the attribution silently: they paid full price and the
+   * referrer was never credited for a sale they made.
+   */
+  const autoCoupon = checkoutCouponCode({ interval: cur.id, multiInterval: options.length > 1 });
+  const effectiveCoupon = coupon.trim() || autoCoupon || undefined;
+
+  /*
+   * The discount only counts if it was checked against THIS code and THIS
+   * plan. Switching interval re-prices everything, and a coupon can be
+   * restricted to one product, so a stale "15% off" beside a new price is
+   * exactly the kind of number that turns into a chargeback.
+   */
+  const discount =
+    applied?.valid && applied.code === coupon.trim().toUpperCase() && applied.interval === cur.id
+      ? applied
+      : null;
+  const payable = discount ? Math.round(cur.price * (1 - discount.percentOff / 100)) : cur.price;
+
+  const apply = async () => {
+    const code = coupon.trim().toUpperCase();
+    if (!code || couponBusy) return;
+    setCouponBusy(true);
+    try {
+      const res = await validateCoupon({
+        accessToken: session?.access_token,
+        code,
+        planSlug: 'pro',
+        interval: cur.id,
+      });
+      setApplied({ ...res, code, interval: cur.id });
+      trackBilling('billing_coupon_applied', { code, valid: Boolean(res?.valid) });
+    } catch {
+      /* Our lookup failed, not their code. Saying "invalid" would send them
+         checking a spelling that is fine. */
+      setApplied({ valid: false, reason: 'LOOKUP', code, interval: cur.id });
+    } finally {
+      setCouponBusy(false);
+    }
+  };
+
+  const COUPON_REFUSAL = {
+    UNKNOWN: 'We don’t recognise that code.',
+    EXPIRED: 'That code has expired.',
+    USED_UP: 'That code has been fully claimed.',
+    WRONG_PLAN: 'That code doesn’t apply to this plan — try another billing option.',
+    UNSUPPORTED: 'We can’t preview that code here, but it will still be applied at checkout.',
+    LOOKUP: 'Couldn’t check that code just now. It will still be applied at checkout.',
+  };
+
+  /*
    * Dates from the real trial length, in IST. "Today" is when the guard comes
    * on; the charge is TRIAL_DAYS later.
    *
@@ -109,7 +168,19 @@ export default function BillingStep({ onStarted }) {
   const chargeOn = new Date(today.getTime() + TRIAL_DAYS * 86400000);
   const timeline = [
     { when: `Today · ${fmtDay(today)}`, what: 'Your guard switches on. All five protections start working. ₹0 charged.', dot: '#00d4aa', glow: '0 0 0 4px rgba(0,212,170,.2)', line: true },
-    { when: fmtDay(chargeOn), what: `First charge of ${inr(cur.price)}, then ${cur.next} until you cancel.`, dot: '#5b687d', glow: 'none', line: false },
+    {
+      when: fmtDay(chargeOn),
+      /* The discounted figure, when one has been checked — the timeline is
+         where someone looks to find out what they will actually be charged,
+         and a full price here beside a "15% off" above it is the screen
+         contradicting itself. */
+      what: `First charge of ${inr(payable)}${
+        discount && discount.cycles === 1 ? `, then ${inr(cur.price)} ${cur.next}` : `, then ${cur.next}`
+      } until you cancel.`,
+      dot: '#5b687d',
+      glow: 'none',
+      line: false,
+    },
   ];
 
   const pick = (id) => {
@@ -126,18 +197,6 @@ export default function BillingStep({ onStarted }) {
     pick(options[next].id);
     rowRefs.current[next]?.focus();
   };
-
-  /*
-   * A code they typed beats the one we carry for them.
-   *
-   * `checkoutCouponCode` is the referral or promo picked up from the link
-   * that brought them here, and it was only ever applied on the pricing
-   * page — so anyone who arrived through a referral and subscribed from
-   * setup lost the attribution silently: they paid full price and the
-   * referrer was never credited for a sale they made.
-   */
-  const autoCoupon = checkoutCouponCode({ interval: cur.id, multiInterval: options.length > 1 });
-  const effectiveCoupon = coupon.trim() || autoCoupon || undefined;
 
   const start = async () => {
     if (busy) return;
@@ -340,7 +399,17 @@ export default function BillingStep({ onStarted }) {
                           <span style={{ display: 'block', marginTop: 3, fontSize: 12, color: '#7f8ca0' }}>{o.sub}</span>
                         </span>
                         <span style={{ flex: 'none', textAlign: 'right' }}>
-                          <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>{inr(o.price)}</span>
+                          {/* Only the selected row is repriced: the discount was
+                              checked against this product, and a coupon can be
+                              restricted to one. */}
+                          {on && discount ? (
+                            <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>
+                              <span style={{ marginRight: 7, fontSize: 13, fontWeight: 600, color: '#7f8ca0', textDecoration: 'line-through' }}>{inr(o.price)}</span>
+                              <span style={{ color: '#2fe3bd' }}>{inr(payable)}</span>
+                            </span>
+                          ) : (
+                            <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>{inr(o.price)}</span>
+                          )}
                           <span style={{ display: 'block', marginTop: 4, fontSize: 11, color: '#7f8ca0' }}>{o.per}</span>
                         </span>
                       </button>
@@ -381,20 +450,46 @@ export default function BillingStep({ onStarted }) {
                   */}
                 <div style={{ marginTop: 14 }}>
                   {couponOpen || coupon ? (
-                    <label style={{ display: 'block' }}>
-                      <span style={{ display: 'block', fontSize: 11.5, color: '#7f8ca0', marginBottom: 6 }}>Coupon code</span>
-                      <input
-                        value={coupon}
-                        onChange={(e) => setCoupon(e.target.value)}
-                        placeholder="Enter code"
-                        autoCapitalize="characters"
-                        spellCheck={false}
-                        style={{ width: '100%', minHeight: 44, padding: '11px 13px', border: 0, borderRadius: 12, background: 'rgba(255,255,255,.04)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.1)', color: '#f6f9fc', font: "600 13px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', textTransform: 'uppercase' }}
-                      />
-                      <span style={{ display: 'block', marginTop: 6, fontSize: 11.5, lineHeight: 1.45, color: '#7f8ca0' }}>
-                        Applied at checkout — you&rsquo;ll see the discounted total before you confirm.
-                      </span>
-                    </label>
+                    <div>
+                      <label htmlFor="bs-coupon" style={{ display: 'block', fontSize: 11.5, color: '#7f8ca0', marginBottom: 6 }}>Coupon code</label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          id="bs-coupon"
+                          value={coupon}
+                          onChange={(e) => { setCoupon(e.target.value); setApplied(null); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); apply(); } }}
+                          placeholder="Enter code"
+                          autoCapitalize="characters"
+                          spellCheck={false}
+                          style={{ flex: 1, minWidth: 0, minHeight: 44, padding: '11px 13px', border: 0, borderRadius: 12, background: 'rgba(255,255,255,.04)', boxShadow: `inset 0 0 0 1px ${discount ? 'rgba(0,212,170,.45)' : 'rgba(255,255,255,.1)'}`, color: '#f6f9fc', font: "600 13px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', textTransform: 'uppercase' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={apply}
+                          disabled={!coupon.trim() || couponBusy}
+                          style={{ flex: 'none', minHeight: 44, padding: '0 14px', border: 0, borderRadius: 12, background: 'rgba(255,255,255,.06)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.12)', color: '#f6f9fc', fontSize: 13, fontWeight: 700, opacity: !coupon.trim() || couponBusy ? 0.5 : 1 }}
+                        >
+                          {couponBusy ? 'Checking…' : 'Apply'}
+                        </button>
+                      </div>
+
+                      {discount ? (
+                        <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: '#2fe3bd' }}>
+                          {discount.percentOff}% off applied.{' '}
+                          {discount.cycles
+                            ? `Covers your first ${discount.cycles === 1 ? 'payment' : `${discount.cycles} payments`}, then the full price.`
+                            : 'Applies to every renewal.'}
+                        </p>
+                      ) : applied && !applied.valid ? (
+                        <p role="alert" style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: applied.reason === 'UNSUPPORTED' || applied.reason === 'LOOKUP' ? '#7f8ca0' : '#ff8178' }}>
+                          {COUPON_REFUSAL[applied.reason] ?? COUPON_REFUSAL.UNKNOWN}
+                        </p>
+                      ) : (
+                        <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: '#7f8ca0' }}>
+                          Press Apply to see the new price. It is applied at checkout either way.
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <button
                       type="button"
