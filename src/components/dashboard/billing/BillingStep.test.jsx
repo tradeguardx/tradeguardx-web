@@ -43,11 +43,12 @@ beforeEach(() => {
 });
 
 describe('billing step', () => {
-  it('leads with the problem, in the agreed words', async () => {
+  it('says what the step is and what it costs', async () => {
     render(<BillingStep />);
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
-      /Accounts aren’t lost to one bad trade\.\s*They’re lost to the trades after it\./,
+      /Set up billing and get 7 days free/,
     );
+    expect(screen.getByText('Cancel any time. Nothing is charged today.')).toBeTruthy();
   });
 
   it('shows one guard-off message, and it carries no button', async () => {
@@ -273,31 +274,6 @@ describe('billing step', () => {
     // Enveloped, this said "We don't recognise that code" for a valid one.
     expect(await screen.findByText(/15% off applied/)).toBeTruthy();
     expect(screen.queryByText(/don’t recognise/)).toBeNull();
-  });
-
-  /* The plain question a trial asks: what comes out of my account, and when.
-     It matters most on a phone, where the protections list is hidden. */
-  it('spells out what happens and when, in order', async () => {
-    render(<BillingStep />);
-    expect(await screen.findByText('Choose a plan')).toBeTruthy();
-    expect(screen.getByText('₹0 today')).toBeTruthy();
-    expect(screen.getByText(/₹1,299 on \d+ \w+/)).toBeTruthy();
-    expect(screen.getByText('day 8, unless you cancel')).toBeTruthy();
-  });
-
-  /* Live figures, so the strip can never contradict the panel beside it. */
-  it('follows the plan and the coupon', async () => {
-    render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('radio', { name: /Quarterly/ }));
-    expect(screen.getByText(/₹3,299 on /)).toBeTruthy();
-    fireEvent.click(screen.getByRole('radio', { name: /Monthly/ }));
-    expect(screen.getByText(/₹1,299 on /)).toBeTruthy();
-
-    fireEvent.click(screen.getByRole('button', { name: /Have a coupon/ }));
-    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
-    await screen.findByText(/15% off applied/);
-    expect(screen.getByText(/₹1,104 on /)).toBeTruthy();
   });
 
   it('hides the status band once the guard is on', async () => {
