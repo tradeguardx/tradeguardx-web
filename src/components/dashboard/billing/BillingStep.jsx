@@ -3,6 +3,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { createCheckoutSession } from '../../../api/paymentsApi';
 import { getPricingPlans } from '../../../api/pricingApi';
 import { trackBilling } from '../../../lib/analytics';
+import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
 import { PROTECTIONS, GLYPH } from './billingContent';
 
 /**
@@ -60,6 +61,8 @@ export default function BillingStep({ onStarted }) {
   const [error, setError] = useState('');
   const rowRefs = useRef([]);
   const [openRows, setOpenRows] = useState([]);
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [coupon, setCoupon] = useState('');
 
   const toggleRow = (id) =>
     setOpenRows((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -124,13 +127,30 @@ export default function BillingStep({ onStarted }) {
     rowRefs.current[next]?.focus();
   };
 
+  /*
+   * A code they typed beats the one we carry for them.
+   *
+   * `checkoutCouponCode` is the referral or promo picked up from the link
+   * that brought them here, and it was only ever applied on the pricing
+   * page — so anyone who arrived through a referral and subscribed from
+   * setup lost the attribution silently: they paid full price and the
+   * referrer was never credited for a sale they made.
+   */
+  const autoCoupon = checkoutCouponCode({ interval: cur.id, multiInterval: options.length > 1 });
+  const effectiveCoupon = coupon.trim() || autoCoupon || undefined;
+
   const start = async () => {
     if (busy) return;
     setBusy(true);
     setError('');
-    trackBilling('billing_trial_start_clicked', { plan: cur.id });
+    trackBilling('billing_trial_start_clicked', { plan: cur.id, coupon: effectiveCoupon ?? null });
     try {
-      const res = await createCheckoutSession({ accessToken: session?.access_token, planSlug: 'pro', interval: cur.id });
+      const res = await createCheckoutSession({
+        accessToken: session?.access_token,
+        planSlug: 'pro',
+        interval: cur.id,
+        couponCode: effectiveCoupon,
+      });
       if (!res?.checkoutUrl) throw new Error('Could not open checkout. Please try again.');
       trackBilling('billing_trial_started', { plan: cur.id });
       onStarted?.(cur.id);
@@ -344,6 +364,46 @@ export default function BillingStep({ onStarted }) {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/*
+                  * A coupon field, hidden until asked for.
+                  *
+                  * An empty box labelled "promo code" on a checkout is a
+                  * standing hint that someone else is paying less, and people
+                  * leave to go looking for one. Behind a link it is there for
+                  * whoever has a code and invisible to everyone else.
+                  *
+                  * It does not claim the code is valid. Dodo accepts an
+                  * unknown code silently, so the only honest moment to say it
+                  * worked is the checkout page, where they will see the
+                  * amount.
+                  */}
+                <div style={{ marginTop: 14 }}>
+                  {couponOpen || coupon ? (
+                    <label style={{ display: 'block' }}>
+                      <span style={{ display: 'block', fontSize: 11.5, color: '#7f8ca0', marginBottom: 6 }}>Coupon code</span>
+                      <input
+                        value={coupon}
+                        onChange={(e) => setCoupon(e.target.value)}
+                        placeholder="Enter code"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        style={{ width: '100%', minHeight: 44, padding: '11px 13px', border: 0, borderRadius: 12, background: 'rgba(255,255,255,.04)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.1)', color: '#f6f9fc', font: "600 13px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', textTransform: 'uppercase' }}
+                      />
+                      <span style={{ display: 'block', marginTop: 6, fontSize: 11.5, lineHeight: 1.45, color: '#7f8ca0' }}>
+                        Applied at checkout — you&rsquo;ll see the discounted total before you confirm.
+                      </span>
+                    </label>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setCouponOpen(true)}
+                      style={{ padding: 0, border: 0, background: 'none', color: '#7f8ca0', fontSize: 12, fontWeight: 600, textDecoration: 'underline' }}
+                    >
+                      Have a coupon?
+                    </button>
+                  )}
                 </div>
 
                 <div style={{ marginTop: 18, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>

@@ -27,6 +27,8 @@ vi.mock('../../../api/pricingApi', () => ({
   }],
 }));
 vi.mock('../../../lib/analytics', () => ({ trackBilling: vi.fn() }));
+const autoCoupon = { value: undefined };
+vi.mock('../../../lib/checkoutCoupon', () => ({ checkoutCouponCode: () => autoCoupon.value }));
 const auth = { user: { access: 'none', isTrial: false }, session: { access_token: 't' } };
 vi.mock('../../../context/AuthContext', () => ({ useAuth: () => auth }));
 
@@ -35,6 +37,7 @@ const { default: BillingStep } = await import('./BillingStep');
 beforeEach(() => {
   checkout.mockClear();
   auth.user = { access: 'none', isTrial: false };
+  autoCoupon.value = undefined;
 });
 
 describe('billing step', () => {
@@ -135,6 +138,56 @@ describe('billing step', () => {
     /* The pain line, which appears only in the expanded detail — the summary
        and the fix share wording, so matching on that proves nothing. */
     expect(screen.getByText(/stop clicking/)).toBeTruthy();
+  });
+
+  /* An empty "promo code" box on a checkout is a standing hint that somebody
+     else is paying less, and people leave to go looking for one. */
+  it('keeps the coupon field behind a link', async () => {
+    render(<BillingStep />);
+    expect(await screen.findByRole('button', { name: /Have a coupon/ })).toBeTruthy();
+    expect(screen.queryByPlaceholderText('Enter code')).toBeNull();
+  });
+
+  it('sends a typed coupon to checkout', async () => {
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: ' save20 ' } });
+    fireEvent.click(screen.getAllByRole('button', { name: /Start 7 days free/ })[0]);
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'save20' });
+  });
+
+  /*
+   * A referral picked up from the link that brought them here. It was only
+   * ever applied on the pricing page, so subscribing from setup lost the
+   * attribution silently — the referee paid full price and the referrer was
+   * never credited for a sale they made.
+   */
+  it('carries a referral code through setup without being asked', async () => {
+    autoCoupon.value = 'REF123';
+    render(<BillingStep />);
+    fireEvent.click((await screen.findAllByRole('button', { name: /Start 7 days free/ }))[0]);
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'REF123' });
+  });
+
+  it('lets a typed code beat the one we carried for them', async () => {
+    autoCoupon.value = 'REF123';
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'MINE' } });
+    fireEvent.click(screen.getAllByRole('button', { name: /Start 7 days free/ })[0]);
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'MINE' });
+  });
+
+  /* Dodo accepts an unknown code silently, so the only honest moment to say
+     it worked is the checkout page, where they see the amount. */
+  it('does not claim the code is valid', async () => {
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    expect(screen.getByText(/you’ll see the discounted total before you confirm/i)).toBeTruthy();
+    expect(screen.queryByText(/applied!|valid|saved ₹/i)).toBeNull();
   });
 
   it('hides the status band once the guard is on', async () => {

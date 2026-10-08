@@ -10,6 +10,7 @@ import { createCheckoutSession } from '../api/paymentsApi';
 import { trialDaysOnOffer, trialOfferLine, firstChargeDate } from '../lib/trialOffer';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch, getPendingCheckoutInterval, normalizeInterval, BILLING_INTERVALS } from '../lib/checkoutIntent';
 import { trackCheckoutStarted } from '../lib/analytics';
+import { checkoutCouponCode } from '../lib/checkoutCoupon';
 import { getStoredReferralCode } from '../lib/referralCode';
 import { getLinkPromoCode } from '../lib/promoLink';
 import { getActivePromo, discountedPrice, formatInr } from '../lib/activePromo';
@@ -28,28 +29,10 @@ import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
  * and forgot to type it is simply charged full price and has no idea. Sending
  * it ourselves is what makes the banner's promise true.
  */
-/**
- * The code to send to checkout, if any. Referral > promo link (?promo=) >
- * site-wide promo from env.
- *
- * THE INTERVAL RESTRICTION BELONGS TO PROMOS, NOT REFERRALS. A site-wide promo
- * is advertised against the monthly price (activePromo.discountedPrice takes a
- * monthly figure), so applying it to a quarterly or yearly checkout would make
- * the banner's promise untrue — that is what the restriction was for.
- *
- * A referral code has no such tie. It is meant to work on every plan, and the
- * voucher owed to the referrer is tiered BY the plan bought, so quarterly and
- * yearly are the ones worth attributing most. Dropping the code on those
- * intervals meant the two highest tiers could never be paid, silently: the
- * referee pays, and no attribution is ever recorded.
- */
-export function checkoutCouponCode({ interval, multiInterval }) {
-  const referral = getStoredReferralCode();
-  if (referral) return referral;
-
-  if (multiInterval && interval !== 'monthly') return undefined;
-  return getLinkPromoCode() || getActivePromo()?.code || undefined;
-}
+/* Lives in lib/checkoutCoupon.js so the setup flow's billing step can send
+   the same code. Imported AND re-exported: this page calls it, and its test
+   has always imported it from this module. */
+export { checkoutCouponCode };
 
 // ─── Per-plan visual theming ─────────────────────────────────────────────────
 const PLAN_THEME = {
