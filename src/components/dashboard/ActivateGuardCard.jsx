@@ -7,6 +7,7 @@ import { trialDaysOnOffer, firstChargeDate } from '../../lib/trialOffer';
 import { brokerLabel } from '../../lib/labels';
 import { fmtMoney } from '../../lib/session';
 import { fetchUnifiedTrades } from '../../api/tradesApi';
+import { useLiveAccount } from '../../hooks/useLiveAccount';
 import { worstDayOf } from '../../lib/worstDay';
 
 /**
@@ -47,6 +48,11 @@ function money(n, currency) {
 export default function ActivateGuardCard({ embedded = false, onLater }) {
   const { user, session, refetchSubscription } = useAuth();
   const { selectedAccount } = useTradingAccounts();
+  const live = useLiveAccount({
+    accessToken: session?.access_token,
+    tradingAccountId: selectedAccount?.id ?? null,
+    initial: selectedAccount,
+  });
   const [plans, setPlans] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -86,18 +92,28 @@ export default function ActivateGuardCard({ embedded = false, onLater }) {
   const priceLabel = typeof monthly?.price === 'number' ? inr(monthly.price) : null;
 
   /*
-   * THE BALANCE COMES FROM THE KEY, NOT FROM A FIELD THEY TYPED.
+   * EQUITY, FROM WHICHEVER SOURCE HAS IT — NEVER ONE VENUE'S PLUMBING.
    *
-   * This read `accountSize`, which is only ever set when someone enters it by
-   * hand for a funded prop account. An account created through the setup flow
-   * has it null, so the card rendered "₹0" and told a trader with real money
-   * on the exchange that a 2% limit on their account was ₹0 — worse than
-   * saying nothing, because it looks like we looked and found nothing.
+   * It read `accountSize`, which is only set when someone types it in for a
+   * funded prop account, so a flow-created account showed "₹0" — worse than
+   * silence, because it looks like we checked and found nothing.
    *
-   * `connectExchange` seeds currentBalance and startingBalance from the
-   * exchange itself at verification, so those come first.
+   * The obvious fix was the balance `connectExchange` seeds at verification,
+   * and that is still first. But it is written by per-venue verify code, and
+   * every Shark account on production has it null while Delta's are all
+   * populated. One venue's parser should not decide whether the product can
+   * state a limit, so the live equity the engine maintains — which is fed the
+   * same way for every venue — is checked too.
+   *
+   * First usable number wins; nothing is printed if none of them is real.
    */
-  const equity = [selectedAccount?.currentBalance, selectedAccount?.startingBalance, selectedAccount?.accountSize]
+  const equity = [
+    live?.currentEquity,
+    live?.dailyStartingEquity,
+    selectedAccount?.currentBalance,
+    selectedAccount?.startingBalance,
+    selectedAccount?.accountSize,
+  ]
     .map(Number)
     .find((n) => Number.isFinite(n) && n > 0);
   const currency = selectedAccount?.accountCurrency || 'USD';
