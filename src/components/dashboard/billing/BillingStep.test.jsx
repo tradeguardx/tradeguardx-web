@@ -302,6 +302,41 @@ describe('billing step', () => {
     expect(screen.queryByText(/don’t recognise/)).toBeNull();
   });
 
+  /* The badge is yearly's per-month against monthly's. A coupon good for
+     every interval moves both, so the ratio — and the badge — hold. */
+  it('leaves the savings badges alone when the coupon applies to everything', async () => {
+    render(<BillingStep />);
+    expect(await screen.findByText('SAVE 42%')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await screen.findByText(/15% off applied/);
+    expect(screen.getByText('SAVE 42%')).toBeTruthy();
+    expect(screen.getByText('SAVE 15%')).toBeTruthy();
+  });
+
+  /*
+   * But a monthly-only code does move it: yearly at ₹750/mo against a
+   * discounted ₹1,169 is 36% cheaper, not 42%. Leaving it would advertise a
+   * saving the customer cannot get.
+   */
+  it('recomputes the badges when the coupon is good for one interval only', async () => {
+    validate.mockImplementation(async ({ interval }) =>
+      interval === 'monthly'
+        ? { valid: true, code: 'MONTHLY10', percentOff: 10, cycles: null }
+        : { valid: false, reason: 'WRONG_PLAN' },
+    );
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'monthly10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await screen.findByText(/10% off applied/);
+    expect(screen.queryByText('SAVE 42%')).toBeNull();
+    expect(screen.getByText('SAVE 36%')).toBeTruthy();
+    // And the per-month subline is measured the same way.
+    expect(screen.getByText(/₹750\/mo · billed once a year/)).toBeTruthy();
+  });
+
   it('hides the status band once the guard is on', async () => {
     auth.user = { access: 'trial', isTrial: true };
     render(<BillingStep />);

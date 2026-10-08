@@ -40,9 +40,9 @@ const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Set up bi
 
 /* Fallbacks only. The pricing endpoint wins — see `options`. */
 const PLAN_FALLBACK = [
-  { id: 'monthly', name: 'Monthly', price: 1299, per: 'per month', sub: 'Billed every month', save: 0, next: 'every month' },
-  { id: 'quarterly', name: 'Quarterly', price: 3299, per: 'per quarter', sub: '₹1,100/mo · billed every 3 months', save: 15, next: 'every 3 months' },
-  { id: 'yearly', name: 'Yearly', price: 8999, per: 'per year', sub: '₹750/mo · billed once a year', save: 42, next: 'every year' },
+  { id: 'monthly', name: 'Monthly', price: 1299, perMonth: 1299, per: 'per month', sub: 'Billed every month', save: 0, next: 'every month' },
+  { id: 'quarterly', name: 'Quarterly', price: 3299, perMonth: 1100, per: 'per quarter', sub: '₹1,100/mo · billed every 3 months', save: 15, next: 'every 3 months' },
+  { id: 'yearly', name: 'Yearly', price: 8999, perMonth: 750, per: 'per year', sub: '₹750/mo · billed once a year', save: 42, next: 'every year' },
 ];
 
 const PER = { monthly: 'per month', quarterly: 'per quarter', yearly: 'per year' };
@@ -93,6 +93,12 @@ export default function BillingStep({ onStarted }) {
           id,
           name: id[0].toUpperCase() + id.slice(1),
           price: r.price,
+          /* The per-month figure, carried so the savings badge and the
+             subline can be recomputed when a coupon lands. Without it the
+             comparison fell back to the full price and measured yearly's
+             ₹8,999 against monthly's ₹1,299 — a negative saving, so no badge
+             rendered at all. */
+          perMonth: r.perMonth ?? r.price,
           per: PER[id],
           sub: id === 'monthly' ? SUB.monthly : `${inr(r.perMonth)}/mo · ${SUB[id]}`,
           save: Math.round(r.savingsPct || 0),
@@ -134,6 +140,30 @@ export default function BillingStep({ onStarted }) {
   const priceOf = (option) => {
     const v = verified?.[option.id];
     return v?.valid ? Math.round(option.price * (1 - v.percentOff / 100)) : option.price;
+  };
+
+  /*
+   * THE SAVING AND THE PER-MONTH FIGURE ARE DERIVED, SO THEY MOVE TOO.
+   *
+   * "SAVE 42%" is yearly's per-month price against monthly's. A coupon that
+   * takes 10% off everything leaves that ratio untouched — but one that is
+   * good for monthly only does not: yearly at ₹750/mo against a discounted
+   * ₹1,169 is 36% cheaper, not 42%. Leaving the badge alone would advertise a
+   * saving the customer cannot get, on the screen where they are choosing
+   * between exactly these three numbers.
+   */
+  const perMonthOf = (option) => {
+    const v = verified?.[option.id];
+    const base = option.perMonth ?? option.price;
+    return v?.valid ? base * (1 - v.percentOff / 100) : base;
+  };
+  const monthlyBaseline = perMonthOf(options.find((o) => o.id === 'monthly') ?? options[0]);
+  const savingOf = (option) => {
+    if (option.id === 'monthly' || !monthlyBaseline) return 0;
+    const pct = Math.round((1 - perMonthOf(option) / monthlyBaseline) * 100);
+    /* A discount that makes a longer plan the worse deal shows no badge
+       rather than a negative one. */
+    return pct > 0 ? pct : 0;
   };
 
   const discount = verified?.[cur.id]?.valid ? verified[cur.id] : null;
@@ -422,11 +452,13 @@ export default function BillingStep({ onStarted }) {
                         <span style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ fontSize: 14, fontWeight: 700 }}>{o.name}</span>
-                            {o.save > 0 && (
-                              <span style={{ font: "700 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', padding: '4px 6px', borderRadius: 5, background: 'rgba(0,212,170,.16)', color: '#2fe3bd' }}>SAVE {o.save}%</span>
+                            {savingOf(o) > 0 && (
+                              <span style={{ font: "700 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', padding: '4px 6px', borderRadius: 5, background: 'rgba(0,212,170,.16)', color: '#2fe3bd' }}>{`SAVE ${savingOf(o)}%`}</span>
                             )}
                           </span>
-                          <span style={{ display: 'block', marginTop: 3, fontSize: 12, color: '#7f8ca0' }}>{o.sub}</span>
+                          <span style={{ display: 'block', marginTop: 3, fontSize: 12, color: '#7f8ca0' }}>
+                            {o.id === 'monthly' ? o.sub : `${inr(Math.round(perMonthOf(o)))}/mo · ${SUB[o.id]}`}
+                          </span>
                         </span>
                         <span style={{ flex: 'none', textAlign: 'right' }}>
                           {/* Each row prices itself from its own verdict, so a
