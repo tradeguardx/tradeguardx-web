@@ -20,6 +20,7 @@ import { journalPeriodBadgeLabel, maxTradingAccountsForPlan } from '../lib/planL
 import { billingStateOf, daysUntil, gstInside, savingVsMonthly } from '../lib/billingState';
 import { trackBilling } from '../lib/analytics';
 import { sx } from '../components/dashboard/shell/sx';
+import CelebrationOverlay from '../components/dashboard/CelebrationOverlay';
 import {
   BAR_COLOUR, BODY, CANCEL_COPY, EVERY, NEXT_LABEL, PER, PLAN_NOTE, STATE_CHIP, STATE_SKIN,
 } from './billing/billingCopy';
@@ -79,6 +80,9 @@ export default function BillingPage() {
      assumed from the last click — the schedule can also be applied or
      cancelled between page loads. */
   const [pending, setPending] = useState(null);
+  /* The plan they just picked, for the celebration. Null when nothing is
+     being celebrated. */
+  const [celebrating, setCelebrating] = useState(null);
 
   const accessToken = session?.access_token;
 
@@ -180,23 +184,22 @@ export default function BillingPage() {
       const res = await changeSubscriptionPlan({ accessToken, interval: opt.id });
       setPending(res?.pending ?? null);
       /*
-       * Every change now waits for the next billing date — see planChangeFor.
-       * On a trial that date is the FIRST payment, not a renewal, and calling
-       * it a renewal to someone who has never been charged is confusing.
+       * Celebrated, not just toasted — picking a plan is the one decision in
+       * this product worth a moment.
+       *
+       * It does NOT say "upgraded". The change is SCHEDULED: they are still
+       * on the old plan until the date below, and nothing has been charged.
+       * Congratulating someone on a thing that has not happened yet is how
+       * you get a support ticket asking why the price did not change.
        */
-      toast.success(
-        `${opt.name} scheduled`,
-        state === 'trial'
-          ? `Your free days run on as they are. Your first payment${nextDate ? ` on ${nextDate}` : ''} will be for ${opt.name}.`
-          : 'It starts at your next renewal. Nothing is charged today.',
-      );
+      setCelebrating(opt);
       refetchSubscription?.();
     } catch (e) {
       toast.error('Could not change the period', e?.message || 'Please try again.');
     } finally {
       setBusy('');
     }
-  }, [accessToken, interval, state, nextDate, refetchSubscription, toast]);
+  }, [accessToken, interval, refetchSubscription, toast]);
 
   const undoChange = useCallback(async () => {
     if (!accessToken) return;
@@ -248,6 +251,19 @@ export default function BillingPage() {
    * Checkout is still the answer once the window has actually passed, which
    * the server says with 409 rather than leaving us to guess from a date.
    */
+  /*
+   * What the switch actually means. The date is the one fact they need: it is
+   * when the new price starts and, on a trial, when they are first charged.
+   */
+  const celebrationLine = (opt) => {
+    const when = nextDate ?? 'your next billing date';
+    const saved = savingVsMonthly(opt, monthlyPrice);
+    const saving = saved > 0 ? ` That is ${inr(saved)} a year less than paying monthly.` : '';
+    return state === 'trial'
+      ? `Your free days run on exactly as they are — nothing is charged today. From ${when} you are on ${opt.name} at ${inr(opt.price)} ${PER[opt.id]}.${saving}`
+      : `You stay on your current plan until ${when}. From then you are on ${opt.name} at ${inr(opt.price)} ${PER[opt.id]}.${saving}`;
+  };
+
   const resume = useCallback(async (toInterval) => {
     if (!accessToken) { toast.error('Not signed in', 'Please sign in again.'); return; }
     trackBilling('billing_resume_clicked', { to: toInterval ?? interval });
@@ -642,6 +658,21 @@ export default function BillingPage() {
           {cancelCopy.btn}
         </button>
       </section>
+
+      <CelebrationOverlay
+        open={Boolean(celebrating)}
+        onClose={() => {
+          setCelebrating(null);
+          /* A reload, because this page is built from the subscription row
+             the webhook writes, and that lands a moment after Dodo answers.
+             Refetching alone can show the pre-change plan for a beat. */
+          if (typeof window !== 'undefined') window.location.reload();
+        }}
+        kicker={celebrating ? `Switching to ${celebrating.name}` : null}
+        headline={celebrating ? `${celebrating.name} it is 🎉` : ''}
+        sub={celebrating ? celebrationLine(celebrating) : ''}
+        cta="Got it"
+      />
 
       {confirming && (
         <div
