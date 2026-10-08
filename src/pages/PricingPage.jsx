@@ -253,7 +253,7 @@ export default function PricingPage() {
         interval: plan.intervals.length > 1 ? interval : 'monthly',
         couponCode: checkoutCouponCode({ interval, multiInterval: plan.intervals.length > 1 }),
       });
-      const url = res?.data?.checkoutUrl;
+      const url = res?.checkoutUrl;
       if (url) { trackCheckoutStarted(plan.key); window.location.href = url; return; }
       throw new Error('No checkout URL returned');
     } catch (err) {
@@ -289,7 +289,7 @@ export default function PricingPage() {
           couponCode: checkoutCouponCode({ interval, multiInterval: plan.intervals.length > 1 }),
         });
         if (cancelled) return;
-        const url = res?.data?.checkoutUrl;
+        const url = res?.checkoutUrl;
         if (url) { clearPendingCheckoutPlan(); trackCheckoutStarted(plan.key); window.location.href = url; return; }
         throw new Error('No checkout URL returned');
       } catch (err) {

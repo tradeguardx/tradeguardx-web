@@ -256,6 +256,28 @@ describe('billing step', () => {
     expect(await screen.findByText(/still be applied at checkout/)).toBeTruthy();
   });
 
+  /*
+   * Services answer { success, data }. The pricing page read res.data.checkoutUrl
+   * and this step read res.checkoutUrl, so one of them was always wrong — the
+   * API layer unwraps now and these pin the shape both ends agree on.
+   */
+  it('follows the checkout url the api returns', async () => {
+    render(<BillingStep />);
+    fireEvent.click((await screen.findAllByRole('button', { name: /Start 7 days free/ }))[0]);
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(screen.queryByText(/Could not open checkout/)).toBeNull();
+  });
+
+  it('reads a coupon verdict straight off the api result', async () => {
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    // Enveloped, this said "We don't recognise that code" for a valid one.
+    expect(await screen.findByText(/15% off applied/)).toBeTruthy();
+    expect(screen.queryByText(/don’t recognise/)).toBeNull();
+  });
+
   it('hides the status band once the guard is on', async () => {
     auth.user = { access: 'trial', isTrial: true };
     render(<BillingStep />);

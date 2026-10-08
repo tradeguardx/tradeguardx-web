@@ -1,6 +1,20 @@
 import { apiPost } from './httpClient';
 import { resolvePaymentsApiBaseUrl } from './config';
 
+/*
+ * Services wrap responses as { success, data }. Callers want the data.
+ *
+ * This was being left to each call site, and they disagreed: the pricing page
+ * read `res.data.checkoutUrl` while the billing step read `res.checkoutUrl`,
+ * so one of them was always going to be wrong. Unwrapping here means there is
+ * one answer and no call site has to know the envelope exists.
+ */
+function unwrap(payload) {
+  if (payload?.success && payload.data !== undefined) return payload.data;
+  return payload;
+}
+
+
 /**
  * Open the Dodo Customer Portal (manage subscription, view invoices, cancel,
  * edit billing address). Returns `{ data: { portalUrl } }`. Caller should
@@ -68,7 +82,7 @@ export async function createCheckoutSession({ accessToken, planSlug, couponCode,
   }
   const baseUrl = options.baseUrl ?? resolvePaymentsApiBaseUrl();
   const body = { planSlug, interval, ...(couponCode ? { couponCode } : {}) };
-  return apiPost(
+  return unwrap(await apiPost(
     '/checkout/session',
     body,
     {
@@ -79,7 +93,7 @@ export async function createCheckoutSession({ accessToken, planSlug, couponCode,
         Authorization: `Bearer ${accessToken}`,
       },
     }
-  );
+  ));
 }
 
 /**
@@ -96,9 +110,9 @@ export async function createCheckoutSession({ accessToken, planSlug, couponCode,
 export async function validateCoupon({ accessToken, code, planSlug = 'pro', interval = 'monthly' }, options = {}) {
   if (!accessToken) throw new Error('Missing access token');
   const baseUrl = options.baseUrl ?? resolvePaymentsApiBaseUrl();
-  return apiPost(
+  return unwrap(await apiPost(
     '/coupon/validate',
     { code, planSlug, interval },
     { ...options, baseUrl, headers: { Authorization: `Bearer ${accessToken}`, ...(options.headers ?? {}) } },
-  );
+  ));
 }
