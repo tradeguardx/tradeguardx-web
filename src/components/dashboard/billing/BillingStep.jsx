@@ -211,17 +211,31 @@ export default function BillingStep({ onStarted }) {
               * something the user did not ask to close is the more annoying
               * of the two behaviours.
               */}
-            <ul style={{ margin: 0, padding: 10, listStyle: 'none', display: 'grid', gap: 1, borderRadius: 18, background: '#0d1422', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)' }}>
-              {PROTECTIONS.map((p) => {
+            {/*
+              * NO CARD AROUND THE LIST.
+              *
+              * The plan panel is the taller column by some 400px. With a
+              * bordered card here, the left side was a box that stopped dead
+              * two-thirds of the way down beside a panel that carried on —
+              * which reads as something failing to render rather than as a
+              * column of content that is simply shorter.
+              *
+              * Stretching it instead would spread five rows across a
+              * thousand pixels. Taking the box away removes the edge that was
+              * drawing attention to the difference: text ending where it ends
+              * needs no explanation.
+              */}
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: 0 }}>
+              {PROTECTIONS.map((p, i) => {
                 const open = openRows.includes(p.id);
                 return (
-                  <li key={p.id}>
+                  <li key={p.id} style={{ borderTop: i === 0 ? 0 : '1px solid rgba(255,255,255,.07)' }}>
                     <button
                       type="button"
                       onClick={() => toggleRow(p.id)}
                       aria-expanded={open}
                       aria-controls={`prot-${p.id}`}
-                      style={{ width: '100%', display: 'flex', gap: 12, padding: '10px 8px', alignItems: 'flex-start', background: open ? 'rgba(255,255,255,.03)' : 'transparent', border: 0, borderRadius: 12, color: '#f6f9fc', textAlign: 'left' }}
+                      style={{ width: '100%', display: 'flex', gap: 12, padding: '13px 6px', alignItems: 'flex-start', background: 'transparent', border: 0, color: '#f6f9fc', textAlign: 'left' }}
                     >
                       <span aria-hidden style={{ flex: 'none', width: 28, height: 28, borderRadius: 9, background: p.gradient, color: p.color, display: 'grid', placeItems: 'center', marginTop: 1 }}>
                         <Glyph d={GLYPH[p.glyph]} />
@@ -239,7 +253,7 @@ export default function BillingStep({ onStarted }) {
                     </button>
 
                     {open && (
-                      <div id={`prot-${p.id}`} style={{ padding: '2px 8px 12px 52px', display: 'grid', gap: 7 }}>
+                      <div id={`prot-${p.id}`} style={{ padding: '0 6px 14px 50px', display: 'grid', gap: 7 }}>
                         <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>
                           <b style={{ color: '#ff8178', fontWeight: 700 }}>Pain:</b> {p.pain}
                         </p>
