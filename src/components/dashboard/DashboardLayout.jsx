@@ -54,8 +54,16 @@ function Shell() {
   const killBtnRef = useRef(null);
 
   const billingArea = pathname.includes('/account') || pathname.includes('/billing');
-  /* The setup flow speaks for itself — see the banner suppression below. */
-  const setupFlow = pathname.includes('/dashboard/setup');
+  /*
+   * Screens that carry their own status band.
+   *
+   * The billing step renders at two routes — inside the setup flow and at
+   * /dashboard/activate — and it draws its own "your guard is off" band.
+   * Only the setup path was listed here, so the standalone route showed the
+   * layout's banner immediately above the step's own: two amber bars, the
+   * same four words, stacked. Repetition is not emphasis.
+   */
+  const setupFlow = pathname.includes('/dashboard/setup') || pathname.includes('/dashboard/activate');
   /*
    * `needsMandate` deliberately does NOT lock the dashboard.
    *
