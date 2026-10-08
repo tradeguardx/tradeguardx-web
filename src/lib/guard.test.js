@@ -159,3 +159,81 @@ describe('gapsOf — billing', () => {
     expect(g.body).not.toMatch(/arms itself/);
   });
 });
+
+/**
+ * THE LEGACY NO-CARD TRIAL.
+ *
+ * Users who signed up before mandate-first are entitled today with nothing
+ * attached. `entitled` was doing double duty — "has access" and "has billing"
+ * — which for these users ticked the billing step as done and then let the
+ * guard go quiet on the day the trial lapsed, having never asked.
+ *
+ * They are asked. They are not blocked.
+ */
+describe('gapsOf — asked for billing, not blocked', () => {
+  const base = { account, connection: readOnly, rules, notifications: alerts };
+
+  it('asks a trialist with no payment method attached', () => {
+    const gaps = gapsOf({ ...base, entitled: true, mandate: false });
+    const billing = gaps.find((g) => g.key === 'billing');
+    expect(billing).toBeTruthy();
+    /* Not "billing is not set up / nothing is enforced" — that is false for
+       someone whose guard is running right now, and it reads as a lockout. */
+    expect(billing.title).toBe('No payment method on your trial');
+    expect(billing.cta).toBe('Set up billing');
+  });
+
+  it('says nothing to a trialist who has one attached', () => {
+    expect(gapsOf({ ...base, entitled: true, mandate: true }).some((g) => g.key === 'billing')).toBe(false);
+  });
+
+  it('keeps the harder copy for someone with no access at all', () => {
+    const billing = gapsOf({ ...base, entitled: false, mandate: false }).find((g) => g.key === 'billing');
+    expect(billing.title).toBe('Billing is not set up');
+    expect(billing.cta).toBe('Start 7 days free');
+  });
+
+  /* Fail-open: an unloaded subscription must never accuse someone who has
+     paid of not having paid. Both default to true. */
+  it('asks nobody from an unloaded state', () => {
+    expect(gapsOf({ ...base }).some((g) => g.key === 'billing')).toBe(false);
+  });
+});
+
+/**
+ * THE FREE WEEK IS ONLY OFFERED TO SOMEONE WHO HAS NOT HAD IT.
+ *
+ * `trialDaysForUser` returns 0 for a spent trial, so "the first 7 days are
+ * free and nothing is charged today" was a promise checkout would not keep —
+ * shown to the one group who would be debited in full on the next click.
+ */
+describe('gapsOf — the trial that has already been used', () => {
+  const base = { account, connection: readOnly, rules, notifications: alerts, entitled: false, mandate: false };
+
+  it('offers the free week to someone who never started', () => {
+    const billing = gapsOf({ ...base, trialSpent: false }).find((g) => g.key === 'billing');
+    expect(billing.title).toBe('Billing is not set up');
+    expect(billing.body).toMatch(/first 7 days are free/);
+  });
+
+  it('does not re-offer it to someone whose trial ended', () => {
+    const billing = gapsOf({ ...base, trialSpent: true }).find((g) => g.key === 'billing');
+    expect(billing.title).toBe('Your free trial has ended');
+    expect(billing.body).not.toMatch(/7 days are free|nothing is charged today/);
+    expect(billing.body).toMatch(/first charge is today/);
+    expect(billing.cta).toBe('See plans');
+  });
+
+  /* Still a billing gap either way — the guard is off for both. */
+  it('reports a billing gap in both cases', () => {
+    expect(gapsOf({ ...base, trialSpent: true }).some((g) => g.key === 'billing')).toBe(true);
+    expect(gapsOf({ ...base, trialSpent: false }).some((g) => g.key === 'billing')).toBe(true);
+  });
+
+  /* A running trial is not a spent one: that user is asked to attach a card,
+     not told their trial is over. */
+  it('does not confuse a running trial with a spent one', () => {
+    const billing = gapsOf({ ...base, entitled: true, trialSpent: false }).find((g) => g.key === 'billing');
+    expect(billing.title).toBe('No payment method on your trial');
+  });
+});

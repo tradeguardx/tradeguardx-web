@@ -37,7 +37,11 @@ export const BODY = {
     'Everything is unlocked. Your card is saved, and nothing is charged until {date}. Cancel before then and you pay nothing.',
   active: 'Paid and protected. Your guard runs on our servers whether or not the app is open.',
   failed:
-    'Your bank declined the payment. Your guard keeps running while you fix it. After that it switches off.',
+    /* There is no dunning grace by design — a declined renewal expires access
+       at once. This used to promise the guard kept running, which was both
+       untrue and the most dangerous direction to be wrong in: someone reads
+       it, trades, and is enforced by nothing. */
+    'Your bank declined the payment and your guard has stopped enforcing. Update your card and it switches back on.',
   cancelled:
     'You keep full protection until {date}. After that the guard switches off and your rules stop being enforced.',
 };
@@ -52,7 +56,11 @@ export const NEXT_LABEL = {
 export const CANCEL_COPY = {
   trial: {
     title: 'Cancel free trial',
-    body: 'You will not be charged. Your guard switches off right away and your rules stop being enforced.',
+    /* Cancelling ends the subscription at the end of the period, not on the
+       spot — so the days already promised are kept. Saying "switches off right
+       away" was describing a cancellation we deliberately do not perform, and
+       it talks people out of a cancellation they are entitled to. */
+    body: 'You will not be charged. You keep full protection until {date} — after that the guard switches off.',
     btn: 'Cancel trial',
   },
   active: {

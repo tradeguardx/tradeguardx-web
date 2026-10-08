@@ -5,7 +5,16 @@ import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useGuard } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
 import { clearPendingCheckoutPlan } from '../lib/checkoutIntent';
-import { openBillingPortal, updateSubscriptionPaymentMethod, createCheckoutSession } from '../api/paymentsApi';
+import {
+  openBillingPortal,
+  updateSubscriptionPaymentMethod,
+  createCheckoutSession,
+  changeSubscriptionPlan,
+  cancelSubscriptionPlanChange,
+  cancelSubscription,
+  resumeSubscription,
+  fetchPendingPlanChange,
+} from '../api/paymentsApi';
 import { getPricingPlans } from '../api/pricingApi';
 import { journalPeriodBadgeLabel, maxTradingAccountsForPlan } from '../lib/planLimits';
 import { billingStateOf, daysUntil, gstInside, savingVsMonthly } from '../lib/billingState';
@@ -38,9 +47,10 @@ import {
  *  - The card's brand and last four digits. "Visa •••• 4242" against someone
  *    else's Mastercard is worse than saying nothing, so the row names the
  *    payment method without inventing it.
- *  - A scheduled plan change. Faking "starts 15 Nov" would tell someone their
- *    billing had changed when nothing had. Plan changes open the provider's
- *    portal, which really does change them.
+ *  - A scheduled plan change. "Starts 15 Nov" is read back from the provider
+ *    (`GET /payments/subscriptions/plan-change`), never assumed from the last
+ *    click, so a schedule applied or cancelled elsewhere does not leave a
+ *    stale promise on the page.
  *
  * Invoices are the same: the list is the provider's until we have an endpoint.
  */
@@ -65,6 +75,10 @@ export default function BillingPage() {
   const [plans, setPlans] = useState([]);
   const [busy, setBusy] = useState('');
   const [confirming, setConfirming] = useState(false);
+  /* What the subscription is scheduled to become. Read from the provider, not
+     assumed from the last click — the schedule can also be applied or
+     cancelled between page loads. */
+  const [pending, setPending] = useState(null);
 
   const accessToken = session?.access_token;
 
@@ -72,6 +86,16 @@ export default function BillingPage() {
     if (params.get('checkout') === 'success') { clearPendingCheckoutPlan(); refetchSubscription?.(); }
   }, [params, refetchSubscription]);
   useEffect(() => { getPricingPlans().then(setPlans).catch(() => setPlans([])); }, []);
+  useEffect(() => {
+    if (!accessToken) return;
+    let live = true;
+    fetchPendingPlanChange({ accessToken })
+      .then((r) => { if (live) setPending(r?.pending ?? null); })
+      /* Nothing scheduled is the overwhelmingly common answer, and a failed
+         read must not block the page or claim a change nobody made. */
+      .catch(() => {});
+    return () => { live = false; };
+  }, [accessToken]);
 
   const me = subscription ?? null;
   const state = billingStateOf({
@@ -140,33 +164,159 @@ export default function BillingPage() {
     }
   }, [accessToken, toast]);
 
-  const resume = async () => {
-    trackBilling('billing_resume_clicked');
-    /* Resuming is a fresh checkout on the same plan: the mandate was ended
-       when they cancelled, so there is nothing to un-cancel. */
-    setBusy('resume');
+  /*
+   * Switching period in place.
+   *
+   * On trial it applies at once (nothing has been billed yet, so the first
+   * charge is simply for the new plan). Once paying it waits for the renewal
+   * and shows as pending until then — the server decides which, and sends
+   * every change as do-not-bill either way.
+   */
+  const switchTo = useCallback(async (opt) => {
+    if (!accessToken) { toast.error('Not signed in', 'Please sign in again.'); return; }
+    trackBilling('billing_plan_change_scheduled', { from: interval, to: opt.id });
+    setBusy(`switch:${opt.id}`);
     try {
-      const res = await createCheckoutSession({ accessToken, planSlug: 'pro', interval });
-      if (!res?.checkoutUrl) throw new Error('Could not open checkout.');
-      window.location.href = res.checkoutUrl;
+      const res = await changeSubscriptionPlan({ accessToken, interval: opt.id });
+      setPending(res?.pending ?? null);
+      if (res?.effectiveAt === 'immediately') {
+        toast.success(`Now on ${opt.name}`, 'Your first charge will be for this plan.');
+        /* The webhook writes our row; refetching is what makes the card agree
+           with the button that was just pressed. */
+        refetchSubscription?.();
+      } else {
+        toast.success(`${opt.name} scheduled`, 'It starts at your next renewal. Nothing charged today.');
+      }
     } catch (e) {
-      toast.error('Could not resume', e?.message || 'Please try again.');
+      toast.error('Could not change the period', e?.message || 'Please try again.');
+    } finally {
       setBusy('');
     }
-  };
+  }, [accessToken, interval, refetchSubscription, toast]);
+
+  const undoChange = useCallback(async () => {
+    if (!accessToken) return;
+    trackBilling('billing_plan_change_undone');
+    setBusy('undo');
+    try {
+      const res = await cancelSubscriptionPlanChange({ accessToken });
+      setPending(res?.pending ?? null);
+      toast.success('Change cancelled', `You stay on ${cur?.name ?? 'your current plan'}.`);
+    } catch (e) {
+      toast.error('Could not undo it', e?.message || 'Please try again.');
+    } finally {
+      setBusy('');
+    }
+  }, [accessToken, cur, toast]);
+
+  /*
+   * Cancelling, in place. This used to hand the user to the provider's
+   * customer portal and hope they found "Manage subscription" — two hops out
+   * of the app to do the one thing we had just offered them a button for.
+   */
+  const doCancel = useCallback(async () => {
+    if (!accessToken) { toast.error('Not signed in', 'Please sign in again.'); return; }
+    trackBilling('billing_cancel_confirmed', { state });
+    setBusy('cancel');
+    try {
+      await cancelSubscription({ accessToken });
+      setConfirming(false);
+      toast.success(
+        state === 'trial' ? 'Cancelled — you will not be charged' : 'Cancelled',
+        `You keep everything until ${nextDate ?? 'the end of your period'}.`,
+      );
+      refetchSubscription?.();
+    } catch (e) {
+      toast.error('Could not cancel', e?.message || 'Please try again.');
+    } finally {
+      setBusy('');
+    }
+  }, [accessToken, state, nextDate, refetchSubscription, toast]);
+
+  /*
+   * Resuming, optionally on a different period.
+   *
+   * This used to be a fresh checkout on the reasoning that "the mandate was
+   * ended when they cancelled" — true of an immediate cancellation, which is
+   * not the one we perform. Until the period runs out the mandate is still
+   * live, so coming back is a flag, not a second AFA and a re-typed UPI id.
+   *
+   * Checkout is still the answer once the window has actually passed, which
+   * the server says with 409 rather than leaving us to guess from a date.
+   */
+  const resume = useCallback(async (toInterval) => {
+    if (!accessToken) { toast.error('Not signed in', 'Please sign in again.'); return; }
+    trackBilling('billing_resume_clicked', { to: toInterval ?? interval });
+    setBusy(toInterval ? `switch:${toInterval}` : 'resume');
+    try {
+      const res = await resumeSubscription({ accessToken, interval: toInterval });
+      const name = options.find((o) => o.id === (res?.interval ?? interval))?.name ?? 'Pro';
+      toast.success(`Back on ${name}`, 'Your guard keeps running. Nothing was charged today.');
+      refetchSubscription?.();
+    } catch (e) {
+      if (e?.status === 409) {
+        /* Nothing left to un-cancel — buy it again, on the period they asked
+           for rather than the one they used to be on. */
+        try {
+          const res = await createCheckoutSession({ accessToken, planSlug: 'pro', interval: toInterval ?? interval });
+          if (!res?.checkoutUrl) throw new Error('Could not open checkout.');
+          window.location.href = res.checkoutUrl;
+          return;
+        } catch (inner) {
+          toast.error('Could not resume', inner?.message || 'Please try again.');
+        }
+      } else {
+        toast.error('Could not resume', e?.message || 'Please try again.');
+      }
+    } finally {
+      setBusy('');
+    }
+  }, [accessToken, interval, options, refetchSubscription, toast]);
 
   if (state === 'none') {
-    /* No subscription to manage. The setup flow is where this starts. */
+    /*
+     * NO PLAN — BUT NOT NECESSARILY NOTHING.
+     *
+     * Two people land here. One has never had anything. The other is part
+     * way through a legacy no-card trial: protected today, nothing attached,
+     * and `billingStateOf` calls that `none` because every word of the trial
+     * state's copy ("nothing is charged until the 15th") is false for a trial
+     * with no card behind it.
+     *
+     * Telling the second "you don't have a plan yet, the first 7 days are
+     * free" is wrong twice over. It contradicts the band directly above it,
+     * which says their trial is running — and the 7 is a number we will not
+     * honour: `trialDaysFor` carries their REMAINING days across, so someone
+     * with 5 days left who presses this gets 5, not 7. Promising a week and
+     * delivering five days is the kind of small lie that costs the sale at
+     * the checkout page, which is where they would find out.
+     */
+    const left = user?.isTrial ? daysUntil(me?.subscription?.currentPeriodEnd) : null;
+    const carrying = typeof left === 'number' && left > 0;
+    /*
+     * A THIRD PERSON LANDS HERE, AND THEY ARE THE ONES WE WERE WORST TO.
+     *
+     * `expired` is not `none`. They had the free week, used it, and watched
+     * the guard stop. `trialDaysForUser` gives them 0, so "the first 7 days
+     * are free and nothing is charged today" was both a lie about the money
+     * and a strange thing to say to someone who already had the trial.
+     */
+    const spent = Boolean(user?.isExpired);
+    const endedOn = spent ? fmtDate(me?.subscription?.currentPeriodEnd) : null;
     return (
       <div style={sxw('max-width:1120px;margin:0 auto')}>
         <h1 style={sxw("margin:0;font:600 28px/1.1 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Plan &amp; billing</h1>
         <p style={sxw('margin:6px 0 0;font-size:13.5px;color:#8a96a8')}>Prices include 18% GST. Invoices are GST-compliant.</p>
         <section style={sxw(`margin-top:20px;${CARD}`)}>
           <p style={sxw('margin:0 0 14px;font-size:13.5px;line-height:1.55;color:#c9d2e0')}>
-            You don&rsquo;t have a plan yet. Setting one up switches your guard on — the first 7 days are free and nothing is charged today.
+            {carrying
+              ? `Your free trial has ${left} day${left === 1 ? '' : 's'} left and no payment method attached, so your guard stops when it ends. Add one and you keep all ${left} — nothing is charged today.`
+              : spent
+                ? `Your free trial ended${endedOn ? ` on ${endedOn}` : ''}, so nothing is enforcing your rules. Subscribe to switch the guard back on${cur ? ` — ${inr(cur.price)} ${PER[interval]}` : ''}. Your free week is already used, so the first charge is today.`
+                : 'You don’t have a plan yet. Setting one up switches your guard on — the first 7 days are free and nothing is charged today.'}
           </p>
           <button type="button" onClick={() => navigate('/dashboard/activate')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
-            Start 7 days free
+            {carrying ? `Set up billing · keep your ${left} days` : spent ? 'Subscribe' : 'Start 7 days free'}
           </button>
         </section>
       </div>
@@ -213,7 +363,12 @@ export default function BillingPage() {
 
             <div style={sxw('margin-top:14px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap')}>
               <h2 style={sxw("margin:0;font:600 26px/1.1 'Space Grotesk',sans-serif;letter-spacing:-.03em")}>Pro · {cur?.name ?? '—'}</h2>
-              <span style={sxw("font:600 15px/1 'Space Grotesk',sans-serif;color:#a3b0c2")}>{inr(cur?.price)} {PER[interval]}</span>
+              {/* A cancelled plan that still prices itself per month reads as
+                  a live subscription. The price is no longer a recurring fact
+                  about them, so the date they lose it takes its place. */}
+              <span style={sxw(`font:600 15px/1 'Space Grotesk',sans-serif;color:${state === 'cancelled' ? '#fbc94f' : '#a3b0c2'}`)}>
+                {state === 'cancelled' ? `Ends ${nextDate ?? 'soon'}` : `${inr(cur?.price)} ${PER[interval]}`}
+              </span>
             </div>
 
             <p style={sxw('margin:10px 0 0;font-size:14px;line-height:1.55;color:#c9d2e0;max-width:58ch')}>
@@ -248,7 +403,7 @@ export default function BillingPage() {
                 </button>
               )}
               {state === 'cancelled' && (
-                <button type="button" disabled={busy === 'resume'} onClick={resume} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
+                <button type="button" disabled={busy === 'resume'} onClick={() => resume()} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
                   {busy === 'resume' ? 'Opening…' : 'Resume Pro'}
                 </button>
               )}
@@ -346,7 +501,10 @@ export default function BillingPage() {
               them on screen. */}
           <div style={sxw('margin-top:12px;display:grid')}>
             <Detail k="Invoice email" v={user?.email ?? session?.user?.email ?? '—'} />
-            <Detail k="Plan" v={cur ? `Pro · ${cur.name}` : '—'} />
+            <Detail
+              k="Plan"
+              v={cur ? `Pro · ${cur.name}${state === 'cancelled' ? ` · ends ${nextDate ?? 'soon'}` : ''}` : '—'}
+            />
             <Detail k="Billing details & GSTIN" v="Managed in the billing portal" muted />
           </div>
           <p style={sxw('margin:10px 0 0;font-size:11.5px;line-height:1.5;color:#7f8ca0')}>
@@ -360,34 +518,71 @@ export default function BillingPage() {
           <h3 style={sxw(H3)}>Change billing period</h3>
           <span style={sxw('font-size:12px;color:#7f8ca0')}>Every plan includes all five protections</span>
         </div>
+        {pending && (() => {
+          /* The one thing the user needs to know between pressing Switch and
+             the renewal: what changes, when, and that today costs nothing. */
+          const to = options.find((o) => o.id === pending.interval);
+          return (
+            <div style={sxw('margin-top:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:13px;background:rgba(240,180,41,.09);box-shadow:inset 0 0 0 1px rgba(240,180,41,.26)')}>
+              <p style={sxw('flex:1;min-width:200px;margin:0;font-size:12.5px;line-height:1.5;color:#f0d79a')}>
+                Changes to <strong style={sxw('color:#fbc94f')}>{to?.name ?? pending.interval}</strong>
+                {to ? ` (${inr(to.price)} ${PER[pending.interval]})` : ''} on {fmtDate(pending.effectiveAt) ?? 'your next renewal'}.
+                {cur ? ` You stay on ${cur.name} until then.` : ''} No charge today.
+              </p>
+              <button
+                type="button"
+                disabled={busy === 'undo' || busy.startsWith('switch')}
+                onClick={undoChange}
+                style={sxw('flex:none;min-height:36px;padding:8px 13px;border:0;border-radius:9px;background:rgba(255,255,255,.1);color:#f6f9fc;font-size:12px;font-weight:700')}
+              >
+                {busy === 'undo' ? '…' : 'Undo'}
+              </button>
+            </div>
+          );
+        })()}
         <div style={sxw('margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px')}>
           {options.map((o) => {
             const isCur = o.id === interval;
+            const isPending = pending?.interval === o.id;
             const saving = savingVsMonthly(o, monthlyPrice);
             return (
-              <div key={o.id} style={sxw(`display:flex;flex-direction:column;gap:10px;padding:15px;border-radius:15px;background:${isCur ? 'rgba(0,212,170,.06)' : 'rgba(255,255,255,.02)'};box-shadow:${isCur ? 'inset 0 0 0 1.5px #00d4aa' : 'inset 0 0 0 1px rgba(255,255,255,.09)'}`)}>
+              <div key={o.id} style={sxw(`display:flex;flex-direction:column;gap:10px;padding:15px;border-radius:15px;background:${isCur ? (state === 'cancelled' ? 'rgba(240,180,41,.05)' : 'rgba(0,212,170,.06)') : 'rgba(255,255,255,.02)'};box-shadow:${isCur ? `inset 0 0 0 1.5px ${state === 'cancelled' ? '#f0b429' : '#00d4aa'}` : 'inset 0 0 0 1px rgba(255,255,255,.09)'}`)}>
                 <div style={sxw('display:flex;align-items:center;gap:8px;flex-wrap:wrap')}>
                   <span style={sxw('font-size:14px;font-weight:700')}>{o.name}</span>
-                  {isCur && <span style={sxw("font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:rgba(0,212,170,.16);color:#2fe3bd")}>CURRENT</span>}
-                  {!isCur && saving > 0 && <span style={sxw("font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:rgba(240,180,41,.14);color:#fbc94f")}>{`SAVE ${inr(saving)}`}</span>}
+                  {isCur && (
+                    <span style={sxw(`font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:${state === 'cancelled' ? 'rgba(240,180,41,.16)' : 'rgba(0,212,170,.16)'};color:${state === 'cancelled' ? '#fbc94f' : '#2fe3bd'}`)}>
+                      {state === 'cancelled' ? 'ENDING' : 'CURRENT'}
+                    </span>
+                  )}
+                  {isPending && <span style={sxw("font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:rgba(240,180,41,.16);color:#fbc94f")}>SCHEDULED</span>}
+                  {!isCur && !isPending && saving > 0 && <span style={sxw("font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:rgba(240,180,41,.14);color:#fbc94f")}>{`SAVE ${inr(saving)}`}</span>}
                 </div>
                 <div>
                   <span style={sxw("font:700 22px/1 'Space Grotesk',sans-serif;letter-spacing:-.025em")}>{inr(o.price)}</span>{' '}
                   <span style={sxw('font-size:12px;color:#8a96a8')}>{PER[o.id]}</span>
                 </div>
                 <div style={sxw('font-size:12px;line-height:1.45;color:#a3b0c2;min-height:34px')}>{PLAN_NOTE[o.id]}</div>
-                {/* Changing plan opens the provider's portal, which really
-                    does change it. A local "starts 15 Nov" would tell someone
-                    their billing had changed when nothing had.
-                    TODO(api): a schedule-at-period-end endpoint would let this
-                    happen in place, with the pending state the brief describes. */}
+                {/* Changes happen here now. This used to open the provider's
+                    customer portal, which lists the subscription and the
+                    invoices but has no plan switcher — so "Switch to Yearly"
+                    delivered the user to a page where they could not. */}
+                {/* Cancelled is NOT a reason to lock the period picker. Someone
+                    who cancelled and now wants quarterly is telling us they
+                    want to stay — and the only route we offered was "resume
+                    first", on a button that opened a fresh checkout. So here
+                    the switch resumes them onto the period they picked, and
+                    the label says so rather than un-cancelling them quietly. */}
                 <button
                   type="button"
-                  disabled={isCur || state === 'failed' || state === 'cancelled' || busy === 'portal'}
-                  onClick={() => { trackBilling('billing_plan_change_scheduled', { from: interval, to: o.id }); portal('portal'); }}
-                  style={sxw(`min-height:42px;padding:10px;border:0;border-radius:10px;background:${isCur ? 'transparent' : 'rgba(255,255,255,.08)'};color:${isCur ? '#7f8ca0' : '#f6f9fc'};font-size:13px;font-weight:700;cursor:${isCur ? 'default' : 'pointer'}`)}
+                  disabled={(isCur && state !== 'cancelled') || isPending || state === 'failed' || busy.startsWith('switch') || busy === 'undo'}
+                  onClick={() => (state === 'cancelled' ? resume(o.id) : switchTo(o))}
+                  style={sxw(`min-height:42px;padding:10px;border:0;border-radius:10px;background:${state === 'cancelled' ? '#00d4aa' : isCur || isPending ? 'transparent' : 'rgba(255,255,255,.08)'};color:${state === 'cancelled' ? '#02241d' : isCur || isPending ? '#7f8ca0' : '#f6f9fc'};font-size:13px;font-weight:700;cursor:${(isCur && state !== 'cancelled') || isPending ? 'default' : 'pointer'}`)}
                 >
-                  {isCur ? 'Your plan' : `Switch to ${o.name}`}
+                  {busy === `switch:${o.id}`
+                    ? (state === 'cancelled' ? 'Resuming…' : 'Switching…')
+                    : state === 'cancelled' ? `Resume on ${o.name}`
+                      : isCur ? 'Your plan'
+                        : isPending ? 'Scheduled' : `Switch to ${o.name}`}
                 </button>
               </div>
             );
@@ -395,7 +590,9 @@ export default function BillingPage() {
         </div>
         {(state === 'failed' || state === 'cancelled') && (
           <p style={sxw('margin:12px 0 0;font-size:12.5px;color:#7f8ca0')}>
-            {state === 'failed' ? 'Sort the payment out first — then you can change the period.' : 'Resume first, then you can change the period.'}
+            {state === 'failed'
+              ? 'Sort the payment out first — then you can change the period.'
+              : `Your card is still saved, so picking a period brings you back on it. Nothing is charged until ${nextDate ?? 'your trial ends'}.`}
           </p>
         )}
       </section>
@@ -463,8 +660,8 @@ export default function BillingPage() {
               {fill(cancelCopy.body, { date: nextDate ?? 'the end of your period' })}
             </p>
             <div style={sxw('margin-top:18px;display:flex;gap:9px;flex-wrap:wrap')}>
-              <button type="button" disabled={busy === 'portal'} onClick={() => portal('portal')} style={sxw('flex:1;min-width:150px;min-height:44px;padding:11px;border:0;border-radius:11px;background:#ef4444;color:#fff;font-size:13px;font-weight:800')}>
-                {busy === 'portal' ? 'Opening…' : 'Yes, cancel'}
+              <button type="button" disabled={busy === 'cancel'} onClick={doCancel} style={sxw('flex:1;min-width:150px;min-height:44px;padding:11px;border:0;border-radius:11px;background:#ef4444;color:#fff;font-size:13px;font-weight:800')}>
+                {busy === 'cancel' ? 'Cancelling…' : 'Yes, cancel'}
               </button>
               <button type="button" onClick={() => setConfirming(false)} style={sxw('flex:1;min-width:150px;min-height:44px;padding:11px;border:0;border-radius:11px;background:rgba(255,255,255,.08);color:#f6f9fc;font-size:13px;font-weight:700')}>
                 Keep my guard

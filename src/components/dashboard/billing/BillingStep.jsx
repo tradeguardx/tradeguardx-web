@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { createCheckoutSession, validateCoupon } from '../../../api/paymentsApi';
+import { createCheckoutSession, validateCoupon, fetchTrialEligibility } from '../../../api/paymentsApi';
 import { getPricingPlans } from '../../../api/pricingApi';
 import { trackBilling } from '../../../lib/analytics';
 import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
@@ -48,6 +48,8 @@ const PLAN_FALLBACK = [
 const PER = { monthly: 'per month', quarterly: 'per quarter', yearly: 'per year' };
 const SUB = { monthly: 'Billed every month', quarterly: 'billed every 3 months', yearly: 'billed once a year' };
 const NEXT = { monthly: 'every month', quarterly: 'every 3 months', yearly: 'every year' };
+/* The offer for someone who has never started. What any given user actually
+   gets comes from the server — see `trialDays` below. */
 const TRIAL_DAYS = 7;
 
 const inr = (n) => (Number.isFinite(n) ? `₹${Math.round(n).toLocaleString('en-IN')}` : '—');
@@ -80,6 +82,28 @@ export default function BillingStep({ onStarted }) {
     setOpenRows((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
 
   useEffect(() => { getPricingPlans().then(setPlans).catch(() => setPlans([])); }, []);
+
+  /*
+   * HOW MANY FREE DAYS THIS PERSON ACTUALLY GETS.
+   *
+   * Not TRIAL_DAYS. Checkout calls `trialDaysForUser`, which carries a
+   * part-used trial across and gives nothing to one that has already ended —
+   * so a hardcoded 7 here promised days the charge would not honour, and told
+   * a lapsed trialist "₹0 today" before debiting them in full.
+   *
+   * `null` until it answers, and no day-count is stated before then: every
+   * number on this screen is a promise about money.
+   */
+  const [trialDays, setTrialDays] = useState(null);
+  useEffect(() => {
+    const token = session?.access_token;
+    if (!token) return undefined;
+    let alive = true;
+    fetchTrialEligibility({ accessToken: token })
+      .then((r) => { if (alive && typeof r?.trialDays === 'number') setTrialDays(r.trialDays); })
+      .catch(() => { /* Stays null; the screen says "free trial" without a count. */ });
+    return () => { alive = false; };
+  }, [session?.access_token]);
   useEffect(() => { trackBilling('billing_step_viewed'); }, []);
 
   /* Real prices win over the table in this file; the layout does not change. */
@@ -216,8 +240,25 @@ export default function BillingStep({ onStarted }) {
    * the sweep covers payment-sourced trials.
    */
   const today = new Date();
-  const chargeOn = new Date(today.getTime() + TRIAL_DAYS * 86400000);
-  const timeline = [
+  /* The free window this user actually gets. Unknown until the server
+     answers; zero for a trial that has already run out. */
+  const freeDays = trialDays;
+  const charged = freeDays === 0;
+  const chargeOn = new Date(today.getTime() + (freeDays ?? TRIAL_DAYS) * 86400000);
+  const timeline = charged
+    ? [
+        /* Their free window is spent. "₹0 charged" here and then taking the
+           money is the worst thing this screen could say. */
+        {
+          when: `Today · ${fmtDay(today)}`,
+          what: `Your free trial has ended, so your first charge of ${inr(payable)} is today. Your guard switches on straight away.`,
+          dot: '#00d4aa',
+          glow: '0 0 0 4px rgba(0,212,170,.2)',
+          line: true,
+        },
+        { when: `Then ${cur.next}`, what: 'Renews automatically until you cancel.', dot: '#5b687d', glow: 'none', line: false },
+      ]
+    : [
     { when: `Today · ${fmtDay(today)}`, what: 'Your guard switches on. All five protections start working. ₹0 charged.', dot: '#00d4aa', glow: '0 0 0 4px rgba(0,212,170,.2)', line: true },
     {
       when: fmtDay(chargeOn),
@@ -232,7 +273,7 @@ export default function BillingStep({ onStarted }) {
       glow: 'none',
       line: false,
     },
-  ];
+      ];
 
   const pick = (id) => {
     setPlan(id);
@@ -329,7 +370,16 @@ export default function BillingStep({ onStarted }) {
               Step 4 of 4 · Last step
             </div>
             <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.4vw,28px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.03em', textWrap: 'pretty' }}>
-              Set up billing and get <span style={{ color: '#2fe3bd' }}>7 days free</span>
+              {charged
+                ? 'Set up billing to keep your guard on'
+                : (
+                  <>
+                    Set up billing and get{' '}
+                    <span style={{ color: '#2fe3bd' }}>
+                      {freeDays == null ? 'your free trial' : `${freeDays} day${freeDays === 1 ? '' : 's'} free`}
+                    </span>
+                  </>
+                )}
             </h1>
             <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: '#a3b0c2', textWrap: 'pretty' }}>
               Cancel any time. Nothing is charged today.
@@ -575,7 +625,11 @@ export default function BillingStep({ onStarted }) {
                   className="bs-cta"
                   style={{ marginTop: 14, width: '100%', minHeight: 54, padding: 15, border: 0, borderRadius: 14, background: '#00d4aa', color: '#02241d', fontSize: 15, fontWeight: 800, boxShadow: '0 14px 34px -14px rgba(0,212,170,.8)', opacity: busy ? 0.75 : 1 }}
                 >
-                  {busy ? 'Starting your trial…' : `Start 7 days free · ${cur.name}`}
+                  {busy
+                    ? (charged ? 'Starting…' : 'Starting your trial…')
+                    : charged
+                      ? `Subscribe · ${cur.name}`
+                      : `Start ${freeDays == null ? 'free trial' : `${freeDays} day${freeDays === 1 ? '' : 's'} free`} · ${cur.name}`}
                 </button>
 
                 {error && (

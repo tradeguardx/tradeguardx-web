@@ -1,4 +1,4 @@
-import { apiPost } from './httpClient';
+import { apiGet, apiPost } from './httpClient';
 import { resolvePaymentsApiBaseUrl } from './config';
 
 /*
@@ -122,4 +122,101 @@ export async function validateCoupon({ accessToken, code, planSlug = 'pro', inte
     { code, planSlug, interval },
     { ...options, baseUrl, headers: { Authorization: `Bearer ${accessToken}`, ...(options.headers ?? {}) } },
   ));
+}
+
+/*
+ * Changing billing period on the subscription the user already has.
+ *
+ * These exist because the billing page used to send people to the provider's
+ * customer portal for this. That portal shows the subscription, the payment
+ * methods and the invoices — and has no plan switcher at all, so "Switch to
+ * Yearly" landed the user on a page where they could not switch to yearly.
+ *
+ * Nobody is charged for changing their mind: the server sends every change as
+ * do-not-bill, immediately while on trial and at the next renewal once paying.
+ */
+
+const authed = (accessToken, options) => {
+  if (!accessToken) throw new Error('Missing access token');
+  return {
+    ...options,
+    baseUrl: options.baseUrl ?? resolvePaymentsApiBaseUrl(),
+    headers: { ...(options.headers || {}), Authorization: `Bearer ${accessToken}` },
+  };
+};
+
+/**
+ * @returns {Promise<{interval:string,effectiveAt:'immediately'|'next_billing_date',
+ *   pending:{interval:string,effectiveAt:string}|null}>}
+ */
+export async function changeSubscriptionPlan({ accessToken, interval }, options = {}) {
+  return unwrap(await apiPost('/subscriptions/change-plan', { interval }, authed(accessToken, options)));
+}
+
+/** Undo a change that is waiting for the next renewal. */
+export async function cancelSubscriptionPlanChange({ accessToken }, options = {}) {
+  return unwrap(await apiPost('/subscriptions/cancel-change-plan', null, authed(accessToken, options)));
+}
+
+/**
+ * What the subscription is scheduled to become, read from the provider.
+ *
+ * A change set for the next renewal leaves the CURRENT period reported as-is,
+ * so without this the page would show "Monthly" and a live switch button to
+ * someone who already switched.
+ *
+ * @returns {Promise<{pending:{interval:string,effectiveAt:string}|null}>}
+ */
+export async function fetchPendingPlanChange({ accessToken }, options = {}) {
+  return unwrap(await apiGet('/subscriptions/plan-change', authed(accessToken, options)));
+}
+
+/**
+ * Cancel the subscription.
+ *
+ * Always at the end of the period, never immediately — during the trial that
+ * is exactly the paywall's promise (leave before day eight, pay nothing)
+ * without taking back the days already given. The server decides that; there
+ * is no "cancel now" to ask for.
+ *
+ * @returns {Promise<{canceled:true,alreadyCanceled:boolean}>}
+ */
+export async function cancelSubscription({ accessToken }, options = {}) {
+  return unwrap(await apiPost('/subscriptions/cancel', null, authed(accessToken, options)));
+}
+
+/**
+ * Un-cancel. Optionally come back on a different period in the same act.
+ *
+ * Cancellation runs to the end of the period, so until that date the mandate
+ * is still live — resuming clears a flag rather than buying again, and the
+ * bank is not asked to approve anything a second time.
+ *
+ * Throws with `code: 'NEEDS_CHECKOUT'` once the period has actually run out,
+ * which is the caller's cue to open checkout instead.
+ *
+ * @returns {Promise<{resumed:true,interval:string|null,planChanged:boolean}>}
+ */
+export async function resumeSubscription({ accessToken, interval }, options = {}) {
+  return unwrap(await apiPost(
+    '/subscriptions/resume',
+    interval ? { interval } : null,
+    authed(accessToken, options),
+  ));
+}
+
+/**
+ * How many free days this user will ACTUALLY get, from the same function the
+ * checkout session uses.
+ *
+ * The paywall used to have `TRIAL_DAYS = 7` written into it and promise seven
+ * to everyone. Checkout does not use that number: a part-used trial carries
+ * its remainder across, and a trial that has already ended gets nothing. So
+ * the screen and the charge disagreed, always against the customer — someone
+ * whose trial had lapsed was shown "₹0 today" and then debited in full.
+ *
+ * @returns {Promise<{trialDays:number,fullTrialDays:number}>}
+ */
+export async function fetchTrialEligibility({ accessToken }, options = {}) {
+  return unwrap(await apiGet('/subscriptions/trial-eligibility', authed(accessToken, options)));
 }

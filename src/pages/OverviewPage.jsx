@@ -37,6 +37,14 @@ const CARD = 'border:1px solid var(--line);border-radius:18px;background:var(--s
  * paying, a list of what remains reads very differently from a list that
  * shows how far you have come.
  */
+/** "14 Oct" — short, unambiguous, and the same shape as the trial banner. */
+function fmtDay(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
 function SetupCard({ steps, doneCount, navigate }) {
   return (
         <section style={sx('margin-bottom:20px;border:1px solid var(--mint-line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
@@ -70,7 +78,7 @@ function SetupCard({ steps, doneCount, navigate }) {
                 </div>
                 <div style={sx('font-size:14px;font-weight:600;letter-spacing:-.005em')}>{st.title}</div>
                 <p style={sx('flex:1;margin:5px 0 12px;font-size:12.5px;color:var(--ink-3);line-height:1.5')}>{st.body}</p>
-                {!st.done && (
+                {(!st.done || st.ending) && (
                   <button type="button" onClick={() => navigate(st.to)} style={sx('align-self:flex-start;padding:7px 12px;border:1px solid var(--ink);border-radius:8px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700')}>{st.cta}</button>
                 )}
               </div>
@@ -81,7 +89,7 @@ function SetupCard({ steps, doneCount, navigate }) {
 }
 
 export default function OverviewPage() {
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const { selectedAccount, selectedTradingAccountId, accountsLoading } = useTradingAccounts();
   const { selected: g } = useGuard();
   const { openShare, items: shareItems, awards: shareAwards, canShare } = useShare();
@@ -157,16 +165,60 @@ export default function OverviewPage() {
         !g.gaps.some((x) => x.key === 'rules'),
       ];
   const firstUndone = preds.indexOf(false);
+
+  /*
+   * BILLING AFTER A CANCELLATION IS NOT A PLAIN "DONE".
+   *
+   * It is also not undone. The mandate exists and the days are still running,
+   * so resetting the step would be false and its CTA would send someone to
+   * set up billing they already have.
+   *
+   * What is untrue is the unqualified tick: the card's whole promise is
+   * "finish setup to turn the guard on", and for this user finishing all five
+   * still ends with the guard switching off on the date below. So the step
+   * keeps its place in the count and says when it lapses.
+   */
+  const canceled = Boolean(user?.subscriptionCanceled);
+  /* Had the free week and used it — not the same as never having started. */
+  const spent = Boolean(user?.isExpired);
+  const endsOn = fmtDay(user?.trialEndsAt);
+  const billingStep = canceled
+    ? {
+        title: 'Set up billing',
+        body: endsOn
+          ? `Cancelled. Your access runs until ${endsOn} — after that nothing is enforced, whatever else is switched on.`
+          : 'Cancelled. Your access runs to the end of the trial — after that nothing is enforced.',
+        accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.plan,
+        to: '/dashboard/account/billing', cta: 'Resubscribe',
+        /* Done for the count, but it must still offer the way back. */
+        ending: true, statusText: endsOn ? `Ends ${endsOn}` : 'Ending', statusColor: 'var(--amber)',
+      }
+    : spent
+      ? {
+          /* The free week is gone. Offering it again is a promise checkout
+             will not keep — `trialDaysForUser` gives a spent trial 0 days. */
+          title: 'Set up billing',
+          body: 'Your free trial has ended, so nothing is enforcing your rules. Subscribe to switch the guard back on — the first charge is today.',
+          accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.plan,
+          to: '/dashboard/activate', cta: 'See plans',
+        }
+      : { title: 'Set up billing', body: 'Free for 7 days, nothing charged today. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Start 7 days free' };
+
   const steps = [
     { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.bank, to: '/dashboard/setup', cta: 'Add an account' },
     { title: 'Connect your API key', body: 'It needs permission to trade. That is what lets us close a position for you.', accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.connect, to: '/dashboard/connect', cta: 'Connect the key' },
-    { title: 'Set up billing', body: 'Free for 7 days, nothing charged today. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Start 7 days free' },
+    billingStep,
     { title: 'Turn on alerts', body: 'Telegram is the fast one. Without a channel a breach happens silently.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.bell, to: '/dashboard/alerts', cta: 'Set up alerts' },
     { title: 'Set your rules', body: 'Written while calm. Two are enough to start: a daily loss limit and a trade cap.', accent: 'var(--violet)', tint: 'rgba(109,63,212,0.12)', d: ICON.rules, to: '/dashboard/rules', cta: 'Choose rules' },
   ].map((st, i) => {
     const done = preds[i];
     const next = !done && firstUndone === i;
-    return { ...st, done, status: done ? 'Done' : next ? 'Do this next' : 'Not done', statusFg: done ? 'var(--mint)' : next ? 'var(--amber)' : 'var(--ink-3)' };
+    return {
+      ...st,
+      done,
+      status: st.statusText && done ? st.statusText : done ? 'Done' : next ? 'Do this next' : 'Not done',
+      statusFg: st.statusColor && done ? st.statusColor : done ? 'var(--mint)' : next ? 'var(--amber)' : 'var(--ink-3)',
+    };
   });
   const doneCount = preds.filter(Boolean).length;
   /* No longer gated on having an account: step one IS adding one, and that is

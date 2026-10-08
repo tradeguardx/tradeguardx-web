@@ -18,28 +18,45 @@ export default function ActivateGuardPage() {
   const { user } = useAuth();
   const { step, loading: stepLoading } = useSetupStep();
 
-  /* Already entitled — came back to this URL, or a webhook landed while they
-     were reading. Nothing to sell; send them to the guard. */
+  /*
+   * Already has a payment method — came back to this URL, or a webhook landed
+   * while they were reading. Nothing to sell; send them to the guard.
+   *
+   * This tested `isTrial`, which is true for a legacy no-card trial too. So
+   * the one group with a live prompt to attach a card was bounced to the
+   * guard every time they followed it: the button said "Set up billing" and
+   * the product answered with the Live guard page. There was no route to the
+   * thing we were asking them for.
+   */
+  const hasMandate =
+    user?.access === 'active' || Boolean(user?.trialAutoRenews) || Boolean(user?.subscriptionCanceled);
   useEffect(() => {
-    if (user?.planKnown && (user.isTrial || user.access === 'active')) {
+    if (user?.planKnown && hasMandate) {
       navigate('/dashboard/live', { replace: true });
     }
-  }, [user?.planKnown, user?.isTrial, user?.access, navigate]);
+  }, [user?.planKnown, hasMandate, navigate]);
 
   /*
    * NOTHING TO PROTECT YET — DO NOT ASK FOR MONEY.
    *
-   * Reached directly or from a stale link before there is an account or a
-   * connected key. Without this the page renders a price with no balance on
-   * it, which is both a weaker ask and a dishonest one: charging to guard an
-   * account that does not exist. Send them to the step they are actually on.
+   * Reached directly or from a stale link before there is an account at all.
+   * Without this the page renders a price with no balance on it, which is
+   * both a weaker ask and a dishonest one: charging to guard an account that
+   * does not exist.
+   *
+   * The bar is an ACCOUNT, not a key. It used to send anyone short of the
+   * `pay` step away, which made this page unreachable for a trialist with
+   * accounts and no key yet — we prompted them to attach a card and then
+   * answered with the key page. A missing key makes the ask weaker, because
+   * their balance cannot be named; it does not make it dishonest, and it is
+   * not a reason to refuse someone trying to keep the trial they are on.
    */
   useEffect(() => {
     if (stepLoading || !step) return;
-    if (step.key !== 'pay') navigate(step.to, { replace: true });
+    if (step.key === 'account') navigate(step.to, { replace: true });
   }, [stepLoading, step, navigate]);
 
-  if (stepLoading || step?.key !== 'pay') return null;
+  if (stepLoading || !step || step.key === 'account') return null;
 
   return <BillingStep />;
 }

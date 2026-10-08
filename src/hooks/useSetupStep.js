@@ -49,7 +49,11 @@ export const SETUP_STEPS = {
     key: 'pay',
     label: 'Switch on your guard',
     to: '/dashboard/activate',
-    blurb: 'Everything is connected. Switch the guard on to start your 7 free days.',
+    /* No day count here. This is a static constant shown to new signups and
+       to users whose trial has already been spent, and the two get different
+       numbers — 7 and 0. The billing step states the real one, because it
+       asks the server for it. */
+    blurb: 'Everything is connected. Switch the guard on so your rules are enforced.',
   },
 };
 

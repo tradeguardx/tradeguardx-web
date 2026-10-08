@@ -61,6 +61,29 @@ export function GuardProvider({ children }) {
    */
   const access = user?.access ?? null;
   const entitled = access == null ? true : access === 'trial' || access === 'active';
+  /*
+   * HAS A PAYMENT METHOD ATTACHED — WHICH IS NOT THE SAME AS HAVING ACCESS.
+   *
+   * For a mandate-first signup the two always agree, which is why they were
+   * ever conflated. They come apart for the users who signed up under the old
+   * no-card trial: entitled today, nothing attached, and on the day the trial
+   * lapses the guard switches off. Reading `entitled` for this told them
+   * "Set up billing — Done" and then took the guard away without ever asking.
+   *
+   * A cancelled mandate still counts: they attached a method, they just told
+   * us to stop using it. That case is an "ending" step, not an unmet one.
+   *
+   * Defaults to true while unknown — same fail-open rule as `entitled`: never
+   * tell someone who has paid that they have not.
+   */
+  const mandate =
+    access == null
+      ? true
+      : access === 'active' || Boolean(user?.trialAutoRenews) || Boolean(user?.subscriptionCanceled);
+  /* Already had the free week. `none` means nothing ever started and the
+     offer is real; `expired` means it ran out and checkout will charge them
+     today. The two must not be told the same thing. */
+  const trialSpent = access === 'expired';
   const { accounts, accountsLoading, selectedTradingAccountId, refreshTradingAccounts } = useTradingAccounts();
   const accessToken = session?.access_token;
 
@@ -181,7 +204,7 @@ export function GuardProvider({ children }) {
       // `loaded` rides along so nothing downstream mistakes "not fetched yet"
       // for "not connected" — see guard.js.
       const isLoaded = slice.loaded && loaded;
-      const input = { account, connection: slice.connection, rules: slice.rules, notifications, loaded: isLoaded, entitled };
+      const input = { account, connection: slice.connection, rules: slice.rules, notifications, loaded: isLoaded, entitled, mandate, trialSpent };
       const enforcement = enforcementOf(input);
       const guard = guardOf(input, now);
       const gaps = gapsOf(input);
@@ -211,7 +234,7 @@ export function GuardProvider({ children }) {
         canLockOut: canLockOutOf(input),
       };
     },
-    [accounts, perAccount, notifications, now, loaded, entitled],
+    [accounts, perAccount, notifications, now, loaded, entitled, mandate, trialSpent],
   );
 
   const value = useMemo(

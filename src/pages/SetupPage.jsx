@@ -106,9 +106,25 @@ export default function SetupPage() {
   const [venues, setVenues] = useState([]);
   const [venuesLoading, setVenuesLoading] = useState(true);
   const [slug, setSlug] = useState(params.get('venue') || '');
+  /*
+   * ADDING ANOTHER ACCOUNT IS NOT RESUMING THE LAST ONE.
+   *
+   * The resume rule below lands on the first undone step, which is right for
+   * someone coming back to finish — and wrong for "Add another account". A
+   * user with one half-finished account pressed "Choose an exchange" and was
+   * dropped onto Connect key for the account they already had, with no way to
+   * create a second one. `?new=1` says which of the two this is.
+   */
+  const fresh = params.get('new') === '1';
+  /* Whether an account was created in THIS pass, so a fresh run does not tick
+     its first two steps off the back of accounts that already existed. */
+  const [createdHere, setCreatedHere] = useState(false);
   /* Null until they navigate. The step shown is derived from what is actually
      done, and this only overrides it once they move themselves — see `at`. */
-  const [pickedStep, setPickedStep] = useState(() => (params.get('venue') ? 1 : null));
+  const [pickedStep, setPickedStep] = useState(() => {
+    if (params.get('venue')) return 1;
+    return fresh ? 0 : null;
+  });
 
   useEffect(() => {
     let alive = true;
@@ -125,17 +141,33 @@ export default function SetupPage() {
    * happen in the middle of this flow.
    */
   const g = guard.selected;
-  const entitled = Boolean(user?.isTrial) || user?.access === 'active';
+  /*
+   * HAS A PAYMENT METHOD — NOT "HAS ACCESS".
+   *
+   * This read `isTrial || access === 'active'`, which ticks the billing step
+   * for anyone on ANY trial. The users who signed up under the old no-card
+   * trial are on one with nothing attached, so they saw billing already
+   * ticked and `afterKey` skipped the step entirely — the flow never asked
+   * them, and on the day the trial lapses the guard simply stops.
+   *
+   * A cancelled mandate still counts: a method is attached, they just told us
+   * to stop using it, and re-running setup is not where that is fixed.
+   */
+  const hasMandate =
+    user?.access === 'active' || Boolean(user?.trialAutoRenews) || Boolean(user?.subscriptionCanceled);
   const hasAccount = Boolean(selectedAccount) || (Array.isArray(accounts) && accounts.length > 0);
   const done = useMemo(() => {
     const noGap = (k) => Boolean(g?.gaps) && !g.gaps.some((x) => x.key === k);
+    /* On a fresh run the accounts they already have say nothing about the one
+       they are creating now, so only an account made in this pass counts. */
+    const account = fresh ? createdHere : hasAccount;
     return [
-      Boolean(slug) || hasAccount,
-      hasAccount,
-      hasAccount && noGap('key'),
-      entitled,
+      Boolean(slug) || account,
+      account,
+      account && noGap('key'),
+      hasMandate,
     ];
-  }, [slug, hasAccount, entitled, g]);
+  }, [slug, hasAccount, hasMandate, fresh, createdHere, g]);
 
   /*
    * RESUME WHERE THEY STOPPED.
@@ -167,12 +199,14 @@ export default function SetupPage() {
   const afterCreate = async (created) => {
     await refreshTradingAccounts();
     if (created?.id) setSelectedTradingAccountId(created.id);
+    setCreatedHere(true);
     go(2);
   };
 
-  /* Entitled users have nothing to buy, so billing is skipped rather than
-     shown and dismissed. With billing last, that means they are done. */
-  const afterKey = () => (entitled ? finish() : go(3));
+  /* Someone who already has a method attached has nothing to buy, so billing
+     is skipped rather than shown and dismissed. With billing last, that means
+     they are done. A no-card trialist is NOT in that group. */
+  const afterKey = () => (hasMandate ? finish() : go(3));
 
   const finish = async () => {
     await refreshTradingAccounts();

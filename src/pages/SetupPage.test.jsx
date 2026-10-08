@@ -33,7 +33,8 @@ vi.mock('../components/dashboard/VenueMark', () => ({ default: () => <span /> })
 
 const auth = { session: { access_token: 't' }, user: { access: 'none', isTrial: false } };
 vi.mock('../context/AuthContext', () => ({ useAuth: () => auth }));
-vi.mock('../context/GuardContext', () => ({ useGuard: () => ({ selected: { gaps: [] }, refresh: vi.fn() }) }));
+const guardCtx = { selected: { gaps: [] }, refresh: vi.fn() };
+vi.mock('../context/GuardContext', () => ({ useGuard: () => guardCtx }));
 
 const accountsCtx = {
   accounts: [],
@@ -45,10 +46,13 @@ vi.mock('../context/TradingAccountContext', () => ({ useTradingAccounts: () => a
 
 const { default: SetupPage } = await import('./SetupPage');
 
-const mount = () => render(<MemoryRouter><SetupPage /></MemoryRouter>);
+const mount = (path = '/dashboard/setup') => render(<MemoryRouter initialEntries={[path]}><SetupPage /></MemoryRouter>);
 
 beforeEach(() => {
   auth.user = { access: 'none', isTrial: false };
+  accountsCtx.accounts = [];
+  accountsCtx.selectedAccount = null;
+  guardCtx.selected = { gaps: [] };
 });
 
 describe('setup, as a page', () => {
@@ -92,10 +96,37 @@ describe('setup, as a page', () => {
     expect(await screen.findByText('connect-flow embedded=true')).toBeTruthy();
   });
 
-  it('skips billing for someone already on a trial', async () => {
+  it('skips billing for someone whose payment method is already attached', async () => {
     // Nothing to sell. Showing a price to a paying customer and making them
     // dismiss it is worse than not showing it at all.
-    auth.user = { access: 'trial', isTrial: true };
+    auth.user = { access: 'trial', isTrial: true, trialAutoRenews: true };
+    mount();
+    fireEvent.click(await screen.findByText('Delta'));
+    fireEvent.click(await screen.findByText('create account'));
+    fireEvent.click(await screen.findByText('connect'));
+    await screen.findByText('Set up your guard');
+    expect(screen.queryByText('billing step')).toBeNull();
+  });
+
+  /*
+   * This case used to be folded into the one above, because the check was
+   * `isTrial` — true for a legacy no-card trial as well. Those users saw
+   * billing already ticked and the flow skipped the step entirely, so it
+   * never asked, and the day the trial lapsed the guard simply stopped.
+   */
+  it('still asks a no-card trialist for billing', async () => {
+    auth.user = { access: 'trial', isTrial: true, trialAutoRenews: false };
+    mount();
+    fireEvent.click(await screen.findByText('Delta'));
+    fireEvent.click(await screen.findByText('create account'));
+    fireEvent.click(await screen.findByText('connect'));
+    expect(await screen.findByText('billing step')).toBeTruthy();
+  });
+
+  /* Cancelled is not unattached: the method is still there, they told us to
+     stop using it, and setup is not where that gets fixed. */
+  it('skips billing for someone who cancelled but still has a method', async () => {
+    auth.user = { access: 'trial', isTrial: true, trialAutoRenews: false, subscriptionCanceled: true };
     mount();
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
@@ -109,5 +140,45 @@ describe('setup, as a page', () => {
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
     expect(await screen.findByText(/connect the key later/i)).toBeTruthy();
+  });
+});
+
+/**
+ * ADDING ANOTHER ACCOUNT IS NOT RESUMING THE LAST ONE.
+ *
+ * Resume lands on the first undone step, which is right for someone coming
+ * back to finish. For "Add another account" it meant a user with one
+ * half-finished account was dropped onto Connect key for the account they
+ * already had — there was no way to create a second one at all.
+ */
+describe('a second account', () => {
+  const existing = { id: 'acc-1', name: 'Shark', venueSlug: 'shark' };
+
+  it('resumes an unfinished account when that is what they came back for', async () => {
+    accountsCtx.accounts = [existing];
+    accountsCtx.selectedAccount = existing;
+    /* The account exists but its key does not — the state this page is for. */
+    guardCtx.selected = { gaps: [{ key: 'key' }] };
+    mount('/dashboard/setup');
+    expect(await screen.findByText('connect-flow embedded=true')).toBeTruthy();
+  });
+
+  it('starts from the exchange picker when they asked for a new one', async () => {
+    accountsCtx.accounts = [existing];
+    accountsCtx.selectedAccount = existing;
+    guardCtx.selected = { gaps: [{ key: 'key' }] };
+    mount('/dashboard/setup?new=1');
+    /* The picker, not the key form for the account they already had. */
+    expect(await screen.findByText('Delta')).toBeTruthy();
+    expect(screen.queryByText('connect-flow embedded=true')).toBeNull();
+  });
+
+  it('walks the new account through its own steps', async () => {
+    accountsCtx.accounts = [existing];
+    accountsCtx.selectedAccount = existing;
+    guardCtx.selected = { gaps: [{ key: 'key' }] };
+    mount('/dashboard/setup?new=1');
+    fireEvent.click(await screen.findByText('Delta'));
+    expect(await screen.findByText('create account')).toBeTruthy();
   });
 });

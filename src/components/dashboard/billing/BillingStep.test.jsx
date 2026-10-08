@@ -12,9 +12,14 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 const checkout = vi.fn(async () => ({ checkoutUrl: 'https://test.checkout/x' }));
 const validate = vi.fn(async () => ({ valid: true, code: 'SAVE15', percentOff: 15, cycles: null }));
+/* The free days this user actually gets, from the same function checkout
+   uses. Defaults to the full window so the existing cases read as a new
+   signup; the cohort cases below override it. */
+let eligibility = { trialDays: 7, fullTrialDays: 7 };
 vi.mock('../../../api/paymentsApi', () => ({
   createCheckoutSession: (...a) => checkout(...a),
   validateCoupon: (...a) => validate(...a),
+  fetchTrialEligibility: async () => eligibility,
 }));
 vi.mock('../../../api/pricingApi', () => ({
   getPricingPlans: async () => [{
@@ -35,6 +40,7 @@ vi.mock('../../../context/AuthContext', () => ({ useAuth: () => auth }));
 const { default: BillingStep } = await import('./BillingStep');
 
 beforeEach(() => {
+  eligibility = { trialDays: 7, fullTrialDays: 7 };
   checkout.mockClear();
   validate.mockClear();
   validate.mockResolvedValue({ valid: true, code: 'SAVE15', percentOff: 15, cycles: null });
@@ -342,5 +348,56 @@ describe('billing step', () => {
     render(<BillingStep />);
     await screen.findByText('Due today');
     expect(screen.queryByText(/Your guard is off/)).toBeNull();
+  });
+});
+
+/**
+ * THE NUMBER ON THIS SCREEN MUST BE THE NUMBER WE CHARGE.
+ *
+ * `TRIAL_DAYS = 7` was written into this file and promised seven free days
+ * to everyone. Checkout does not use it — `trialDaysForUser` carries a
+ * part-used trial across and gives nothing to one that has already ended.
+ * The two disagreed, always against the customer.
+ */
+describe('billing step — the free window it promises', () => {
+  /* Anchored on the pay panel: "Set up billing" appears in more than one
+     place, and the day count only renders once prices have loaded. */
+  const show = async () => { render(<BillingStep />); await screen.findByText('Choose how you pay'); };
+
+  it('names the carried days for someone part-way through a trial', async () => {
+    eligibility = { trialDays: 4, fullTrialDays: 7 };
+    await show();
+    /* Both the headline and the button carry it — someone who scrolls past
+       one must not be able to read the other and get a different number. */
+    expect((await screen.findAllByText(/4 days free/)).length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText(/7 days free/)).toBeNull();
+  });
+
+  it('says "1 day", not "1 days", on the last day', async () => {
+    eligibility = { trialDays: 1, fullTrialDays: 7 };
+    await show();
+    expect((await screen.findAllByText(/1 day free/)).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/1 days free/)).toBeNull();
+  });
+
+  /*
+   * The worst case. 27 users are here: a legacy trial that has already run
+   * out. They get ZERO free days and are charged on the spot — and this
+   * screen used to tell them "7 days free · ₹0 charged today".
+   */
+  it('tells a lapsed trialist they are charged today, not that it is free', async () => {
+    eligibility = { trialDays: 0, fullTrialDays: 7 };
+    await show();
+    expect(await screen.findByText(/first charge of .* is today/i)).toBeTruthy();
+    expect(screen.queryByText(/days free/)).toBeNull();
+    expect(screen.queryByText(/₹0 charged/)).toBeNull();
+  });
+
+  /* A number is a promise about money; silence beats a guess. */
+  it('states no day count until the server has answered', async () => {
+    eligibility = new Promise(() => {});
+    render(<BillingStep />);
+    expect(await screen.findByText(/your free trial/i)).toBeTruthy();
+    expect(screen.queryByText(/7 days free/)).toBeNull();
   });
 });

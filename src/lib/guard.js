@@ -79,7 +79,7 @@ export function hasAlertChannel(settings) {
  * Ordered gaps. Each is { key, title, body, cta, to }. `to` is a dashboard
  * route the CTA navigates to. Returns [] when nothing is missing.
  */
-export function gapsOf({ account, connection, rules, notifications, entitled = true, loaded = true }) {
+export function gapsOf({ account, connection, rules, notifications, entitled = true, mandate = true, trialSpent = false, loaded = true }) {
   // Copy verbatim from the reference's gapOf(). Read-only is not a gap here —
   // it is the 'watching' state, with its own band copy (see describeGuard).
   //
@@ -127,15 +127,57 @@ export function gapsOf({ account, connection, rules, notifications, entitled = t
    * yet cannot flash "you have not paid" at someone who has — the same
    * fail-open rule the key and rules gaps follow.
    */
-  if (!entitled) {
-    gaps.push({
-      key: 'billing',
-      short: 'guard not switched on',
-      title: 'Billing is not set up',
-      body: 'Rules are written down but nothing enforces them until the guard is on. The first 7 days are free and nothing is charged today.',
-      cta: 'Start 7 days free',
-      to: '/dashboard/activate',
-    });
+  /*
+   * TWO DIFFERENT PEOPLE, ONE STEP.
+   *
+   * `entitled` is "has access right now". `mandate` is "has a payment method
+   * attached". For a mandate-first signup they always agree. They come apart
+   * for the users who signed up under the old no-card trial: protected today,
+   * nothing attached, and the guard goes quiet on the day it lapses.
+   *
+   * Reading only `entitled` ticked this step as done for them and then said
+   * nothing until the protection was already gone. They are asked, and they
+   * are NOT blocked — the trial they were given still runs to its end.
+   */
+  if (!entitled || !mandate) {
+    gaps.push(
+      entitled
+        ? {
+            key: 'billing',
+            short: 'no payment method',
+            title: 'No payment method on your trial',
+            body: 'Your guard is running, and on the day your trial ends it stops — there is nothing attached to keep it going. Add one now and you keep every day you have left.',
+            cta: 'Set up billing',
+            to: '/dashboard/activate',
+          }
+        : trialSpent
+          ? {
+              /*
+               * THEY HAVE ALREADY HAD THE FREE WEEK.
+               *
+               * The offer below is a promise the checkout will not keep:
+               * `trialDaysForUser` returns 0 for a spent trial, so "the first
+               * 7 days are free and nothing is charged today" was shown to
+               * someone who would be debited in full the moment they pressed
+               * it. It is also the wrong thing to say to a person who has
+               * used the product for a week and watched it stop.
+               */
+              key: 'billing',
+              short: 'trial ended',
+              title: 'Your free trial has ended',
+              body: 'Nothing is enforcing your rules any more. Subscribe to switch the guard back on — your free week is already used, so your first charge is today.',
+              cta: 'See plans',
+              to: '/dashboard/activate',
+            }
+          : {
+            key: 'billing',
+            short: 'guard not switched on',
+            title: 'Billing is not set up',
+            body: 'Rules are written down but nothing enforces them until the guard is on. The first 7 days are free and nothing is charged today.',
+            cta: 'Start 7 days free',
+            to: '/dashboard/activate',
+          },
+    );
   }
   if (enabledRuleCount(rules) === 0) {
     gaps.push({
