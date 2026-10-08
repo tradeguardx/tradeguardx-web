@@ -1,85 +1,51 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useTradingAccounts } from '../../context/TradingAccountContext';
 import { createCheckoutSession } from '../../api/paymentsApi';
 import { getPricingPlans } from '../../api/pricingApi';
 import { trialDaysOnOffer, firstChargeDate } from '../../lib/trialOffer';
-import { brokerLabel } from '../../lib/labels';
-import { fmtMoney } from '../../lib/session';
-import { fetchUnifiedTrades } from '../../api/tradesApi';
-import { useLiveAccount } from '../../hooks/useLiveAccount';
-import { worstDayOf } from '../../lib/worstDay';
 
 /**
- * The ask itself: their balance, their limit in rupees, the date, the amount.
+ * The ask: what happens without a guard, what it costs, and the three ways to
+ * pay for it.
  *
- * A component rather than a page because it is rendered in two places — the
- * standalone /dashboard/activate route and stage 3 of the add-venue wizard —
- * and the wizard's stated rule is that its stages are the REAL screens, not
- * reduced copies. A second, simplified version of the page that asks for
- * money is exactly the kind that drifts from the real one within a release
- * and starts quoting a price we no longer charge.
+ * ──────────────────────────────────────────────────────────────────────────
+ * IT ARGUES FROM THE PROBLEM, NOT FROM THEIR ACCOUNT.
+ *
+ * It used to lead with their balance and a counterfactual from their own
+ * worst day. Both read well when the data was there and were absent when it
+ * was not — the balance is written by per-venue code and every Shark account
+ * on production has none, and the counterfactual needs history that has not
+ * imported yet for exactly the person being asked. An argument that is
+ * missing for some users is not an argument; it is a gap they notice.
+ *
+ * What is always true needs no data: a day that has already gone wrong costs
+ * more than this does, and the trades that do the damage are the ones taken
+ * after it went wrong. That holds for every trader on every venue on their
+ * first day, which is who this screen is for.
+ * ──────────────────────────────────────────────────────────────────────────
+ *
+ * A component rather than a page because it renders in two places — the
+ * /dashboard/activate route and the billing step of the setup flow — and a
+ * second simplified copy of the screen that asks for money is the kind that
+ * drifts and starts quoting a price we no longer charge.
  */
 
-const DEFAULT_LIMIT_PCT = 0.02;
+const INTERVAL_LABEL = { monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Yearly' };
+const INTERVAL_EVERY = { monthly: 'every month', quarterly: 'every 3 months', yearly: 'every year' };
 
-/* The PLAN price, which really is in rupees. */
 function inr(n) {
   if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return null;
   return `₹${Math.round(n).toLocaleString('en-IN')}`;
 }
 
-/*
- * THE BALANCE IS IN THE ACCOUNT'S OWN CURRENCY, NOT RUPEES.
- *
- * Delta and CoinDCX settle in USD and USDT; a ₹ in front of 35.37 would tell
- * someone with $35 that they hold thirty-five rupees. The plan price beside
- * it is genuinely ₹1,299, so the two figures on this card are in different
- * currencies and both have to say which.
- *
- * Null unless it is a real positive number, so the card falls back to the
- * general promise rather than printing a zero it cannot stand behind.
- */
-function money(n, currency) {
-  if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return null;
-  return fmtMoney(n, currency || 'USD', { decimals: n < 100 ? 2 : 0 });
-}
-
 export default function ActivateGuardCard({ embedded = false, onLater }) {
   const { user, session, refetchSubscription } = useAuth();
-  const { selectedAccount } = useTradingAccounts();
-  const live = useLiveAccount({
-    accessToken: session?.access_token,
-    tradingAccountId: selectedAccount?.id ?? null,
-    initial: selectedAccount,
-  });
   const [plans, setPlans] = useState([]);
+  const [interval, setInterval] = useState('monthly');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => { getPricingPlans().then(setPlans).catch(() => setPlans([])); }, []);
-
-  /*
-   * Their own worst day, if we have enough history to know it.
-   *
-   * This arrives late or not at all — the import starts when the key is
-   * verified and runs for minutes — so nothing on this card waits for it and
-   * nothing says it is coming. If it lands, the strongest sentence on the
-   * page appears; if it does not, the page was already complete without it.
-   */
-  const [trades, setTrades] = useState(null);
-  useEffect(() => {
-    const token = session?.access_token;
-    const id = selectedAccount?.id;
-    if (!token || !id) return undefined;
-    const ac = new AbortController();
-    fetchUnifiedTrades({ accessToken: token, tradingAccountId: id, limit: 200, signal: ac.signal })
-      .then(setTrades)
-      .catch(() => {
-        /* No history yet is the normal case straight after connecting. */
-      });
-    return () => ac.abort();
-  }, [session?.access_token, selectedAccount?.id]);
 
   const freeDays = trialDaysOnOffer(user);
   const chargeOn = useMemo(
@@ -88,43 +54,14 @@ export default function ActivateGuardCard({ embedded = false, onLater }) {
   );
 
   const pro = plans.find((p) => String(p.slug || '').toLowerCase() === 'pro');
-  const monthly = pro?.intervals?.find((i) => i.interval === 'monthly');
-  const priceLabel = typeof monthly?.price === 'number' ? inr(monthly.price) : null;
+  const options = useMemo(() => {
+    const rows = pro?.intervals ?? [];
+    return ['monthly', 'quarterly', 'yearly']
+      .map((k) => rows.find((r) => r.interval === k))
+      .filter((r) => r && typeof r.price === 'number');
+  }, [pro]);
 
-  /*
-   * EQUITY, FROM WHICHEVER SOURCE HAS IT — NEVER ONE VENUE'S PLUMBING.
-   *
-   * It read `accountSize`, which is only set when someone types it in for a
-   * funded prop account, so a flow-created account showed "₹0" — worse than
-   * silence, because it looks like we checked and found nothing.
-   *
-   * The obvious fix was the balance `connectExchange` seeds at verification,
-   * and that is still first. But it is written by per-venue verify code, and
-   * every Shark account on production has it null while Delta's are all
-   * populated. One venue's parser should not decide whether the product can
-   * state a limit, so the live equity the engine maintains — which is fed the
-   * same way for every venue — is checked too.
-   *
-   * First usable number wins; nothing is printed if none of them is real.
-   */
-  const equity = [
-    live?.currentEquity,
-    live?.dailyStartingEquity,
-    selectedAccount?.currentBalance,
-    selectedAccount?.startingBalance,
-    selectedAccount?.accountSize,
-  ]
-    .map(Number)
-    .find((n) => Number.isFinite(n) && n > 0);
-  const currency = selectedAccount?.accountCurrency || 'USD';
-  const equityLabel = money(equity, currency);
-  const limitLabel = money(equity * DEFAULT_LIMIT_PCT, currency);
-  const venue = selectedAccount?.name || brokerLabel(selectedAccount?.propFirmSlug) || 'your account';
-
-  const worst = useMemo(
-    () => worstDayOf(trades ?? [], { limit: equity * DEFAULT_LIMIT_PCT, timeZone: selectedAccount?.timezone }),
-    [trades, equity, selectedAccount?.timezone],
-  );
+  const chosen = options.find((o) => o.interval === interval) ?? options[0] ?? null;
 
   const start = async () => {
     if (busy) return;
@@ -134,7 +71,7 @@ export default function ActivateGuardCard({ embedded = false, onLater }) {
       const res = await createCheckoutSession({
         accessToken: session?.access_token,
         planSlug: 'pro',
-        interval: 'monthly',
+        interval: chosen?.interval ?? 'monthly',
       });
       const url = res?.checkoutUrl;
       if (!url) throw new Error('Could not open checkout. Please try again.');
@@ -158,54 +95,78 @@ export default function ActivateGuardCard({ embedded = false, onLater }) {
         </>
       )}
 
-      {/* Their own money, their own limit. Everything else here is secondary. */}
-      {equityLabel ? (
-        <div
-          className={embedded ? 'rounded-xl border p-4' : 'mt-5 rounded-xl border p-4'}
-          style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)' }}
-        >
-          <p className="text-[12px]" style={{ color: 'var(--dash-text-faint)' }}>{venue}</p>
-          <p className="mt-0.5 font-display text-xl font-bold" style={{ color: 'var(--dash-text-primary)' }}>{equityLabel}</p>
-          {limitLabel && (
-            <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-              A 2% daily loss limit on this account is <strong style={{ color: 'var(--dash-text-primary)' }}>{limitLabel}</strong>.
-              Past that we cancel your orders, close your positions and lock you out for the rest of the day — from our
-              servers, whether or not you are at the screen.
-            </p>
-          )}
-        </div>
-      ) : (
-        <p className={embedded ? 'text-[13px] leading-relaxed' : 'mt-4 text-[13px] leading-relaxed'} style={{ color: 'var(--dash-text-secondary)' }}>
-          Your rules run on our servers and act on your account even when you are not at the screen — orders cancelled,
-          positions closed, locked out for the day.
+      {/*
+        * The argument. Not "here are the features" and not a projection of
+        * their account — the mechanism by which trading accounts actually
+        * die, which every trader recognises because they have lived it.
+        */}
+      <div
+        className={embedded ? 'rounded-xl border p-4' : 'mt-5 rounded-xl border p-4'}
+        style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)' }}
+      >
+        <p className="text-[14px] font-bold" style={{ color: 'var(--dash-text-primary)' }}>
+          Accounts are not lost to one bad trade.
         </p>
-      )}
+        <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+          They are lost to the trades taken after it — the ones that go on once the day has already gone wrong.
+          The guard runs on our servers: at your limit it cancels your orders, closes your positions and locks you
+          out for the rest of the day, whether or not you are at the screen.
+        </p>
+        <p className="mt-3 text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+          A month of this costs less than one stop-loss you did not take.
+        </p>
+      </div>
 
-      {/* The argument, when their own history can make it. Below the balance
-          because the limit has to be named before it means anything. */}
-      {worst && limitLabel && (
-        <div
-          className="mt-3 rounded-xl border p-4"
-          style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--tax-neg-soft)' }}
-        >
-          <p className="text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-            On <strong style={{ color: 'var(--dash-text-primary)' }}>{new Date(worst.day).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}</strong>{' '}
-            you lost <strong style={{ color: 'var(--tax-neg)' }}>{money(worst.loss, currency)}</strong> across {worst.tradeCount} trades.
-            With this limit on, the guard would have stopped you after{' '}
-            {worst.stoppedAfter === 1 ? 'the first' : `${worst.stoppedAfter}`}
-            {worst.stoppedAfter === 1 ? ' trade' : ' trades'}
-            {worst.saved > 0 ? <> — the rest of that day cost <strong style={{ color: 'var(--tax-neg)' }}>{money(worst.saved, currency)}</strong>.</> : '.'}
-          </p>
+      {/* All three, because the cheapest per month is the longest commitment
+          and hiding that is how people feel sold to later. */}
+      {options.length > 0 && (
+        <div className="mt-5 grid gap-2 sm:grid-cols-3">
+          {options.map((o) => {
+            const on = chosen?.interval === o.interval;
+            return (
+              <button
+                key={o.interval}
+                type="button"
+                onClick={() => setInterval(o.interval)}
+                aria-pressed={on}
+                className="rounded-xl border p-3 text-left transition-colors"
+                style={{
+                  borderColor: on ? 'var(--accent, #00d4aa)' : 'var(--dash-border)',
+                  backgroundColor: on ? 'rgba(0,212,170,0.08)' : 'var(--dash-bg-input)',
+                }}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[12px] font-semibold" style={{ color: 'var(--dash-text-secondary)' }}>
+                    {INTERVAL_LABEL[o.interval]}
+                  </span>
+                  {o.savingsPct > 0 && (
+                    <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: 'rgba(0,212,170,0.16)', color: 'var(--accent, #00d4aa)' }}>
+                      save {Math.round(o.savingsPct)}%
+                    </span>
+                  )}
+                </span>
+                <span className="mt-1 block font-display text-[17px] font-bold" style={{ color: 'var(--dash-text-primary)' }}>
+                  {inr(o.price)}
+                </span>
+                <span className="mt-0.5 block text-[11.5px]" style={{ color: 'var(--dash-text-faint)' }}>
+                  {o.interval === 'monthly' ? 'per month' : `${inr(o.perMonth)}/mo · billed ${o.interval}`}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="mt-5">
         <p className="font-display text-lg font-bold" style={{ color: 'var(--dash-text-primary)' }}>
-          {freeDays > 0 ? <>₹0 today{priceLabel ? ` · ${priceLabel} on ${chargeOn}` : ''}</> : <>{priceLabel ?? 'Pro'} · billed monthly</>}
+          {freeDays > 0
+            ? <>₹0 today{chosen ? ` · ${inr(chosen.price)} on ${chargeOn}` : ''}</>
+            : <>{chosen ? inr(chosen.price) : 'Pro'} · billed {chosen?.interval ?? 'monthly'}</>}
         </p>
         {freeDays > 0 && (
           <p className="mt-1 text-[13px]" style={{ color: 'var(--dash-text-secondary)' }}>
-            Cancel any time before {chargeOn} and you pay nothing.
+            Cancel any time before {chargeOn} and you pay nothing. After that,{' '}
+            {INTERVAL_EVERY[chosen?.interval ?? 'monthly']} until you cancel.
           </p>
         )}
       </div>
@@ -250,10 +211,7 @@ export default function ActivateGuardCard({ embedded = false, onLater }) {
   if (embedded) return <div>{inner}</div>;
 
   return (
-    <div
-      className="rounded-2xl border p-6 sm:p-8"
-      style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)' }}
-    >
+    <div className="rounded-2xl border p-6 sm:p-8" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)' }}>
       {inner}
     </div>
   );
