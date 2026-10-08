@@ -266,6 +266,17 @@ export function trackCtaClick(source) {
   emit('cta_click', { vid, props: { source: source || 'unknown' } });
 }
 
+/**
+ * The billing step of setup. One emitter for the whole screen because these
+ * events are only useful read together — how many saw it, how many touched a
+ * plan, how many pressed the button, and how many of those actually reached
+ * the provider. Split across four shapes they stop being a funnel.
+ */
+export function trackBilling(event, props = {}) {
+  const { vid } = visitor();
+  emit(event, { vid, props });
+}
+
 /** User was sent to the payment provider's checkout. */
 export function trackCheckoutStarted(plan) {
   const { vid } = visitor();

@@ -26,8 +26,8 @@ vi.mock('./ConnectKeyPage', () => ({
     </div>
   ),
 }));
-vi.mock('../components/dashboard/ActivateGuardCard', () => ({
-  default: ({ embedded }) => <span>activate embedded={String(embedded)}</span>,
+vi.mock('../components/dashboard/billing/BillingStep', () => ({
+  default: () => <span>billing step</span>,
 }));
 vi.mock('../components/dashboard/VenueMark', () => ({ default: () => <span /> }));
 
@@ -67,7 +67,7 @@ describe('setup, as a page', () => {
     fireEvent.click(screen.getByText('connect'));
     /* Billing sits after the key: the balance is read from the key, so this is
        the first point the ask can name their own daily limit. */
-    expect(await screen.findByText(/activate embedded=true/)).toBeTruthy();
+    expect(await screen.findByText('billing step')).toBeTruthy();
   });
 
   /* Rules and alerts are editable afterwards and alerts are optional by
@@ -78,7 +78,7 @@ describe('setup, as a page', () => {
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
-    await screen.findByText(/activate embedded=true/);
+    await screen.findByText('billing step');
     expect(screen.queryByText(/Alerts/)).toBeNull();
     expect(screen.queryByText(/^Rules$/)).toBeNull();
   });
@@ -101,7 +101,7 @@ describe('setup, as a page', () => {
     fireEvent.click(await screen.findByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
     await screen.findByText('Set up your guard');
-    expect(screen.queryByText(/activate embedded/)).toBeNull();
+    expect(screen.queryByText('billing step')).toBeNull();
   });
 
   it('names what each skip costs, rather than saying "skip"', async () => {

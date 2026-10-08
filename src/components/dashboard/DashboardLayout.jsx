@@ -54,6 +54,8 @@ function Shell() {
   const killBtnRef = useRef(null);
 
   const billingArea = pathname.includes('/account') || pathname.includes('/billing');
+  /* The setup flow speaks for itself — see the banner suppression below. */
+  const setupFlow = pathname.includes('/dashboard/setup');
   /*
    * `needsMandate` deliberately does NOT lock the dashboard.
    *
@@ -158,14 +160,17 @@ function Shell() {
             <NotificationPanel />
             <AvatarMenu />
           </div>
-          <GuardBand />
+          {!setupFlow && <GuardBand />}
         </header>
 
         <BreachToast />
 
         <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;margin:0 auto;animation:tgxSlide .22s ease-out')}>
           <VerifyEmailBanner />
-          <SetupBanner />
+          {/* The setup flow's billing step carries its own status band, and
+              three messages all saying "your guard is off" reads as nagging
+              rather than emphasis. */}
+          {!setupFlow && <SetupBanner />}
           <TrialBanner />
           {locked ? <UpgradeWall /> : <Outlet />}
         </main>

@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import ActivateGuardCard from '../components/dashboard/ActivateGuardCard';
+import BillingStep from '../components/dashboard/billing/BillingStep';
 import { useSetupStep } from '../hooks/useSetupStep';
 
 /**
- * The paywall as a destination of its own, for anyone who left the wizard and
- * came back. The ask itself lives in ActivateGuardCard, which the add-venue
- * wizard renders as its billing stage — one implementation, two entrances.
+ * The billing step as a destination of its own, for anyone who left the setup
+ * flow and came back. The screen itself is BillingStep, the same component
+ * step 4 renders — one implementation, two entrances, so a price can never be
+ * right in one place and stale in the other.
  *
  * This page owns only the routing decisions: who should not be here, and
  * where they go instead.
@@ -40,9 +41,5 @@ export default function ActivateGuardPage() {
 
   if (stepLoading || step?.key !== 'pay') return null;
 
-  return (
-    <div className="mx-auto w-full max-w-lg py-6">
-      <ActivateGuardCard onLater={() => navigate('/dashboard/overview')} />
-    </div>
-  );
+  return <BillingStep />;
 }

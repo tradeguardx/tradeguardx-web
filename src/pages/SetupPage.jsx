@@ -6,7 +6,7 @@ import { useTradingAccounts } from '../context/TradingAccountContext';
 import { fetchSupportedProps } from '../api/tradingAccountsApi';
 import { AddAccountForm } from './TradingAccountsPage';
 import { ConnectKeyFlow } from './ConnectKeyPage';
-import ActivateGuardCard from '../components/dashboard/ActivateGuardCard';
+import BillingStep from '../components/dashboard/billing/BillingStep';
 import VenuePicker from '../components/dashboard/VenuePicker';
 import VenueMark from '../components/dashboard/VenueMark';
 import { venueFor } from '../lib/venues';
@@ -30,7 +30,7 @@ import { sx } from '../components/dashboard/shell/sx';
  * ──────────────────────────────────────────────────────────────────────────
  *
  * THE STAGES ARE THE REAL SCREENS. AddAccountForm, ConnectKeyFlow,
- * ActivateGuardCard, AlertsSettings and RulesTerminal are the same components
+ * BillingStep and ConnectKeyFlow are the same components
  * their standalone routes render. A setup flow with its own simplified copies
  * is a second implementation of the most important steps in the product, and
  * it drifts from the real ones within a release.
@@ -199,6 +199,16 @@ export default function SetupPage() {
 
   const venue = slug ? venueFor(slug) : null;
 
+  /*
+   * Step 4 owns its whole screen — band, stepper, headline and plan panel —
+   * so the page chrome below would be a second stepper above its own and a
+   * second heading above its headline. The reference is explicit that this
+   * step replaces them.
+   */
+  if (at === 3) {
+    return <BillingStep onStarted={() => setPickedStep(3)} />;
+  }
+
   return (
     <div style={sx('max-width:1040px;margin:0 auto;padding-bottom:56px')}>
       <header style={sx('margin-bottom:20px')}>
@@ -248,7 +258,6 @@ export default function SetupPage() {
       )}
 
       {at === 2 && <ConnectKeyFlow embedded onConnected={afterKey} />}
-      {at === 3 && <ActivateGuardCard embedded />}
 
       {at > 0 && (
         <footer style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:30px;padding-top:18px;border-top:1px solid var(--line)')}>
@@ -269,21 +278,6 @@ export default function SetupPage() {
               style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}
             >
               I&apos;ll connect the key later
-            </button>
-          )}
-          {at === 3 && (
-            <button
-              type="button"
-              onClick={() => {
-                /* An explicit decision, remembered. Overview hands people back
-                   to this flow until the guard can act; without a record of
-                   "not now" that help becomes a loop they cannot get out of. */
-                try { window.localStorage?.setItem('tgx_setup_dismissed', '1'); } catch { /* blocked storage */ }
-                finish();
-              }}
-              style={sx('padding:9px 13px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}
-            >
-              Not now — leave the guard off
             </button>
           )}
           {at < STEPS.length - 1 ? (
