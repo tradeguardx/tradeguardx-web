@@ -179,20 +179,24 @@ export default function BillingPage() {
     try {
       const res = await changeSubscriptionPlan({ accessToken, interval: opt.id });
       setPending(res?.pending ?? null);
-      if (res?.effectiveAt === 'immediately') {
-        toast.success(`Now on ${opt.name}`, 'Your first charge will be for this plan.');
-        /* The webhook writes our row; refetching is what makes the card agree
-           with the button that was just pressed. */
-        refetchSubscription?.();
-      } else {
-        toast.success(`${opt.name} scheduled`, 'It starts at your next renewal. Nothing charged today.');
-      }
+      /*
+       * Every change now waits for the next billing date — see planChangeFor.
+       * On a trial that date is the FIRST payment, not a renewal, and calling
+       * it a renewal to someone who has never been charged is confusing.
+       */
+      toast.success(
+        `${opt.name} scheduled`,
+        state === 'trial'
+          ? `Your free days run on as they are. Your first payment${nextDate ? ` on ${nextDate}` : ''} will be for ${opt.name}.`
+          : 'It starts at your next renewal. Nothing is charged today.',
+      );
+      refetchSubscription?.();
     } catch (e) {
       toast.error('Could not change the period', e?.message || 'Please try again.');
     } finally {
       setBusy('');
     }
-  }, [accessToken, interval, refetchSubscription, toast]);
+  }, [accessToken, interval, state, nextDate, refetchSubscription, toast]);
 
   const undoChange = useCallback(async () => {
     if (!accessToken) return;

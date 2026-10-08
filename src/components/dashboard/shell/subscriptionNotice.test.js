@@ -70,3 +70,41 @@ describe('subscriptionNotice — the two kinds of trial', () => {
     expect(subscriptionNotice(trial({ trialDaysLeft: null })).text).toContain('Your free trial is active');
   });
 });
+
+/**
+ * UNDER A RED BAND, THE PLAN LINE STATES THE MONEY AND NOTHING ELSE.
+ *
+ * "Free trial — everything unlocked" printed directly beneath "No rules are
+ * switched on · NOT PROTECTED" is the screen arguing with itself. Unlocked
+ * describes the features; the trader reads it as covered.
+ */
+describe('subscriptionNotice — the compact form', () => {
+  it('drops the reassurance but keeps the charge date', () => {
+    const n = subscriptionNotice(trial({ trialAutoRenews: true }));
+    expect(n.short).not.toMatch(/unlocked/i);
+    expect(n.short).toMatch(/Oct/);
+    expect(n.short).toMatch(/5 days left/);
+  });
+
+  it('still says a cancelled plan will not be charged', () => {
+    const n = subscriptionNotice(trial({ subscriptionCanceled: true, trialAutoRenews: true }));
+    expect(n.short).toMatch(/Cancelled/);
+    expect(n.short).toMatch(/won’t be charged/);
+  });
+
+  /* The one fact that matters for this user: nothing is attached. */
+  it('names the missing payment method on a no-card trial', () => {
+    expect(subscriptionNotice(trial({ trialAutoRenews: false })).short).toMatch(/no payment method attached/);
+  });
+
+  it('gives every state a short form, so the band never falls back', () => {
+    for (const u of [
+      trial({ trialAutoRenews: true }),
+      trial({ trialAutoRenews: false }),
+      trial({ subscriptionCanceled: true }),
+    ]) {
+      expect(typeof subscriptionNotice(u).short).toBe('string');
+      expect(subscriptionNotice(u).short.length).toBeGreaterThan(0);
+    }
+  });
+});

@@ -74,8 +74,9 @@ export default function GuardBand() {
               than beside it as a second alarm of equal weight. */}
           {guard && notice && (
             <div style={sx('margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;color:var(--ink-3)')}>
-              <strong style={sx('color:var(--ink-2);font-weight:700')}>{notice.strong}</strong>{' '}
-              {notice.text}{' '}
+              {/* `short`, not `text`: under a red band the plan line states the
+                  money and nothing else. See subscriptionNotice. */}
+              {notice.short ?? notice.text}{' '}
               {noticeLink && (
                 <Link to={noticeLink.to} style={sx('font-weight:700;text-decoration:underline', { color: `var(--${notice.tone})` })}>{noticeLink.cta}</Link>
               )}

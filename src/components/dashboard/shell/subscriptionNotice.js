@@ -26,7 +26,13 @@ export function fmtDay(iso) {
 }
 
 /**
- * @returns {{tone:string,strong:string,text:string,cta:string,to:string}|null}
+ * `short` is the same fact with the reassurance stripped out, for when this
+ * rides UNDER a guard problem. "Free trial — everything unlocked" printed
+ * directly beneath "No rules are switched on · NOT PROTECTED" is the screen
+ * arguing with itself: unlocked describes the features, and the trader reads
+ * it as covered. Under a red band the plan line's only job is the money.
+ *
+ * @returns {{tone:string,strong:string,text:string,short:string,cta:string,to:string}|null}
  */
 export function subscriptionNotice(user) {
   /* Nothing is said from an unloaded state. "Cancelled" or "set up payment"
@@ -48,6 +54,7 @@ export function subscriptionNotice(user) {
       tone: 'amber',
       strong: 'Cancelled.',
       text: on ? `Your access runs until ${on}. You won’t be charged.` : 'Your access runs to the end of the trial. You won’t be charged.',
+      short: on ? `Cancelled · access until ${on} · you won’t be charged` : 'Cancelled · access to the end of the trial · you won’t be charged',
       cta: 'Resubscribe',
       to: '/dashboard/account/billing',
     };
@@ -64,6 +71,7 @@ export function subscriptionNotice(user) {
       tone: 'mint',
       strong: 'Free trial — everything unlocked.',
       text: on ? `${left}. Your first payment is on ${on}. Cancel before then and you won’t be charged.` : `${left}. Cancel before it ends and you won’t be charged.`,
+      short: on ? `Free trial · ${left} · first payment ${on}` : `Free trial · ${left} · cancel before it ends and you pay nothing`,
       cta: 'Manage',
       to: '/dashboard/account/billing',
     };
@@ -75,6 +83,7 @@ export function subscriptionNotice(user) {
     /* The carried-days rule makes this honest: setting up autopay now keeps
        the days they have left, so there is nothing to gain by waiting. */
     text: `${left}. Set up payment to keep access when it ends — you keep the days you have left.`,
+    short: `Free trial · ${left} · no payment method attached`,
     cta: 'Set up',
     /* Not /pricing. That is the public marketing page, and sending a signed-in
        trialist there drops them out of the product to re-choose a plan they

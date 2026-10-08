@@ -257,6 +257,15 @@ export function guardOf(input, now = Date.now()) {
  * Pill, band and hero copy per guard state — transcribed from the reference's
  * guardFor(). `label` is the account-row word (stateOf), `pill` the header word.
  */
+/** The second line under "Not protected", per gap. See describeGuard. */
+const SUB_FOR_GAP = {
+  setup: 'This account is missing details the engine needs before it can size a limit. Finish it and the guard can be armed.',
+  key: 'The engine has no key with permission to act. Connect one with trading scope and it can cancel orders and close positions for you.',
+  billing: 'Enforcement needs an active plan. Your rules stay exactly as you left them until one is on.',
+  rules: 'Your key is connected and verified. There is simply no rule for the engine to enforce — switch one on and the guard arms itself.',
+  alerts: 'The guard acts either way. Without a channel it just will not be able to tell you when it does.',
+};
+
 export function describeGuard(guard, { on = 0, total = 0, gap = null, label = '', readOnly = false, entitled = true } = {}) {
   switch (guard) {
     case GUARD.LOADING:
@@ -315,7 +324,17 @@ export function describeGuard(guard, { on = 0, total = 0, gap = null, label = ''
         title: gap
           ? `Not protected. ${gap.title.replace(/^The |^This /, '')}`
           : on > 0 ? `Not protected. Your ${on} rules exist, nothing enforces them.` : 'Not protected. No rules are switched on yet.',
-        sub: 'Finish setup and the engine starts watching every fill. Until then your rules are written down but nothing acts on them.',
+        /*
+         * NAME THE ONE THING THAT IS MISSING.
+         *
+         * This said "finish setup" whatever was wrong. Onboarding is four
+         * steps now — exchange, account, key, billing — and rules come after
+         * it, so a user who has finished all four and simply has no rule
+         * switched on was told to go and finish a setup they had completed.
+         * The generic line also claimed "your rules are written down" to
+         * someone with none.
+         */
+        sub: SUB_FOR_GAP[gap?.key] ?? 'Nothing is enforcing this account yet. Until that is sorted your rules are written down but nothing acts on them.',
         showBand: true,
         bandTitle: gap ? gap.title : 'Nothing is enforcing this account yet',
         bandBody: gap ? gap.body : 'Connect a key with trading scope and the engine can cancel orders and close positions for you. Until then nothing acts on your rules.',
