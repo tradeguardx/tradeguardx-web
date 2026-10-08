@@ -35,6 +35,17 @@ const TRADE_ENV_BASE_URLS = {
   prod: 'https://api.tradeguardx.com/trades',
 };
 
+/**
+ * Sync service (serverless basePath `sync`). Imports exchange history — fills
+ * in, FIFO-reconstructed positions out — so the product has something to say
+ * about a trader's own past rather than only about the account balance.
+ */
+const SYNC_ENV_BASE_URLS = {
+  local: 'http://localhost:3011',
+  dev: 'https://dev.api.tradeguardx.com/sync',
+  prod: 'https://api.tradeguardx.com/sync',
+};
+
 /** Analytics service (serverless basePath `analytics`). Public ingest endpoint. */
 const ANALYTICS_ENV_BASE_URLS = {
   local: 'http://localhost:3010',
@@ -152,6 +163,12 @@ export function resolveAnalyticsApiBaseUrl() {
 }
 
 export const ANALYTICS_API_BASE_URL = resolveAnalyticsApiBaseUrl();
+
+export function resolveSyncApiBaseUrl() {
+  return resolveServiceBaseUrl('VITE_SYNC_API_BASE_URL', SYNC_ENV_BASE_URLS);
+}
+
+export const SYNC_API_BASE_URL = resolveSyncApiBaseUrl();
 
 /**
  * The single public IP users should whitelist on their Delta API key. Returns

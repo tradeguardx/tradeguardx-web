@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { triggerHistoryBackfill } from '../../api/syncApi';
 import {
   connectExchangeCredentials,
   disconnectExchangeCredentials,
@@ -122,6 +123,18 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
       });
       setConnection(result);
       setConnectOutcome({ ok: true, summary: result });
+      /*
+       * Start importing their history the moment the key verifies.
+       *
+       * It takes minutes and may fail, so nothing waits on it and nothing is
+       * told about it: the very next screen asks for money, and a spinner
+       * between "key connected" and "here is the price" is the worst place in
+       * the product to spend that time. When it lands, the journal, the tax
+       * centre and the trader's own past are simply there.
+       */
+      triggerHistoryBackfill({ accessToken, tradingAccountId: account.id }).catch(() => {
+        /* History is a bonus, never a blocker. The daily sweep gap-fills. */
+      });
     } catch (e) {
       setConnectOutcome({ ok: false, message: e?.message || `${v.name} rejected the connection. Try again.` });
     } finally {

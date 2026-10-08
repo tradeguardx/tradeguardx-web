@@ -6,6 +6,8 @@ import { getPricingPlans } from '../../api/pricingApi';
 import { trialDaysOnOffer, firstChargeDate } from '../../lib/trialOffer';
 import { brokerLabel } from '../../lib/labels';
 import { fmtMoney } from '../../lib/session';
+import { fetchUnifiedTrades } from '../../api/tradesApi';
+import { worstDayOf } from '../../lib/worstDay';
 
 /**
  * The ask itself: their balance, their limit in rupees, the date, the amount.
@@ -51,6 +53,28 @@ export default function ActivateGuardCard({ embedded = false, onLater }) {
 
   useEffect(() => { getPricingPlans().then(setPlans).catch(() => setPlans([])); }, []);
 
+  /*
+   * Their own worst day, if we have enough history to know it.
+   *
+   * This arrives late or not at all — the import starts when the key is
+   * verified and runs for minutes — so nothing on this card waits for it and
+   * nothing says it is coming. If it lands, the strongest sentence on the
+   * page appears; if it does not, the page was already complete without it.
+   */
+  const [trades, setTrades] = useState(null);
+  useEffect(() => {
+    const token = session?.access_token;
+    const id = selectedAccount?.id;
+    if (!token || !id) return undefined;
+    const ac = new AbortController();
+    fetchUnifiedTrades({ accessToken: token, tradingAccountId: id, limit: 200, signal: ac.signal })
+      .then(setTrades)
+      .catch(() => {
+        /* No history yet is the normal case straight after connecting. */
+      });
+    return () => ac.abort();
+  }, [session?.access_token, selectedAccount?.id]);
+
   const freeDays = trialDaysOnOffer(user);
   const chargeOn = useMemo(
     () => firstChargeDate(freeDays)?.toLocaleDateString(undefined, { day: 'numeric', month: 'long' }) ?? null,
@@ -80,6 +104,11 @@ export default function ActivateGuardCard({ embedded = false, onLater }) {
   const equityLabel = money(equity, currency);
   const limitLabel = money(equity * DEFAULT_LIMIT_PCT, currency);
   const venue = selectedAccount?.name || brokerLabel(selectedAccount?.propFirmSlug) || 'your account';
+
+  const worst = useMemo(
+    () => worstDayOf(trades ?? [], { limit: equity * DEFAULT_LIMIT_PCT, timeZone: selectedAccount?.timezone }),
+    [trades, equity, selectedAccount?.timezone],
+  );
 
   const start = async () => {
     if (busy) return;
@@ -134,6 +163,24 @@ export default function ActivateGuardCard({ embedded = false, onLater }) {
           Your rules run on our servers and act on your account even when you are not at the screen — orders cancelled,
           positions closed, locked out for the day.
         </p>
+      )}
+
+      {/* The argument, when their own history can make it. Below the balance
+          because the limit has to be named before it means anything. */}
+      {worst && limitLabel && (
+        <div
+          className="mt-3 rounded-xl border p-4"
+          style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--tax-neg-soft)' }}
+        >
+          <p className="text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+            On <strong style={{ color: 'var(--dash-text-primary)' }}>{new Date(worst.day).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}</strong>{' '}
+            you lost <strong style={{ color: 'var(--tax-neg)' }}>{money(worst.loss, currency)}</strong> across {worst.tradeCount} trades.
+            With this limit on, the guard would have stopped you after{' '}
+            {worst.stoppedAfter === 1 ? 'the first' : `${worst.stoppedAfter}`}
+            {worst.stoppedAfter === 1 ? ' trade' : ' trades'}
+            {worst.saved > 0 ? <> — the rest of that day cost <strong style={{ color: 'var(--tax-neg)' }}>{money(worst.saved, currency)}</strong>.</> : '.'}
+          </p>
+        </div>
       )}
 
       <div className="mt-6">
