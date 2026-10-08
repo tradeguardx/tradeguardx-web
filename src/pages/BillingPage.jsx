@@ -7,7 +7,7 @@ import { useToast } from '../components/common/ToastProvider';
 import { clearPendingCheckoutPlan } from '../lib/checkoutIntent';
 import { openBillingPortal, updateSubscriptionPaymentMethod, createCheckoutSession } from '../api/paymentsApi';
 import { getPricingPlans } from '../api/pricingApi';
-import { journalPeriodBadgeLabel } from '../lib/planLimits';
+import { journalPeriodBadgeLabel, maxTradingAccountsForPlan } from '../lib/planLimits';
 import { billingStateOf, daysUntil, gstInside, savingVsMonthly } from '../lib/billingState';
 import { trackBilling } from '../lib/analytics';
 import { sx } from '../components/dashboard/shell/sx';
@@ -101,7 +101,22 @@ export default function BillingPage() {
   const nextAt = state === 'trial' ? me?.subscription?.trialEndsAt : me?.subscription?.currentPeriodEnd;
   const nextDate = fmtDate(nextAt);
   const left = daysUntil(nextAt);
-  const startedAt = fmtDate(me?.subscription?.createdAt);
+  const createdAt = me?.subscription?.createdAt ?? null;
+  const startedAt = fmtDate(createdAt);
+
+  /*
+   * How long the trial actually is, measured rather than assumed.
+   *
+   * "Day 1 of 7" had the 7 written into it. The server's TRIAL_DAYS is
+   * env-driven precisely so a launch offer can be a config flip, so the first
+   * 14-day trial would have had this bar counting to seven and reporting a
+   * day number from the wrong end. The two dates we already hold say it
+   * exactly.
+   */
+  const trialDays =
+    createdAt && me?.subscription?.trialEndsAt
+      ? Math.max(1, Math.round((new Date(me.subscription.trialEndsAt) - new Date(createdAt)) / 86400000))
+      : 7;
 
   const skin = STATE_SKIN[state] ?? STATE_SKIN.active;
   const chip = STATE_CHIP[state] ?? STATE_CHIP.active;
@@ -157,7 +172,11 @@ export default function BillingPage() {
 
   const bar =
     state === 'trial'
-      ? { l: left != null ? `Day ${Math.max(1, 8 - left)} of 7` : 'Trial running', r: left != null ? `${left} days left` : '', w: left != null ? `${Math.round(((7 - left) / 7) * 100)}%` : '0%' }
+      ? {
+          l: left != null ? `Day ${Math.min(trialDays, Math.max(1, trialDays - left + 1))} of ${trialDays}` : 'Trial running',
+          r: left != null ? `${left} ${left === 1 ? 'day' : 'days'} left` : '',
+          w: left != null ? `${Math.round(((trialDays - left) / trialDays) * 100)}%` : '0%',
+        }
       : state === 'cancelled'
         ? { l: 'Protection ends', r: left != null ? `${left} days left` : '', w: '58%' }
         : state === 'failed'
@@ -278,7 +297,13 @@ export default function BillingPage() {
         <section style={sxw(CARD)}>
           <h3 style={sxw(H3)}>What your plan is protecting</h3>
           <div style={sxw('margin-top:14px;display:grid;gap:14px')}>
-            <Row k="Trading accounts" v={`${accounts?.length ?? 0} · unlimited`} />
+            {/* The ceiling comes from the plan, not from the word
+                "unlimited" typed into a template: a Free row would have read
+                "1 · unlimited", which is the opposite of true. */}
+            <Row
+              k="Trading accounts"
+              v={`${accounts?.length ?? 0} · ${maxTradingAccountsForPlan(user?.subscribedPlanSlug ?? 'pro') ?? 'unlimited'}`}
+            />
             <Row
               k="Rules switched on"
               v={`${rulesOn} of ${rulesTotal}`}
