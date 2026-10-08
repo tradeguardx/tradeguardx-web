@@ -179,13 +179,6 @@ export default function BillingStep({ onStarted }) {
           })}
         </ol>
 
-          <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.6vw,30px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.032em', textWrap: 'pretty' }}>
-            Accounts aren&rsquo;t lost to one bad trade. <span style={{ color: '#7f8ca0' }}>They&rsquo;re lost to the trades after it.</span>
-          </h1>
-          <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: '#a3b0c2', maxWidth: '62ch', textWrap: 'pretty' }}>
-            All five below, on every plan. Free for 7 days — nothing charged today.
-          </p>
-        </div>
 
         {/* The hero lives in the left column so the panel starts at the top
             of the row, level with the headline, instead of below it. The
@@ -205,6 +198,13 @@ export default function BillingStep({ onStarted }) {
             <div style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.18em', textTransform: 'uppercase', color: '#2fe3bd' }}>
               Step 4 of 4 · Last step
             </div>
+            <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.4vw,28px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.03em', textWrap: 'pretty' }}>
+              Accounts aren&rsquo;t lost to one bad trade. <span style={{ color: '#7f8ca0' }}>They&rsquo;re lost to the trades after it.</span>
+            </h1>
+            <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: '#a3b0c2', textWrap: 'pretty' }}>
+              All five below, on every plan. Free for 7 days — nothing charged today.
+            </p>
+          </div>
             {/*
               * Summary always, detail on demand. Someone who already knows
               * why they are here never opens a row; someone weighing it can
