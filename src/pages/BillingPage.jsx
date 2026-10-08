@@ -125,11 +125,14 @@ export default function BillingPage() {
     if (!accessToken) { toast.error('Not signed in', 'Please sign in again.'); return; }
     setBusy(what);
     try {
+      /* Two endpoints, two field names: the portal returns `portalUrl` and
+         the payment-method update returns `paymentUpdateUrl`. Reading one
+         name for both is what made Update fail silently with "no link". */
       const res = what === 'card'
         ? await updateSubscriptionPaymentMethod({ accessToken })
         : await openBillingPortal({ accessToken });
-      const url = res?.portalUrl ?? res?.url;
-      if (!url) throw new Error('No portal link came back.');
+      const url = res?.paymentUpdateUrl ?? res?.portalUrl ?? res?.url;
+      if (!url) throw new Error('No link came back from the billing provider.');
       window.location.href = url;
     } catch (e) {
       toast.error('Could not open billing', e?.message || 'Please try again.');
@@ -278,7 +281,19 @@ export default function BillingPage() {
               * TODO(api): surface brand, last4 and expiry on /subscriptions/me.
               */}
             <div style={sxw(`display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#070a12;box-shadow:inset 0 0 0 1px ${state === 'failed' ? 'rgba(239,68,68,.4)' : 'rgba(255,255,255,.07)'}`)}>
-              <span aria-hidden style={sxw("flex:none;width:40px;height:28px;border-radius:6px;background:linear-gradient(135deg,#1a1f71,#2e3a9e);display:grid;place-items:center;font:800 9px/1 'Space Grotesk',sans-serif;letter-spacing:.06em;color:#fff")}>CARD</span>
+              {/*
+                * Not "CARD". Most people here pay by UPI mandate, and a card
+                * tile on a UPI subscription is the same class of error as
+                * printing someone else's last four digits — it describes a
+                * payment method we have not been told about.
+                * TODO(api): once /subscriptions/me carries the method, show
+                * the real brand or "UPI Autopay" here.
+                */}
+              <span aria-hidden style={sxw('flex:none;width:40px;height:28px;border-radius:6px;background:rgba(255,255,255,.07);display:grid;place-items:center;color:#a3b0c2')}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 7h18v12H3z" /><path d="M3 11h18M8 15h4" />
+                </svg>
+              </span>
               <span style={sxw('flex:1;min-width:0')}>
                 <span style={sxw('display:block;font-size:13px;font-weight:700')}>Payment method on file</span>
                 <span style={sxw(`display:block;margin-top:2px;font-size:11.5px;color:${state === 'failed' ? '#ff8178' : '#7f8ca0'}`)}>

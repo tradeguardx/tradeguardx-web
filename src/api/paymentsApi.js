@@ -29,7 +29,7 @@ export async function openBillingPortal({ accessToken }, options = {}) {
     throw new Error('Missing access token for billing portal');
   }
   const baseUrl = options.baseUrl ?? resolvePaymentsApiBaseUrl();
-  return apiPost(
+  return unwrap(await apiPost(
     '/billing-portal/session',
     null,
     {
@@ -39,8 +39,8 @@ export async function openBillingPortal({ accessToken }, options = {}) {
         ...(options.headers || {}),
         Authorization: `Bearer ${accessToken}`,
       },
-    }
-  );
+    },
+  ));
 }
 
 /**
@@ -53,7 +53,7 @@ export async function updateSubscriptionPaymentMethod({ accessToken }, options =
     throw new Error('Missing access token for payment method update');
   }
   const baseUrl = options.baseUrl ?? resolvePaymentsApiBaseUrl();
-  return apiPost(
+  return unwrap(await apiPost(
     '/subscriptions/update-payment-method',
     null,
     {
@@ -63,8 +63,8 @@ export async function updateSubscriptionPaymentMethod({ accessToken }, options =
         ...(options.headers || {}),
         Authorization: `Bearer ${accessToken}`,
       },
-    }
-  );
+    },
+  ));
 }
 
 /**
