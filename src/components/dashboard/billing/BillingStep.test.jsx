@@ -81,9 +81,12 @@ describe('billing step', () => {
     expect(checkout.mock.calls[0][0]).toMatchObject({ planSlug: 'pro', interval: 'quarterly' });
   });
 
-  it('keeps the tax wording exactly — it is legally careful', async () => {
+  it('keeps the tax wording exactly, with the claim it qualifies', async () => {
+    // It sits inside the tax row, not loose under the list: a legal
+    // qualifier with nothing visible to qualify just reads as a worry.
     render(<BillingStep />);
-    expect(await screen.findByText('Illustrative, not a confirmed liability. Review with your CA.')).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: /Tax management/ }));
+    expect(screen.getByText('Illustrative, not a confirmed liability. Review with your CA.')).toBeTruthy();
   });
 
   /*
@@ -97,6 +100,29 @@ describe('billing step', () => {
     await screen.findAllByText('Due today');
     expect(screen.queryByText(/email you two days before/i)).toBeNull();
     expect(screen.queryByText(/with a link to cancel/i)).toBeNull();
+  });
+
+  it('keeps the detail behind an accordion, closed by default', async () => {
+    render(<BillingStep />);
+    const row = await screen.findByRole('button', { name: /Rule-based kill switch/ });
+    expect(row).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText(/One red trade becomes five/)).toBeNull();
+
+    fireEvent.click(row);
+    expect(row).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText(/One red trade becomes five/)).toBeTruthy();
+  });
+
+  /* Closing something the user did not ask to close is the more annoying of
+     the two behaviours, so rows open independently. */
+  it('lets more than one row stay open', async () => {
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Rule-based kill switch/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Manual kill switch/ }));
+    expect(screen.getByText(/One red trade becomes five/)).toBeTruthy();
+    /* The pain line, which appears only in the expanded detail — the summary
+       and the fix share wording, so matching on that proves nothing. */
+    expect(screen.getByText(/stop clicking/)).toBeTruthy();
   });
 
   it('hides the status band once the guard is on', async () => {

@@ -7,13 +7,17 @@
  * exists to sell a subscription spent most of its height demonstrating
  * features to someone who had not yet seen the price.
  *
- * One line each. The demonstrations belong in the product, which they are
- * about to have for seven days.
+ * One line each, with the pain and the fix behind an accordion. Someone who
+ * already knows why they are here never opens one; someone weighing it can
+ * read the case for the protection that worries them without the other four
+ * arguing at them at the same time.
  */
 
 export const PROTECTIONS = [
   {
     id: 'kill',
+    pain: 'You hit your daily limit, then take “one more” to win it back. One red trade becomes five.',
+    fix: "At your limit we close your positions, cancel open orders and lock the day in about 120ms. It works even when you're not at the screen.",
     n: '01',
     title: 'Rule-based kill switch',
     body: 'At your limit we close your positions, cancel open orders and lock the day — in about 120ms, with the app closed.',
@@ -23,6 +27,8 @@ export const PROTECTIONS = [
   },
   {
     id: 'manual',
+    pain: "You know you're tilted, but you can't stop clicking.",
+    fix: "Lock yourself out for 3, 6 or 12 hours. There's no cancel button, only the clock.",
     n: '02',
     title: 'Manual kill switch',
     body: 'Lock yourself out for 3, 6 or 12 hours. There is no cancel button, only the clock.',
@@ -32,6 +38,11 @@ export const PROTECTIONS = [
   },
   {
     id: 'tax',
+    pain: "A year of trades, and your CA wants a reconciled P&L you've never built.",
+    fix: 'We reconcile every trade into one financial-year P&L, show two illustrative treatments, and export a report for your CA.',
+    /* Legally careful, and it belongs next to the claim it qualifies rather
+       than loose under the list where it qualifies nothing on screen. */
+    note: 'Illustrative, not a confirmed liability. Review with your CA.',
     n: '03',
     title: 'Tax management',
     body: 'Every trade reconciled into one financial-year P&L, with a report you can hand to your CA.',
@@ -41,6 +52,8 @@ export const PROTECTIONS = [
   },
   {
     id: 'accounts',
+    pain: "You scalp in one account and swing in another, but one set of rules can't fit both.",
+    fix: 'Every account gets its own rules, limits and guard. Switch between them in one tap.',
     n: '04',
     title: 'Up to 5 trading accounts',
     body: 'Each with its own rules, limits and guard. Switch between them in one tap.',
@@ -50,6 +63,8 @@ export const PROTECTIONS = [
   },
   {
     id: 'journal',
+    pain: 'You repeat the same mistake because you never wrote it down.',
+    fix: 'A two-minute guided journal after each session. The AI reads your trades, puts a cost on each habit, and suggests a rule to stop it.',
     n: '05',
     title: 'Journal + AI trade analyser',
     body: 'A two-minute journal after each session. The AI puts a cost on each habit and suggests a rule to stop it.',

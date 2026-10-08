@@ -59,6 +59,10 @@ export default function BillingStep({ onStarted }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const rowRefs = useRef([]);
+  const [openRows, setOpenRows] = useState([]);
+
+  const toggleRow = (id) =>
+    setOpenRows((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
 
   useEffect(() => { getPricingPlans().then(setPlans).catch(() => setPlans([])); }, []);
   useEffect(() => { trackBilling('billing_step_viewed'); }, []);
@@ -191,37 +195,69 @@ export default function BillingStep({ onStarted }) {
             Accounts aren&rsquo;t lost to one bad trade. <span style={{ color: '#7f8ca0' }}>They&rsquo;re lost to the trades after it.</span>
           </h1>
           <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: '#a3b0c2', maxWidth: '62ch', textWrap: 'pretty' }}>
-            Every plan turns on all five protections below. Free for 7 days — nothing charged today.
+            All five below, on every plan. Free for 7 days — nothing charged today.
           </p>
         </div>
 
         <div style={{ marginTop: 28, display: 'flex', gap: 26, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 460px', minWidth: 0 }}>
-            <ul style={{ margin: 0, padding: 16, listStyle: 'none', display: 'grid', gap: 2, borderRadius: 18, background: '#0d1422', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)' }}>
-              {PROTECTIONS.map((p) => (
-                <li key={p.id} style={{ display: 'flex', gap: 12, padding: '10px 4px', alignItems: 'flex-start' }}>
-                  <span
-                    aria-hidden
-                    style={{ flex: 'none', width: 28, height: 28, borderRadius: 9, background: p.gradient, color: p.color, display: 'grid', placeItems: 'center', marginTop: 1 }}
-                  >
-                    <Glyph d={GLYPH[p.glyph]} />
-                  </span>
-                  <span style={{ minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, letterSpacing: '-.005em' }}>{p.title}</span>
-                    <span style={{ display: 'block', marginTop: 2, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>{p.body}</span>
-                  </span>
-                </li>
-              ))}
+            {/*
+              * Summary always, detail on demand. Someone who already knows
+              * why they are here never opens a row; someone weighing it can
+              * read the case for the one protection that worries them without
+              * the other four arguing at the same time.
+              *
+              * Rows open independently rather than one-at-a-time: closing
+              * something the user did not ask to close is the more annoying
+              * of the two behaviours.
+              */}
+            <ul style={{ margin: 0, padding: 10, listStyle: 'none', display: 'grid', gap: 1, borderRadius: 18, background: '#0d1422', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)' }}>
+              {PROTECTIONS.map((p) => {
+                const open = openRows.includes(p.id);
+                return (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleRow(p.id)}
+                      aria-expanded={open}
+                      aria-controls={`prot-${p.id}`}
+                      style={{ width: '100%', display: 'flex', gap: 12, padding: '10px 8px', alignItems: 'flex-start', background: open ? 'rgba(255,255,255,.03)' : 'transparent', border: 0, borderRadius: 12, color: '#f6f9fc', textAlign: 'left' }}
+                    >
+                      <span aria-hidden style={{ flex: 'none', width: 28, height: 28, borderRadius: 9, background: p.gradient, color: p.color, display: 'grid', placeItems: 'center', marginTop: 1 }}>
+                        <Glyph d={GLYPH[p.glyph]} />
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, letterSpacing: '-.005em' }}>{p.title}</span>
+                        <span style={{ display: 'block', marginTop: 2, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>{p.body}</span>
+                      </span>
+                      <span
+                        aria-hidden
+                        style={{ flex: 'none', marginTop: 6, color: '#7f8ca0', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }}
+                      >
+                        <Glyph d={['M6 9l6 6 6-6']} size={14} />
+                      </span>
+                    </button>
+
+                    {open && (
+                      <div id={`prot-${p.id}`} style={{ padding: '2px 8px 12px 52px', display: 'grid', gap: 7 }}>
+                        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>
+                          <b style={{ color: '#ff8178', fontWeight: 700 }}>Pain:</b> {p.pain}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#f6f9fc' }}>
+                          <b style={{ color: '#2fe3bd', fontWeight: 700 }}>Fix:</b> {p.fix}
+                        </p>
+                        {p.note && (
+                          <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: '#7f8ca0' }}>{p.note}</p>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
 
             <p style={{ margin: '12px 2px 0', fontSize: 12, lineHeight: 1.55, color: '#7f8ca0' }}>
               All five come with every plan. Plans only change how often you pay.
-            </p>
-            {/* Kept from the card that used to show figures. The tax centre
-                still shows numbers once there are trades behind them, and
-                this is the sentence that qualifies them. */}
-            <p style={{ margin: '6px 2px 0', fontSize: 11.5, lineHeight: 1.5, color: '#7f8ca0' }}>
-              Illustrative, not a confirmed liability. Review with your CA.
             </p>
           </div>
 
