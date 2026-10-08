@@ -14,7 +14,7 @@ export function Glyph({ d, size = 19, width = 2 }) {
   );
 }
 
-export function IconTile({ gradient, color, d, size = 38, radius = 12, glyph = 19, stroke = 2 }) {
+export function IconTile({ gradient, color, d, size = 32, radius = 10, glyph = 16, stroke = 2 }) {
   return (
     <span aria-hidden style={{ flex: 'none', width: size, height: size, borderRadius: radius, background: gradient, display: 'grid', placeItems: 'center', color }}>
       <Glyph d={d} size={glyph} width={stroke} />
@@ -22,15 +22,15 @@ export function IconTile({ gradient, color, d, size = 38, radius = 12, glyph = 1
   );
 }
 
-export function CardHead({ tile, kicker, title, titleSize = 18 }) {
+export function CardHead({ tile, kicker, title, titleSize = 16 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       {tile}
       <div>
-        <div style={{ font: "600 10px/1 'JetBrains Mono',monospace", letterSpacing: '.16em', textTransform: 'uppercase', color: '#7f8ca0' }}>
+        <div style={{ font: "600 9px/1 'JetBrains Mono',monospace", letterSpacing: '.15em', textTransform: 'uppercase', color: '#7f8ca0' }}>
           {kicker}
         </div>
-        <h2 style={{ margin: '6px 0 0', font: `600 ${titleSize}px/1.2 'Space Grotesk',sans-serif`, letterSpacing: '-.02em' }}>{title}</h2>
+        <h2 style={{ margin: '5px 0 0', font: `600 ${titleSize}px/1.2 'Space Grotesk',sans-serif`, letterSpacing: '-.02em' }}>{title}</h2>
       </div>
     </div>
   );
@@ -40,10 +40,10 @@ export function CardHead({ tile, kicker, title, titleSize = 18 }) {
 export function PainFix({ pain, fix }) {
   return (
     <>
-      <p style={{ margin: '16px 0 0', fontSize: 13.5, lineHeight: 1.55, color: '#a3b0c2' }}>
+      <p style={{ margin: '12px 0 0', fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>
         <b style={{ color: '#ff8178', fontWeight: 700 }}>Pain:</b> {pain}
       </p>
-      <p style={{ margin: '8px 0 0', fontSize: 13.5, lineHeight: 1.55, color: '#f6f9fc' }}>
+      <p style={{ margin: '6px 0 0', fontSize: 12.5, lineHeight: 1.5, color: '#f6f9fc' }}>
         <b style={{ color: '#2fe3bd', fontWeight: 700 }}>Fix:</b> {fix}
       </p>
     </>
@@ -51,10 +51,10 @@ export function PainFix({ pain, fix }) {
 }
 
 /** Pinned to the bottom so proof panels align across a row. */
-export function Proof({ children, padding = 14, ring = 'rgba(255,255,255,.07)', style }) {
+export function Proof({ children, padding = 12, ring = 'rgba(255,255,255,.07)', style }) {
   return (
-    <div style={{ marginTop: 'auto', paddingTop: 18 }}>
-      <div style={{ padding, borderRadius: 16, background: '#070a12', boxShadow: `inset 0 0 0 1px ${ring}`, overflow: 'hidden', ...style }}>
+    <div style={{ marginTop: 'auto', paddingTop: 14 }}>
+      <div style={{ padding, borderRadius: 14, background: '#070a12', boxShadow: `inset 0 0 0 1px ${ring}`, overflow: 'hidden', ...style }}>
         {children}
       </div>
     </div>

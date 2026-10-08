@@ -63,11 +63,18 @@ export const GLYPH = {
 };
 
 /** Shared card shell: padding 22, r22, #0d1422 with a hairline ring. */
+/*
+ * Tighter than the reference's 22/22. At full width the five cards ran well
+ * past a laptop fold, so the plan panel beside them — the thing the screen is
+ * for — scrolled away while someone was still reading what they were buying.
+ * Every size below came down together; shrinking padding alone just makes a
+ * card look cramped around text that did not change.
+ */
 export const CARD = {
   display: 'flex',
   flexDirection: 'column',
-  padding: 22,
-  borderRadius: 22,
+  padding: 16,
+  borderRadius: 18,
   background: '#0d1422',
   boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)',
 };
