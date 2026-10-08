@@ -1,12 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { act, render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 /**
  * The acceptance checks from the billing-step brief, as tests.
- *
- * The CTA and "due today" appear twice in the DOM on purpose — once in the
- * sticky panel and once in the phone bar, which CSS hides above 980px. jsdom
- * applies no CSS, so every query for them uses getAll and takes the first.
  *
  * The ones worth having are about promises: what the headline says, that the
  * price and cadence follow the selected plan, that "due today" is always ₹0
@@ -66,26 +62,26 @@ describe('billing step', () => {
   it('starts on yearly and prices the button accordingly', async () => {
     render(<BillingStep />);
     expect(await screen.findByRole('radio', { name: /Yearly/ })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getAllByRole('button', { name: /Start 7 days free · Yearly/ })[0]).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Start 7 days free · Yearly/ })).toBeTruthy();
   });
 
   it('follows the selected plan through the button and the timeline', async () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('radio', { name: /Monthly/ }));
-    expect(screen.getAllByRole('button', { name: /Start 7 days free · Monthly/ })[0]).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Start 7 days free · Monthly/ })).toBeTruthy();
     expect(screen.getByText(/First charge of ₹1,299, then every month until you cancel\./)).toBeTruthy();
   });
 
   it('always says ₹0 is due today', async () => {
     render(<BillingStep />);
-    await screen.findAllByText('Due today');
+    await screen.findByText('Due today');
     expect(screen.getAllByText('₹0').length).toBeGreaterThan(0);
   });
 
   it('sends the chosen interval to checkout', async () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('radio', { name: /Quarterly/ }));
-    fireEvent.click(screen.getAllByRole('button', { name: /Start 7 days free · Quarterly/ })[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free · Quarterly/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ planSlug: 'pro', interval: 'quarterly' });
   });
@@ -106,7 +102,7 @@ describe('billing step', () => {
    */
   it('promises no reminder email, because none is sent', async () => {
     render(<BillingStep />);
-    await screen.findAllByText('Due today');
+    await screen.findByText('Due today');
     expect(screen.queryByText(/email you two days before/i)).toBeNull();
     expect(screen.queryByText(/with a link to cancel/i)).toBeNull();
   });
@@ -158,7 +154,7 @@ describe('billing step', () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: ' save20 ' } });
-    fireEvent.click(screen.getAllByRole('button', { name: /Start 7 days free/ })[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'save20' });
   });
@@ -172,7 +168,7 @@ describe('billing step', () => {
   it('carries a referral code through setup without being asked', async () => {
     autoCoupon.value = 'REF123';
     render(<BillingStep />);
-    fireEvent.click((await screen.findAllByRole('button', { name: /Start 7 days free/ }))[0]);
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'REF123' });
   });
@@ -182,7 +178,7 @@ describe('billing step', () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'MINE' } });
-    fireEvent.click(screen.getAllByRole('button', { name: /Start 7 days free/ })[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'MINE' });
   });
@@ -263,7 +259,7 @@ describe('billing step', () => {
    */
   it('follows the checkout url the api returns', async () => {
     render(<BillingStep />);
-    fireEvent.click((await screen.findAllByRole('button', { name: /Start 7 days free/ }))[0]);
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(screen.queryByText(/Could not open checkout/)).toBeNull();
   });
@@ -278,37 +274,10 @@ describe('billing step', () => {
     expect(screen.queryByText(/don’t recognise/)).toBeNull();
   });
 
-  /*
-   * The phone bar stands in for the real button rather than joining it. Two
-   * identical CTAs a thumb apart was happening on every phone once the panel
-   * wrapped below the list.
-   */
-  it('hides the phone bar while the real button is on screen', async () => {
-    const seen = [];
-    const realIO = global.IntersectionObserver;
-    global.IntersectionObserver = class {
-      constructor(cb) { seen.push(cb); }
-      observe() {}
-      disconnect() {}
-    };
-    try {
-      render(<BillingStep />);
-      await screen.findAllByText('Due today');
-      // Report the CTA as visible, the way a browser would when it is.
-      act(() => seen.forEach((cb) => cb([{ isIntersecting: true }])));
-      expect(screen.getAllByRole('button', { name: /Start 7 days free/ })).toHaveLength(1);
-
-      act(() => seen.forEach((cb) => cb([{ isIntersecting: false }])));
-      expect(screen.getAllByRole('button', { name: /Start 7 days free/ })).toHaveLength(2);
-    } finally {
-      global.IntersectionObserver = realIO;
-    }
-  });
-
   it('hides the status band once the guard is on', async () => {
     auth.user = { access: 'trial', isTrial: true };
     render(<BillingStep />);
-    await screen.findAllByText('Due today');
+    await screen.findByText('Due today');
     expect(screen.queryByText(/Your guard is off/)).toBeNull();
   });
 });

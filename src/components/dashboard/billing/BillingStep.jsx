@@ -60,26 +60,6 @@ export default function BillingStep({ onStarted }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const rowRefs = useRef([]);
-  const ctaRef = useRef(null);
-  /*
-   * The phone bar is a stand-in for the real button, not a second one. While
-   * the panel's own CTA is on screen there is no reason for both — two
-   * identical buttons a thumb apart is just noise, and it was happening on
-   * every phone once the panel wrapped below the list.
-   *
-   * Defaults to shown: without IntersectionObserver the bar is the safer of
-   * the two to have, since the alternative is an action nobody can reach.
-   */
-  const [ctaOffScreen, setCtaOffScreen] = useState(true);
-  useEffect(() => {
-    const el = ctaRef.current;
-    if (!el || typeof IntersectionObserver !== 'function') return undefined;
-    const io = new IntersectionObserver(([entry]) => setCtaOffScreen(!entry.isIntersecting), {
-      rootMargin: '-40px 0px 0px 0px',
-    });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
   const [openRows, setOpenRows] = useState([]);
   const [couponOpen, setCouponOpen] = useState(false);
   const [coupon, setCoupon] = useState('');
@@ -527,7 +507,6 @@ export default function BillingStep({ onStarted }) {
                 </div>
 
                 <button
-                  ref={ctaRef}
                   type="button"
                   onClick={start}
                   disabled={busy}
@@ -551,24 +530,6 @@ export default function BillingStep({ onStarted }) {
           </aside>
         </div>
 
-        {/* Phone: the panel has wrapped below the cards, so the action would
-            be a scroll away. Same handler, same state — not a second button
-            with its own idea of what is selected. */}
-        <div className="bs-stickybar" hidden={!ctaOffScreen}>
-          <span style={{ flex: 'none' }}>
-            <span style={{ display: 'block', fontSize: 11, color: '#7f8ca0' }}>Due today</span>
-            <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", color: '#2fe3bd' }}>₹0</span>
-          </span>
-          <button
-            type="button"
-            onClick={start}
-            disabled={busy}
-            className="bs-cta"
-            style={{ flex: 1, minHeight: 54, padding: 15, border: 0, borderRadius: 14, background: '#00d4aa', color: '#02241d', fontSize: 15, fontWeight: 800, opacity: busy ? 0.75 : 1 }}
-          >
-            {busy ? 'Starting your trial…' : `Start 7 days free · ${cur.name}`}
-          </button>
-        </div>
       </div>
     </div>
   );

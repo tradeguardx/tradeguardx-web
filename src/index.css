@@ -1770,33 +1770,11 @@
   .bs-panel{position:static;max-width:none!important}
 }
 
-/* Below the two-column breakpoint the plan panel sits under the list, so the
-   only action on the page would otherwise be a scroll away. The bar keeps it
-   on screen; above that width the panel is sticky and a second button would
-   be two ways to do one thing.
-
-   It sits ABOVE the tab bar, not under it. `.tgx-tabbar` is fixed at bottom:0
-   with z-index 60, so a bar at bottom:0 is simply hidden behind the app's own
-   navigation — which is what happened: the CTA was there, under Home/Live/
-   Rules, and unreachable. 50px is the tab bar's own min-height; the safe area
-   is already inside it, so adding it here as well would double-count and
-   leave a gap on a notched phone. */
-.bs-stickybar{display:none}
-/* `hidden` has to beat the media query's `display:flex`. */
-.bs-stickybar[hidden]{display:none!important}
-@media (max-width:980px){
-  .bs-stickybar{
-    display:flex;align-items:center;gap:12px;
-    position:sticky;bottom:0;z-index:5;
-    margin:0 -15px;padding:12px 15px;
-    background:rgba(7,10,18,.94);backdrop-filter:blur(8px);
-    border-top:1px solid rgba(255,255,255,.08);
-  }
-}
-/* Only where the tab bar actually renders. */
-@media (max-width:900px){
-  .bs-stickybar{bottom:calc(50px + env(safe-area-inset-bottom,0px))}
-}
+/* The plan panel's own button is the last thing on the page once the columns
+   stack, so a second sticky CTA above the tab bar was two identical buttons a
+   thumb apart — and the one people kept seeing first was the stand-in. The
+   real one is reachable by scrolling to the end of the thing you are reading,
+   which is where a buy button belongs. */
 
 /* The stepper on a phone: ticks and the step you are on.
    Four labels plus connectors is ~400px of content in a 433px viewport, so it
