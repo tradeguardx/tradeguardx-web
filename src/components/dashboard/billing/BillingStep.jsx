@@ -284,79 +284,87 @@ export default function BillingStep({ onStarted }) {
               All five below, on every plan. Free for 7 days — nothing charged today.
             </p>
           </div>
-            {/*
-              * Summary always, detail on demand. Someone who already knows
-              * why they are here never opens a row; someone weighing it can
-              * read the case for the one protection that worries them without
-              * the other four arguing at the same time.
-              *
-              * Rows open independently rather than one-at-a-time: closing
-              * something the user did not ask to close is the more annoying
-              * of the two behaviours.
-              */}
-            {/*
-              * NO CARD AROUND THE LIST.
-              *
-              * The plan panel is the taller column by some 400px. With a
-              * bordered card here, the left side was a box that stopped dead
-              * two-thirds of the way down beside a panel that carried on —
-              * which reads as something failing to render rather than as a
-              * column of content that is simply shorter.
-              *
-              * Stretching it instead would spread five rows across a
-              * thousand pixels. Taking the box away removes the edge that was
-              * drawing attention to the difference: text ending where it ends
-              * needs no explanation.
-              */}
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: 0 }}>
-              {PROTECTIONS.map((p, i) => {
-                const open = openRows.includes(p.id);
-                return (
-                  <li key={p.id} style={{ borderTop: i === 0 ? 0 : '1px solid rgba(255,255,255,.07)' }}>
-                    <button
-                      type="button"
-                      onClick={() => toggleRow(p.id)}
-                      aria-expanded={open}
-                      aria-controls={`prot-${p.id}`}
-                      style={{ width: '100%', display: 'flex', gap: 12, padding: '13px 6px', alignItems: 'flex-start', background: 'transparent', border: 0, color: '#f6f9fc', textAlign: 'left' }}
-                    >
-                      <span aria-hidden style={{ flex: 'none', width: 28, height: 28, borderRadius: 9, background: p.gradient, color: p.color, display: 'grid', placeItems: 'center', marginTop: 1 }}>
-                        <Glyph d={GLYPH[p.glyph]} />
-                      </span>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, letterSpacing: '-.005em' }}>{p.title}</span>
-                        <span style={{ display: 'block', marginTop: 2, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>{p.body}</span>
-                      </span>
-                      <span
-                        aria-hidden
-                        style={{ flex: 'none', marginTop: 6, color: '#7f8ca0', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }}
+            {/* Hidden on a phone. On a laptop the list sits beside the plans
+                and costs nothing; stacked, it is five accordions and a
+                paragraph between the headline and the price, and the price is
+                what someone opened this screen to see. The headline still
+                makes the argument, and the protections are one tap away in
+                the product they are about to have. */}
+            <div className="bs-protections">
+              {/*
+                * Summary always, detail on demand. Someone who already knows
+                * why they are here never opens a row; someone weighing it can
+                * read the case for the one protection that worries them without
+                * the other four arguing at the same time.
+                *
+                * Rows open independently rather than one-at-a-time: closing
+                * something the user did not ask to close is the more annoying
+                * of the two behaviours.
+                */}
+              {/*
+                * NO CARD AROUND THE LIST.
+                *
+                * The plan panel is the taller column by some 400px. With a
+                * bordered card here, the left side was a box that stopped dead
+                * two-thirds of the way down beside a panel that carried on —
+                * which reads as something failing to render rather than as a
+                * column of content that is simply shorter.
+                *
+                * Stretching it instead would spread five rows across a
+                * thousand pixels. Taking the box away removes the edge that was
+                * drawing attention to the difference: text ending where it ends
+                * needs no explanation.
+                */}
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: 0 }}>
+                {PROTECTIONS.map((p, i) => {
+                  const open = openRows.includes(p.id);
+                  return (
+                    <li key={p.id} style={{ borderTop: i === 0 ? 0 : '1px solid rgba(255,255,255,.07)' }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleRow(p.id)}
+                        aria-expanded={open}
+                        aria-controls={`prot-${p.id}`}
+                        style={{ width: '100%', display: 'flex', gap: 12, padding: '13px 6px', alignItems: 'flex-start', background: 'transparent', border: 0, color: '#f6f9fc', textAlign: 'left' }}
                       >
-                        <Glyph d={['M6 9l6 6 6-6']} size={14} />
-                      </span>
-                    </button>
+                        <span aria-hidden style={{ flex: 'none', width: 28, height: 28, borderRadius: 9, background: p.gradient, color: p.color, display: 'grid', placeItems: 'center', marginTop: 1 }}>
+                          <Glyph d={GLYPH[p.glyph]} />
+                        </span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, letterSpacing: '-.005em' }}>{p.title}</span>
+                          <span style={{ display: 'block', marginTop: 2, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>{p.body}</span>
+                        </span>
+                        <span
+                          aria-hidden
+                          style={{ flex: 'none', marginTop: 6, color: '#7f8ca0', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }}
+                        >
+                          <Glyph d={['M6 9l6 6 6-6']} size={14} />
+                        </span>
+                      </button>
 
-                    {open && (
-                      <div id={`prot-${p.id}`} style={{ padding: '0 6px 14px 50px', display: 'grid', gap: 7 }}>
-                        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>
-                          <b style={{ color: '#ff8178', fontWeight: 700 }}>Pain:</b> {p.pain}
-                        </p>
-                        {/* No "Fix:" label — the summary above already is
-                            the fix. This line is what the summary cannot
-                            carry: the caveat, or the specific. */}
-                        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#f6f9fc' }}>{p.detail}</p>
-                        {p.note && (
-                          <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: '#7f8ca0' }}>{p.note}</p>
-                        )}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+                      {open && (
+                        <div id={`prot-${p.id}`} style={{ padding: '0 6px 14px 50px', display: 'grid', gap: 7 }}>
+                          <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>
+                            <b style={{ color: '#ff8178', fontWeight: 700 }}>Pain:</b> {p.pain}
+                          </p>
+                          {/* No "Fix:" label — the summary above already is
+                              the fix. This line is what the summary cannot
+                              carry: the caveat, or the specific. */}
+                          <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#f6f9fc' }}>{p.detail}</p>
+                          {p.note && (
+                            <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: '#7f8ca0' }}>{p.note}</p>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
 
-            <p style={{ margin: '12px 2px 0', fontSize: 12, lineHeight: 1.55, color: '#7f8ca0' }}>
-              All five come with every plan. Plans only change how often you pay.
-            </p>
+              <p style={{ margin: '12px 2px 0', fontSize: 12, lineHeight: 1.55, color: '#7f8ca0' }}>
+                All five come with every plan. Plans only change how often you pay.
+              </p>
+            </div>
           </div>
 
           {/* Sticky belongs to the two-column arrangement only. Once the

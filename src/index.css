@@ -1776,6 +1776,15 @@
    real one is reachable by scrolling to the end of the thing you are reading,
    which is where a buy button belongs. */
 
+/* The five protections are a laptop luxury. Stacked above the plan panel
+   they put five accordions and a paragraph between the headline and the
+   price — and the price is what someone opened this screen to see. 900px is
+   the app's own definition of mobile, the width at which the tab bar appears
+   and the sidebar goes away. */
+@media (max-width:900px){
+  .bs-protections{display:none}
+}
+
 /* The stepper on a phone: ticks and the step you are on.
    Four labels plus connectors is ~400px of content in a 433px viewport, so it
    wrapped to three lines above a headline that had not started yet. The done
