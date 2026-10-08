@@ -21,6 +21,7 @@ import { billingStateOf, daysUntil, gstInside, savingVsMonthly } from '../lib/bi
 import { trackBilling } from '../lib/analytics';
 import { sx } from '../components/dashboard/shell/sx';
 import CelebrationOverlay from '../components/dashboard/CelebrationOverlay';
+import { debitMayBeInFlight, MANDATE_NOTE, IN_FLIGHT_NOTE } from '../lib/mandateWindow';
 import {
   BAR_COLOUR, BODY, CANCEL_COPY, EVERY, NEXT_LABEL, PER, PLAN_NOTE, STATE_CHIP, STATE_SKIN,
 } from './billing/billingCopy';
@@ -146,6 +147,10 @@ export default function BillingPage() {
       ? Math.max(1, Math.round((new Date(me.subscription.trialEndsAt) - new Date(createdAt)) / 86400000))
       : 7;
 
+  /* Close enough to the billing date that a UPI debit may already have been
+     initiated, in which case "you will not be charged" cannot be promised. */
+  const inFlight = debitMayBeInFlight(nextAt);
+
   const skin = STATE_SKIN[state] ?? STATE_SKIN.active;
   const chip = STATE_CHIP[state] ?? STATE_CHIP.active;
 
@@ -229,7 +234,7 @@ export default function BillingPage() {
       await cancelSubscription({ accessToken });
       setConfirming(false);
       toast.success(
-        state === 'trial' ? 'Cancelled — you will not be charged' : 'Cancelled',
+        inFlight ? 'Cancelled' : state === 'trial' ? 'Cancelled — you will not be charged' : 'Cancelled',
         `You keep everything until ${nextDate ?? 'the end of your period'}.`,
       );
       refetchSubscription?.();
@@ -238,7 +243,7 @@ export default function BillingPage() {
     } finally {
       setBusy('');
     }
-  }, [accessToken, state, nextDate, refetchSubscription, toast]);
+  }, [accessToken, state, nextDate, inFlight, refetchSubscription, toast]);
 
   /*
    * Resuming, optionally on a different period.
@@ -694,6 +699,25 @@ export default function BillingPage() {
             <p style={sxw('margin:10px 0 0;font-size:13px;line-height:1.55;color:#c9d2e0')}>
               {fill(cancelCopy.body, { date: nextDate ?? 'the end of your period' })}
             </p>
+            {/*
+              * Cancelling the subscription and revoking the bank mandate are
+              * two different things, and we can only do the first. Dodo
+              * exposes no way to revoke a UPI mandate — its SDK has no
+              * payment-method resource at all — so a customer who cancels and
+              * then finds Autopay still listed at their bank concludes the
+              * cancellation failed. Telling them where it lives costs a line.
+              */}
+            <p style={sxw('margin:12px 0 0;font-size:12.5px;line-height:1.5;color:#8a96a8')}>
+              {MANDATE_NOTE}
+            </p>
+            {inFlight && (
+              /* Indian UPI debits are initiated inside a ~48h window before
+                 the date, and nothing we do here stops one already in flight.
+                 Shown only to the people it can actually happen to. */
+              <p style={sxw('margin:10px 0 0;padding:10px 12px;border-radius:10px;background:rgba(240,180,41,.09);box-shadow:inset 0 0 0 1px rgba(240,180,41,.26);font-size:12.5px;line-height:1.5;color:#f0d79a')}>
+                {IN_FLIGHT_NOTE}
+              </p>
+            )}
             <div style={sxw('margin-top:18px;display:flex;gap:9px;flex-wrap:wrap')}>
               <button type="button" disabled={busy === 'cancel'} onClick={doCancel} style={sxw('flex:1;min-width:150px;min-height:44px;padding:11px;border:0;border-radius:11px;background:#ef4444;color:#fff;font-size:13px;font-weight:800')}>
                 {busy === 'cancel' ? 'Cancelling…' : 'Yes, cancel'}
