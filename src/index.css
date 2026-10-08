@@ -1785,7 +1785,11 @@
 @media (max-width:560px){
   .bs-steps{gap:6px!important}
   .bs-steps > li{padding:7px 9px!important;gap:7px!important;min-width:0}
-  .bs-steps__sub{display:none}
+  /* !important because the span carries an inline `display:block`, and an
+     inline style beats a stylesheet rule. Without it the sub-labels stayed
+     and the real labels went — "any of the three" with no "Choose a plan"
+     above it — and the row overflowed with the extra width. */
+  .bs-steps__sub{display:none!important}
   .bs-steps__wide{display:none}
   .bs-steps__tight{display:inline}
   .bs-steps span{font-size:11.5px!important}

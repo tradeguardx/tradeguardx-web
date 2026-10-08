@@ -305,7 +305,7 @@ export default function BillingStep({ onStarted }) {
               * has been applied, and the real charge date — so it can never
               * drift from the panel beside it.
               */}
-            <ol className="bs-steps" style={{ display: 'flex', gap: 8, margin: '16px 0 0', padding: 0, listStyle: 'none' }}>
+            <ol className="bs-steps" style={{ display: 'flex', gap: 8, margin: '16px 0 0', padding: 0, listStyle: 'none', minWidth: 0 }}>
               {[
                 { k: 'Choose a plan', v: 'any of the three' },
                 { k: '₹0 today', v: 'nothing is charged' },
@@ -313,7 +313,9 @@ export default function BillingStep({ onStarted }) {
               ].map((step, i) => (
                 <li
                   key={step.k}
-                  style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 12, background: 'rgba(255,255,255,.03)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.07)' }}
+                  /* `minWidth: 0` so a long chip shrinks rather than pushing
+                     the row off the side of the screen. */
+                  style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, padding: '8px 12px', borderRadius: 12, background: 'rgba(255,255,255,.03)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.07)' }}
                 >
                   <span aria-hidden style={{ flex: 'none', width: 18, height: 18, borderRadius: 6, display: 'grid', placeItems: 'center', background: 'rgba(0,212,170,.14)', color: '#2fe3bd', font: "700 10px/1 'JetBrains Mono',monospace" }}>
                     {i + 1}
