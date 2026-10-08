@@ -283,6 +283,40 @@ export default function BillingStep({ onStarted }) {
             <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: '#a3b0c2', textWrap: 'pretty' }}>
               All five below, on every plan. Free for 7 days — nothing charged today.
             </p>
+
+            {/*
+              * The mechanics, in the order they happen.
+              *
+              * The headline is the argument and the panel carries the detail,
+              * but between them nobody was answering the plain question a
+              * trial asks: what comes out of my account, and when. It matters
+              * most on a phone, where the protections list is hidden and this
+              * is the only thing between the headline and the prices.
+              *
+              * Every figure is live — the selected plan, the discount if one
+              * has been applied, and the real charge date — so it can never
+              * drift from the panel beside it.
+              */}
+            <ol style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '16px 0 0', padding: 0, listStyle: 'none' }}>
+              {[
+                { k: 'Choose a plan', v: 'any of the three' },
+                { k: '₹0 today', v: 'nothing is charged' },
+                { k: `${inr(payable)} on ${fmtDay(chargeOn)}`, v: 'day 8, unless you cancel' },
+              ].map((step, i) => (
+                <li
+                  key={step.k}
+                  style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 12, background: 'rgba(255,255,255,.03)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.07)' }}
+                >
+                  <span aria-hidden style={{ flex: 'none', width: 18, height: 18, borderRadius: 6, display: 'grid', placeItems: 'center', background: 'rgba(0,212,170,.14)', color: '#2fe3bd', font: "700 10px/1 'JetBrains Mono',monospace" }}>
+                    {i + 1}
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap' }}>{step.k}</span>
+                    <span style={{ display: 'block', marginTop: 1, fontSize: 11, color: '#7f8ca0', whiteSpace: 'nowrap' }}>{step.v}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
             {/* Hidden on a phone. On a laptop the list sits beside the plans
                 and costs nothing; stacked, it is five accordions and a
