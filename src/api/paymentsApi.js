@@ -81,7 +81,14 @@ export async function createCheckoutSession({ accessToken, planSlug, couponCode,
     throw new Error('Missing access token for checkout');
   }
   const baseUrl = options.baseUrl ?? resolvePaymentsApiBaseUrl();
-  const body = { planSlug, interval, ...(couponCode ? { couponCode } : {}) };
+  /*
+   * Where checkout should send us back to. The server decides whether to
+   * honour it — localhost off production, our own app otherwise — so this is
+   * a request, not an instruction. Without it a local dev session was
+   * returned to tradeguardx.com after paying.
+   */
+  const returnOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
+  const body = { planSlug, interval, ...(couponCode ? { couponCode } : {}), ...(returnOrigin ? { returnOrigin } : {}) };
   return unwrap(await apiPost(
     '/checkout/session',
     body,

@@ -67,7 +67,7 @@ vi.mock('../components/support/SupportChat', () => ({ default: () => null }));
 vi.mock('../components/dashboard/WelcomeCelebration', () => ({ default: () => null }));
 vi.mock('../components/dashboard/PhonePrompt', () => ({ default: () => null }));
 vi.mock('../components/dashboard/VerifyEmailBanner', () => ({ default: () => null }));
-vi.mock('../components/dashboard/TrialGate', () => ({ SetupBanner: () => null, TrialBanner: () => null, UpgradeWall: () => null }));
+vi.mock('../components/dashboard/TrialGate', () => ({ TrialBanner: () => null, UpgradeWall: () => null }));
 
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import OverviewPage from '../pages/OverviewPage';

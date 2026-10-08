@@ -6,7 +6,7 @@ import { DashboardThemeProvider, useDashboardTheme } from '../../context/Dashboa
 import { GuardProvider } from '../../context/GuardContext';
 import { PrefsProvider, usePrefs } from '../../context/PrefsContext';
 import SupportChat from '../support/SupportChat';
-import { SetupBanner, TrialBanner, UpgradeWall } from './TrialGate';
+import { TrialBanner, UpgradeWall } from './TrialGate';
 import WelcomeCelebration from './WelcomeCelebration';
 import PhonePrompt from './PhonePrompt';
 import BreachToast from './shell/BreachToast';
@@ -175,10 +175,6 @@ function Shell() {
 
         <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;margin:0 auto;animation:tgxSlide .22s ease-out')}>
           <VerifyEmailBanner />
-          {/* The setup flow's billing step carries its own status band, and
-              three messages all saying "your guard is off" reads as nagging
-              rather than emphasis. */}
-          {!setupFlow && <SetupBanner />}
           <TrialBanner />
           {locked ? <UpgradeWall /> : <Outlet />}
         </main>
