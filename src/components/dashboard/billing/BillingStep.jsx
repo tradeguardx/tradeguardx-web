@@ -118,34 +118,47 @@ export default function BillingStep({ onStarted }) {
   const effectiveCoupon = coupon.trim() || autoCoupon || undefined;
 
   /*
-   * The discount only counts if it was checked against THIS code and THIS
-   * plan. Switching interval re-prices everything, and a coupon can be
-   * restricted to one product, so a stale "15% off" beside a new price is
-   * exactly the kind of number that turns into a chargeback.
+   * CHECKED AGAINST EVERY INTERVAL, NOT JUST THE SELECTED ONE.
+   *
+   * A Dodo discount carries `restricted_to`, so a code can be real for
+   * monthly and meaningless for yearly. Checking only the selected plan meant
+   * the other two rows showed full price with no way to tell whether that was
+   * the truth or just something we had not asked about — and switching plan
+   * silently dropped a discount that may well have applied.
+   *
+   * Three calls on one deliberate click is a fair price for every row on
+   * screen being a number we have actually verified.
    */
-  const discount =
-    applied?.valid && applied.code === coupon.trim().toUpperCase() && applied.interval === cur.id
-      ? applied
-      : null;
-  const payable = discount ? Math.round(cur.price * (1 - discount.percentOff / 100)) : cur.price;
+  const verified =
+    applied && applied.code === coupon.trim().toUpperCase() ? applied.byInterval : null;
+  const priceOf = (option) => {
+    const v = verified?.[option.id];
+    return v?.valid ? Math.round(option.price * (1 - v.percentOff / 100)) : option.price;
+  };
+
+  const discount = verified?.[cur.id]?.valid ? verified[cur.id] : null;
+  const payable = priceOf(cur);
+  /* Refused for this plan, but good for another — a different sentence from
+     "we don't recognise that code", and the one that keeps someone looking at
+     the other two rows instead of hunting for a typo. */
+  const refusal = verified?.[cur.id] && !verified[cur.id].valid ? verified[cur.id].reason : null;
 
   const apply = async () => {
     const code = coupon.trim().toUpperCase();
     if (!code || couponBusy) return;
     setCouponBusy(true);
     try {
-      const res = await validateCoupon({
-        accessToken: session?.access_token,
-        code,
-        planSlug: 'pro',
-        interval: cur.id,
-      });
-      setApplied({ ...res, code, interval: cur.id });
-      trackBilling('billing_coupon_applied', { code, valid: Boolean(res?.valid) });
-    } catch {
-      /* Our lookup failed, not their code. Saying "invalid" would send them
-         checking a spelling that is fine. */
-      setApplied({ valid: false, reason: 'LOOKUP', code, interval: cur.id });
+      const results = await Promise.all(
+        options.map((o) =>
+          validateCoupon({ accessToken: session?.access_token, code, planSlug: 'pro', interval: o.id })
+            .then((res) => [o.id, res])
+            /* One interval failing must not throw away the other two. */
+            .catch(() => [o.id, { valid: false, reason: 'LOOKUP' }]),
+        ),
+      );
+      const byInterval = Object.fromEntries(results);
+      setApplied({ code, byInterval });
+      trackBilling('billing_coupon_applied', { code, valid: Boolean(byInterval[cur.id]?.valid) });
     } finally {
       setCouponBusy(false);
     }
@@ -416,13 +429,13 @@ export default function BillingStep({ onStarted }) {
                           <span style={{ display: 'block', marginTop: 3, fontSize: 12, color: '#7f8ca0' }}>{o.sub}</span>
                         </span>
                         <span style={{ flex: 'none', textAlign: 'right' }}>
-                          {/* Only the selected row is repriced: the discount was
-                              checked against this product, and a coupon can be
-                              restricted to one. */}
-                          {on && discount ? (
+                          {/* Each row prices itself from its own verdict, so a
+                              code that is real for monthly and not for yearly
+                              shows exactly that. */}
+                          {verified?.[o.id]?.valid ? (
                             <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>
                               <span style={{ marginRight: 7, fontSize: 13, fontWeight: 600, color: '#7f8ca0', textDecoration: 'line-through' }}>{inr(o.price)}</span>
-                              <span style={{ color: '#2fe3bd' }}>{inr(payable)}</span>
+                              <span style={{ color: '#2fe3bd' }}>{inr(priceOf(o))}</span>
                             </span>
                           ) : (
                             <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>{inr(o.price)}</span>
@@ -497,9 +510,9 @@ export default function BillingStep({ onStarted }) {
                             ? `Covers your first ${discount.cycles === 1 ? 'payment' : `${discount.cycles} payments`}, then the full price.`
                             : 'Applies to every renewal.'}
                         </p>
-                      ) : applied && !applied.valid ? (
-                        <p role="alert" style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: applied.reason === 'UNSUPPORTED' || applied.reason === 'LOOKUP' ? '#7f8ca0' : '#ff8178' }}>
-                          {COUPON_REFUSAL[applied.reason] ?? COUPON_REFUSAL.UNKNOWN}
+                      ) : refusal ? (
+                        <p role="alert" style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: refusal === 'UNSUPPORTED' || refusal === 'LOOKUP' ? '#7f8ca0' : '#ff8178' }}>
+                          {COUPON_REFUSAL[refusal] ?? COUPON_REFUSAL.UNKNOWN}
                         </p>
                       ) : (
                         <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: '#7f8ca0' }}>

@@ -205,6 +205,10 @@ describe('billing step', () => {
     // Monthly ₹1,299 less 15% = ₹1,104, on the plan row and in the timeline.
     expect(screen.getAllByText('₹1,104').length).toBeGreaterThan(0);
     expect(screen.getByText(/First charge of ₹1,104/)).toBeTruthy();
+    /* And the rows above, because a code checked only against the selected
+       plan leaves the other two showing a price nobody verified. */
+    expect(screen.getByText('₹2,804')).toBeTruthy();
+    expect(screen.getByText('₹7,649')).toBeTruthy();
   });
 
   it('says how long the discount lasts', async () => {
@@ -216,17 +220,39 @@ describe('billing step', () => {
     expect(await screen.findByText(/Covers your first payment, then the full price/)).toBeTruthy();
   });
 
-  /* A discount checked against one plan must never be shown against another:
-     a coupon can be restricted to a single product. */
-  it('drops the discount when the plan changes', async () => {
+  it('keeps the discount when the plan changes, if it is good there too', async () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/15% off applied/);
     fireEvent.click(screen.getByRole('radio', { name: /Yearly/ }));
-    expect(screen.queryByText(/15% off applied/)).toBeNull();
-    expect(screen.getByText(/First charge of ₹8,999/)).toBeTruthy();
+    expect(screen.getByText(/15% off applied/)).toBeTruthy();
+    expect(screen.getByText(/First charge of ₹7,649/)).toBeTruthy();
+  });
+
+  /*
+   * A Dodo discount carries restricted_to, so a code can be real for monthly
+   * and meaningless for yearly. Each row has to show its own verdict.
+   */
+  it('prices only the intervals the code is actually good for', async () => {
+    validate.mockImplementation(async ({ interval }) =>
+      interval === 'monthly'
+        ? { valid: true, code: 'MONTHLY10', percentOff: 10, cycles: null }
+        : { valid: false, reason: 'WRONG_PLAN' },
+    );
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'monthly10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await screen.findByText(/10% off applied/);
+    expect(screen.getByText('₹1,169')).toBeTruthy();
+    // Quarterly and yearly keep their full prices, not a discount we never got.
+    expect(screen.getByText('₹3,299')).toBeTruthy();
+    expect(screen.getByText('₹8,999')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('radio', { name: /Yearly/ }));
+    expect(screen.getByText(/doesn’t apply to this plan/)).toBeTruthy();
   });
 
   it.each([
