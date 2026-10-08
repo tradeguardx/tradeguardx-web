@@ -1776,6 +1776,21 @@
    real one is reachable by scrolling to the end of the thing you are reading,
    which is where a buy button belongs. */
 
+/* The three trial steps stay on ONE row at phone widths.
+   Wrapped, they became a two-line block directly above the prices, which is
+   a lot of chrome between a headline and the thing someone came to read. The
+   sub-labels go, the padding tightens, and step three loses the word "on" —
+   the numbers are what carry it. */
+.bs-steps__tight{display:none}
+@media (max-width:560px){
+  .bs-steps{gap:6px!important}
+  .bs-steps > li{padding:7px 9px!important;gap:7px!important;min-width:0}
+  .bs-steps__sub{display:none}
+  .bs-steps__wide{display:none}
+  .bs-steps__tight{display:inline}
+  .bs-steps span{font-size:11.5px!important}
+}
+
 /* The five protections are a laptop luxury. Stacked above the plan panel
    they put five accordions and a paragraph between the headline and the
    price — and the price is what someone opened this screen to see. 900px is

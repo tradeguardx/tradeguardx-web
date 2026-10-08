@@ -56,7 +56,15 @@ const fmtDay = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'sh
 export default function BillingStep({ onStarted }) {
   const { user, session } = useAuth();
   const [plans, setPlans] = useState([]);
-  const [plan, setPlan] = useState('yearly');
+  /*
+   * Monthly, not yearly.
+   *
+   * The reference defaulted to the longest commitment because it is the best
+   * per-month price. But this is the first money conversation with someone
+   * who signed up today, and a year preselected reads as the choice being
+   * made for them. The saving is on screen for anyone who wants it.
+   */
+  const [plan, setPlan] = useState('monthly');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const rowRefs = useRef([]);
@@ -95,7 +103,7 @@ export default function BillingStep({ onStarted }) {
     return live.length ? live : PLAN_FALLBACK;
   }, [plans]);
 
-  const cur = options.find((o) => o.id === plan) ?? options[options.length - 1];
+  const cur = options.find((o) => o.id === plan) ?? options[0];
 
   /*
    * A code they typed beats the one we carry for them.
@@ -297,11 +305,11 @@ export default function BillingStep({ onStarted }) {
               * has been applied, and the real charge date — so it can never
               * drift from the panel beside it.
               */}
-            <ol style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '16px 0 0', padding: 0, listStyle: 'none' }}>
+            <ol className="bs-steps" style={{ display: 'flex', gap: 8, margin: '16px 0 0', padding: 0, listStyle: 'none' }}>
               {[
                 { k: 'Choose a plan', v: 'any of the three' },
                 { k: '₹0 today', v: 'nothing is charged' },
-                { k: `${inr(payable)} on ${fmtDay(chargeOn)}`, v: 'day 8, unless you cancel' },
+                { k: `${inr(payable)} on ${fmtDay(chargeOn)}`, v: 'day 8, unless you cancel', tight: `${inr(payable)} · ${fmtDay(chargeOn)}` },
               ].map((step, i) => (
                 <li
                   key={step.k}
@@ -311,8 +319,11 @@ export default function BillingStep({ onStarted }) {
                     {i + 1}
                   </span>
                   <span style={{ minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap' }}>{step.k}</span>
-                    <span style={{ display: 'block', marginTop: 1, fontSize: 11, color: '#7f8ca0', whiteSpace: 'nowrap' }}>{step.v}</span>
+                    <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                      <span className="bs-steps__wide">{step.k}</span>
+                      {step.tight && <span className="bs-steps__tight">{step.tight}</span>}
+                    </span>
+                    <span className="bs-steps__sub" style={{ display: 'block', marginTop: 1, fontSize: 11, color: '#7f8ca0', whiteSpace: 'nowrap' }}>{step.v}</span>
                   </span>
                 </li>
               ))}

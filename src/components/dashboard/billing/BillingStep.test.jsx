@@ -57,12 +57,13 @@ describe('billing step', () => {
     expect(band[0].querySelector('button')).toBeNull();
   });
 
-  /* Default is yearly: the brief's choice, and the one that makes the saving
-     visible rather than something you discover after subscribing. */
-  it('starts on yearly and prices the button accordingly', async () => {
+  /* Monthly by default. This is the first money conversation with someone who
+     signed up today, and a year preselected reads as the choice being made
+     for them; the saving is on screen for anyone who wants it. */
+  it('starts on monthly and prices the button accordingly', async () => {
     render(<BillingStep />);
-    expect(await screen.findByRole('radio', { name: /Yearly/ })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('button', { name: /Start 7 days free · Yearly/ })).toBeTruthy();
+    expect(await screen.findByRole('radio', { name: /Monthly/ })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('button', { name: /Start 7 days free · Monthly/ })).toBeTruthy();
   });
 
   it('follows the selected plan through the button and the timeline', async () => {
@@ -191,7 +192,7 @@ describe('billing step', () => {
     expect(screen.getByText(/Press Apply to see the new price/i)).toBeTruthy();
     expect(screen.queryByText(/% off applied/)).toBeNull();
     // The full price still stands until something is actually applied.
-    expect(screen.getByText(/First charge of ₹8,999/)).toBeTruthy();
+    expect(screen.getByText(/First charge of ₹1,299/)).toBeTruthy();
   });
 
   it('prices the selected plan after Apply, and the timeline with it', async () => {
@@ -200,9 +201,9 @@ describe('billing step', () => {
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/15% off applied/);
-    // Yearly ₹8,999 less 15% = ₹7,649, on the plan row and in the timeline.
-    expect(screen.getAllByText('₹7,649').length).toBeGreaterThan(0);
-    expect(screen.getByText(/First charge of ₹7,649/)).toBeTruthy();
+    // Monthly ₹1,299 less 15% = ₹1,104, on the plan row and in the timeline.
+    expect(screen.getAllByText('₹1,104').length).toBeGreaterThan(0);
+    expect(screen.getByText(/First charge of ₹1,104/)).toBeTruthy();
   });
 
   it('says how long the discount lasts', async () => {
@@ -222,9 +223,9 @@ describe('billing step', () => {
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/15% off applied/);
-    fireEvent.click(screen.getByRole('radio', { name: /Monthly/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /Yearly/ }));
     expect(screen.queryByText(/15% off applied/)).toBeNull();
-    expect(screen.getByText(/First charge of ₹1,299/)).toBeTruthy();
+    expect(screen.getByText(/First charge of ₹8,999/)).toBeTruthy();
   });
 
   it.each([
@@ -280,14 +281,16 @@ describe('billing step', () => {
     render(<BillingStep />);
     expect(await screen.findByText('Choose a plan')).toBeTruthy();
     expect(screen.getByText('₹0 today')).toBeTruthy();
-    expect(screen.getByText(/₹8,999 on \d+ \w+/)).toBeTruthy();
+    expect(screen.getByText(/₹1,299 on \d+ \w+/)).toBeTruthy();
     expect(screen.getByText('day 8, unless you cancel')).toBeTruthy();
   });
 
   /* Live figures, so the strip can never contradict the panel beside it. */
   it('follows the plan and the coupon', async () => {
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('radio', { name: /Monthly/ }));
+    fireEvent.click(await screen.findByRole('radio', { name: /Quarterly/ }));
+    expect(screen.getByText(/₹3,299 on /)).toBeTruthy();
+    fireEvent.click(screen.getByRole('radio', { name: /Monthly/ }));
     expect(screen.getByText(/₹1,299 on /)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /Have a coupon/ }));
