@@ -1758,12 +1758,8 @@
 
 
 /* ── Billing step (setup step 4) ─────────────────────────────────────────
-   The loss bar filling and the pattern dot pulsing are the only motion on a
-   screen that asks for money; both are decorative and both stop under
-   prefers-reduced-motion, which the component also honours in JS so the
-   countdown does not tick for someone who asked for stillness. */
-@keyframes bsFill{from{width:0}}
-@keyframes bsPulse{0%,100%{opacity:1}50%{opacity:.3}}
+   No motion at all now: the proof panels that animated went with the cards,
+   and a screen that asks for money is better still. */
 .bs-cta:hover{background:#2fe3bd!important}
 
 /* Below the two-column breakpoint the plan panel sits under the cards, so the

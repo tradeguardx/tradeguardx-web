@@ -3,8 +3,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { createCheckoutSession } from '../../../api/paymentsApi';
 import { getPricingPlans } from '../../../api/pricingApi';
 import { trackBilling } from '../../../lib/analytics';
-import { PAIN_FIX, KS_LOG, TAX_ROWS, ACCTS, GLYPH, CARD } from './billingContent';
-import { CardHead, Glyph, IconTile, PainFix, Proof } from './protections';
+import { PROTECTIONS, GLYPH } from './billingContent';
 
 /**
  * Setup step 4 — the only screen in the product that asks for money.
@@ -28,6 +27,14 @@ import { CardHead, Glyph, IconTile, PainFix, Proof } from './protections';
  * shadows and strings are copied from it exactly.
  */
 
+function Glyph({ d, size = 15, width = 2 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {d.map((p) => <path key={p} d={p} />)}
+    </svg>
+  );
+}
+
 const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Set up billing'];
 
 /* Fallbacks only. The pricing endpoint wins — see `options`. */
@@ -43,40 +50,10 @@ const NEXT = { monthly: 'every month', quarterly: 'every 3 months', yearly: 'eve
 const TRIAL_DAYS = 7;
 
 const inr = (n) => (Number.isFinite(n) ? `₹${Math.round(n).toLocaleString('en-IN')}` : '—');
-const pad = (n) => String(n).padStart(2, '0');
 const fmtDay = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
-
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-    if (!mq) return undefined;
-    const on = () => setReduced(mq.matches);
-    on();
-    mq.addEventListener?.('change', on);
-    return () => mq.removeEventListener?.('change', on);
-  }, []);
-  return reduced;
-}
-
-/** Decorative. Illustrative of a manual lockout, never tied to a real one. */
-function Countdown({ reduced }) {
-  const [left, setLeft] = useState(5 * 3600 + 42 * 60 + 10);
-  useEffect(() => {
-    if (reduced) return undefined;
-    const t = window.setInterval(() => setLeft((v) => (v > 0 ? v - 1 : 6 * 3600)), 1000);
-    return () => window.clearInterval(t);
-  }, [reduced]);
-  return (
-    <div aria-hidden style={{ marginTop: 7, font: "700 26px/1 'JetBrains Mono',monospace", letterSpacing: '-.02em', color: '#fbc94f', fontVariantNumeric: 'tabular-nums' }}>
-      {pad(Math.floor(left / 3600))}:{pad(Math.floor((left % 3600) / 60))}:{pad(left % 60)}
-    </div>
-  );
-}
 
 export default function BillingStep({ onStarted }) {
   const { user, session } = useAuth();
-  const reduced = useReducedMotion();
   const [plans, setPlans] = useState([]);
   const [plan, setPlan] = useState('yearly');
   const [busy, setBusy] = useState(false);
@@ -219,122 +196,32 @@ export default function BillingStep({ onStarted }) {
         </div>
 
         <div style={{ marginTop: 28, display: 'flex', gap: 26, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 560px', minWidth: 0, display: 'grid', gap: 12 }}>
+          <div style={{ flex: '1 1 460px', minWidth: 0 }}>
+            <ul style={{ margin: 0, padding: 16, listStyle: 'none', display: 'grid', gap: 2, borderRadius: 18, background: '#0d1422', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)' }}>
+              {PROTECTIONS.map((p) => (
+                <li key={p.id} style={{ display: 'flex', gap: 12, padding: '10px 4px', alignItems: 'flex-start' }}>
+                  <span
+                    aria-hidden
+                    style={{ flex: 'none', width: 28, height: 28, borderRadius: 9, background: p.gradient, color: p.color, display: 'grid', placeItems: 'center', marginTop: 1 }}
+                  >
+                    <Glyph d={GLYPH[p.glyph]} />
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, letterSpacing: '-.005em' }}>{p.title}</span>
+                    <span style={{ display: 'block', marginTop: 2, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>{p.body}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
 
-            {/* 01 — the kill switch, full width: it is the product. */}
-            <section style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, background: '#0d1422', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)' }}>
-              <div aria-hidden style={{ position: 'absolute', width: 420, height: 420, right: -160, top: -200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(239,68,68,.16),transparent 66%)', pointerEvents: 'none' }} />
-              <div style={{ position: 'relative', display: 'flex', gap: 18, padding: 18, flexWrap: 'wrap' }}>
-                <div style={{ flex: '1 1 300px', minWidth: 0 }}>
-                  <CardHead
-                    tile={<IconTile gradient="linear-gradient(145deg,#ff8a80,#d63a2f)" color="#fff" d={GLYPH.shield} />}
-                    kicker="01 · Automatic"
-                    title="Rule-based kill switch"
-                    titleSize={17}
-                  />
-                  <div style={{ marginTop: 14, display: 'grid', gap: 10 }}>
-                    <div style={{ display: 'flex', gap: 11 }}>
-                      <span style={{ flex: 'none', marginTop: 2, font: "700 9px/1 'JetBrains Mono',monospace", letterSpacing: '.1em', padding: '4px 6px', borderRadius: 5, background: 'rgba(239,68,68,.14)', color: '#ff8178', height: 'fit-content' }}>PAIN</span>
-                      <span style={{ fontSize: 13, lineHeight: 1.5, color: '#c9d2e0' }}>{PAIN_FIX.killSwitch.pain}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 11 }}>
-                      <span style={{ flex: 'none', marginTop: 2, font: "700 9px/1 'JetBrains Mono',monospace", letterSpacing: '.1em', padding: '4px 6px', borderRadius: 5, background: 'rgba(0,212,170,.14)', color: '#2fe3bd', height: 'fit-content' }}>FIX</span>
-                      <span style={{ fontSize: 13, lineHeight: 1.5, color: '#f6f9fc' }}>{PAIN_FIX.killSwitch.fix}</span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ flex: '1 1 250px', minWidth: 0, padding: 13, borderRadius: 14, background: '#070a12', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.07)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#a3b0c2' }}>
-                    <span>Today</span>
-                    <span style={{ fontVariantNumeric: 'tabular-nums' }}><b style={{ color: '#ff8178' }}>−$220.00</b> of −$220 limit</span>
-                  </div>
-                  <div aria-hidden style={{ marginTop: 9, height: 8, borderRadius: 999, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: '100%', borderRadius: 999, background: 'linear-gradient(90deg,#f0b429,#ef4444)', animation: reduced ? 'none' : 'bsFill 1.4s cubic-bezier(.2,.8,.2,1) both' }} />
-                  </div>
-                  <div style={{ marginTop: 13, display: 'grid', gap: 7 }}>
-                    {KS_LOG.map((l) => (
-                      <div key={l.x} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12 }}>
-                        <span style={{ flex: 'none', font: "500 11px/1 'JetBrains Mono',monospace", color: '#5b687d' }}>{l.t}</span>
-                        <span aria-hidden style={{ flex: 'none', width: 7, height: 7, borderRadius: '50%', background: l.c }} />
-                        <span style={{ color: '#c9d2e0' }}>{l.x}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,255px),1fr))', gap: 12 }}>
-
-              <section style={CARD}>
-                <CardHead tile={<IconTile gradient="linear-gradient(145deg,#ffd666,#e0a400)" color="#2a1a00" d={GLYPH.power} stroke={2.1} />} kicker="02 · You press it" title="Manual kill switch" />
-                <PainFix {...PAIN_FIX.manual} />
-                <Proof>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ font: "600 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.16em', color: '#7f8ca0' }}>LOCKED · TRADING RESUMES IN</div>
-                    <Countdown reduced={reduced} />
-                    <div style={{ marginTop: 10, display: 'flex', gap: 6, justifyContent: 'center' }}>
-                      {['3h', '6h', '12h'].map((h) => (
-                        <span key={h} style={{ padding: '5px 11px', borderRadius: 999, fontSize: 11.5, fontWeight: 700, ...(h === '6h' ? { color: '#2a1a00', background: '#f0b429' } : { color: '#7f8ca0', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.1)' }) }}>{h}</span>
-                      ))}
-                    </div>
-                  </div>
-                </Proof>
-              </section>
-
-              <section style={CARD}>
-                <CardHead tile={<IconTile gradient="linear-gradient(145deg,#7cb0fd,#2563eb)" color="#fff" d={GLYPH.receipt} />} kicker="03 · March, sorted" title="Tax management" />
-                <PainFix {...PAIN_FIX.tax} />
-                <Proof padding={0}>
-                  {TAX_ROWS.map((r) => (
-                    <div key={r.k} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,.06)', fontSize: 12 }}>
-                      <span style={{ color: '#a3b0c2' }}>{r.k}</span>
-                      <b style={{ fontVariantNumeric: 'tabular-nums', color: r.c }}>{r.v}</b>
-                    </div>
-                  ))}
-                  {/* Legally careful. Keep this wording. */}
-                  <div style={{ padding: '8px 12px', fontSize: 10.5, lineHeight: 1.45, color: '#7f8ca0' }}>Illustrative, not a confirmed liability. Review with your CA.</div>
-                </Proof>
-              </section>
-
-              <section style={CARD}>
-                <CardHead tile={<IconTile gradient="linear-gradient(145deg,#5ff2d2,#00a98a)" color="#04140f" d={GLYPH.windows} />} kicker="04 · Up to 5" title="More than one account" />
-                <PainFix {...PAIN_FIX.accounts} />
-                <Proof padding={0}>
-                  {ACCTS.map((a) => (
-                    <div key={a.name} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
-                      <span aria-hidden style={{ flex: 'none', width: 20, height: 20, borderRadius: '50%', background: '#fd7d02', display: 'grid', placeItems: 'center', font: "800 11px/1 'Space Grotesk',sans-serif", color: '#fff' }}>Δ</span>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700 }}>{a.name}</span>
-                        <span style={{ display: 'block', marginTop: 2, fontSize: 11, color: '#7f8ca0' }}>{a.rules}</span>
-                      </span>
-                      <span style={{ flex: 'none', font: "700 9px/1 'JetBrains Mono',monospace", letterSpacing: '.1em', padding: '4px 7px', borderRadius: 5, background: a.bg, color: a.fg }}>{a.state}</span>
-                    </div>
-                  ))}
-                </Proof>
-              </section>
-
-              <section style={CARD}>
-                <CardHead tile={<IconTile gradient="linear-gradient(145deg,#b191fb,#7c3aed)" color="#fff" d={GLYPH.sparkle} />} kicker="05 · Learn from it" title="Journal + AI trade analyser" />
-                <PainFix {...PAIN_FIX.journal} />
-                <Proof ring="rgba(139,92,246,.3)">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, font: "600 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.16em', color: '#b191fb' }}>
-                    <span aria-hidden style={{ width: 6, height: 6, borderRadius: '50%', background: '#b191fb', animation: reduced ? 'none' : 'bsPulse 2s ease-in-out infinite' }} />
-                    PATTERN FOUND · 90 DAYS
-                  </div>
-                  <div style={{ marginTop: 9, fontSize: 12.5, lineHeight: 1.45, color: '#f6f9fc' }}>
-                    You widen your stop after two losses in a row. It has cost you <b style={{ color: '#ff8178' }}>−$412.60</b>.
-                  </div>
-                  <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, background: 'rgba(139,92,246,.16)', color: '#c4b0ff', fontSize: 11.5, fontWeight: 700 }}>
-                    <Glyph d={GLYPH.shieldPlain} size={13} width={2.2} />
-                    Suggested: close after 2 losses
-                  </div>
-                </Proof>
-              </section>
-            </div>
-
-            <p style={{ margin: '4px 2px 0', fontSize: 12.5, lineHeight: 1.55, color: '#7f8ca0' }}>
+            <p style={{ margin: '12px 2px 0', fontSize: 12, lineHeight: 1.55, color: '#7f8ca0' }}>
               All five come with every plan. Plans only change how often you pay.
+            </p>
+            {/* Kept from the card that used to show figures. The tax centre
+                still shows numbers once there are trades behind them, and
+                this is the sentence that qualifies them. */}
+            <p style={{ margin: '6px 2px 0', fontSize: 11.5, lineHeight: 1.5, color: '#7f8ca0' }}>
+              Illustrative, not a confirmed liability. Review with your CA.
             </p>
           </div>
 
