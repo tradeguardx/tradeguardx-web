@@ -18,8 +18,15 @@ import { formatRemaining } from './format';
  */
 
 export function KillSwitchButton({ onOpen }) {
-  const { selected, subscribeTick } = useGuard();
+  const { selected, subscribeTick, life } = useGuard();
+  const toast = useToast();
   const armed = selected.guard === 'locked';
+  /* Disabled only in setup, where there is no key to act with. With no plan
+     it stays live: the manual kill switch is the user's own instruction and
+     the engine honours it either way. A tap on the disabled button says why
+     rather than doing nothing. */
+  const usable = armed || life?.ks?.enabled !== false;
+  const tip = life?.ks?.tip;
   /**
    * A countdown that only moves when something else re-renders is a
    * screenshot, not a timer. Subscribe for as long as the lock runs.
@@ -30,12 +37,15 @@ export function KillSwitchButton({ onOpen }) {
       type="button"
       data-tgx-ks="1"
       data-armed={armed ? '1' : '0'}
-      onClick={onOpen}
+      onClick={usable ? onOpen : () => toast.info(tip ?? 'Works once your key is connected')}
       aria-label="Kill switch"
+      aria-disabled={usable ? undefined : 'true'}
+      title={armed ? undefined : tip}
       style={sx('flex:none;display:flex;align-items:center;gap:8px;height:36px;padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums', {
         border: `1px solid ${armed ? 'var(--red-line)' : 'var(--red-btn)'}`,
         background: armed ? 'var(--red-tint)' : 'var(--red-btn)',
         color: armed ? 'var(--red)' : '#fff',
+        opacity: usable ? 1 : 0.45,
       })}
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" style={{ flex: 'none' }}><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
@@ -49,7 +59,7 @@ const HOUR_OFF = "flex:1;padding:12px;border-radius:11px;font:600 14px/1 'Space 
 
 export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   const { session } = useAuth();
-  const { selected, refresh, subscribeTick } = useGuard();
+  const { selected, refresh, subscribeTick, life } = useGuard();
   const toast = useToast();
   const navigate = useNavigate();
   const [hours, setHours] = useState(3);
@@ -193,6 +203,9 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
 
           {armable && (
             <div>
+              {life?.unprotected && (
+                <p style={sx('margin:0 0 10px;font-size:13px;line-height:1.55;font-weight:600;color:var(--ink)')}>Your rules aren&rsquo;t active right now. This kill switch is.</p>
+              )}
               <p style={sx('margin:0 0 15px;font-size:13px;line-height:1.6;color:var(--ink-2)')}>Locks you out of this account for the window you pick. <strong style={sx('color:var(--ink);font-weight:700')}>You can&rsquo;t call it off yourself</strong> — there is no off button, only the clock. Support can lift it if something real happens.</p>
               <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:9px")}>Lock duration</div>
               <div style={sx('display:flex;gap:8px;margin-bottom:15px')} role="radiogroup" aria-label="Lock duration">

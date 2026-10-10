@@ -119,7 +119,20 @@ export function AuthProvider({ children }) {
          "you will be charged on X" sentence has to go quiet when this is on. */
       const subscriptionCanceled = subData?.canceled === true;
 
+      /*
+       * The lifecycle state (t1 … lf, `none` before a plan) and whether the
+       * engine is enforcing, both decided by subscription-service. The shell
+       * reads protection from here and never derives it. Null until /me
+       * answers, and on an older API — callers fall back to `access`.
+       */
+      const planState = typeof subData?.state === 'string' ? subData.state : null;
+      const planProtected = typeof subData?.protected === 'boolean' ? subData.protected : null;
+      const planStateEndsAt = subData?.stateEndsAt ?? null;
+
       const accessFields = {
+        planState,
+        planProtected,
+        planStateEndsAt,
         access,
         isTrial,
         isExpired,

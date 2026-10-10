@@ -242,7 +242,7 @@ function fieldDisplay(field, value, sym = '$') {
   return `${pre ? `${pre}` : ''}${value}${field.suffix ? ` ${field.suffix}` : ''}`;
 }
 
-function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, frozenNote, cooldownNote, expanded, onToggleExpand, enforcement, currency }) {
+function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, frozenNote, cooldownNote, expanded, onToggleExpand, enforcement, currency, viewOnly = false }) {
   // The account's settlement currency, not a constant: rule templates are
   // shared across venues but an amount is only meaningful in the currency the
   // account actually settles in.
@@ -255,9 +255,12 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
   // Colour follows the STATE, not the words. Keying it on the label meant any
   // rewording of user-facing copy quietly turned the pill grey.
   const tone = state === 'on' ? { bg: 'var(--mint-tint)', fg: 'var(--mint)' } : state === 'alerts' ? { bg: 'var(--amber-tint)', fg: 'var(--amber)' } : { bg: 'var(--surface-3)', fg: 'var(--ink-3)' };
-  const onUnlocked = isOn && !ruleLocked && !cooled;
-  const toggleBlocked = isOn && (ruleLocked || cooled);
-  const editable = !rule.locked && isOn && !ruleLocked && !cooled;
+  /* viewOnly: no active plan. The rules are saved and shown as they are,
+     but nothing here changes them — editing a rule nothing enforces gives a
+     false sense of being covered. The rule lock keeps its own clock. */
+  const onUnlocked = isOn && !ruleLocked && !cooled && !viewOnly;
+  const toggleBlocked = isOn && (ruleLocked || cooled) && !viewOnly;
+  const editable = !rule.locked && isOn && !ruleLocked && !cooled && !viewOnly;
   const frozen = isOn && ruleLocked && !cooled;
   const isCooled = isOn && cooled;
 
@@ -289,7 +292,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
 
   /** Flip on/off. Off is a loosening the backend may defer; on is immediate. */
   const toggleEnabled = async () => {
-    if (busy || rule.locked) return;
+    if (busy || rule.locked || viewOnly) return;
     const next = !rule.enabled;
     setBusy(true);
     try {
@@ -360,7 +363,11 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
         )}
         <span data-tgx-rxstatus="1" style={sx('flex:none;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px', { background: rule.locked ? 'var(--surface-3)' : tone.bg, color: rule.locked ? 'var(--ink-3)' : tone.fg })}>{rule.locked ? 'Upgrade' : status}</span>
 
-        {rule.locked ? (
+        {viewOnly && !rule.locked ? (
+          <span role="switch" aria-checked={isOn} aria-disabled="true" title="Saved, not enforced while your plan is inactive" onClick={(e) => e.stopPropagation()} style={sx('flex:none;position:relative;display:block;width:38px;height:22px;border-radius:999px;border:1px solid var(--line);background:var(--surface-3);cursor:not-allowed;opacity:.6')}>
+            <span style={sx('position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-faint)', { left: isOn ? '18px' : '2px' })} />
+          </span>
+        ) : rule.locked ? (
           <Link to="/pricing" onClick={(e) => e.stopPropagation()} style={sx('flex:none;padding:6px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none')}>Upgrade</Link>
         ) : onUnlocked ? (
           <span role="switch" tabIndex={0} aria-checked="true" aria-label={`Turn off ${rule.name}`} title="Turn this rule off"
@@ -435,7 +442,11 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
             </div>
           )}
 
-          {rule.locked ? (
+          {viewOnly && !rule.locked ? (
+            <div style={sx('padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
+              {isOn ? 'Saved and switched on — not enforced while your plan is inactive.' : 'Saved and switched off.'}
+            </div>
+          ) : rule.locked ? (
             <div style={sx('display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--ink-3)')}>
               <span>Included on a higher plan.</span>
               <Link to="/pricing" style={sx(BTN_GHOST, { textDecoration: 'none' })}>View plans</Link>
@@ -534,7 +545,9 @@ export default function RulesTerminal() {
   // While the account is locked the API rejects rule edits, so the UI blocks
   // them rather than letting someone type a change that cannot save.
   const { locked: cooldownLocked, untilMs: cooldownUntilMs, reason: cooldownReason } = useCooldown({ accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId, account: selectedAccount });
-  const { selected: guardSel, now: guardNow, subscribeTick } = useGuard();
+  const { selected: guardSel, now: guardNow, subscribeTick, life } = useGuard();
+  // No edit CTA here: the shell's band already offers Pay / Subscribe.
+  const rulesViewOnly = Boolean(life?.unprotected);
   const cooled = cooldownLocked || guardSel.guard === 'locked';
   const [bundle, setBundle] = useState(null);
   const ruleLock = ruleLockNow(bundle?.ruleLock ?? null, guardNow);
@@ -664,6 +677,7 @@ export default function RulesTerminal() {
     key: `${rule.id}-${reloadNonce}`, rule, accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId,
     isRetail: bundle?.isRetail, onSaved: load, cooled, ruleLocked, lockNote, frozenNote, cooldownNote, enforcement: guardSel.enforcement,
     expanded: expandedRuleId === rule.id, onToggleExpand: () => toggleExpandedRule(rule.id),
+    viewOnly: rulesViewOnly,
     // Shark settles in INR. Without this the amount fields and summaries show
     // a dollar sign beside a number the engine enforces as rupees.
     currency: selectedAccount?.accountCurrency,
@@ -674,6 +688,9 @@ export default function RulesTerminal() {
       <div style={sx('margin-bottom:18px;max-width:78ch')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Rules</h1>
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>Switch on the ones you want. Every rule is on every plan — set them while calm, because they only matter when you are not.</p>
+        {rulesViewOnly && (
+          <p style={sx('margin:10px 0 0;font-size:13px;font-weight:600;color:var(--ink-2)')}>Rules are saved but not enforced while your plan is inactive.</p>
+        )}
       </div>
 
       <section style={sx('margin-bottom:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>

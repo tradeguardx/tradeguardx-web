@@ -44,7 +44,10 @@ export function ShareProvider({ children }) {
   const [open, setOpen] = useState(null);
   const { session, user } = useAuth();
   const { selectedAccount, selectedTradingAccountId } = useTradingAccounts();
-  const { selected: g } = useGuard();
+  const { selected: g, life } = useGuard();
+  /* No share cards while unprotected (lifecycle spec §3.1, §3.5): a card
+     says "the guard caught this", and with no plan it caught nothing. */
+  const shareAllowed = !(life?.unprotected || life?.setup);
 
   const data = useShareData({
     accessToken: session?.access_token,
@@ -90,8 +93,8 @@ export function ShareProvider({ children }) {
     items,
     awards: data.awards,
     loading: data.loading,
-    canShare: data.kinds.length > 0,
-  }), [openShare, closeShare, data.cards, data.kinds, items, data.awards, data.loading]);
+    canShare: shareAllowed && data.kinds.length > 0,
+  }), [openShare, closeShare, data.cards, data.kinds, items, data.awards, data.loading, shareAllowed]);
 
   return (
     <ShareContext.Provider value={value}>

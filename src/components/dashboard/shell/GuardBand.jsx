@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useGuard } from '../../../context/GuardContext';
 import { useAuth } from '../../../context/AuthContext';
-import { subscriptionNotice } from './subscriptionNotice';
+import { planNoticeOf } from './lifecycleShell';
 import { sx } from './sx';
 
 /**
@@ -17,10 +18,20 @@ import { sx } from './sx';
  * it is about a date. With no guard problem, the subscription line becomes
  * the band.
  */
+const DISMISS_KEY = 'tgx.band.dismissed';
+
+function readDismissed() {
+  try { return window.localStorage.getItem(DISMISS_KEY); } catch { return null; }
+}
+
 export default function GuardBand() {
-  const { selected, loaded } = useGuard();
+  const { selected, loaded, life } = useGuard();
   const { user } = useAuth();
   const { pathname } = useLocation();
+  const [dismissed, setDismissed] = useState(readDismissed);
+
+  // Plan & billing explains the state itself; a band above it repeats it.
+  if (pathname.startsWith('/dashboard/account/billing')) return null;
 
   /**
    * The band exists to point somewhere. On the page it points AT, it is just
@@ -30,7 +41,13 @@ export default function GuardBand() {
   const elsewhere = (to) => Boolean(to) && !pathname.startsWith(to);
 
   let guard = null;
-  if (loaded && selected.account) {
+  if (life?.unprotected && life.band) {
+    /* A plan state that already says "Not protected" carries the plan's
+       message alone. A key problem on top is shown on Accounts and Connect
+       key, not here (spec §5). */
+    const b = life.band;
+    if (elsewhere(b.to)) guard = { bandTitle: b.title, bandBody: b.body, cta: b.cta, to: b.to, tone: 'red' };
+  } else if (loaded && selected.account) {
     const d = selected.describe;
     let { showBand, bandTitle, bandBody, cta, to, tone } = d;
     // Armed but silent: the alerts gap still needs a band (brief §4 gap 5).
@@ -41,7 +58,11 @@ export default function GuardBand() {
     if (showBand && elsewhere(to)) guard = { bandTitle, bandBody, cta, to, tone };
   }
 
-  const notice = subscriptionNotice(user);
+  let notice = life?.unprotected ? null : planNoticeOf(life, user);
+  // A dismissible notice stays dismissed for that exact sentence only — a
+  // new date is a new notice.
+  const noticeId = notice?.dismissible ? `${life?.id}:${notice.strong}` : null;
+  if (noticeId && dismissed === noticeId) notice = null;
   const noticeLink = notice && elsewhere(notice.to) ? notice : null;
   if (!guard && !notice) return null;
 
@@ -89,6 +110,19 @@ export default function GuardBand() {
       ) : noticeLink ? (
         <Link className="guard-band__cta" to={noticeLink.to} style={sx('flex:none;padding:8px 13px;border-radius:8px;background:var(--surface);font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap', { border: `1px solid var(--${tone}-line)`, color: fg })}>{noticeLink.cta}</Link>
       ) : null}
+      {!guard && noticeId && (
+        <button
+          type="button"
+          aria-label="Dismiss"
+          onClick={() => {
+            try { window.localStorage.setItem(DISMISS_KEY, noticeId); } catch { /* still hides for this visit */ }
+            setDismissed(noticeId);
+          }}
+          style={sx('flex:none;display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:var(--ink-3)')}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      )}
     </div>
   );
 }

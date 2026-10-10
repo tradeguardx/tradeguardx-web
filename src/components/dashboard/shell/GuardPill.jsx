@@ -1,10 +1,20 @@
 import { useGuard } from '../../../context/GuardContext';
 import { sx } from './sx';
+import { pillOf } from './lifecycleShell';
 
 /** Guard pill — reference lines 327–330. */
 export default function GuardPill() {
-  const { selected } = useGuard();
-  if (!selected.account) return null;
+  const { selected, life } = useGuard();
+  if (!selected.account) {
+    // s0: nothing to describe yet but the setup itself.
+    if (life?.id !== 's0') return null;
+    return (
+      <div data-tgx-mdhide="1" style={sx('display:flex;align-items:center;gap:9px;padding:7px 13px 7px 11px;border-radius:999px;white-space:nowrap;flex:none;border:1px solid var(--line-strong);background:var(--surface-2)')}>
+        <span style={sx('flex:none;width:7px;height:7px;border-radius:50%;background:var(--ink-faint)')} />
+        <span style={sx("font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-2)")}>Set up · 0 of 4</span>
+      </div>
+    );
+  }
   // Until the guard state is known the pill shows a neutral placeholder: a
   // coloured verdict here was the first thing people saw on login, and it was
   // wrong for the half-second before the fetch landed.
@@ -16,11 +26,12 @@ export default function GuardPill() {
       </div>
     );
   }
-  const t = selected.describe.tone;
+  const shown = pillOf(life, selected.describe, selected.guard);
+  const t = shown.tone;
   return (
-    <div data-tgx-mdhide="1" title={selected.describe.title} style={sx('display:flex;align-items:center;gap:9px;padding:7px 13px 7px 11px;border-radius:999px;white-space:nowrap;flex:none', { border: `1px solid var(--${t}-line)`, background: `var(--${t}-tint)` })}>
+    <div data-tgx-mdhide="1" title={shown.title} style={sx('display:flex;align-items:center;gap:9px;padding:7px 13px 7px 11px;border-radius:999px;white-space:nowrap;flex:none', { border: `1px solid var(--${t}-line)`, background: `var(--${t}-tint)` })}>
       <span style={sx('flex:none;width:7px;height:7px;border-radius:50%;animation:tgxPulse 2.1s ease-in-out infinite', { background: `var(--${t}-solid)`, boxShadow: `0 0 0 3px var(--${t}-tint)` })} />
-      <span style={sx("font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase", { color: `var(--${t})` })}>{selected.describe.pill}</span>
+      <span style={sx("font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase", { color: `var(--${t})` })}>{shown.pill}</span>
     </div>
   );
 }

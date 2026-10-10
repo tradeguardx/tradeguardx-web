@@ -128,12 +128,15 @@ export default function AccountsPage() {
   // they came to press; the server enforces the real limit either way.
   const planKnown = Boolean(user?.planKnown);
   const maxAccounts = planKnown ? maxTradingAccountsForPlan(user?.plan) : null;
-  const planName = planKnown ? user.planLabel || 'Free' : '';
+  /* No plan name here: "Your Trial ended plan" and "Your Free plan" were both
+     what this used to print. The limit is the same for everyone now; what
+     differs is whether a new account is protected. */
+  const life = guard.life;
   const capLine = !planKnown
     ? 'Checking your plan…'
-    : maxAccounts == null
-      ? `Your ${planName} plan has no account limit.`
-      : `Your ${planName} plan covers ${maxAccounts === 1 ? 'one' : maxAccounts === 5 ? 'five' : maxAccounts}.`;
+    : life?.unprotected
+      ? 'Add as many as you trade. Each one is protected once your plan is active.'
+      : 'Add as many as you trade.';
   const atCap = planKnown && maxAccounts != null && accounts.length >= maxAccounts;
 
   const go = (id, to) => { setSelectedTradingAccountId(id); navigate(to); };
@@ -168,7 +171,12 @@ export default function AccountsPage() {
 
       {accounts.map((a) => {
         const st = guard.stateFor(a.id);
-        const d = st.describe;
+        /* With no active plan every account inherits the plan's label — the
+           key is not the problem, so "Watching only" would send them to fix
+           the wrong thing. */
+        const d = life?.unprotected
+          ? { ...st.describe, label: life.accountLabel, tone: 'red', action: life.band?.cta ?? st.describe.action, to: life.band?.to ?? st.describe.to }
+          : st.describe;
         const tone = d.tone;
         const locked = st.guard === 'locked';
         /*
@@ -211,7 +219,7 @@ export default function AccountsPage() {
           ? { has: false, badge: 'Checking…', fg: 'var(--ink-3)', bg: 'var(--surface-3)', scope: 'Reading this account’s key status', note: '' }
           : !hasKey
           ? { has: false, badge: 'Not connected', fg: 'var(--red)', bg: 'var(--red-tint)', scope: 'No key — nothing is being enforced on this account', note: '' }
-          : st.enforcement === 'watching' || conn.enforcementCapable === false
+          : conn.enforcementCapable === false || (st.enforcement === 'watching' && !life?.unprotected)
             ? { has: true, badge: 'Read-only', fg: 'var(--amber)', bg: 'var(--amber-tint)', scope: 'Read-only — we can see your trades but cannot close them', note: locked ? 'Key changes are blocked while the kill switch runs.' : 'Make a new key with trading turned on and we start watching from your next trade.' }
             : { has: true, badge: 'Connected', fg: 'var(--mint)', bg: 'var(--mint-tint)', scope: 'This key can cancel orders and close positions', note: locked ? 'Key changes are blocked while the kill switch runs. That is deliberate: swapping the key would be a way to switch the lockout off.' : '' };
         const action = d.action;

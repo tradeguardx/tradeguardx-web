@@ -16,6 +16,7 @@ import {
   lockUntilOf,
   totalRuleCount,
 } from '../lib/guard';
+import { lifecycleIdOf, lifecycleView } from '../lib/lifecycle';
 
 /**
  * Guard state for every account the user has, kept fresh, read everywhere.
@@ -60,7 +61,15 @@ export function GuardProvider({ children }) {
    * unprotected — same rule as `loaded` everywhere else in this file.
    */
   const access = user?.access ?? null;
-  const entitled = access == null ? true : access === 'trial' || access === 'active';
+  /*
+   * `planProtected` is subscription-service's verdict, the one the risk
+   * engine is tested against row for row. It wins whenever it is present;
+   * `access` is the fallback for an older API.
+   */
+  const planProtected = typeof user?.planProtected === 'boolean' ? user.planProtected : null;
+  const entitled = planProtected != null
+    ? planProtected
+    : access == null ? true : access === 'trial' || access === 'active';
   /*
    * HAS A PAYMENT METHOD ATTACHED — WHICH IS NOT THE SAME AS HAVING ACCESS.
    *
@@ -237,8 +246,37 @@ export function GuardProvider({ children }) {
     [accounts, perAccount, notifications, now, loaded, entitled, mandate, trialSpent],
   );
 
+  /*
+   * The lifecycle state the shell renders (s0 … lf). Setup states need to
+   * know whether the selected account's key is connected, so they wait for
+   * the guard fetch; a plan state does not. Null means "unknown" and every
+   * consumer then leaves the shell as it was — never a red verdict from an
+   * unloaded state.
+   */
+  // Memoised: the context value below must stay referentially stable.
+  const selectedState = useMemo(() => stateFor(selectedTradingAccountId), [stateFor, selectedTradingAccountId]);
+  const lifeId = (() => {
+    const planState = user?.planState ?? null;
+    if (planState === 'none' && accounts.length > 0 && !selectedState.loaded) return null;
+    if (planState === 'none' && accountsLoading) return null;
+    return lifecycleIdOf({
+      planState,
+      accountsCount: accounts.length,
+      keyConnected: selectedState.connection?.status === 'active',
+    });
+  })();
+  const life = useMemo(
+    () => lifecycleView(lifeId, {
+      endsAt: user?.planStateEndsAt ?? null,
+      periodEnd: user?.currentPeriodEnd ?? null,
+      autoRenews: Boolean(user?.trialAutoRenews),
+    }),
+    [lifeId, user?.planStateEndsAt, user?.currentPeriodEnd, user?.trialAutoRenews],
+  );
+
   const value = useMemo(
     () => ({
+      life,
       loaded,
       now,
       notifications,
@@ -247,14 +285,14 @@ export function GuardProvider({ children }) {
       hasAlertChannel: gapsOf({ account: null, connection: null, rules: null, notifications, loaded }).every(
         (g) => g.key !== 'alerts',
       ),
-      selected: stateFor(selectedTradingAccountId),
+      selected: selectedState,
       stateFor,
       all: accounts.map((a) => stateFor(a.id)),
       refresh,
       user,
       subscribeTick,
     }),
-    [loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedTradingAccountId, accounts, refresh, user, subscribeTick],
+    [life, loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedState, accounts, refresh, user, subscribeTick],
   );
 
   return <GuardContext.Provider value={value}>{children}</GuardContext.Provider>;

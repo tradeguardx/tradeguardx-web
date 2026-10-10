@@ -12,6 +12,7 @@ import { fetchBreaches } from '../api/breachesApi';
 import { brokerLabel } from '../lib/labels';
 import { ICON } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
+import { pillOf } from '../components/dashboard/shell/lifecycleShell';
 import { formatRemaining } from '../components/dashboard/shell/format';
 
 /**
@@ -91,7 +92,7 @@ function SetupCard({ steps, doneCount, navigate }) {
 export default function OverviewPage() {
   const { session, user } = useAuth();
   const { selectedAccount, selectedTradingAccountId, accountsLoading } = useTradingAccounts();
-  const { selected: g } = useGuard();
+  const { selected: g, life } = useGuard();
   const { openShare, items: shareItems, awards: shareAwards, canShare } = useShare();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
@@ -234,6 +235,11 @@ export default function OverviewPage() {
     /* Private window or blocked storage — treat as not dismissed. */
   }
   const d = g.describe;
+  /* The hero: the plan's own words where the state has them (cancelled,
+     confirming, ended), otherwise the guard's description of this account. */
+  const heroPill = pillOf(life, d, g.guard);
+  const heroTitle = life && !life.setup && life.hero ? life.hero.title : d.title;
+  const heroSub = life && !life.setup && life.hero ? life.hero.sub : d.sub;
   const cur = s.currency;
   const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'your exchange';
   const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });
@@ -299,6 +305,42 @@ export default function OverviewPage() {
       : { k: fyLabel, v: fmtMoney(fyNet, 'INR'), note: 'Economic P&L, ledger-derived. Not a tax figure.', fg: 'var(--ink)', to: '/dashboard/tax' },
   ];
 
+  /*
+   * ── lifecycle overrides ────────────────────────────────────────────
+   *
+   * With no active plan (pf te pe pg lf), or before setup is done, nothing on
+   * this page may imply enforcement. The figures above are computed as
+   * usual; these replace the parts that would say otherwise — the dial, the
+   * three facts, the loss budget — with the spec's wording. Trades, P&L and
+   * the tax figure stay: they are the user's own record, not protection.
+   */
+  const lifeOff = Boolean(life && (life.ended || life.setup));
+  if (lifeOff) {
+    dial.pct = 'Off';
+    dial.color = 'var(--ink-faint)';
+    dial.tint = 'var(--surface-3)';
+    dial.dash = `0 ${C}`;
+    dial.label = life.dial.label;
+    facts.splice(0, facts.length, ...life.facts.map(([k, v, note]) => ({ k, v, note, fg: 'var(--ink-2)' })));
+    const off = life.lossBudgetNote ?? 'Not enforced until setup is done';
+    statCards[0] = { ...statCards[0], note: 'From your trade history. Nothing is being closed for you.' };
+    statCards[1] = { k: 'Loss budget used', v: '—', note: off, fg: 'var(--ink-faint)', to: statCards[1].to };
+  }
+  /* "Guard switched off" heads the feed while the plan is off, dated when we
+     know the date. TODO(api): an exact switch-off time (guard_applied_at). */
+  const offAt = life?.ended ? (user?.currentPeriodEnd ?? user?.trialEndsAt ?? null) : null;
+  const offRow = life?.ended
+    ? {
+        t: offAt ? new Date(offAt).getTime() : null,
+        text: `Guard switched off: ${life.endedFrom === 'failed' ? 'payment failed' : life.endedFrom === 'unpaid' ? 'all retries failed' : life.endedFrom === 'trial' ? 'trial ended' : 'plan ended'}`,
+        kind: 'system',
+        amt: '',
+        fg: 'var(--ink-3)',
+        dot: 'var(--red-solid)',
+      }
+    : null;
+  const feed = activity && offRow ? [offRow, ...activity.filter((x) => !/Guard armed/.test(x.text))].slice(0, 5) : activity;
+
   // ── next actions ────────────────────────────────────────────────────
   const settling = g.rules?.ruleLock?.settling;
   // No advice until we know the state — "Finish setup" shown to a fully
@@ -351,12 +393,15 @@ export default function OverviewPage() {
         <div style={sx('position:absolute;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:40px 40px;mask-image:linear-gradient(160deg,#000,transparent 62%);-webkit-mask-image:linear-gradient(160deg,#000,transparent 62%);pointer-events:none')} />
         <div style={sx('position:relative;display:flex;align-items:center;gap:32px;padding:30px 32px 28px;flex-wrap:wrap')}>
           <div style={sx('flex:1;min-width:min(320px,100%)')}>
-            <div style={sx('display:inline-flex;align-items:center;gap:9px;padding:5px 12px 5px 9px;margin-bottom:16px;border-radius:999px', { border: `1px solid var(--${d.tone}-line)`, background: `var(--${d.tone}-tint)` })}>
-              <span style={sx('width:7px;height:7px;border-radius:50%;animation:tgxPulse 2.1s ease-in-out infinite', { background: `var(--${d.tone}-solid)`, boxShadow: `0 0 0 4px var(--${d.tone}-tint)` })} />
-              <span style={sx("font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase", { color: `var(--${d.tone})` })}>{d.pill}</span>
+            <div style={sx('display:inline-flex;align-items:center;gap:9px;padding:5px 12px 5px 9px;margin-bottom:16px;border-radius:999px', { border: `1px solid var(--${heroPill.tone}-line)`, background: `var(--${heroPill.tone}-tint)` })}>
+              <span style={sx('width:7px;height:7px;border-radius:50%;animation:tgxPulse 2.1s ease-in-out infinite', { background: `var(--${heroPill.tone}-solid)`, boxShadow: `0 0 0 4px var(--${heroPill.tone}-tint)` })} />
+              <span style={sx("font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase", { color: `var(--${heroPill.tone})` })}>{heroPill.pill}</span>
             </div>
-            <h2 style={sx("margin:0;font:600 34px/1.14 'Space Grotesk',sans-serif;letter-spacing:-.035em;max-width:24ch;text-wrap:pretty")}>{d.title}</h2>
-            <p style={sx('margin:13px 0 0;font-size:14px;line-height:1.6;color:var(--ink-2);max-width:58ch;text-wrap:pretty')}>{d.sub}</p>
+            <h2 style={sx("margin:0;font:600 34px/1.14 'Space Grotesk',sans-serif;letter-spacing:-.035em;max-width:24ch;text-wrap:pretty")}>{heroTitle}</h2>
+            <p style={sx('margin:13px 0 0;font-size:14px;line-height:1.6;color:var(--ink-2);max-width:58ch;text-wrap:pretty')}>{heroSub}</p>
+            {lifeOff && life.plainEnglish && (
+              <p style={sx('margin:10px 0 0;font-size:13px;line-height:1.55;color:var(--ink-3);max-width:58ch;text-wrap:pretty')}>{life.plainEnglish}</p>
+            )}
           </div>
 
           <div style={sx('flex:none;position:relative;width:186px;height:186px;display:grid;place-items:center')}>
@@ -437,7 +482,7 @@ export default function OverviewPage() {
         under this user's name.
       */}
       <ShareCardsStrip
-        show={g.loaded && g.guard !== 'unprotected' && g.guard !== 'loading' && canShare}
+        show={g.loaded && g.guard !== 'unprotected' && g.guard !== 'loading' && canShare && !lifeOff}
         items={shareItems}
         awards={shareAwards}
         onOpenShare={openShare}
@@ -467,16 +512,22 @@ export default function OverviewPage() {
             <h3 style={sx(H3)}>Activity</h3>
             <span style={sx('font-size:11px;color:var(--ink-faint)')}>live · 20s</span>
           </div>
-          {activity === null ? (
+          {feed === null ? (
             <div style={sx('padding:13px 18px;font-size:12.5px;color:var(--ink-3)')}>Loading…</div>
-          ) : activity.length === 0 ? (
+          ) : feed.length === 0 ? (
             <div style={sx('padding:13px 18px;font-size:12.5px;color:var(--ink-3)')}>Nothing yet. Fills and rule events land here as they happen.</div>
-          ) : activity.map((ev, i) => (
+          ) : feed.map((ev, i) => (
             <div key={i} style={sx('display:flex;gap:11px;padding:13px 18px;border-bottom:1px solid var(--line)')}>
               <span style={sx('flex:none;width:7px;height:7px;border-radius:50%;margin-top:6px', { background: ev.dot })} />
               <span style={sx('flex:1;min-width:0')}>
                 <span style={sx('display:block;font-size:13px;font-weight:500')}>{ev.text}</span>
-                <span style={sx('display:block;font-size:11.5px;color:var(--ink-faint);margin-top:3px')}>{new Date(ev.t).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })} · {ev.kind}</span>
+                <span style={sx('display:block;font-size:11.5px;color:var(--ink-faint);margin-top:3px')}>
+                  {ev.t == null
+                    ? ev.kind
+                    : `${ev.kind === 'system'
+                      ? new Date(ev.t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })
+                      : new Date(ev.t).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })} · ${ev.kind}`}
+                </span>
               </span>
               {ev.amt && <span style={sx("flex:none;font:600 12.5px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;padding-top:3px", { color: ev.fg })}>{ev.amt}</span>}
             </div>

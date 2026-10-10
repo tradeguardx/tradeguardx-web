@@ -16,7 +16,7 @@ import { sx } from './sx';
 const GROUP_LABEL = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);padding:18px 9px 8px";
 const ITEM = "position:relative;width:100%;display:flex;align-items:center;gap:11px;padding:9px 10px;margin-bottom:2px;border:0;border-radius:10px;text-align:left;font-size:13.5px;font-weight:500;letter-spacing:-.005em;text-decoration:none";
 
-function NavItem({ id, to, label, badge, end, onNavigate }) {
+function NavItem({ id, to, label, badge, badgeFg, locked, end, onNavigate }) {
   const { pathname } = useLocation();
   const on = end ? pathname === to : pathname.startsWith(to);
   const d = ICON[id] ?? ['', ''];
@@ -28,17 +28,17 @@ function NavItem({ id, to, label, badge, end, onNavigate }) {
       className="dsb-item"
       style={sx(ITEM, {
         background: on ? 'linear-gradient(90deg,var(--mint-tint),transparent 78%)' : 'transparent',
-        color: on ? 'var(--ink)' : 'var(--ink-2)',
+        color: on ? 'var(--ink)' : locked ? 'var(--ink-faint)' : 'var(--ink-2)',
       })}
     >
       <span style={sx('position:absolute;left:0;top:9px;bottom:9px;width:2px;border-radius:2px', { background: on ? 'var(--mint-solid)' : 'transparent' })} />
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={on ? 'var(--mint)' : 'var(--ink-faint)'} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={on && !locked ? 'var(--mint)' : 'var(--ink-faint)'} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
         <path d={d[0]} />
         <path d={d[1]} />
       </svg>
       <span style={{ flex: 1 }}>{label}</span>
       {badge ? (
-        <span style={sx("font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase", { color: on ? 'var(--mint)' : 'var(--ink-faint)' })}>{badge}</span>
+        <span style={sx("font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase", { color: badgeFg ?? (on ? 'var(--mint)' : 'var(--ink-faint)') })}>{badge}</span>
       ) : null}
     </NavLink>
   );
@@ -50,6 +50,7 @@ export default function Sidebar({ onNavigate }) {
   const { isDark, toggleTheme } = useDashboardTheme();
   const { user } = useAuth();
   const g = guard.selected;
+  const life = guard.life;
   // Global count of upcoming high-impact releases — not scoped to the range being browsed.
   const upcoming = useUpcomingCalendar();
   const upcomingHigh = (upcoming.data?.days ?? []).reduce((n, d) => n + d.events.filter((e) => e.impact === 3 && e.time_status === 'exact' && new Date(e.event_time_utc).getTime() > guard.now).length, 0);
@@ -57,9 +58,9 @@ export default function Sidebar({ onNavigate }) {
   // Until the subscription answers, say nothing about the plan rather than
   // "Free" — a paying user reading that on every login is a small betrayal.
   const planWord = user?.planKnown ? user.planLabel || 'Free' : '';
-  const planLine = planWord
+  const planLine = lifecyclePlanLine(life, user, accounts.length) ?? (planWord
     ? (accounts.length > 1 ? `${planWord} · ${accounts.length} accounts` : `${planWord} plan`)
-    : (accounts.length > 1 ? `${accounts.length} accounts` : '');
+    : (accounts.length > 1 ? `${accounts.length} accounts` : ''));
 
   const protect = [
     { id: 'overview', to: '/dashboard/overview', label: 'Overview', end: true },
@@ -82,6 +83,18 @@ export default function Sidebar({ onNavigate }) {
     { id: 'security', to: '/dashboard/account/security', label: 'Security' },
   ];
 
+  /* Lifecycle badges sit on top of the counts above: a locked page says
+     LOCKED, and the "!" goes where the fix is — Plan & billing for a plan
+     problem, Connect key only when the key is what is missing. */
+  const decorate = (it) => {
+    const mark = life?.badges?.[it.id];
+    if (mark) return { ...it, badge: mark, badgeFg: 'var(--red)' };
+    if (life?.locks?.includes(it.id)) return { ...it, badge: 'LOCKED', badgeFg: 'var(--ink-faint)', locked: true };
+    if (it.id === 'rules' && life?.rulesBadge) return { ...it, badge: life.rulesBadge, badgeFg: 'var(--ink-faint)' };
+    if (it.id === 'connect' && life?.unprotected) return { ...it, badge: '' };
+    return it;
+  };
+
   return (
     <>
       <div style={sx('padding:19px 18px 16px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--line)')}>
@@ -90,19 +103,19 @@ export default function Sidebar({ onNavigate }) {
         </div>
         <div style={sx('min-width:0;flex:1')}>
           <Link to="/dashboard/overview" onClick={onNavigate} style={sx("font:600 15px/1.1 'Space Grotesk',sans-serif;letter-spacing:-.015em;color:var(--ink);text-decoration:none;display:block")}>TradeGuardX</Link>
-          <div style={sx("font:500 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-top:5px")}>{planLine}</div>
+          <div style={sx("font:500 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")} title={planLine}>{planLine}</div>
         </div>
       </div>
 
       <nav style={sx('flex:1;overflow-y:auto;padding:6px 10px 10px')} aria-label="Dashboard">
         <div style={sx(GROUP_LABEL, { padding: '14px 9px 8px' })}>Protect</div>
-        {protect.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
+        {protect.map(decorate).map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
         <div style={sx(GROUP_LABEL)}>Market</div>
-        {market.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
+        {market.map(decorate).map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
         <div style={sx(GROUP_LABEL)}>Review</div>
-        {review.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
+        {review.map(decorate).map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
         <div style={sx(GROUP_LABEL)}>Setup</div>
-        {setup.map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
+        {setup.map(decorate).map((i) => <NavItem key={i.id} {...i} onNavigate={onNavigate} />)}
       </nav>
 
       <div style={sx('flex:none;padding:12px 14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px')}>
@@ -116,4 +129,18 @@ export default function Sidebar({ onNavigate }) {
       </div>
     </>
   );
+}
+
+/**
+ * The line under the logo, from the lifecycle state. Null keeps the plan
+ * word line above. Truncation is the container's job — it never wraps.
+ */
+function lifecyclePlanLine(life, user, accountsCount) {
+  if (!life) return null;
+  if (life.id === 't1' || life.id === 't6') {
+    const d = user?.trialDaysLeft;
+    return typeof d === 'number' && d > 0 ? `Trial · ${d} day${d === 1 ? '' : 's'} left` : 'Trial · ends today';
+  }
+  if (life.id === 'p') return accountsCount > 1 ? `Pro · ${accountsCount} accounts` : 'Pro';
+  return life.plan;
 }

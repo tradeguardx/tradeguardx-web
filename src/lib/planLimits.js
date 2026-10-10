@@ -42,8 +42,11 @@ export function paidCheckoutEligibility(currentUserPlanSlug, targetPlanKey) {
 }
 
 /** @returns {number|null} null = unlimited (a 20-account abuse ceiling sits behind it server-side) */
-export function maxTradingAccountsForPlan(planSlug) {
-  return planTierFromSlug(planSlug) === 'pro' ? null : 1;
+// Unlimited (behind the server's 20-account ceiling) in every plan state —
+// see user-service planLimits.ts. An account added with no plan is simply
+// not protected until there is one.
+export function maxTradingAccountsForPlan() {
+  return null;
 }
 
 /** 1 April of the Indian financial year containing `d`. */

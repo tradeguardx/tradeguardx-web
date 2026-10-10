@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { TradingAccountProvider } from '../../context/TradingAccountContext';
 import { DashboardThemeProvider, useDashboardTheme } from '../../context/DashboardThemeContext';
-import { GuardProvider } from '../../context/GuardContext';
+import { GuardProvider, useGuard } from '../../context/GuardContext';
 import { PrefsProvider, usePrefs } from '../../context/PrefsContext';
 import SupportChat from '../support/SupportChat';
 import { UpgradeWall } from './TrialGate';
@@ -21,6 +21,9 @@ import AvatarMenu from './shell/AvatarMenu';
 import NotificationPanel from './shell/NotificationPanel';
 import { KillSwitchButton, KillSwitchModal } from './shell/KillSwitch';
 import BottomTabs from './shell/BottomTabs';
+import LifecycleLock from './shell/LifecycleLock';
+import LifecycleToast from './shell/LifecycleToast';
+import { lockedRouteOf } from '../../lib/lifecycle';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { sx } from './shell/sx';
 
@@ -40,6 +43,7 @@ import { sx } from './shell/sx';
 
 function Shell() {
   const { user } = useAuth();
+  const { life } = useGuard();
   const { theme } = useDashboardTheme();
   const { prefs } = usePrefs();
   const { pathname } = useLocation();
@@ -79,7 +83,20 @@ function Shell() {
    * ActivateGuardPage meets them. A banner keeps the way forward visible on
    * every page.
    */
-  const locked = Boolean(user?.isExpired) && !billingArea;
+  /*
+   * LOCKS COME FROM THE LIFECYCLE STATE, ONE ROUTE AT A TIME.
+   *
+   * Live guard and Journal lock while unprotected; setup also locks Trades
+   * and Tax until a key exists. Everything else stays usable — Trades, Tax,
+   * Rules (view only), Accounts, the kill switch — because none of it is
+   * what an unpaid plan withholds, and hiding a user's own history reads as
+   * deleting it.
+   *
+   * `legacyLocked` is the old whole-dashboard wall, kept only for an API
+   * that does not send the lifecycle state yet (life === null).
+   */
+  const lockedRoute = life ? lockedRouteOf(pathname, life.locks) : null;
+  const legacyLocked = !life && Boolean(user?.isExpired) && !billingArea;
 
   useEffect(() => {
     if (!drawer) return undefined;
@@ -178,7 +195,9 @@ function Shell() {
           {/* The trial banner used to sit here, directly under the guard band
               and the same size as it — two alarms competing. It is now a line
               inside GuardBand. */}
-          {locked ? <UpgradeWall /> : <Outlet />}
+          {lockedRoute && life.lock ? (
+            <LifecycleLock lock={life.lock} from={pathname}><Outlet /></LifecycleLock>
+          ) : legacyLocked ? <UpgradeWall /> : <Outlet />}
         </main>
       </div>
 
@@ -188,6 +207,7 @@ function Shell() {
 
       <KillSwitchModal key={killNonce} open={killOpen} onClose={() => setKillOpen(false)} returnFocusRef={killBtnRef} />
       <WelcomeCelebration />
+      <LifecycleToast />
       <PhonePrompt />
       {/* Not rendered on a phone. It sat on top of the bottom tab bar — same
           corner, same z-index — so the "More" tab and the chat bubble fought
