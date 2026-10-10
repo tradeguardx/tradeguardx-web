@@ -34,6 +34,15 @@ describe('Plan & billing renders the spec’s page state for every case', () => 
     expect(pageFor('pc').trial).toBe(false);
   });
 
+  /* Paid, then deleted every account: the shell says s0, but this page is
+     about the subscription, which still renews. */
+  it('a paying user with no accounts still sees their plan, not the setup step', () => {
+    expect(billingPageOf(lifecycleView('s0'), { planState: 'p' }).page).toBe('active');
+    expect(billingPageOf(lifecycleView('s2'), { planState: 'tc' }).page).toBe('cancelled');
+    expect(billingPageOf(lifecycleView('s2'), { planState: 'te' }).page).toBe('ended');
+    expect(billingPageOf(lifecycleView('s0'), { planState: 'none' }).page).toBe('setupEarly');
+  });
+
   it('is null when the case is unknown', () => {
     expect(billingPageOf(null)).toBeNull();
   });

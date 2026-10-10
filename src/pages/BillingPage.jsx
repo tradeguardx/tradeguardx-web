@@ -137,7 +137,7 @@ export default function BillingPage() {
    * the case is known — or on an API that does not send it — the page falls
    * back to deriving it from the subscription, exactly as it used to.
    */
-  const bp = billingPageOf(life, { autoRenews: Boolean(user?.trialAutoRenews) });
+  const bp = billingPageOf(life, { autoRenews: Boolean(user?.trialAutoRenews), planState: user?.planState ?? null });
   const derived = billingStateOf({
     access: user?.access,
     trial: user?.trialAutoRenews ? { autoRenews: true } : null,

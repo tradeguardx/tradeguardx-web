@@ -16,9 +16,21 @@
  * Null when the case is unknown (older API): the page falls back to its own
  * derivation, exactly as before.
  */
-export function billingPageOf(life, { autoRenews = false } = {}) {
+export function billingPageOf(life, { autoRenews = false, planState = null } = {}) {
   if (!life) return null;
-  switch (life.id) {
+  /*
+   * A SETUP CASE IS NOT "NO PLAN".
+   *
+   * The shell puts anyone without an account (s0) or a connected key (s2)
+   * into setup first, whatever they pay for. But this page is about the
+   * subscription, and someone who is paying and deleted their accounts — or
+   * is adding a new one — still has one: a renewal date, a card, a Cancel
+   * button. Showing them the setup step instead would hide all of it while
+   * the plan keeps renewing. So when the server reports a plan, the page
+   * follows the plan.
+   */
+  const id = life.setup && planState && planState !== 'none' ? planState : life.id;
+  switch (id) {
     case 's0':
     case 's2':
       return { page: 'setupEarly' };
