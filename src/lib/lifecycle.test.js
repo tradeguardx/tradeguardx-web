@@ -8,7 +8,7 @@ import {
   PROTECTED_STATES,
   UNPROTECTED_STATES,
 } from './lifecycle';
-import { pillOf, planNoticeOf } from '../components/dashboard/shell/lifecycleShell';
+import { heroOf, pillOf, planNoticeOf } from '../components/dashboard/shell/lifecycleShell';
 
 const ALL = ['s0', 's2', 's3', 't1', 't6', 'tc', 'tx', 'p', 'pf', 'pc', 'te', 'pe', 'pg', 'ac', 'lf', 'nr'];
 const ARMED = { pill: 'Armed', tone: 'mint', title: 'Armed.' };
@@ -247,5 +247,24 @@ describe('not enforced (spec §1.5)', () => {
     expect(unenforcedLabel(b, { timeline: true })).toBe('Daily loss limit reached · not enforced: plan inactive');
     // A key problem is not blamed on the plan.
     expect(unenforcedLabel({ ...b, context: { reason: 'incapable' } }, { unprotected: true })).toBe('Daily loss limit reached · not enforced');
+  });
+});
+
+describe('the Overview hero never contradicts the pill', () => {
+  const noRules = { pill: 'Not protected', tone: 'red', title: 'Not protected. No rules are switched on yet.', sub: 'Nothing is enforcing this account yet.' };
+  const armed = { pill: 'Armed', tone: 'mint', title: 'Armed.', sub: 'Watching every fill.' };
+  const tc = lifecycleView('tc', { endsAt: '2026-10-15T12:00:00Z' });
+
+  it('a cancelled trial with no rules on says "Not protected", like the pill', () => {
+    expect(heroOf(tc, noRules, 'unprotected').title).toBe('Not protected. No rules are switched on yet.');
+    expect(pillOf(tc, noRules, 'unprotected').pill).toBe('Not protected');
+  });
+
+  it('once armed, the plan’s date leads', () => {
+    expect(heroOf(tc, armed, 'armed').title).toBe('Protected until 15 Oct.');
+  });
+
+  it('with no plan the plan’s hero always leads', () => {
+    expect(heroOf(lifecycleView('te'), noRules, 'watching').title).toBe('Nothing is protecting your accounts.');
   });
 });

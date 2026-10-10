@@ -12,7 +12,7 @@ import { fetchBreaches } from '../api/breachesApi';
 import { brokerLabel } from '../lib/labels';
 import { ICON } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
-import { pillOf } from '../components/dashboard/shell/lifecycleShell';
+import { heroOf, pillOf } from '../components/dashboard/shell/lifecycleShell';
 import { isUnenforced, unenforcedLabel } from '../lib/lifecycle';
 import { formatRemaining } from '../components/dashboard/shell/format';
 
@@ -250,8 +250,9 @@ export default function OverviewPage() {
   /* The hero: the plan's own words where the state has them (cancelled,
      confirming, ended), otherwise the guard's description of this account. */
   const heroPill = pillOf(life, d, g.guard);
-  const heroTitle = life && !life.setup && life.hero ? life.hero.title : d.title;
-  const heroSub = life && !life.setup && life.hero ? life.hero.sub : d.sub;
+  const hero = heroOf(life, d, g.guard);
+  const heroTitle = hero.title;
+  const heroSub = hero.sub;
   const cur = s.currency;
   const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'your exchange';
   const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });

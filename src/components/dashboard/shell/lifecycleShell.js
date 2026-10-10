@@ -39,3 +39,17 @@ export function planNoticeOf(life, user) {
   return null;
 }
 
+
+/**
+ * The Overview hero, in the same precedence as the pill.
+ *
+ * A protected plan's own words ("Protected until 15 Oct.") only hold while
+ * this account is actually armed. With no rules on, or a key that cannot
+ * act, the pill says "Not protected" — and a headline saying "Protected"
+ * beneath it was both true and contradictory. The account's own condition
+ * leads; the plan's date is still in the band.
+ */
+export function heroOf(life, describe, guard) {
+  if (life?.hero && !life.setup && (life.unprotected || guard === 'armed')) return life.hero;
+  return { title: describe.title, sub: describe.sub };
+}
