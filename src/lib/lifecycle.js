@@ -469,6 +469,7 @@ const RULE_NAMES = {
   'max-trades-day': 'Max trades per day',
   'max-total-loss': 'Max total loss',
   'daily-target': 'Daily target',
+  'daily-profit-target': 'Daily target',
   'close-after-losses': 'Losing streak',
   'stop-loss-alert': 'Stop-loss alert',
   'cooldown-block': 'Cooldown',
