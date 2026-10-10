@@ -14,7 +14,8 @@ import { subscriptionNotice } from './subscriptionNotice';
  *   4. protected — the plan's wording where it has one (tc, pc, tx)
  */
 export function pillOf(life, describe, guard) {
-  if (life?.unprotected && life.pill) return { pill: life.pill, tone: life.tone, title: life.band?.title ?? '' };
+  // Setup and unprotected states speak for themselves, whatever the key says.
+  if ((life?.unprotected || life?.setup) && life.pill) return { pill: life.pill, tone: life.tone, title: life.band?.title ?? '' };
   if (life?.pill && guard === 'armed') return { pill: life.pill, tone: life.tone, title: life.hero?.title ?? '' };
   return { pill: describe.pill, tone: describe.tone, title: describe.title };
 }
@@ -29,7 +30,7 @@ export function pillOf(life, describe, guard) {
  */
 export function planNoticeOf(life, user) {
   if (!life) return subscriptionNotice(user);
-  if (life.band && !life.unprotected) {
+  if (life.band && !life.unprotected && !life.setup) {
     const b = life.band;
     return { tone: b.tone, strong: b.title, text: b.body, short: `${b.title} ${b.body}`, cta: b.cta, to: b.to, dismissible: Boolean(b.dismissible) };
   }

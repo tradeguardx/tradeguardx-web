@@ -3,8 +3,8 @@ import {
   entryToastFor,
   lifecycleIdOf,
   lifecycleView,
+  keyStateOf,
   lockedRouteOf,
-  withMissingKey,
   PROTECTED_STATES,
   UNPROTECTED_STATES,
 } from './lifecycle';
@@ -13,19 +13,32 @@ import { pillOf, planNoticeOf } from '../components/dashboard/shell/lifecycleShe
 const ALL = ['s0', 's2', 's3', 't1', 't6', 'tc', 'tx', 'p', 'pf', 'pc', 'te', 'pe', 'pg', 'ac', 'lf', 'nr'];
 const ARMED = { pill: 'Armed', tone: 'mint', title: 'Armed.' };
 
-describe('which state', () => {
+describe('which state, in the spec’s order (first match wins)', () => {
   it('is unknown until the plan state arrives — never a guess', () => {
-    expect(lifecycleIdOf({ planState: null, accountsCount: 2, keyConnected: true })).toBeNull();
+    expect(lifecycleIdOf({ planState: null, accountsCount: 2, keyState: 'ok' })).toBeNull();
   });
 
-  it('splits "no plan yet" by setup progress', () => {
-    expect(lifecycleIdOf({ planState: 'none', accountsCount: 0 })).toBe('s0');
-    expect(lifecycleIdOf({ planState: 'none', accountsCount: 1, keyConnected: false })).toBe('s2');
-    expect(lifecycleIdOf({ planState: 'none', accountsCount: 1, keyConnected: true })).toBe('s3');
+  it('no account is s0 and a key never connected is s2 — whatever the plan', () => {
+    expect(lifecycleIdOf({ planState: 'p', accountsCount: 0, keyState: 'none' })).toBe('s0');
+    // The tester's case: a cancelled trial on a fresh Shark account.
+    expect(lifecycleIdOf({ planState: 'tc', accountsCount: 1, keyState: 'none' })).toBe('s2');
+    expect(lifecycleIdOf({ planState: 'none', accountsCount: 1, keyState: 'none' })).toBe('s2');
   });
 
-  it('takes any plan state as it comes', () => {
-    expect(lifecycleIdOf({ planState: 'pf', accountsCount: 0 })).toBe('pf');
+  it('a connected key with no plan yet is s3', () => {
+    expect(lifecycleIdOf({ planState: 'none', accountsCount: 1, keyState: 'ok' })).toBe('s3');
+  });
+
+  it('a key that failed after connecting keeps the plan state (§5, scenario Q)', () => {
+    expect(lifecycleIdOf({ planState: 'p', accountsCount: 1, keyState: 'failed' })).toBe('p');
+  });
+
+  it('reads key states from the credentials status', () => {
+    expect(keyStateOf({ status: 'active' })).toBe('ok');
+    expect(keyStateOf({ status: 'invalid' })).toBe('failed');
+    expect(keyStateOf({ status: 'revoked' })).toBe('failed');
+    expect(keyStateOf(null)).toBe('none');
+    expect(keyStateOf({ status: 'not_connected' })).toBe('none');
   });
 });
 
@@ -98,20 +111,19 @@ describe('tx without a card (the old no-card trial)', () => {
   });
 });
 
-describe('an account with no key, under any plan', () => {
-  it('locks the pages that read the exchange, even on a protected plan', () => {
-    const v = withMissingKey(lifecycleView('tc', { endsAt: '2026-10-15T12:00:00Z' }));
-    expect(v.locks).toEqual(['live', 'journal', 'trades', 'tax']);
-    expect(v.lockFor('live').title).toBe('Connect your key to see this');
-    expect(v.lockFor('live').to).toBe('/dashboard/connect');
-    expect(v.ks.enabled).toBe(false);
-    expect(v.badges.connect).toBe('!');
+describe('setup states carry the spec’s own pill and band', () => {
+  it('s2 names the account and points at the key', () => {
+    const v = lifecycleView('s2', { accountName: 'Shark' });
+    expect(v.pill).toBe('Not protected');
+    expect(v.band.title).toBe('Nothing is watching Shark yet.');
+    expect(v.band.to).toBe('/dashboard/connect');
+    expect(v.lock.title).toBe('Connect your key to see this');
   });
 
-  it('keeps the plan lock on Live guard and Journal when the plan is off too', () => {
-    const v = withMissingKey(lifecycleView('te'));
-    expect(v.lockFor('live').title).toBe('Needs an active plan');
-    expect(v.lockFor('trades').title).toBe('Connect your key to see this');
+  it('s3 offers the trial with ₹0 today', () => {
+    const v = lifecycleView('s3');
+    expect(v.pill).toBe('Guard off');
+    expect(v.band.body).toMatch(/₹0 today/);
   });
 });
 

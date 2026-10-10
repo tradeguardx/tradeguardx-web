@@ -374,7 +374,15 @@ export default function OverviewPage() {
    * works and every other route stays reachable. A setup flow you cannot
    * leave is how someone who was merely curious gets stuck.
    */
-  if (noAccount || (setupIncomplete && !setupDismissed && g?.loaded !== false)) {
+  /* Only real setup goes back to the flow. A user whose plan ended or whose
+     payment failed has finished setup; their missing plan reads as a billing
+     gap, and bouncing them to onboarding hid the Overview the spec gives
+     them ("Nothing is protecting your accounts"). Unknown state falls back
+     to the old rule. */
+  const sendToSetup = !life
+    ? setupIncomplete && !setupDismissed
+    : life.id === 's0' || (life.setup && !setupDismissed);
+  if (noAccount || (sendToSetup && g?.loaded !== false)) {
     return <Navigate to="/dashboard/setup" replace />;
   }
 

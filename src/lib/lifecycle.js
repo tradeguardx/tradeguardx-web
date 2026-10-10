@@ -13,11 +13,13 @@
  * sentence is cut back to what we know rather than filled with a guess.
  * Each such place is marked TODO(api).
  *
- * Setup states (s0 / s2 / s3) are the server's `none`, split here by setup
- * progress. Their pill, band and hero stay with the existing setup guidance
- * in guard.js, which already names the one missing step; this file adds only
- * what the spec adds for them: locks, the DRAFT badge and the disabled kill
- * switch.
+ * Setup states come FIRST, as in the spec's derivation (§2, first match
+ * wins): no account → s0, a key never connected → s2, whatever the plan. A
+ * cancelled trial on a fresh account with no key is s2, not tc — nothing can
+ * be watched on it. s3 is a connected key with no plan yet (the server's
+ * `none`). A key that was connected and has since failed (invalid, revoked)
+ * is not setup: the plan state stands and the key problem shows as the
+ * account's own condition (§5, scenario Q).
  */
 
 /** The engine is enforcing in these. Mirrors lifecycleState.ts PROTECTED. */
@@ -45,18 +47,31 @@ export function lockedRouteOf(pathname, locks) {
   return null;
 }
 
+/** Key statuses that mean a key WAS connected and has since failed. */
+const FAILED_KEY = ['invalid', 'revoked'];
+
+/** 'none' (never connected) | 'ok' | 'failed', from the credentials status. */
+export function keyStateOf(connection) {
+  const st = connection?.status ?? null;
+  if (st === 'active') return 'ok';
+  if (FAILED_KEY.includes(st)) return 'failed';
+  return 'none';
+}
+
 /**
- * Which of the spec's states this user is in.
+ * Which of the spec's states this user is in, in the spec's order.
  *
- * Null while the plan state is unknown (not loaded, or an older API). The
- * callers then leave the existing shell exactly as it was: no lock, no red
- * band, nothing claimed — an unloaded state must never read as unprotected.
+ * Null while anything it depends on is unknown (plan state not loaded, or an
+ * older API). The callers then leave the existing shell exactly as it was:
+ * no lock, no red band, nothing claimed — an unloaded state must never read
+ * as unprotected.
  */
-export function lifecycleIdOf({ planState, accountsCount, keyConnected }) {
+export function lifecycleIdOf({ planState, accountsCount, keyState }) {
   if (!planState) return null;
-  if (planState !== 'none') return planState;
   if (!accountsCount) return 's0';
-  return keyConnected ? 's3' : 's2';
+  if (keyState === 'none') return 's2';
+  if (planState === 'none') return 's3';
+  return planState;
 }
 
 function day(iso) {
@@ -78,7 +93,7 @@ const ENDED_LOCK_BODY = 'Your rules and entries are saved, not deleted. Subscrib
  * Everything the shell needs for one state.
  *
  * @param {string|null} id     from lifecycleIdOf
- * @param {{ endsAt?: string|null, periodEnd?: string|null, autoRenews?: boolean }} ctx
+ * @param {{ endsAt?: string|null, periodEnd?: string|null, autoRenews?: boolean, accountName?: string }} ctx
  *   endsAt     — /me `stateEndsAt`: end of the protected window (tc, pc, tx)
  *   periodEnd  — the subscription's period end; for pe, when it ended
  *   autoRenews — a card is on file for this trial. Without one (the old
@@ -123,7 +138,12 @@ export function lifecycleView(id, ctx = {}) {
     case 's2':
       return {
         ...base,
+        pill: id === 's0' ? 'Set up · 0 of 4' : 'Not protected',
+        tone: id === 's0' ? 'neutral' : 'red',
         plan: id === 's0' ? 'Setup · step 1 of 4' : 'Setup · step 3 of 4',
+        band: id === 's0'
+          ? { tone: 'red', title: 'Finish setup to switch your guard on.', body: 'About three minutes. Until then nothing is watching your trades.', cta: 'Continue setup', to: '/dashboard/setup' }
+          : { tone: 'red', title: `Nothing is watching ${ctx.accountName || 'this account'} yet.`, body: 'Connect the key to turn your rules into actions.', cta: 'Connect key', to: '/dashboard/connect' },
         locks: ['live', 'journal', 'trades', 'tax'],
         lock: {
           title: 'Connect your key to see this',
@@ -144,7 +164,10 @@ export function lifecycleView(id, ctx = {}) {
     case 's3':
       return {
         ...base,
+        pill: 'Guard off',
+        tone: 'amber',
         plan: 'Setup · step 4 of 4',
+        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Start your 7-day free trial to switch it on. ₹0 today.', cta: 'Start free trial', to: '/dashboard/activate' },
         locks: ['live', 'journal'],
         lock: {
           title: 'Starts with your free trial',
@@ -354,37 +377,6 @@ export function lifecycleView(id, ctx = {}) {
     default:
       return base;
   }
-}
-
-/**
- * The selected account has no working key — on top of ANY plan state.
- *
- * The spec locks pages for a missing key only in setup (s2), but a protected
- * plan with a keyless account is the same situation for that account:
- * nothing to read, nothing to act with. So Live guard, Journal, Trades and
- * Tax show "Connect your key to see this" whatever the plan, the kill switch
- * waits for a key, and Connect key carries the "!". With no active plan,
- * Live guard and Journal keep the plan's lock — paying is the bigger fix and
- * the band already says so.
- */
-export function withMissingKey(view) {
-  if (!view) return view;
-  const keyLock = {
-    title: 'Connect your key to see this',
-    body: 'Nothing can show here until we can read your exchange. About two minutes on a laptop.',
-    cta: 'Connect key',
-    to: '/dashboard/connect',
-  };
-  const planLocks = view.unprotected ? view.locks : [];
-  return {
-    ...view,
-    keyMissing: true,
-    locks: [...new Set([...planLocks, 'live', 'journal', 'trades', 'tax'])],
-    lockFor: (route) => (planLocks.includes(route) ? view.lock : keyLock),
-    lock: view.unprotected ? view.lock : keyLock,
-    ks: { enabled: false, tip: 'Works once your key is connected' },
-    badges: { ...view.badges, connect: '!' },
-  };
 }
 
 /** What every red, key-in-place state shares. */

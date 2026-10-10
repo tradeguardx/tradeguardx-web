@@ -170,7 +170,7 @@ describe('Pro cancelled, still inside the period (pc)', () => {
   });
 });
 
-describe('trial cancelled, and this account has no key yet', () => {
+describe('trial cancelled, but this account’s key was never connected (s2)', () => {
   beforeEach(() => {
     auth.user = { ...base, planState: 'tc', planProtected: true, planStateEndsAt: '2026-10-15T12:00:00Z', access: 'trial', isTrial: true, subscriptionCanceled: true };
     getExchangeCredentialsStatus.mockImplementation(async () => ({ status: 'not_connected' }));
@@ -179,9 +179,12 @@ describe('trial cancelled, and this account has no key yet', () => {
     getExchangeCredentialsStatus.mockImplementation(async () => ({ status: 'active', enforcementCapable: true, lastValidatedAt: new Date().toISOString() }));
   });
 
-  it('locks Live guard behind "Connect your key"', async () => {
+  it('is setup, not a trial: red pill, "Nothing is watching", Live guard locked', async () => {
     mount('/dashboard/live');
     await waitFor(() => expect(screen.getByText('Connect your key to see this')).toBeTruthy());
+    expect(screen.getAllByText('Not protected').length).toBeGreaterThan(0);
+    expect(screen.getByText('Nothing is watching Delta main yet.')).toBeTruthy();
+    expect(screen.getByText('Setup · step 3 of 4')).toBeTruthy();
     expect(screen.getAllByRole('link', { name: 'Connect key' }).some((a) => a.getAttribute('href') === '/dashboard/connect')).toBe(true);
     expect(screen.getByRole('button', { name: 'Kill switch' }).getAttribute('aria-disabled')).toBe('true');
   });

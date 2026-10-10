@@ -41,12 +41,12 @@ export default function GuardBand() {
   const elsewhere = (to) => Boolean(to) && !pathname.startsWith(to);
 
   let guard = null;
-  if (life?.unprotected && life.band) {
+  if ((life?.unprotected || life?.setup) && life.band) {
     /* A plan state that already says "Not protected" carries the plan's
        message alone. A key problem on top is shown on Accounts and Connect
        key, not here (spec §5). */
     const b = life.band;
-    if (elsewhere(b.to)) guard = { bandTitle: b.title, bandBody: b.body, cta: b.cta, to: b.to, tone: 'red' };
+    if (elsewhere(b.to)) guard = { bandTitle: b.title, bandBody: b.body, cta: b.cta, to: b.to, tone: b.tone };
   } else if (loaded && selected.account) {
     const d = selected.describe;
     let { showBand, bandTitle, bandBody, cta, to, tone } = d;
@@ -58,7 +58,7 @@ export default function GuardBand() {
     if (showBand && elsewhere(to)) guard = { bandTitle, bandBody, cta, to, tone };
   }
 
-  let notice = life?.unprotected ? null : planNoticeOf(life, user);
+  let notice = life?.unprotected || life?.setup ? null : planNoticeOf(life, user);
   // A dismissible notice stays dismissed for that exact sentence only — a
   // new date is a new notice.
   const noticeId = notice?.dismissible ? `${life?.id}:${notice.strong}` : null;

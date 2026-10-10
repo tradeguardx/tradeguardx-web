@@ -196,7 +196,7 @@ function Shell() {
               and the same size as it — two alarms competing. It is now a line
               inside GuardBand. */}
           {lockedRoute && life.lock ? (
-            <LifecycleLock lock={life.lockFor ? life.lockFor(lockedRoute) : life.lock} from={pathname}><Outlet /></LifecycleLock>
+            <LifecycleLock lock={life.lock} from={pathname}><Outlet /></LifecycleLock>
           ) : legacyLocked ? <UpgradeWall /> : <Outlet />}
         </main>
       </div>
