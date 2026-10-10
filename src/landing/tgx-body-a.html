@@ -308,6 +308,63 @@
   </div>
 </section>
 
+<!-- MANUAL KILL SWITCH
+     The rules catch a trader after a breach. This is the other half: the
+     button for the moment BEFORE, when they can feel the next trade is a bad
+     idea. Every claim below is what the server does (lockoutService.ts):
+     3/6/12h, refused while a position is open, extendable but never
+     shortened, rule edits and key changes blocked while it runs, anything
+     opened in the meantime closed on sight. -->
+<section class="block mks" id="manual-kill-switch">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Manual kill switch</span>
+      <h2 class="display h2">Feel the tilt coming?<br>Lock yourself out.</h2>
+      <p>Your rules catch you once you break them. This is for the moment before, when you already know the next trade is a bad idea.</p>
+    </div>
+
+    <div class="mks-grid">
+      <ul class="mks-points">
+        <li>
+          <span class="mks-num">3h · 6h · 12h</span>
+          <h4>Pick how long, between trades.</h4>
+          <p>One tap from the top of your dashboard. You start it once your positions are closed, before the next one.</p>
+        </li>
+        <li>
+          <span class="mks-num">No cancel</span>
+          <h4>There is no way to end it early.</h4>
+          <p>You can make it longer, never shorter. Your rules and API key are locked too, so there&rsquo;s no back door.</p>
+        </li>
+        <li>
+          <span class="mks-num">Closed on sight</span>
+          <h4>Anything you open gets closed.</h4>
+          <p>Orders placed on the website, the app or a bot are closed by our servers until the clock runs out.</p>
+        </li>
+      </ul>
+
+      <div class="mks-demo" role="img" aria-label="The lock-yourself-out dialog: Delta Main, 3 hours selected, no cancel, then the account shown locked with a countdown">
+        <div class="mks-dialog">
+          <div class="mks-dh">
+            <b>Lock yourself out</b>
+            <span><img src="/brokers/delta-exchange.svg" alt="" width="12" height="12">Delta &middot; Main</span>
+          </div>
+          <div class="mks-hours">
+            <span class="on">3h</span><span>6h</span><span>12h</span>
+          </div>
+          <p class="mks-warn">You won&rsquo;t be able to trade this account until <b>18:42&nbsp;IST</b>. There is no cancel.</p>
+          <span class="mks-btn">Lock me out</span>
+        </div>
+        <div class="mks-locked">
+          <span class="mks-dot"></span>
+          <span class="mks-l1">Locked</span>
+          <span class="mks-clock">02:59:41</span>
+          <span class="mks-l2">left &middot; new orders closed on sight</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- TRADING IN ACTION SPLIT -->
 <!-- TAX CENTRE -->
 <section class="block" id="tax">
