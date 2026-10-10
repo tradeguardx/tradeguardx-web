@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <!--
+      The SPA shell for pages that are not public content: login and the other
+      auth steps, /dashboard, /influencer. vercel.json rewrites those here.
+
+      They used to be rewritten to index.html, which is the PRERENDERED
+      HOMEPAGE: a crawler fetching /login or a mistyped /help/x got the
+      homepage's title, canonical and JSON-LD with a 200 — a duplicate of /
+      under every such URL. This shell carries none of that, and says noindex
+      before any JavaScript runs.
+    -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#00d4aa" />
+    <title>TradeGuardX</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

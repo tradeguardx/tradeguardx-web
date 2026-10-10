@@ -25,9 +25,14 @@ import { EXCLUDED_ROUTES, PRIVATE_PREFIXES, PUBLIC_ROUTES } from './publicRoutes
  */
 // process.cwd() is the project root under vitest; import.meta.url is not a
 // file URL in the jsdom environment.
-const rewrites = JSON.parse(readFileSync(resolve(process.cwd(), 'vercel.json'), 'utf8')).rewrites;
+const config = JSON.parse(readFileSync(resolve(process.cwd(), 'vercel.json'), 'utf8'));
+const { rewrites, redirects } = config;
 
-const servedBySpa = (path) => rewrites.some((r) => new RegExp(`^${r.source}$`).test(path));
+const rewriteFor = (path) => rewrites.find((r) => new RegExp(`^${r.source}$`).test(path));
+const servedBySpa = (path) => Boolean(rewriteFor(path));
+// Vercel redirect sources use :param segments.
+const redirectFor = (path) => redirects.find((r) => new RegExp(`^${r.source.replace(/:[a-z]+/gi, '[^/]+')}$`).test(path));
+const resolves = (path) => Boolean(redirectFor(path)) || servedBySpa(path);
 
 describe('every route the app owns is still served', () => {
   it('covers every public route in the sitemap source', () => {
@@ -40,7 +45,7 @@ describe('every route the app owns is still served', () => {
     // Excluded from indexing is not the same as excluded from existing.
     // /login, /reset-password and the redirect stubs all have to resolve.
     for (const path of Object.keys(EXCLUDED_ROUTES)) {
-      expect(servedBySpa(path), `${path} would 404`).toBe(true);
+      expect(resolves(path), `${path} would 404`).toBe(true);
     }
   });
 
@@ -54,6 +59,39 @@ describe('every route the app owns is still served', () => {
     expect(servedBySpa('/dashboard/trades/abc-123')).toBe(true);
     expect(servedBySpa('/exchanges/shark/api-key')).toBe(true);
     expect(servedBySpa('/help/kill-switch')).toBe(true);
+  });
+});
+
+describe('only the homepage is served the homepage', () => {
+  /*
+   * index.html is the PRERENDERED HOMEPAGE. Rewriting /login or /help/<typo>
+   * to it answered those URLs with the homepage's title, canonical and JSON-LD
+   * and a 200 — a soft-404 / duplicate of / under every one of them. Live on
+   * 11 Oct 2026 for /help/nope, /exchanges/binance, /prop-firm and /login.
+   */
+  it('rewrites nothing but / to index.html', () => {
+    for (const r of rewrites) {
+      if (r.destination === '/index.html') expect(r.source).toBe('/');
+    }
+  });
+
+  it('serves app pages from the noindex shell', () => {
+    for (const path of ['/login', '/reset-password', '/dashboard', '/dashboard/trades/abc-123', '/influencer/payouts']) {
+      expect(rewriteFor(path)?.destination, path).toBe('/app.html');
+    }
+  });
+
+  it('404s a mistyped page under a public section', () => {
+    for (const path of ['/help/nope', '/exchanges/binance', '/exchanges/delta/whatever', '/pricing/old', '/about/team']) {
+      expect(resolves(path), `${path} should 404`).toBe(false);
+    }
+  });
+
+  it('301s the retired URLs at the edge instead of rendering them', () => {
+    expect(redirectFor('/prop-firm')?.destination).toBe('/');
+    expect(redirectFor('/beta-traders')?.destination).toBe('/signup');
+    expect(redirectFor('/beta-testers')?.destination).toBe('/signup');
+    expect(servedBySpa('/prop-firm')).toBe(false);
   });
 });
 

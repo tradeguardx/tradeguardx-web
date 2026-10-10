@@ -4,5 +4,6 @@ Allow: /
 
 # App UI behind login — not useful for public search
 Disallow: /dashboard/
+Disallow: /influencer/
 
 Sitemap: https://tradeguardx.com/sitemap.xml

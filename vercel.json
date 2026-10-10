@@ -29,6 +29,21 @@
       "source": "/docs",
       "destination": "/help",
       "permanent": true
+    },
+    {
+      "source": "/prop-firm",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/beta-traders",
+      "destination": "/signup",
+      "permanent": true
+    },
+    {
+      "source": "/beta-testers",
+      "destination": "/signup",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -37,10 +52,19 @@
       "destination": "/index.html"
     },
     {
-      "source": "/((?:about|beta-testers|beta-traders|crypto-kill-switch|crypto-tax-india|dashboard|docs|exchanges|forgot-password|help|home-classic|influencer|login|partner-with-us|pricing|privacy|prop-firm|reel-preview|refund|reset-password|risk-disclosure|roadmap|security|signup|support|terms|verify-email)(?:/.*)?)",
-      "destination": "/index.html"
+      "source": "/((?:pricing|signup|exchanges|exchanges/delta|exchanges/delta/api-key|exchanges/coindcx|exchanges/coindcx/api-key|exchanges/coindcx/margin|exchanges/shark|exchanges/shark/api-key|crypto-kill-switch|crypto-tax-india|help|help/how-it-works|help/kill-switch|help/cooldowns|help/rules|help/changing-rules|help/live-dashboard|help/troubleshooting|security|about|roadmap|support|partner-with-us|privacy|terms|refund|risk-disclosure))",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/((?:login|forgot-password|verify-email|reset-password|home-classic|reel-preview))",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/((?:dashboard|influencer)(?:/.*)?)",
+      "destination": "/app.html"
     }
   ],
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/assets/(.*)",

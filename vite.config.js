@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import prerender from '@prerenderer/rollup-plugin';
@@ -32,6 +33,16 @@ export default defineConfig(async () => {
   const launchOptions = await getLaunchOptions();
 
   return {
+    build: {
+      rollupOptions: {
+        // app.html: the noindex shell vercel.json serves for login, the
+        // dashboard and every other route that is not prerendered.
+        input: {
+          main: path.resolve(import.meta.dirname, 'index.html'),
+          app: path.resolve(import.meta.dirname, 'app.html'),
+        },
+      },
+    },
     plugins: [
       react(),
       prerender({

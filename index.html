@@ -61,8 +61,7 @@
             "sameAs": [
               "https://x.com/TradeguardX",
               "https://www.instagram.com/tradeguardx/",
-              "https://www.youtube.com/@TradeGuardX",
-              "https://chromewebstore.google.com/detail/tradeguardx/neilhfdnoacngmepnpokhgclncnlgalf"
+              "https://www.youtube.com/@TradeGuardX"
             ]
           },
           {
@@ -70,13 +69,14 @@
             "@id": "https://tradeguardx.com/#website",
             "url": "https://tradeguardx.com",
             "name": "TradeGuardX",
+            "inLanguage": "en-IN",
             "publisher": { "@id": "https://tradeguardx.com/#organization" }
           },
           {
             "@type": "SoftwareApplication",
             "@id": "https://tradeguardx.com/#software",
             "name": "TradeGuardX",
-            "description": "India's first crypto trading kill switch. A server-side risk engine for Delta Exchange, CoinDCX and Shark Exchange that enforces your daily-loss, max-trades, risk-per-trade and cooldown rules — blocking new orders, closing open positions, and locking your account the moment you break a limit.",
+            "description": "A server-side crypto trading kill switch for Delta Exchange, CoinDCX and Shark Exchange. It enforces your daily-loss, max-trades, risk-per-trade and losing-streak rules by closing open positions and blocking new orders the moment you break a limit, plus a manual kill switch, trade journal and Indian crypto tax centre.",
             "url": "https://tradeguardx.com",
             "applicationCategory": "FinanceApplication",
             "applicationSubCategory": "Trading risk management",
@@ -84,33 +84,41 @@
             "offers": [
               {
                 "@type": "Offer",
-                "name": "Free Trial",
-                "price": "0",
-                "priceCurrency": "INR",
-                "description": "3-day full-access trial, no card"
-              },
-              {
-                "@type": "Offer",
-                "name": "Pro Plan",
+                "name": "Pro — monthly",
+                "url": "https://tradeguardx.com/pricing",
                 "price": "1299",
                 "priceCurrency": "INR",
-                "billingIncrement": "P1M"
+                "priceSpecification": { "@type": "UnitPriceSpecification", "price": "1299", "priceCurrency": "INR", "billingDuration": "P1M", "valueAddedTaxIncluded": true },
+                "description": "7 days free, then billed monthly. A UPI AutoPay mandate or card is set up first; cancel before day 8 and nothing is charged."
               },
               {
                 "@type": "Offer",
-                "name": "Pro+ Plan",
-                "price": "2999",
+                "name": "Pro — quarterly",
+                "url": "https://tradeguardx.com/pricing",
+                "price": "3299",
                 "priceCurrency": "INR",
-                "billingIncrement": "P1M"
+                "priceSpecification": { "@type": "UnitPriceSpecification", "price": "3299", "priceCurrency": "INR", "billingDuration": "P3M", "valueAddedTaxIncluded": true },
+                "description": "7 days free, then billed every 3 months. A UPI AutoPay mandate or card is set up first; cancel before day 8 and nothing is charged."
+              },
+              {
+                "@type": "Offer",
+                "name": "Pro — yearly",
+                "url": "https://tradeguardx.com/pricing",
+                "price": "8999",
+                "priceCurrency": "INR",
+                "priceSpecification": { "@type": "UnitPriceSpecification", "price": "8999", "priceCurrency": "INR", "billingDuration": "P1Y", "valueAddedTaxIncluded": true },
+                "description": "7 days free, then billed yearly. A UPI AutoPay mandate or card is set up first; cancel before day 8 and nothing is charged."
               }
             ],
             "publisher": { "@id": "https://tradeguardx.com/#organization" },
             "featureList": [
-              "Automatic kill switch — cancels orders and closes positions on breach",
-              "Daily loss limit and max-drawdown protection",
-              "Risk-per-trade auto-close",
-              "Max trades per day and loss-streak cooldown",
-              "Real-time trade journal with AI insights",
+              "Automatic kill switch — closes positions and blocks new orders on a breach",
+              "Manual kill switch — lock yourself out for 3, 6 or 12 hours",
+              "Daily loss limit with a warning before the limit",
+              "Max trades per day, cooldown after losses in a row, risk per trade",
+              "Stop-loss and drawdown alerts on Telegram and email",
+              "Trade journal, behaviour ledger and economic calendar",
+              "Indian crypto tax centre",
               "Live on Delta Exchange, CoinDCX futures and Shark Exchange"
             ]
           }
