@@ -54,7 +54,9 @@ describe('billing step', () => {
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
       /Set up billing and get 7 days free/,
     );
-    expect(screen.getByText('Cancel any time. Nothing is charged today.')).toBeTruthy();
+    expect(screen.getByText('Pay ₹0 today')).toBeTruthy();
+    // The date and amount of the first debit, once the server has answered.
+    expect(await screen.findByText(/· ₹[\d,]+ on \d{1,2} \w{3} · cancel any time before\./)).toBeTruthy();
   });
 
   it('shows one guard-off message, and it carries no button', async () => {
@@ -391,6 +393,9 @@ describe('billing step — the free window it promises', () => {
     expect(await screen.findByText(/first charge of .* is today/i)).toBeTruthy();
     expect(screen.queryByText(/days free/)).toBeNull();
     expect(screen.queryByText(/₹0 charged/)).toBeNull();
+    expect(screen.queryByText(/Pay ₹0 today/)).toBeNull();
+    expect(screen.queryByText(/Nothing is charged today/)).toBeNull();
+    expect(screen.getByText(/is charged today/)).toBeTruthy();
   });
 
   /* A number is a promise about money; silence beats a guess. */

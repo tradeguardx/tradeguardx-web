@@ -381,8 +381,22 @@ export default function BillingStep({ onStarted }) {
                   </>
                 )}
             </h1>
+            {/* The price of today is the first thing people look for here, so
+                it is said as a number. Sat outside the charged check, this line
+                once told lapsed trialists "nothing is charged today" directly
+                under a headline that was about to charge them. The date only
+                appears once the server has said how many days are free. */}
             <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: '#a3b0c2', textWrap: 'pretty' }}>
-              Cancel any time. Nothing is charged today.
+              {charged ? (
+                <>Your free week is already used, so <b style={{ color: '#e8edf5' }}>{inr(payable)} is charged today</b>. Cancel any time.</>
+              ) : (
+                <>
+                  <b style={{ color: '#2fe3bd' }}>Pay ₹0 today</b>
+                  {freeDays == null
+                    ? ' · cancel any time.'
+                    : ` · ${inr(payable)} on ${fmtDay(chargeOn)} · cancel any time before.`}
+                </>
+              )}
             </p>
 
           </div>
