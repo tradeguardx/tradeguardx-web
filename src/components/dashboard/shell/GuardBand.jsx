@@ -2,25 +2,21 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useGuard } from '../../../context/GuardContext';
 import { useAuth } from '../../../context/AuthContext';
-import { planNoticeOf } from './lifecycleShell';
+import { bandMessagesOf } from '../../../lib/messages';
 import { sx } from './sx';
 
 /**
- * The dashboard's one band. Only while something is wrong or ending; never
- * dismissible.
+ * The dashboard's one band.
  *
- * It carries two things that used to be two separate full-width banners
- * stacked on top of each other — the guard problem and the subscription
- * state. See `subscriptionNotice` for why they were merged.
- *
- * The guard leads, because it is about right now: nothing is being enforced
- * this second. The subscription rides underneath as a quieter line, because
- * it is about a date. With no guard problem, the subscription line becomes
- * the band.
+ * What it says comes from lib/messages.js, which ranks every possible
+ * message — plan off, setup, a locked account, a key that cannot act, no
+ * rules, a plan ending, no alert channel. The band shows the most important
+ * one, and the next one as a single line beneath it. It never shows two
+ * alarms of equal weight, and never lets a lesser one lead.
  */
 const DISMISS_KEY = 'tgx.band.dismissed';
 
-/** { id, until } — the notice dismissed, and when it comes back. */
+/** { id, until } — the message dismissed, and when it comes back. */
 function readDismissed() {
   try {
     const v = JSON.parse(window.localStorage.getItem(DISMISS_KEY) ?? 'null');
@@ -38,7 +34,7 @@ function dismissUntil(days, now = new Date()) {
 }
 
 export default function GuardBand() {
-  const { selected, loaded, life, now } = useGuard();
+  const { selected, life, now } = useGuard();
   const { user } = useAuth();
   const { pathname } = useLocation();
   const [dismissed, setDismissed] = useState(readDismissed);
@@ -46,41 +42,24 @@ export default function GuardBand() {
   // Plan & billing explains the state itself; a band above it repeats it.
   if (pathname.startsWith('/dashboard/account/billing')) return null;
 
-  /**
-   * The band exists to point somewhere. On the page it points AT, it is just
-   * a louder copy of what is already on screen — the lockout band sat above
-   * the Live guard countdown offering to show you the countdown.
+  /*
+   * The band exists to point somewhere. On the page it points AT it is a
+   * louder copy of what is already on screen, so a message whose CTA is this
+   * page drops out and the next one takes its place.
    */
-  const elsewhere = (to) => Boolean(to) && !pathname.startsWith(to);
+  const elsewhere = (to) => Boolean(to) && !pathname.startsWith(to.split('?')[0]);
+  // Dismissed for that exact sentence only (a new date is a new message),
+  // and only until its window runs out.
+  const keyOf = (m) => `${m.id}:${m.title}`;
+  const hidden = (m) => m.dismissible && dismissed?.id === keyOf(m) && now < dismissed.until;
 
-  let guard = null;
-  if ((life?.unprotected || life?.setup) && life.band) {
-    /* A plan state that already says "Not protected" carries the plan's
-       message alone. A key problem on top is shown on Accounts and Connect
-       key, not here (spec §5). */
-    const b = life.band;
-    if (elsewhere(b.to)) guard = { bandTitle: b.title, bandBody: b.body, cta: b.cta, to: b.to, tone: b.tone };
-  } else if (loaded && selected.account) {
-    const d = selected.describe;
-    let { showBand, bandTitle, bandBody, cta, to, tone } = d;
-    // Armed but silent: the alerts gap still needs a band (brief §4 gap 5).
-    if (!showBand && selected.gap?.key === 'alerts') {
-      showBand = true; tone = 'amber';
-      bandTitle = selected.gap.title; bandBody = selected.gap.body; cta = selected.gap.cta; to = selected.gap.to;
-    }
-    if (showBand && elsewhere(to)) guard = { bandTitle, bandBody, cta, to, tone };
-  }
+  const messages = bandMessagesOf({ life, selected, user }).filter((m) => elsewhere(m.to) && !hidden(m));
+  if (messages.length === 0) return null;
+  const [top, next] = messages;
 
-  let notice = life?.unprotected || life?.setup ? null : planNoticeOf(life, user);
-  // Dismissed for that exact sentence only (a new date is a new notice), and
-  // only until its window runs out — then it is back.
-  const noticeId = notice?.dismissible ? `${life?.id}:${notice.strong}` : null;
-  if (noticeId && dismissed?.id === noticeId && now < dismissed.until) notice = null;
-  const noticeLink = notice && elsewhere(notice.to) ? notice : null;
-  if (!guard && !notice) return null;
-
-  const tone = guard ? guard.tone : notice.tone;
+  const tone = top.tone;
   const fg = `var(--${tone})`;
+  const warn = tone === 'red' || tone === 'amber';
 
   return (
     /*
@@ -90,45 +69,33 @@ export default function GuardBand() {
      * the link up into a full-width button. The icon belongs beside the title,
      * so it is nested with it and the band handles its own stacking.
      */
-    <div data-tgx-band="1" className="guard-band" role="status" style={sx('align-items:flex-start;gap:12px;padding:12px 24px', { borderTop: `1px solid var(--${tone}-line)`, background: `var(--${tone}-tint)` })}>
+    <div data-tgx-band="1" data-band-id={top.id} className="guard-band" role="status" style={sx('align-items:flex-start;gap:12px;padding:12px 24px', { borderTop: `1px solid var(--${tone}-line)`, background: `var(--${tone}-tint)` })}>
       <div className="guard-band__main" style={sx('flex:1;min-width:0;align-items:flex-start;gap:10px')}>
-        {guard ? (
+        {warn ? (
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="1.9" strokeLinecap="round" style={{ flex: 'none', marginTop: 2 }}><path d="M12 3l9 16H3l9-16z" /><path d="M12 9.5v4M12 16.4h.01" /></svg>
         ) : (
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 2 }}><path d="M13 3L4 14h7l-1 7 9-11h-7z" /></svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 2 }}><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
         )}
         <div style={sx('flex:1;min-width:0')}>
-          <div style={sx('font-size:13.5px;font-weight:700;line-height:1.35', { color: guard ? fg : 'var(--ink)' })}>
-            {guard ? guard.bandTitle : notice.strong}
-          </div>
-          <div style={sx('font-size:12.5px;line-height:1.5;color:var(--ink-2);margin-top:3px;max-width:96ch')}>
-            {guard ? guard.bandBody : notice.text}
-          </div>
-          {/* Both at once: the plan line sits under the guard problem rather
-              than beside it as a second alarm of equal weight. */}
-          {guard && notice && (
+          <div style={sx('font-size:13.5px;font-weight:700;line-height:1.35', { color: warn ? fg : 'var(--ink)' })}>{top.title}</div>
+          <div style={sx('font-size:12.5px;line-height:1.5;color:var(--ink-2);margin-top:3px;max-width:96ch')}>{top.body}</div>
+          {/* The next most important thing, as one quiet line — never a
+              second alarm of equal weight. */}
+          {next && (
             <div style={sx('margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;color:var(--ink-3)')}>
-              {/* `short`, not `text`: under a red band the plan line states the
-                  money and nothing else. See subscriptionNotice. */}
-              {notice.short ?? notice.text}{' '}
-              {noticeLink && (
-                <Link to={noticeLink.to} style={sx('font-weight:700;text-decoration:underline', { color: `var(--${notice.tone})` })}>{noticeLink.cta}</Link>
-              )}
+              {next.title}{' '}
+              <Link to={next.to} style={sx('font-weight:700;text-decoration:underline', { color: `var(--${next.tone})` })}>{next.cta}</Link>
             </div>
           )}
         </div>
       </div>
-      {guard ? (
-        <Link className="guard-band__cta" to={guard.to} style={sx('flex:none;padding:8px 13px;border-radius:8px;background:var(--surface);font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap', { border: `1px solid var(--${tone}-line)`, color: fg })}>{guard.cta}</Link>
-      ) : noticeLink ? (
-        <Link className="guard-band__cta" to={noticeLink.to} style={sx('flex:none;padding:8px 13px;border-radius:8px;background:var(--surface);font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap', { border: `1px solid var(--${tone}-line)`, color: fg })}>{noticeLink.cta}</Link>
-      ) : null}
-      {!guard && noticeId && (
+      <Link className="guard-band__cta" to={top.to} style={sx('flex:none;padding:8px 13px;border-radius:8px;background:var(--surface);font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap', { border: `1px solid var(--${tone}-line)`, color: fg })}>{top.cta}</Link>
+      {top.dismissible && (
         <button
           type="button"
           aria-label="Dismiss"
           onClick={() => {
-            const v = { id: noticeId, until: dismissUntil(notice.dismissDays ?? 1) };
+            const v = { id: keyOf(top), until: dismissUntil(top.dismissDays ?? 1) };
             try { window.localStorage.setItem(DISMISS_KEY, JSON.stringify(v)); } catch { /* still hides for this visit */ }
             setDismissed(v);
           }}
