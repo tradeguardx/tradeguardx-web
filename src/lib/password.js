@@ -25,11 +25,17 @@ export function pwStrength(pw) {
  * Returns an error string, or null when the pair is acceptable. Callers show
  * the message inline rather than relying on the server to reject it.
  */
-export function validatePasswordPair(password, confirm) {
+export function validatePassword(password) {
   if (!password) return 'Enter a password.';
   if (password.length < MIN_PASSWORD_LENGTH) {
     return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
   }
+  return null;
+}
+
+export function validatePasswordPair(password, confirm) {
+  const single = validatePassword(password);
+  if (single) return single;
   if (!confirm) return 'Re-enter your password to confirm it.';
   if (password !== confirm) return 'Passwords do not match.';
   return null;

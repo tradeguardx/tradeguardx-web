@@ -7,7 +7,7 @@ import { getPricingPlans } from '../api/pricingApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/ToastProvider';
 import { createCheckoutSession } from '../api/paymentsApi';
-import { trialDaysOnOffer, trialOfferLine, firstChargeDate } from '../lib/trialOffer';
+import { trialDaysOnOffer, trialOfferLine, firstChargeDate, FULL_TRIAL_DAYS } from '../lib/trialOffer';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch, getPendingCheckoutInterval, normalizeInterval, BILLING_INTERVALS } from '../lib/checkoutIntent';
 import { trackCheckoutStarted } from '../lib/analytics';
 import { checkoutCouponCode } from '../lib/checkoutCoupon';
@@ -153,6 +153,84 @@ function normalizePlan(raw, index) {
   };
 }
 
+// ─── What one plan includes ──────────────────────────────────────────────────
+// Written here rather than read from the plan's API feature list: that list is
+// eight flat bullets and left out half the product (the manual kill switch,
+// the warning before the limit, the events calendar). Every line below is
+// checked against what the engine and dashboard actually do — the stop-loss
+// and drawdown rules alert rather than close, so they're listed as alerts.
+const INCLUDED = [
+  {
+    group: 'Protection',
+    items: [
+      ['Automatic kill switch', 'Break a rule and our servers close your positions and block new orders, whether you trade on the web, the app or a bot.'],
+      ['Manual kill switch', 'Feel the tilt coming? Lock yourself out for 3, 6 or 12 hours. There is no cancel button.'],
+      ['Every rule', 'Daily loss limit, daily profit target, max trades per day, cooldown after losses in a row, risk per trade.'],
+      ['A warning before the limit', 'A heads-up as you near your daily loss limit, before anything is closed.'],
+      ['Rules that hold', 'Your rules lock at your first trade of the day and stay locked until the reset.'],
+      ['Alerts on Telegram and email', 'Every breach and lock, plus stop-loss and drawdown alerts.'],
+    ],
+  },
+  {
+    group: 'Insight',
+    items: [
+      ['Trade journal', 'Every trade recorded on its own, with performance analytics and a P&L calendar.'],
+      ['Behaviour ledger', 'Revenge trades, overtrading and broken rules, and what they cost you.'],
+      ['Economic calendar', 'High-impact events like CPI, FOMC and payrolls, in IST, so you know when the market is about to jump.'],
+    ],
+  },
+  {
+    group: 'Tax & accounts',
+    items: [
+      ['Indian tax centre', 'Your financial year rebuilt from exchange fills, with the F&O and VDA readings side by side.'],
+      ['Unlimited trading accounts', 'Delta Exchange, CoinDCX and Shark. One subscription covers them all.'],
+      ['3 financial years of history', 'The current year and the two before, for your journal and your tax.'],
+      ['Priority support', 'Replies from the people who build it.'],
+    ],
+  },
+];
+
+function IncludedPanel({ checkColor }) {
+  return (
+    <div className="rounded-[1.5rem] border px-6 py-7 md:px-8" style={{ borderColor: 'rgba(255,255,255,0.07)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] mb-6" style={{ color: 'rgba(0,212,170,0.75)' }}>Everything is included, on every interval</p>
+      <div className="grid gap-8 md:grid-cols-3 md:gap-10">
+        {INCLUDED.map((g) => (
+          <div key={g.group}>
+            <h3 className="text-[13px] font-semibold text-white mb-4">{g.group}</h3>
+            <ul className="space-y-4">
+              {g.items.map(([title, body]) => (
+                <li key={title} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${checkColor}1a` }}>
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: checkColor }} aria-hidden>
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-medium leading-snug" style={{ color: '#e2e8f0' }}>{title}</span>
+                    <span className="block text-[12.5px] leading-relaxed mt-0.5" style={{ color: '#64748b' }}>{body}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** "₹0 today · ₹1,299 on 18 Oct" over "Cancel any time before" — two lines on purpose, so it never breaks mid-phrase. */
+function OfferLine({ text, color }) {
+  const [now, rest] = text.split(' · cancel');
+  return (
+    <p className="mt-2 text-center text-[11.5px] leading-relaxed" style={{ color }}>
+      {now}
+      {rest != null && <><br />Cancel{rest}</>}
+    </p>
+  );
+}
+
 // ─── Trust badge strip ───────────────────────────────────────────────────────
 const TRUST_BADGES = [
   {
@@ -161,7 +239,7 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
     ),
-    label: '7-day money-back',
+    label: '₹0 today',
   },
   {
     icon: (
@@ -169,7 +247,7 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    label: 'Cancel anytime',
+    label: 'Cancel before day 8, pay nothing',
   },
   {
     icon: (
@@ -177,7 +255,7 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
     ),
-    label: 'Secure payment',
+    label: 'UPI AutoPay or card',
   },
   {
     icon: (
@@ -185,14 +263,14 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
       </svg>
     ),
-    label: 'Nothing charged for 7 days',
+    label: 'Incl. 18% GST',
   },
 ];
 
 export default function PricingPage() {
   useSEO({
     title: 'Pricing',
-    description: 'Free and Pro plans for real-time trading risk management on Delta Exchange, CoinDCX and Shark Exchange. Every rule on every plan — Pro adds unlimited accounts and 3 years of history.',
+    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly. 7 days free — cancel before day 8 and pay nothing. Delta Exchange, CoinDCX and Shark.',
     url: 'https://tradeguardx.com/pricing',
   });
   const [plans, setPlans] = useState([]);
@@ -227,7 +305,14 @@ export default function PricingPage() {
     } catch { return 'yearly'; }
   });
   /** Price line for a card on the selected interval; monthly-only plans ignore the toggle. */
-  const priceFor = (plan) => plan.intervals.find((iv) => iv.interval === interval) || plan.intervals[0];
+  const priceFor = (plan, iv = interval) => plan.intervals.find((x) => x.interval === iv) || plan.intervals[0];
+  /*
+   * One plan sold on several intervals: on a wide screen the intervals ARE
+   * the choice, so they sit side by side as three cards and the toggle goes
+   * away. Phones keep the toggle and one card — three stacked cards there
+   * push "what's included" a long way down.
+   */
+  const intervalView = plans.length === 1 && plans[0].intervals.length > 1;
 
   useEffect(() => {
     // The pill under the header names whichever code will actually be sent;
@@ -235,9 +320,10 @@ export default function PricingPage() {
     setReferralCode(getStoredReferralCode() || getLinkPromoCode());
   }, []);
 
-  async function handlePaidPlanCta(plan) {
+  /** `iv` is the interval of the card that was clicked; the toggle's when omitted. */
+  async function handlePaidPlanCta(plan, iv = interval) {
     if (plan.key === 'free') { navigate(plan.ctaLink); return; }
-    if (!session?.access_token) { navigate(plan.ctaLink); return; }
+    if (!session?.access_token) { navigate(signupLink(plan, iv)); return; }
     const elig = paidCheckoutEligibility(user?.billingPlan, plan.key);
     const compOnSameTier = elig.reason === 'current' && user?.subscriptionSource !== 'payment';
     if (!elig.allowed && !compOnSameTier) {
@@ -250,8 +336,8 @@ export default function PricingPage() {
       const res = await createCheckoutSession({
         accessToken: session.access_token,
         planSlug: plan.key,
-        interval: plan.intervals.length > 1 ? interval : 'monthly',
-        couponCode: checkoutCouponCode({ interval, multiInterval: plan.intervals.length > 1 }),
+        interval: plan.intervals.length > 1 ? iv : 'monthly',
+        couponCode: checkoutCouponCode({ interval: iv, multiInterval: plan.intervals.length > 1 }),
       });
       const url = res?.checkoutUrl;
       if (url) { trackCheckoutStarted(plan.key); window.location.href = url; return; }
@@ -313,7 +399,10 @@ export default function PricingPage() {
           // Force canonical Free → Pro → Pro+ order regardless of API/DB sortOrder.
           // Anything unknown lands at the end.
           const ORDER = { free: 0, pro: 1, proplus: 2 };
-          const normalized = apiPlans.map(normalizePlan);
+          // There is one plan. The API still returns the legacy Free row for
+          // old accounts, but showing it here contradicted every other page
+          // ("One plan") and promised a card-free tier that no longer exists.
+          const normalized = apiPlans.map(normalizePlan).filter((p) => p.key !== 'free');
           normalized.sort((a, b) => (ORDER[a.key] ?? 99) - (ORDER[b.key] ?? 99));
           setPlans(normalized);
         }
@@ -329,7 +418,13 @@ export default function PricingPage() {
 
 
   // ─── CTA renderer (keeps all business logic) ──────────────────────────────
-  function renderCta(plan) {
+  /** Signup link that carries the interval, so checkout after signup opens on the card they picked. */
+  function signupLink(plan, iv) {
+    if (plan.intervals.length <= 1 || !plan.ctaLink.includes('?')) return plan.ctaLink;
+    return `${plan.ctaLink}&interval=${iv}`;
+  }
+
+  function renderCta(plan, iv = interval) {
     const t = PLAN_THEME[plan.key] || PLAN_THEME.free;
     const isPrimary = plan.primary;
 
@@ -339,7 +434,11 @@ export default function PricingPage() {
       ? { background: t.ctaGradient, color: t.ctaText, boxShadow: t.ctaShadow }
       : { backgroundColor: t.ctaBg, color: t.ctaText, border: `1px solid ${t.ctaBorder}` };
 
-    const secondaryStyle = { backgroundColor: t.ctaBg, color: t.ctaText, border: `1px solid ${t.ctaBorder}` };
+    // Themes with only a gradient (Pro) have no secondary colours of their own;
+    // the interval cards need one for the two cards that aren't "Best value".
+    const secondaryStyle = t.ctaBg
+      ? { backgroundColor: t.ctaBg, color: t.ctaText, border: `1px solid ${t.ctaBorder}` }
+      : { backgroundColor: 'rgba(255,255,255,0.06)', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.10)' };
 
     if (plan.key === 'free' && session?.access_token) {
       if (subscriptionLoading) return <button disabled className={`${baseClass} opacity-60 cursor-wait`} style={secondaryStyle}>Loading plan…</button>;
@@ -358,16 +457,16 @@ export default function PricingPage() {
         if (source !== 'payment') {
           // Comped on this tier: monthly is what they effectively hold, so it
           // reads as their plan; a longer interval is a genuine upgrade.
-          const line0 = priceFor(plan);
+          const line0 = priceFor(plan, iv);
           if (line0.interval === 'monthly') return <div className={`${baseClass} text-center`} style={currentStyle}>Your plan — complimentary ✓</div>;
           return (
-            <button type="button" onClick={() => handlePaidPlanCta(plan)} disabled={checkoutKey === plan.key} className={`${baseClass} disabled:opacity-60`} style={isPrimary ? primaryStyle : secondaryStyle}>
+            <button type="button" onClick={() => handlePaidPlanCta(plan, iv)} disabled={checkoutKey === plan.key} className={`${baseClass} disabled:opacity-60`} style={isPrimary ? primaryStyle : secondaryStyle}>
               {checkoutKey === plan.key ? 'Opening checkout…' : `Start Pro — ${line0.interval}`}
             </button>
           );
         }
         const currentInterval = subscription?.subscription?.billingInterval || 'monthly';
-        const line = priceFor(plan);
+        const line = priceFor(plan, iv);
         if (plan.intervals.length > 1 && line.interval !== currentInterval) {
           return <Link to="/dashboard/account/billing" className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>Switch to {line.interval} billing</Link>;
         }
@@ -387,30 +486,39 @@ export default function PricingPage() {
        * stop.
        */
       const freeDays = trialDaysOnOffer(user);
-      const line = priceFor(plan);
+      const line = priceFor(plan, iv);
       const amount = typeof line?.price === 'number' ? `₹${line.price.toLocaleString('en-IN')}` : null;
-      const startsOn = firstChargeDate(freeDays)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) ?? null;
+      const startsOn = firstChargeDate(freeDays)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).replace(' ', '\u00a0') ?? null;
       const offer = trialOfferLine(freeDays, amount, startsOn);
 
       return (
         <>
-          <button type="button" onClick={() => handlePaidPlanCta(plan)} disabled={checkoutKey === plan.key} className={`${baseClass} disabled:opacity-60`} style={isPrimary ? primaryStyle : secondaryStyle}>
+          <button type="button" onClick={() => handlePaidPlanCta(plan, iv)} disabled={checkoutKey === plan.key} className={`${baseClass} disabled:opacity-60`} style={isPrimary ? primaryStyle : secondaryStyle}>
             {checkoutKey === plan.key
               ? 'Redirecting…'
               : freeDays > 0
                 ? `Start ${freeDays} day${freeDays === 1 ? '' : 's'} free`
                 : plan.cta}
           </button>
-          {offer ? (
-            <p className="mt-2 text-center text-[11.5px] leading-relaxed" style={{ color: t.subtleText || 'rgba(226,232,240,0.6)' }}>
-              {offer}
-            </p>
-          ) : null}
+          {offer ? <OfferLine text={offer} color={t.subtleText || 'rgba(226,232,240,0.6)'} /> : null}
         </>
       );
     }
 
-    return <Link to={plan.ctaLink} className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>{plan.cta}</Link>;
+    // Signed out: everyone new gets the full trial, so say it the same way
+    // the signed-in branch does — the price and date before the click.
+    const line = priceFor(plan, iv);
+    const amount = typeof line?.price === 'number' && line.price > 0 ? `₹${line.price.toLocaleString('en-IN')}` : null;
+    const startsOn = firstChargeDate(FULL_TRIAL_DAYS)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).replace(' ', '\u00a0') ?? null;
+    const offer = amount ? trialOfferLine(FULL_TRIAL_DAYS, amount, startsOn) : null;
+    return (
+      <>
+        <Link to={signupLink(plan, iv)} className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>
+          {amount ? `Start ${FULL_TRIAL_DAYS} days free` : plan.cta}
+        </Link>
+        {offer ? <OfferLine text={offer} color="rgba(226,232,240,0.6)" /> : null}
+      </>
+    );
   }
 
   return (
@@ -445,14 +553,14 @@ export default function PricingPage() {
           </div>
 
           <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight text-white mb-4 leading-[1.1]">
-            Simple pricing.{' '}
+            One plan.{' '}
             <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #00d4aa 0%, #10b981 100%)' }}>
-              Cancel anytime.
+              Pick how you pay.
             </span>
           </h1>
 
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
-            Every account starts with 7 days of full access, free. Set up payment first, cancel any time before day 8 and you pay nothing.
+            Everything is included: the kill switch, every rule, all three exchanges, unlimited accounts and the tax centre. Start with 7 days free. You set up UPI AutoPay or a card first; cancel before day 8 and you pay nothing.
           </p>
 
           <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -499,7 +607,7 @@ export default function PricingPage() {
 
         {/* ── Billing interval ─────────────────────────────────────────────── */}
         {plans.some((p) => p.intervals.length > 1) && (
-          <div className="mb-8 flex justify-center">
+          <div className={`${intervalView ? 'md:hidden ' : ''}mb-8 flex justify-center`}>
             <div role="tablist" aria-label="Billing interval" className="inline-flex items-center gap-1 rounded-full border p-1" style={{ borderColor: 'rgba(255,255,255,0.10)', backgroundColor: 'rgba(255,255,255,0.04)' }}>
               {BILLING_INTERVALS.map((iv) => {
                 const on = iv === interval;
@@ -515,9 +623,59 @@ export default function PricingPage() {
           </div>
         )}
 
+        {/* ── Wide screens: one card per billing interval ──────────────────── */}
+        {intervalView && (() => {
+          const plan = plans[0];
+          const t = PLAN_THEME[plan.key] || PLAN_THEME.pro;
+          const order = BILLING_INTERVALS.filter((iv) => plan.intervals.some((x) => x.interval === iv));
+          const best = order.reduce((b, iv) => (priceFor(plan, iv).savingsPct > priceFor(plan, b).savingsPct ? iv : b), order[0]);
+          const NAME = { monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Yearly' };
+          const PER = { monthly: '/mo', quarterly: '/qtr', yearly: '/yr' };
+          return (
+            <div className="hidden md:block max-w-5xl mx-auto mb-6">
+              <div className="grid grid-cols-3 gap-5 items-stretch">
+                {order.map((iv) => {
+                  const line = priceFor(plan, iv);
+                  const isBest = iv === best && line.savingsPct > 0;
+                  const promoPrice = activePromo?.discountPct && iv === 'monthly' && line.price > 0
+                    ? discountedPrice(line.price, activePromo.discountPct)
+                    : null;
+                  return (
+                    <div key={iv} className={`relative flex rounded-[1.5rem] p-[1.5px] bg-gradient-to-b ${isBest ? t.border : 'from-slate-700/35 via-slate-700/15 to-slate-800/10'}`}>
+                      <div className="flex flex-col flex-1 rounded-[1.4rem] p-7" style={{ backgroundColor: isBest ? '#0d1627' : '#0b1020' }}>
+                        <div className="flex items-center justify-between gap-2 mb-5 min-h-[26px]">
+                          <h3 className="font-display text-xl font-bold text-white tracking-tight">{NAME[iv]}</h3>
+                          {isBest ? (
+                            <span className="rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide" style={{ backgroundColor: t.badgeBg, borderColor: t.badgeBorder, color: t.badgeText }}>Best value</span>
+                          ) : line.savingsPct > 0 ? (
+                            <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ backgroundColor: 'rgba(0,212,170,0.12)', color: '#00d4aa' }}>save {line.savingsPct}%</span>
+                          ) : null}
+                        </div>
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1.5">
+                          <span className="font-display text-[44px] leading-none font-black text-white tracking-tight">{formatInr(promoPrice ?? line.price)}</span>
+                          <span className="text-sm font-medium" style={{ color: '#64748b' }}>{promoPrice != null && activePromo.cycles === 1 ? 'first month' : PER[iv]}</span>
+                          {promoPrice != null && <span className="text-base font-semibold line-through" style={{ color: '#64748b' }}>{formatInr(line.price)}</span>}
+                        </div>
+                        <p className="text-[12.5px] leading-relaxed min-h-[20px]" style={{ color: '#94a3b8' }}>
+                          {iv === 'monthly'
+                            ? (promoPrice != null && activePromo.cycles === 1 ? `Then ${formatInr(line.price)}/mo. ${activePromo.code} applied at checkout.` : 'Most flexible. Cancel any month.')
+                            : `That's ₹${line.perMonth.toLocaleString('en-IN')}/mo, ${line.savingsPct}% less than monthly.`}
+                        </p>
+                        <p className="text-[11px] font-medium mt-1" style={{ color: '#475569' }}>Billed {iv} · incl. 18% GST</p>
+                        <div className="mt-auto pt-7">{renderCta({ ...plan, primary: isBest }, iv)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          );
+        })()}
+
         {/* ── Plan cards ───────────────────────────────────────────────────── */}
         {plans.length > 0 && (
-          <div className={`grid ${plans.length >= 3 ? 'md:grid-cols-3 max-w-5xl' : 'md:grid-cols-2 max-w-3xl'} gap-5 lg:gap-6 mx-auto mb-6 items-stretch`}>
+          <div className={`${intervalView ? 'md:hidden ' : ''}grid ${plans.length >= 3 ? 'md:grid-cols-3 max-w-5xl' : plans.length === 2 ? 'md:grid-cols-2 max-w-3xl' : 'max-w-md'} gap-5 lg:gap-6 mx-auto mb-6 items-stretch`}>
             {plans.map((plan, i) => {
               const t = PLAN_THEME[plan.key] || PLAN_THEME.free;
               const isPrimary = plan.primary;
@@ -576,7 +734,8 @@ export default function PricingPage() {
                           >
                             {PLAN_ICONS[plan.key] || PLAN_ICONS.free}
                           </div>
-                          {plan.badge && (
+                          {/* "Most popular" means nothing when it is the only card. */}
+                          {plan.badge && plans.length > 1 && (
                             <span
                               className="rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wide"
                               style={{ backgroundColor: t.badgeBg, borderColor: t.badgeBorder, color: t.badgeText }}
@@ -682,7 +841,7 @@ export default function PricingPage() {
                               </p>
                             )}
                             <p className="text-[11px] mb-6 font-medium" style={{ color: '#475569' }}>
-                              {price === 0 ? 'Free plan · nothing to pay' : `${billedLabel} · incl. 18% GST · ${line.interval === 'monthly' ? 'cancel anytime' : `${plan.refundDays}-day money-back`}`}
+                              {`${billedLabel} · incl. 18% GST`}
                             </p>
                           </>
                         )}
@@ -693,10 +852,10 @@ export default function PricingPage() {
                         </motion.div>
 
                         {/* Divider */}
-                        <div className="mb-5 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)' }} />
+                        <div className={`mb-5 h-px ${plans.length === 1 ? 'hidden' : ''}`} style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)' }} />
 
-                        {/* Feature list */}
-                        <ul className="space-y-3 flex-1">
+                        {/* Feature list — a single plan uses the grouped panel below instead. */}
+                        <ul className={`space-y-3 flex-1 ${plans.length === 1 ? 'hidden' : ''}`}>
                           {plan.features.map((f) => (
                             <li key={f.text} className="flex items-start gap-2.5">
                               {f.included ? (
@@ -779,6 +938,19 @@ export default function PricingPage() {
           </div>
         )}
 
+        {plans.length === 1 && (
+          <div className="max-w-5xl mx-auto mt-6">
+            <IncludedPanel checkColor={(PLAN_THEME[plans[0].key] || PLAN_THEME.pro).checkColor} />
+          </div>
+        )}
+
+        {plans.length > 0 && (
+          <p className="mx-auto mb-12 mt-8 max-w-xl text-center text-[12.5px] leading-relaxed" style={{ color: '#64748b' }}>
+            After a charge, you still have 7 days to ask for a full refund.{' '}
+            <Link to="/refund" className="underline underline-offset-2 hover:text-slate-300">Refund policy</Link>
+          </p>
+        )}
+
         {/* Empty state */}
         {!isLoading && plans.length === 0 && (
           <div className="max-w-3xl mx-auto mb-12 rounded-2xl px-6 py-10 text-center" style={{ border: '1px solid rgba(255,255,255,0.07)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
@@ -814,7 +986,7 @@ export default function PricingPage() {
               <p className="text-base mb-10 max-w-md mx-auto" style={{ color: '#475569' }}>
                 {session?.access_token && !subscriptionLoading && isPaidPlan(user?.billingPlan)
                   ? 'You are on a paid plan. Manage billing anytime from your account.'
-                  : 'Join traders who trust TradeGuardX. 7 days free — nothing charged until day 8.'}
+                  : '7 days free · ₹0 today · cancel before day 8 and pay nothing.'}
               </p>
               <motion.div
                 className="inline-block"
@@ -829,7 +1001,7 @@ export default function PricingPage() {
                     boxShadow: '0 4px 24px rgba(0,212,170,0.30)',
                   }}
                 >
-                  {session?.access_token ? 'Open dashboard' : 'Get Started Free'}
+                  {session?.access_token ? 'Open dashboard' : 'Start 7 days free'}
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>

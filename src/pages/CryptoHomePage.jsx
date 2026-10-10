@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { useSEO } from '../hooks/useSEO';
 import { useAuth } from '../context/AuthContext';
 import StoryAIJournal from '../components/landing/story/StoryAIJournal';
-import RecentJoinsToast from '../components/landing/RecentJoinsToast';
 import TradingInAction from '../components/landing/TradingInAction';
 import HeroLiveDemo from '../components/landing/HeroLiveDemo';
 import '../landing/tgx.scoped.css';
@@ -248,7 +247,6 @@ export default function CryptoHomePage() {
       <LandingDivider />
       {/* Pricing + FAQ. */}
       <RawHtml className="tgx-home" innerRef={bTailRef} html={rawBodyBTail} />
-      <RecentJoinsToast />
     </>
   );
 }

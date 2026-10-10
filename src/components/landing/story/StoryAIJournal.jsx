@@ -157,41 +157,46 @@ export default function StoryAIJournal() {
 /* ---------- P&L calendar (monthly heatmap) ---------- */
 
 // March 2026, leading 0s = padding for the first day-of-week (Sun=0).
-// pnl: profit/loss in dollars, null = no trades that day.
+// pnl: profit/loss in rupees, null = no trades that day.
 const CALENDAR_MONTH = 'March 2026';
 const CALENDAR_CELLS = [
   null, null, null, null, null, null, // pad to first day (Sun=index 0); March 1 = Sun
-  { d: 1,  pnl: 220 },
-  { d: 2,  pnl: -85 },
-  { d: 3,  pnl: 410 },
-  { d: 4,  pnl: -160 },
+  { d: 1,  pnl: 18500 },
+  { d: 2,  pnl: -7000 },
+  { d: 3,  pnl: 34000 },
+  { d: 4,  pnl: -13500 },
   { d: 5,  pnl: 0 },
-  { d: 6,  pnl: 90 },
+  { d: 6,  pnl: 7500 },
   { d: 7,  pnl: null },
   { d: 8,  pnl: null },
-  { d: 9,  pnl: 340 },
-  { d: 10, pnl: -240 },
-  { d: 11, pnl: 180 },
-  { d: 12, pnl: -65 },
-  { d: 13, pnl: 290 },
+  { d: 9,  pnl: 28000 },
+  { d: 10, pnl: -20000 },
+  { d: 11, pnl: 15000 },
+  { d: 12, pnl: -5500 },
+  { d: 13, pnl: 24000 },
   { d: 14, pnl: null },
   { d: 15, pnl: null },
-  { d: 16, pnl: 510 },
-  { d: 17, pnl: 80 },
-  { d: 18, pnl: -130 },
-  { d: 19, pnl: 220 },
-  { d: 20, pnl: -90 },
+  { d: 16, pnl: 42500 },
+  { d: 17, pnl: 6500 },
+  { d: 18, pnl: -11000 },
+  { d: 19, pnl: 18500 },
+  { d: 20, pnl: -7500 },
   { d: 21, pnl: null },
   { d: 22, pnl: null },
-  { d: 23, pnl: 380 },
-  { d: 24, pnl: -50 },
-  { d: 25, pnl: 160, today: true },
+  { d: 23, pnl: 31500 },
+  { d: 24, pnl: -4000 },
+  { d: 25, pnl: 13500, today: true },
   { d: 26, pnl: null },
   { d: 27, pnl: null },
   { d: 28, pnl: null },
 ];
 
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+/** 18500 → "19k": the calendar cells are ~40px wide on a phone; the MTD pill carries the ₹. */
+function compactInr(n) {
+  return n >= 1000 ? `${Math.round(n / 1000)}k` : String(n);
+}
 
 function pnlIntensity(pnl, max) {
   if (pnl == null || pnl === 0 || max === 0) return 0;
@@ -229,7 +234,7 @@ function PnlCalendar() {
             color: monthTotal >= 0 ? '#6ee7b7' : '#fda4af',
           }}
         >
-          {monthTotal >= 0 ? '+' : '−'}${Math.abs(monthTotal).toLocaleString()} MTD
+          {monthTotal >= 0 ? '+' : '−'}₹{Math.abs(monthTotal).toLocaleString('en-IN')} MTD
         </span>
       </div>
 
@@ -289,10 +294,10 @@ function PnlCalendar() {
               </p>
               {c.pnl != null && c.pnl !== 0 && (
                 <p
-                  className="mt-0.5 font-mono text-[8.5px] font-semibold leading-none tabular-nums"
+                  className="mt-0.5 whitespace-nowrap font-mono text-[8.5px] font-semibold leading-none tabular-nums"
                   style={{ color: textColor }}
                 >
-                  {c.pnl > 0 ? '+' : '−'}${Math.abs(c.pnl)}
+                  {c.pnl > 0 ? '+' : '−'}{compactInr(Math.abs(c.pnl))}
                 </p>
               )}
             </motion.div>

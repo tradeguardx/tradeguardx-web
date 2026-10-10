@@ -447,6 +447,10 @@
     font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--text-3);
   }
+  /* Which exchange the reviewer trades on: the first thing a CoinDCX or Delta
+     visitor wants to know about a quote is whether it's about *their* venue. */
+  .tgx-home .rv-who .rv-ex{ display: inline-flex; align-items: center; gap: 6px; }
+  .tgx-home .rv-who .rv-ex img{ height: 13px; width: auto; flex: none; }
 
   /* On a phone, three stacked quote cards is a screen and a half of scrolling
      past near-identical boxes — you read the first and thumb past the rest.
@@ -2300,9 +2304,12 @@
     .tgx-home .hero-grid > div:first-child{ display: contents; }
     .tgx-home .hero-grid .h1{ order: 1; }
     .tgx-home .hero-grid .hero-sub{ order: 2; margin-bottom: 26px; }
-    .tgx-home .hero-visual{ order: 3; margin-bottom: 30px; }
-    .tgx-home .hero-grid .hero-ctas{ order: 4; }
-    .tgx-home .hero-grid .hero-trust{ order: 5; }
+    /* Buttons before the demo: on a phone the demo card used to sit between
+       the headline and "Create free account", pushing the only way to act
+       ~900px down. The demo now follows the trust ticks as proof. */
+    .tgx-home .hero-grid .hero-ctas{ order: 3; }
+    .tgx-home .hero-grid .hero-trust{ order: 4; margin-bottom: 32px; }
+    .tgx-home .hero-visual{ order: 5; margin-bottom: 30px; }
     .tgx-home .pain-grid, .tgx-home .steps, .tgx-home .rules-grid{ grid-template-columns: 1fr; }
     .tgx-home .trust-grid{ grid-template-columns: repeat(3, 1fr); gap: 28px 20px; text-align: center; }
     .tgx-home .trust-exchanges{ grid-column: 1 / -1; justify-content: center; flex-wrap: wrap; }

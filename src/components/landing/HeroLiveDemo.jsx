@@ -15,9 +15,10 @@ import { motion, useReducedMotion } from 'framer-motion';
  * phase has to survive being glanced at rather than watched.
  */
 
-const LOSS_LIMIT = 300;
+// Rupees: the audience trades Indian venues, and the price on this page is in ₹.
+const LOSS_LIMIT = 25000;
 const MAX_TRADES = 3;
-const TARGET = 500;
+const TARGET = 40000;
 const LOCK_SECONDS = 8 * 3600 + 12 * 60 + 33;
 
 const PHASES = [
@@ -26,12 +27,12 @@ const PHASES = [
   { key: 'setup_target', screen: 'setup', label: 'Setting your rules', pnl: 0, trades: 0, hold: 2400 },
   { key: 'saved', screen: 'setup', label: 'Rules saved', pnl: 0, trades: 0, hold: 1800 },
   // The session.
-  { key: 'open', screen: 'live', label: 'Trade open', pnl: 145, trades: 1, hold: 2300 },
-  { key: 'turn', screen: 'live', label: 'Trade open', pnl: -60, trades: 2, hold: 1900 },
-  { key: 'warn', screen: 'live', label: 'Approaching limit', pnl: -228, trades: 2, hold: 2100 },
-  { key: 'breach', screen: 'live', label: 'Daily loss limit hit', pnl: -300, trades: 3, hold: 1600 },
-  { key: 'enforce', screen: 'live', label: 'Kill switch firing', pnl: -300, trades: 3, hold: 2600 },
-  { key: 'locked', screen: 'live', label: 'Locked until tomorrow', pnl: -300, trades: 3, hold: 5000 },
+  { key: 'open', screen: 'live', label: 'Trade open', pnl: 12000, trades: 1, hold: 2300 },
+  { key: 'turn', screen: 'live', label: 'Trade open', pnl: -5000, trades: 2, hold: 1900 },
+  { key: 'warn', screen: 'live', label: 'Approaching limit', pnl: -19000, trades: 2, hold: 2100 },
+  { key: 'breach', screen: 'live', label: 'Daily loss limit hit', pnl: -25000, trades: 3, hold: 1600 },
+  { key: 'enforce', screen: 'live', label: 'Kill switch firing', pnl: -25000, trades: 3, hold: 2600 },
+  { key: 'locked', screen: 'live', label: 'Locked until tomorrow', pnl: -25000, trades: 3, hold: 5000 },
 ];
 
 const GREEN = '#34d399';
@@ -39,7 +40,8 @@ const RED = '#f87171';
 const AMBER = '#fbbf24';
 const MUTED = '#8b98a5';
 
-const money = (n) => `${n < 0 ? '−' : '+'}$${Math.abs(n).toFixed(0)}`;
+const inr = (n) => `₹${Math.abs(n).toLocaleString('en-IN')}`;
+const money = (n) => `${n < 0 ? '−' : '+'}${inr(n)}`;
 
 function hhmmss(total) {
   const s = Math.max(0, total);
@@ -209,7 +211,7 @@ export default function HeroLiveDemo() {
                     color: isActive || isDone ? f.colour : MUTED,
                   }}
                 >
-                  ${isDone ? f.value : isActive ? f.typed : '—'}
+                  {isDone ? inr(f.value) : isActive ? (f.typed ? inr(Number(f.typed)) : '₹') : '₹—'}
                   {isActive && <Caret />}
                 </span>
               </div>
@@ -236,7 +238,7 @@ export default function HeroLiveDemo() {
           </motion.div>
 
           <p style={{ margin: '4px 0 0', fontSize: 12, lineHeight: 1.55, color: MUTED, textAlign: 'center' }}>
-            Set once, while you’re calm. Loosening one later takes a cooling-off period.
+            Set once, while you’re calm. They lock at your first trade of the day.
           </p>
         </motion.div>
       ) : (
@@ -250,11 +252,11 @@ export default function HeroLiveDemo() {
                 initial={reduce ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35 }}
-                style={{ margin: '7px 0 0', fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em', color: isLoss ? RED : GREEN }}
+                style={{ margin: '7px 0 0', fontSize: 'clamp(21px, 6.4vw, 30px)', whiteSpace: 'nowrap', fontWeight: 800, letterSpacing: '-0.02em', color: isLoss ? RED : GREEN }}
               >
                 {money(pnl)}
               </motion.p>
-              <p style={{ margin: '3px 0 0', fontSize: 11.5, color: MUTED }}>Cap: ${LOSS_LIMIT}</p>
+              <p style={{ margin: '3px 0 0', fontSize: 11.5, color: MUTED }}>Cap: {inr(LOSS_LIMIT)}</p>
             </div>
             <div style={card}>
               <p style={capLabel}>Trades</p>
@@ -288,9 +290,9 @@ export default function HeroLiveDemo() {
               />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 9, fontSize: 11, color: MUTED }}>
-              <span style={{ color: RED }}>−${LOSS_LIMIT} · locks</span>
-              <span>$0</span>
-              <span style={{ color: GREEN }}>+${TARGET} · locks in</span>
+              <span style={{ color: RED }}>−{inr(LOSS_LIMIT)} · locks</span>
+              <span>₹0</span>
+              <span style={{ color: GREEN }}>+{inr(TARGET)} · locks in</span>
             </div>
           </div>
 
@@ -327,7 +329,7 @@ export default function HeroLiveDemo() {
                 {phase.key === 'open' && 'Long BTCUSD running. Nothing to do while you’re inside your limits.'}
                 {phase.key === 'turn' && 'Trade reversed. Still inside the daily loss cap.'}
                 {phase.key === 'warn' && '76% of your daily cap is gone. This is where discipline usually fails.'}
-                {phase.key === 'breach' && 'You hit −$300. The rule you set this morning takes over now.'}
+                {phase.key === 'breach' && `You hit −${inr(LOSS_LIMIT)}. The rule you set this morning takes over now.`}
                 {phase.key === 'enforce' && 'Orders cancelled · positions closed · new entries blocked.'}
               </p>
             )}

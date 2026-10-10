@@ -8,7 +8,7 @@ import AuthSplit from '../components/auth/AuthSplit';
 import { useToast } from '../components/common/ToastProvider';
 import { setPendingCheckoutPlan, normalizePlanSlugForMatch } from '../lib/checkoutIntent';
 import PasswordField from '../components/common/PasswordField';
-import { pwStrength, validatePasswordPair, MIN_PASSWORD_LENGTH } from '../lib/password';
+import { pwStrength, validatePassword, MIN_PASSWORD_LENGTH } from '../lib/password';
 
 const planMeta = {
   proplus: { label: 'Pro+', cls: 'bg-purple-500/15 text-purple-300 border-purple-500/25' },
@@ -18,18 +18,18 @@ const planMeta = {
 
 export default function SignupPage() {
   useSEO({
-    title: 'Sign Up Free',
-    description: 'Create your TradeGuardX account and start protecting your trades in minutes. 7 days free, nothing charged until day 8.',
+    title: 'Sign Up — 7 Days Free',
+    description: 'Create your TradeGuardX account. 7 days free with everything unlocked: ₹0 today, set up UPI AutoPay or a card during setup, cancel before day 8 and pay nothing.',
     url: 'https://tradeguardx.com/signup',
   });
   const [searchParams] = useSearchParams();
   const rawPlan = searchParams.get('plan') || 'free';
   const plan = rawPlan === 'free' ? 'free' : normalizePlanSlugForMatch(rawPlan);
+  // The interval card they clicked on /pricing, so checkout opens on it.
+  const interval = searchParams.get('interval') || 'monthly';
   const pm = planMeta[plan] || planMeta.free;
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
   const [pwError, setPwError] = useState(null);
   const [focused, setFocused] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,9 +46,9 @@ export default function SignupPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Catch a typo'd password here rather than after the account exists — a
-    // mistyped password on signup means an immediate reset-email round trip.
-    const problem = validatePasswordPair(password, confirm);
+    // No confirm field: the eye toggle lets people check what they typed, and
+    // a second box cost every signup a field to protect the few who mistype.
+    const problem = validatePassword(password);
     if (problem) {
       setPwError(problem);
       return;
@@ -56,7 +56,7 @@ export default function SignupPage() {
     setPwError(null);
     setIsSubmitting(true);
     try {
-      const result = await signup(email, password, name);
+      const result = await signup(email, password);
       if (result?.requiresEmailConfirmation) {
         // No session exists yet, so the dashboard is unreachable. Land them on a
         // page that says exactly that and can re-send the email — bouncing to
@@ -64,7 +64,7 @@ export default function SignupPage() {
         navigate('/verify-email', { replace: true, state: { email } });
       } else {
         if (plan !== 'free') {
-          setPendingCheckoutPlan(plan);
+          setPendingCheckoutPlan(plan, interval);
           toast.success('Account created', 'Continue to secure checkout for your plan.');
           navigate('/pricing', { replace: true });
           return;
@@ -84,7 +84,7 @@ export default function SignupPage() {
     setIsSubmitting(true);
     try {
       if (plan !== 'free') {
-        setPendingCheckoutPlan(plan);
+        setPendingCheckoutPlan(plan, interval);
       }
       await loginWithGoogle(plan !== 'free' ? '/pricing' : '/dashboard?welcome=1');
       toast.info(
@@ -120,7 +120,10 @@ export default function SignupPage() {
       >
         <div className="mb-9">
           <h1 className="font-display text-[34px] font-bold tracking-[-0.02em] text-white mb-2">Create your account</h1>
-          <p className="text-slate-400 text-[16px]">Free for 7 days, everything unlocked. Nothing charged until day 8.</p>
+          <p className="text-slate-400 text-[16px]">Free for 7 days, everything unlocked.</p>
+          {/* Said here, before the account exists, so the AutoPay step in setup
+              is something they were told about rather than a surprise. */}
+          <p className="text-slate-500 text-[13px] mt-1.5">₹0 today · AutoPay set-up in step 4 · cancel before day 8 and pay nothing</p>
           {plan !== 'free' && (
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold border mt-3 ${pm.cls}`}>
               {pm.label} plan
@@ -156,19 +159,6 @@ export default function SignupPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[14px] font-medium text-slate-300 mb-2">Full name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onFocus={() => setFocused('name')}
-                onBlur={() => setFocused(null)}
-                placeholder="Your name"
-                className={`w-full h-[54px] px-5 rounded-2xl border text-white text-[14px] placeholder-slate-600 focus:outline-none transition-all ${ring('name')}`}
-              />
-            </div>
-
-            <div>
               <label className="block text-[14px] font-medium text-slate-300 mb-2">Email</label>
               <input
                 type="email"
@@ -187,10 +177,11 @@ export default function SignupPage() {
                 id="signup-password"
                 label="Password"
                 value={password}
-                onChange={setPassword}
+                onChange={(v) => { setPassword(v); if (pwError) setPwError(null); }}
                 autoComplete="new-password"
                 size="lg"
                 placeholder={`Min ${MIN_PASSWORD_LENGTH} characters`}
+                error={pwError}
               />
 
               {/* Strength meter */}
@@ -208,17 +199,6 @@ export default function SignupPage() {
                 </div>
               )}
             </div>
-
-            <PasswordField
-              id="signup-confirm"
-              label="Confirm password"
-              value={confirm}
-              onChange={setConfirm}
-              autoComplete="new-password"
-                size="lg"
-              placeholder="Re-enter your password"
-              error={pwError}
-            />
 
             <button
               type="submit"
@@ -243,9 +223,9 @@ export default function SignupPage() {
           <Link to="/login" className="text-accent hover:text-accent-hover font-medium transition-colors">Sign in</Link>
         </p>
 
-        <div className="flex items-center gap-5 mt-8">
-          {['Secure', '2,500+ traders', 'Free plan available'].map((t) => (
-            <span key={t} className="flex items-center gap-1.5 text-[11px] text-slate-600">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8">
+          {['Trade-only API key', 'No withdrawal access', 'Cancel before day 8'].map((t) => (
+            <span key={t} className="flex items-center gap-1.5 whitespace-nowrap text-[11px] text-slate-600">
               <span className="w-1 h-1 rounded-full bg-accent/50" />
               {t}
             </span>
