@@ -236,7 +236,20 @@ export default function OverviewPage() {
   const doneCount = preds.filter(Boolean).length;
   /* No longer gated on having an account: step one IS adding one, and that is
      the first thing a new user needs to see laid out. */
-  const showSetup = doneCount < steps.length;
+  /*
+   * THE CHECKLIST IS FOR GETTING STARTED, NOT FOR EVER.
+   *
+   * It shows only while a REQUIRED step is undone — account, key, billing,
+   * rules. Alerts are optional; leaving them off used to keep a full "Finish
+   * setup to turn the guard on" card above a guard that was already on, with
+   * the plan's end date and the alerts prompt repeated from the banner. The
+   * optional step now waits in "What to do next".
+   *
+   * Not with the plan off either: the banner already says so, with the one
+   * button that fixes it.
+   */
+  const REQUIRED = [0, 1, 2, 4]; // account, key, billing, rules (3 = alerts)
+  const showSetup = !life?.unprotected && REQUIRED.some((i) => !preds[i]);
 
   const setupGaps = ['setup', 'key', 'billing'];
   const setupIncomplete = Boolean(g?.gaps?.some((x) => setupGaps.includes(x.key)));
@@ -373,6 +386,15 @@ export default function OverviewPage() {
         : { title: 'Check your rule-lock window', body: 'Seven days is the default. Choosing the length before you need it is the whole point of the device.', to: '/dashboard/live', accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.rules },
       { title: 'Set a killswitch window before you need it', body: 'Deciding the length while calm is the whole idea. You cannot arm one mid-tilt and mean it.', to: '/dashboard/live', accent: 'var(--red)', tint: 'var(--red-tint)', d: ['M12 4v7', 'M6.8 7.4a7.4 7.4 0 1010.4 0'] },
     ];
+  /* The optional setup step is a suggestion, so it lives here, first —
+     not in the banner and not in a setup card. */
+  const alertsGap = g.loaded ? g.gaps?.find((x) => x.key === 'alerts') : null;
+  if (alertsGap && !nextActions.some((n) => n.to === alertsGap.to)) {
+    nextActions.splice(g.guard === 'armed' ? 0 : 1, 0, {
+      title: 'Turn on alerts', body: alertsGap.body, to: alertsGap.to, accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.bell,
+    });
+    nextActions.splice(3);
+  }
   const nextSub = g.guard !== 'armed' || fresh ? 'Three things worth doing in your first week.' : 'Ranked by what it costs you to leave undone.';
 
   /*

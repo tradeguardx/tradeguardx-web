@@ -9,7 +9,7 @@
  * important fact read as a footnote.
  *
  * Now each possible message is a row with a rank. The band shows the top
- * one, and the next one as a single line beneath it. Nothing else.
+ * one. Nothing else.
  *
  *   RANK  WHAT                                  WHY IT RANKS HERE
  *   10    plan off      pf te pe pg lf          nothing is protected, on any account
@@ -19,7 +19,7 @@
  *                                                this account is not protected now
  *   50    no rules      0 rules switched on     protected by a plan, enforcing nothing
  *   60    plan ending   tc pc t6, no-card trial protected now, not after a date
- *   70    no alerts     no Telegram / email     enforcement works, silently
+ *   70    no alerts     no Telegram / email     not a banner: a suggestion in Overview
  *
  * Copy lives with its source — lifecycle.js for plan and setup, guard.js for
  * the account — so a sentence is still written once. This file decides only
@@ -111,8 +111,9 @@ export function bandMessagesOf({ life, selected, user }) {
     }
   }
 
-  /* ── Polish ───────────────────────────────────────────────────────── */
-  if (accountMatters && gap('alerts')) out.push(fromGap(gap('alerts'), RANK.NO_ALERTS, 'amber'));
+  /* No alert channel is NOT a banner: enforcement works without it, so it
+     is a suggestion, and suggestions live in Overview's "What to do next".
+     RANK.NO_ALERTS stays as the record of where it would rank. */
 
   // Stable: equal ranks keep the order they were added in.
   return out.map((m, i) => ({ m, i })).sort((a, b) => a.m.rank - b.m.rank || a.i - b.i).map(({ m }) => m);

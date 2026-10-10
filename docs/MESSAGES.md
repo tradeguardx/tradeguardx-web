@@ -46,7 +46,7 @@ Every user is in exactly one case. They're checked in this order, and the first 
 
 ## 2. The banner (one at a time)
 
-The band under the top bar shows **the highest-ranked message**, plus **the next one as a single line** under it. It is hidden on Plan & billing and in onboarding. A message whose button points at the page you're already on drops out, and the next one takes its place.
+The band under the top bar shows **only the highest-ranked message**. One banner, one action. It is hidden on Plan & billing and in onboarding. A message whose button points at the page you're already on drops out, and the next one takes its place.
 
 | Rank | Message | When | Tone | Button | Dismissible |
 |---|---|---|---|---|---|
@@ -68,9 +68,10 @@ The band under the top bar shows **the highest-ranked message**, plus **the next
 | 60 | **Your trial ends {date}.** "We'll charge ₹1,299. Nothing to do if you're staying." | `t6` with a card | grey | Manage plan | for the day |
 | 60 | **Your free trial has ended.** "Your guard stays on until {date}. Set up billing to keep it on." | `tx` without a card (old trial) | amber | Set up billing | no |
 | 60 | **Free trial — everything unlocked.** "{n} days left. Set up payment to keep access when it ends." | `t1`/`t6` without a card (old trial) | mint | Set up | no |
-| 70 | **No alert channel connected** "The guard would act without telling you." | no Telegram or email | amber | Set up alerts | no |
+| — | *No alert channel* is **not a banner**. Enforcement works without it, so it's a suggestion: the first item in Overview's "What to do next". | | | | |
 
 **Silences, on purpose**
+- **Each fact is said once on a screen.** The banner carries the action, the hero carries the status, and the setup card only shows while a *required* step (account, key, billing, rules) is undone. It's also hidden while the plan is off, because the banner already says so.
 - **Plan off or still in setup:** account problems (key, rules, alerts) are not shown in the band. The plan message already says "not protected", and those problems appear on Accounts and Connect key instead.
 - **The billing gap (`guard.js`):** never shown when the case is known, because ranks 10, 20 and 60 already say it.
 - **`t1` with a card, `tx` with a card, `p`, `ac`, `nr`:** no banner. A calm, protected state shows no billing nags.

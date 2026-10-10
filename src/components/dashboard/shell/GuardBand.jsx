@@ -10,9 +10,9 @@ import { sx } from './sx';
  *
  * What it says comes from lib/messages.js, which ranks every possible
  * message — plan off, setup, a locked account, a key that cannot act, no
- * rules, a plan ending, no alert channel. The band shows the most important
- * one, and the next one as a single line beneath it. It never shows two
- * alarms of equal weight, and never lets a lesser one lead.
+ * rules, a plan ending. The band shows the single most important one.
+ * One banner, one action: a second line under it was a second alarm, and
+ * the facts it repeated were already elsewhere on the page.
  */
 const DISMISS_KEY = 'tgx.band.dismissed';
 
@@ -55,7 +55,7 @@ export default function GuardBand() {
 
   const messages = bandMessagesOf({ life, selected, user }).filter((m) => elsewhere(m.to) && !hidden(m));
   if (messages.length === 0) return null;
-  const [top, next] = messages;
+  const [top] = messages;
 
   const tone = top.tone;
   const fg = `var(--${tone})`;
@@ -79,14 +79,6 @@ export default function GuardBand() {
         <div style={sx('flex:1;min-width:0')}>
           <div style={sx('font-size:13.5px;font-weight:700;line-height:1.35', { color: warn ? fg : 'var(--ink)' })}>{top.title}</div>
           <div style={sx('font-size:12.5px;line-height:1.5;color:var(--ink-2);margin-top:3px;max-width:96ch')}>{top.body}</div>
-          {/* The next most important thing, as one quiet line — never a
-              second alarm of equal weight. */}
-          {next && (
-            <div style={sx('margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;color:var(--ink-3)')}>
-              {next.title}{' '}
-              <Link to={next.to} style={sx('font-weight:700;text-decoration:underline', { color: `var(--${next.tone})` })}>{next.cta}</Link>
-            </div>
-          )}
         </div>
       </div>
       <Link className="guard-band__cta" to={top.to} style={sx('flex:none;padding:8px 13px;border-radius:8px;background:var(--surface);font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap', { border: `1px solid var(--${tone}-line)`, color: fg })}>{top.cta}</Link>

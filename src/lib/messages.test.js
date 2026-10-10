@@ -8,15 +8,15 @@ const ids = (msgs) => msgs.map((m) => m.id);
 const tc = lifecycleView('tc', { endsAt: '2026-10-15T12:00:00Z' });
 
 describe('the band says the most important thing first', () => {
-  it('the screenshot: trial cancelled leads, "no alert channel" is the second line', () => {
+  it('the screenshot: trial cancelled is the banner; no alert channel is not a banner at all', () => {
     const msgs = bandMessagesOf({ life: tc, selected: acct({ gaps: [gap('alerts')] }), user: {} });
-    expect(ids(msgs)).toEqual(['plan:tc', 'gap:alerts']);
+    expect(ids(msgs)).toEqual(['plan:tc']);
     expect(msgs[0].title).toBe('Trial cancelled. You won’t be charged.');
   });
 
   it('no rules on beats the plan ending: nothing is enforced today', () => {
     const msgs = bandMessagesOf({ life: tc, selected: acct({ guard: 'unprotected', gaps: [gap('rules'), gap('alerts')] }), user: {} });
-    expect(ids(msgs)).toEqual(['gap:rules', 'plan:tc', 'gap:alerts']);
+    expect(ids(msgs)).toEqual(['gap:rules', 'plan:tc']);
   });
 
   it('a locked account leads everything but the plan being off', () => {

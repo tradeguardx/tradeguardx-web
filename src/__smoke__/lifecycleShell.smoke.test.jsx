@@ -7,6 +7,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { getExchangeCredentialsStatus } from '../api/exchangeCredentialsApi';
+import { fetchNotificationSettings } from '../api/notificationsApi';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 const account = {
@@ -102,6 +103,7 @@ function mount(path) {
 
 const base = { id: 'u1', name: 'Prashant Pathak', email: 'p@x.com', planKnown: true };
 const failed = { ...base, planState: 'pf', planProtected: false, access: 'expired', isExpired: true };
+const cancelledTrial = { ...base, planState: 'tc', planProtected: true, planStateEndsAt: '2026-10-15T12:00:00Z', access: 'trial', isTrial: true, trialAutoRenews: false, subscriptionCanceled: true };
 const cancelled = { ...base, planState: 'pc', planProtected: true, planStateEndsAt: '2026-11-15T12:00:00Z', access: 'active', subscriptionCanceled: true };
 
 beforeEach(() => { localStorage.clear(); });
@@ -222,5 +224,26 @@ describe('a reload shows one skeleton, then the real page — nothing in between
     release();
     expect(await screen.findByText('Off until your payment goes through')).toBeTruthy();
     expect(screen.queryByText('Loading your dashboard…')).toBeNull();
+  });
+});
+
+describe('a cancelled trial, armed, with no alert channel — each fact said once', () => {
+  beforeEach(() => {
+    auth.user = cancelledTrial;
+    fetchNotificationSettings.mockImplementation(async () => ({ telegramConnected: false, emailNotificationsEnabled: false }));
+  });
+  afterEach(() => {
+    fetchNotificationSettings.mockImplementation(async () => ({ telegramConnected: true, emailNotificationsEnabled: false }));
+  });
+
+  it('one banner, no setup card, alerts as the first suggestion', async () => {
+    mount('/dashboard/overview');
+    await waitFor(() => expect(screen.getByText('Trial cancelled. You won’t be charged.')).toBeTruthy());
+    // Not a second banner line.
+    expect(screen.queryByText('No alert channel connected')).toBeNull();
+    // No "finish setup" card over a guard that is already on.
+    expect(screen.queryByText(/Finish setup to turn the guard on/)).toBeNull();
+    // The optional step waits in "What to do next".
+    expect(await screen.findByText('Turn on alerts')).toBeTruthy();
   });
 });
