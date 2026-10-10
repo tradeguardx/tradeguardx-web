@@ -17,6 +17,7 @@ import {
   totalRuleCount,
 } from '../lib/guard';
 import { keyStateOf, lifecycleIdOf, lifecycleView } from '../lib/lifecycle';
+import { getPricingPlans } from '../api/pricingApi';
 
 /**
  * Guard state for every account the user has, kept fresh, read everywhere.
@@ -39,7 +40,7 @@ function settle(p) {
 }
 
 export function GuardProvider({ children }) {
-  const { session, user } = useAuth();
+  const { session, user, subscription } = useAuth();
   /*
    * Entitlement, mirroring isEntitled() in the engine's exchange/credentials.ts
    * and the `access` the subscription API computes. The engine stopped acting
@@ -267,14 +268,29 @@ export function GuardProvider({ children }) {
     });
   })();
   const accountName = selectedState.account?.name ?? '';
+  /* The plan's list price for the user's billing period, for "Pay ₹1,299"
+     and "Payment received · ₹1,299". Unknown until the pricing call lands;
+     the sentences drop the figure until then rather than guess. */
+  const [plans, setPlans] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    getPricingPlans().then((p) => { if (alive) setPlans(p); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const interval = subscription?.subscription?.billingInterval ?? 'monthly';
+  const price = useMemo(() => {
+    const row = (plans ?? []).find((p) => String(p.slug || '').toLowerCase() === 'pro')?.intervals?.find((x) => x.interval === interval);
+    return typeof row?.price === 'number' ? `₹${Math.round(row.price).toLocaleString('en-IN')}` : null;
+  }, [plans, interval]);
   const life = useMemo(
     () => lifecycleView(lifeId, {
       endsAt: user?.planStateEndsAt ?? null,
       periodEnd: user?.currentPeriodEnd ?? null,
       autoRenews: Boolean(user?.trialAutoRenews),
       accountName,
+      price,
     }),
-    [lifeId, accountName, user?.planStateEndsAt, user?.currentPeriodEnd, user?.trialAutoRenews],
+    [lifeId, accountName, price, user?.planStateEndsAt, user?.currentPeriodEnd, user?.trialAutoRenews],
   );
 
   const value = useMemo(

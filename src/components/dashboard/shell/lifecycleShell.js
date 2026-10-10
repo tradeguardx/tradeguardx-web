@@ -32,7 +32,7 @@ export function planNoticeOf(life, user) {
   if (!life) return subscriptionNotice(user);
   if (life.band && !life.unprotected && !life.setup) {
     const b = life.band;
-    return { tone: b.tone, strong: b.title, text: b.body, short: `${b.title} ${b.body}`, cta: b.cta, to: b.to, dismissible: Boolean(b.dismissible) };
+    return { tone: b.tone, strong: b.title, text: b.body, short: `${b.title} ${b.body}`, cta: b.cta, to: b.to, dismissible: Boolean(b.dismissible), dismissDays: b.dismissDays ?? 1 };
   }
   const noCardTrial = user?.isTrial && !user?.trialAutoRenews && !user?.subscriptionCanceled;
   if (noCardTrial && (life.id === 't1' || life.id === 't6')) return subscriptionNotice(user);

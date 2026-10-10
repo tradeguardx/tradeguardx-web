@@ -6,6 +6,9 @@ import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useDashboardTheme } from '../context/DashboardThemeContext';
 import { useShare } from '../context/ShareContext';
+import { useGuard } from '../context/GuardContext';
+import { fetchBreaches } from '../api/breachesApi';
+import { isUnenforced, unenforcedLabel } from '../lib/lifecycle';
 import RealReplayChart from '../components/charts/RealReplayChart';
 import {
   fetchJournalEvents,
@@ -1191,6 +1194,19 @@ export default function TradeDetailPage() {
   const [media, setMedia] = useState([]);
   const [events, setEvents] = useState([]);
   const [tab, setTab] = useState('overview');
+  const { life } = useGuard();
+  /* Rule hits on this trade that the engine could not act on, shown in the
+     timeline as "{Rule} reached · not enforced: plan inactive" (spec §1.5). */
+  const [unenforced, setUnenforced] = useState([]);
+  useEffect(() => {
+    const token = session?.access_token;
+    if (!token || !tradeUid) return undefined;
+    const ctrl = new AbortController();
+    fetchBreaches({ accessToken: token, tradeUid, limit: 20, signal: ctrl.signal })
+      .then((list) => { if (!ctrl.signal.aborted) setUnenforced((list || []).filter(isUnenforced)); })
+      .catch(() => {});
+    return () => ctrl.abort();
+  }, [session?.access_token, tradeUid]);
 
   // AI narrative — single source of truth from the API
   const [narrative, setNarrative] = useState(null);
@@ -1463,6 +1479,13 @@ export default function TradeDetailPage() {
                 <h3 style={sx("margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em")}>Timeline</h3>
                 <p style={sx('margin:5px 0 0;font-size:12.5px;color:var(--ink-3)')}>Where discipline cost money, priced where it happened.</p>
               </div>
+              {unenforced.map((b) => (
+                <div key={b.id} style={sx('display:flex;align-items:center;gap:10px;padding:12px 21px;border-bottom:1px solid var(--line);font-size:13px')}>
+                  <span style={sx('flex:none;width:7px;height:7px;border-radius:50%;background:var(--amber-solid)')} />
+                  <span style={sx('flex:1;min-width:0')}>{unenforcedLabel(b, { unprotected: Boolean(life?.unprotected), timeline: true })}</span>
+                  <span style={sx('flex:none;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--amber-tint);color:var(--amber)')}>not enforced</span>
+                </div>
+              ))}
               <EventTimeline events={events} currency={cur} />
             </section>
           )}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
@@ -13,6 +13,7 @@ import { brokerLabel } from '../lib/labels';
 import { ICON } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
 import { pillOf } from '../components/dashboard/shell/lifecycleShell';
+import { isUnenforced, unenforcedLabel } from '../lib/lifecycle';
 import { formatRemaining } from '../components/dashboard/shell/format';
 
 /**
@@ -93,6 +94,9 @@ export default function OverviewPage() {
   const { session, user } = useAuth();
   const { selectedAccount, selectedTradingAccountId, accountsLoading } = useTradingAccounts();
   const { selected: g, life } = useGuard();
+  // Read inside the fetch callback without refetching when the state changes.
+  const lifeRef = useRef(life);
+  useEffect(() => { lifeRef.current = life; }, [life]);
   const { openShare, items: shareItems, awards: shareAwards, canShare } = useShare();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
@@ -114,7 +118,15 @@ export default function OverviewPage() {
     ]).then(([breaches, trades]) => {
       if (ctrl.signal.aborted) return;
       const ev = [];
-      for (const b of breaches || []) ev.push({ t: new Date(b.createdAt).getTime(), text: b.message, kind: b.severity === 'critical' ? 'rule' : 'alert', amt: '', fg: 'var(--ink-3)', dot: b.severity === 'critical' ? 'var(--red-solid)' : 'var(--amber-solid)' });
+      for (const b of breaches || []) {
+        // A hit the engine could not act on is an amber "not enforced" row
+        // (spec §1.5), not a red one that reads as if something was closed.
+        if (isUnenforced(b)) {
+          ev.push({ t: new Date(b.createdAt).getTime(), text: unenforcedLabel(b, { unprotected: Boolean(lifeRef.current?.unprotected) }), kind: 'rule', amt: '', fg: 'var(--ink-3)', dot: 'var(--amber-solid)' });
+          continue;
+        }
+        ev.push({ t: new Date(b.createdAt).getTime(), text: b.message, kind: b.severity === 'critical' ? 'rule' : 'alert', amt: '', fg: 'var(--ink-3)', dot: b.severity === 'critical' ? 'var(--red-solid)' : 'var(--amber-solid)' });
+      }
       const list = Array.isArray(trades) ? trades : trades?.trades ?? [];
       for (const t of list) {
         if (!t?.closedAt) continue;
@@ -332,7 +344,7 @@ export default function OverviewPage() {
   const offRow = life?.ended
     ? {
         t: offAt ? new Date(offAt).getTime() : null,
-        text: `Guard switched off: ${life.endedFrom === 'failed' ? 'payment failed' : life.endedFrom === 'unpaid' ? 'all retries failed' : life.endedFrom === 'trial' ? 'trial ended' : 'plan ended'}`,
+        text: `Guard switched off: ${life.offReason}`,
         kind: 'system',
         amt: '',
         fg: 'var(--ink-3)',

@@ -31,6 +31,7 @@ export const UNPROTECTED_STATES = ['pf', 'te', 'pe', 'pg', 'lf'];
 export const SETUP_STATES = ['s0', 's2', 's3'];
 
 const BILLING = '/dashboard/account/billing';
+const ONBOARDING = '/dashboard/setup';
 
 /** Route ids the spec locks, to the dashboard paths they cover. */
 export const LOCK_ROUTES = {
@@ -100,10 +101,17 @@ const ENDED_LOCK_BODY = 'Your rules and entries are saved, not deleted. Subscrib
  *                no-card trial) t1/t6 keep the existing "set up billing"
  *                prompt instead of the spec's charge notice: there is no
  *                charge coming, and saying there is would be false.
+ *   accountName — the selected account, for "Nothing is watching {account}"
+ *   price      — the plan's price for their billing period, "₹1,299". The
+ *                list price: TODO(api) the provider's actual amount due,
+ *                which differs only while a coupon applies. Sentences that
+ *                need it drop the figure when it is unknown.
  */
 export function lifecycleView(id, ctx = {}) {
   if (!id) return null;
   const until = day(ctx.endsAt);
+  const price = ctx.price || null;
+  const acct = ctx.accountName || 'Your account';
   const base = {
     id,
     protected: PROTECTED_STATES.includes(id),
@@ -142,8 +150,8 @@ export function lifecycleView(id, ctx = {}) {
         tone: id === 's0' ? 'neutral' : 'red',
         plan: id === 's0' ? 'Setup · step 1 of 4' : 'Setup · step 3 of 4',
         band: id === 's0'
-          ? { tone: 'red', title: 'Finish setup to switch your guard on.', body: 'About three minutes. Until then nothing is watching your trades.', cta: 'Continue setup', to: '/dashboard/setup' }
-          : { tone: 'red', title: `Nothing is watching ${ctx.accountName || 'this account'} yet.`, body: 'Connect the key to turn your rules into actions.', cta: 'Connect key', to: '/dashboard/connect' },
+          ? { tone: 'neutral', title: 'Finish setup to switch your guard on.', body: 'About three minutes. Until then nothing is watching your trades.', cta: 'Continue setup', to: ONBOARDING }
+          : { tone: 'red', title: `Nothing is watching ${ctx.accountName || 'this account'} yet.`, body: 'Connect the key to turn your rules into actions.', cta: 'Connect key', to: ONBOARDING },
         locks: ['live', 'journal', 'trades', 'tax'],
         lock: {
           title: 'Connect your key to see this',
@@ -151,7 +159,8 @@ export function lifecycleView(id, ctx = {}) {
             ? 'This page fills in from your exchange. Finish setup and it comes alive.'
             : 'Nothing can show here until we can read your exchange. About two minutes on a laptop.',
           cta: id === 's0' ? 'Continue setup' : 'Connect key',
-          to: id === 's0' ? '/dashboard/setup' : '/dashboard/connect',
+          // Setup CTAs go to onboarding, which opens at the case's step.
+          to: ONBOARDING,
         },
         ks: { enabled: false, tip: 'Works once your key is connected' },
         badges: id === 's2' ? { connect: '!' } : {},
@@ -167,13 +176,13 @@ export function lifecycleView(id, ctx = {}) {
         pill: 'Guard off',
         tone: 'amber',
         plan: 'Setup · step 4 of 4',
-        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Start your 7-day free trial to switch it on. ₹0 today.', cta: 'Start free trial', to: '/dashboard/activate' },
+        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Start your 7-day free trial to switch it on. ₹0 today.', cta: 'Start free trial', to: ONBOARDING },
         locks: ['live', 'journal'],
         lock: {
           title: 'Starts with your free trial',
           body: 'Your key is connected and history is filling in. This switches on the moment the trial starts.',
           cta: 'Start free trial',
-          to: '/dashboard/activate',
+          to: ONBOARDING,
         },
         ks: { enabled: false, tip: 'Starts with your free trial' },
         rulesBadge: 'DRAFT',
@@ -184,17 +193,21 @@ export function lifecycleView(id, ctx = {}) {
 
     /* ── Trial ───────────────────────────────────────────────────────── */
     case 't1':
-      return { ...base, toast: 'Guard on. Your account is protected.' };
+      return { ...base, toast: `Guard on. ${acct} is protected.` };
     case 't6':
       return {
         ...base,
-        // TODO(api): amount and card ("We'll charge ₹1,299 to Visa •••• 4242").
+        // TODO(api): the card ("… to Visa •••• 4242").
         band: ctx.autoRenews && until
           ? {
               tone: 'neutral',
+              // Hidden for the rest of the day once dismissed; back tomorrow.
               dismissible: true,
+              dismissDays: 1,
               title: `Your trial ends ${until}.`,
-              body: 'We’ll take your first payment then. Nothing to do if you’re staying.',
+              body: price
+                ? `We’ll charge ${price}. Nothing to do if you’re staying.`
+                : 'We’ll take your first payment then. Nothing to do if you’re staying.',
               cta: 'Manage plan',
               to: BILLING,
             }
@@ -220,6 +233,7 @@ export function lifecycleView(id, ctx = {}) {
           sub: 'After that your guard switches off on every account. Your rules and history are kept.',
         },
         toast: 'Trial cancelled. You won’t be charged.',
+        accountSuffix: until ? `until ${until}` : null,
       };
     case 'tx':
       /* The spec's tx is a card trial waiting on its first charge. The old
@@ -253,15 +267,14 @@ export function lifecycleView(id, ctx = {}) {
         tone: 'mint',
         plan: 'Trial ended · confirming',
         hero: {
-          title: 'Your account is protected.',
+          title: `${acct} is protected.`,
           sub: 'Your trial ended and we’re confirming the first payment with your bank. Your guard stays on meanwhile, for up to 3 days.',
         },
       };
 
     /* ── Pro ─────────────────────────────────────────────────────────── */
     case 'p':
-      // TODO(api): "Payment received · ₹{amount}" needs the amount charged.
-      return { ...base, toast: 'Payment received. Invoice in Plan & billing.' };
+      return { ...base, toast: price ? `Payment received · ${price}. Invoice in Plan & billing.` : 'Payment received. Invoice in Plan & billing.' };
     case 'pc':
       return {
         ...base,
@@ -270,6 +283,9 @@ export function lifecycleView(id, ctx = {}) {
         plan: until ? `Pro · ends ${until}` : 'Pro · cancelled',
         band: {
           tone: 'amber',
+          // Hidden for 3 days once dismissed, then back until the period ends.
+          dismissible: true,
+          dismissDays: 3,
           title: until ? `Pro ends ${until}.` : 'Pro is cancelled.',
           body: 'After that your guard switches off. Nothing is deleted.',
           cta: 'Resume Pro',
@@ -282,6 +298,7 @@ export function lifecycleView(id, ctx = {}) {
             : 'You paid for the period, so you keep everything until it ends. Then the guard switches off on every account.',
         },
         toast: until ? `Pro cancelled. You’re protected until ${until}.` : 'Pro cancelled. You’re protected until your plan ends.',
+        accountSuffix: until ? `until ${until}` : null,
       };
     case 'ac':
       return { ...base, plan: 'Pro · complimentary' };
@@ -289,33 +306,37 @@ export function lifecycleView(id, ctx = {}) {
       return { ...base, plan: 'Pro · checking plan' };
 
     /* ── Not protected, key in place ─────────────────────────────────── */
-    case 'pf':
+    case 'pf': {
+      // The renewal is charged on the period end, so that is when it failed.
+      // TODO(api): Dodo's retry dates ("We also retry on 17 Oct and 20 Oct").
+      const failedOn = day(ctx.periodEnd);
+      const pay = price ? `Pay ${price}` : 'Pay now';
       return {
         ...ended(base, 'failed'),
         pill: 'Not protected · payment failed',
         plan: 'Pro · payment failed',
-        // TODO(api): the amount due ("Pay ₹1,299") and Dodo's retry dates.
         band: {
           tone: 'red',
           title: 'Payment failed. Your guard is off.',
-          body: 'Nothing is protecting your accounts until the payment goes through. Pay now to switch it back on.',
-          cta: 'Pay now',
+          body: `Nothing is protecting your accounts until the payment goes through. ${pay} to switch it back on now.`,
+          cta: pay,
           to: BILLING,
         },
         hero: {
           title: 'Nothing is protecting your accounts.',
-          sub: 'Your bank declined the payment, so the guard switched off. Pay now and your saved rules start enforcing again straight away.',
+          sub: `Your bank declined ${price ?? 'the payment'}${failedOn ? ` on ${failedOn}` : ''}, so the guard switched off. Pay now and your saved rules start enforcing again straight away.`,
         },
         lock: {
           title: 'Off until your payment goes through',
-          body: 'Your rules and entries are saved. Pay now and this switches back on straight away.',
-          cta: 'Pay now',
+          body: `Your rules and entries are saved. ${pay} and this switches back on straight away.`,
+          cta: pay,
           to: BILLING,
         },
         plainEnglish:
-          'Your payment failed, so we are not watching or closing anything right now. Pay now and your saved rules start enforcing again straight away. Your manual kill switch still works.',
+          `Your payment failed, so we are not watching or closing anything right now. ${pay} and your saved rules start enforcing again straight away. Your manual kill switch still works.`,
         toast: 'Payment failed. Your guard is off until it goes through.',
       };
+    }
     case 'te':
       return {
         ...ended(base, 'trial'),
@@ -342,25 +363,34 @@ export function lifecycleView(id, ctx = {}) {
         },
       };
     }
-    case 'pg':
+    case 'pg': {
       // Not produced until end_reason is stored; here so it is ready.
+      const pay = price ? `Pay ${price}` : 'Pay now';
       return {
         ...ended(base, 'unpaid'),
         plan: 'No plan · unpaid',
         band: {
           tone: 'red',
           title: 'Pro ended. All payment retries failed.',
-          body: 'Nothing is protecting your accounts. Pay now to switch everything back on.',
-          cta: 'Pay now',
+          body: `Nothing is protecting your accounts. ${pay} to switch everything back on.`,
+          cta: pay,
           to: BILLING,
         },
-        lock: { title: 'Needs an active plan', body: 'Your rules and entries are saved, not deleted. Pay now and this switches back on.', cta: 'Pay now', to: BILLING },
+        hero: {
+          title: 'Nothing is protecting your accounts.',
+          sub: `Your rules are saved but not enforced. Trades and tax history stay readable. ${pay} and the guard is back on immediately.`,
+        },
+        lock: { title: 'Needs an active plan', body: `Your rules and entries are saved, not deleted. ${pay} and this switches back on.`, cta: pay, to: BILLING },
+        plainEnglish:
+          `Your plan has ended, so we are not watching or closing anything. ${price ? `Pay the overdue ${price}` : 'Pay the overdue amount'} and your saved rules start enforcing again straight away. Your manual kill switch still works.`,
       };
+    }
     case 'lf':
       return {
         ...ended(base, 'trial'),
         pill: 'Not protected · no plan',
         plan: 'No plan · subscribe',
+        offReason: 'plan ended',
         band: {
           tone: 'red',
           title: 'Your account has no active plan.',
@@ -403,6 +433,8 @@ function ended(base, endedFrom) {
     dial: { label: failed ? 'guard off · payment failed' : 'guard off · no active plan' },
     lossBudgetNote: failed ? 'Not enforced: payment failed' : 'Not enforced: no active plan',
     accountLabel: failed ? 'Not protected · payment failed' : 'Not protected · rules saved',
+    /** "Guard switched off: …", the first Activity row. */
+    offReason: failed ? 'payment failed' : endedFrom === 'unpaid' ? 'all retries failed' : endedFrom === 'trial' ? 'trial ended' : 'plan ended',
     plainEnglish:
       'Your plan has ended, so we are not watching or closing anything. Subscribe and your saved rules start enforcing again straight away. Your manual kill switch still works.',
   };
@@ -419,5 +451,48 @@ export function entryToastFor(fromId, toId, view) {
   if (fromId && UNPROTECTED_STATES.includes(fromId) && PROTECTED_STATES.includes(toId)) {
     return 'Payment went through. Your guard is back on.';
   }
-  return view?.toast ?? null;
+  if (view?.toast) return view.toast;
+  /* Protection flipped and the case has no toast of its own (§1.2).
+     TODO(api): with open positions the off-toast reads "Your guard is off.
+     Open positions are not being watched." — needs the engine's positions. */
+  const was = fromId ? PROTECTED_STATES.includes(fromId) : null;
+  const now = PROTECTED_STATES.includes(toId);
+  if (was === null || was === now || SETUP_STATES.includes(fromId)) return null;
+  return now ? 'Your guard is on.' : 'Your guard is off.';
+}
+
+/* ── Rule hits the engine could not act on (spec §1.5) ────────────────── */
+
+const RULE_NAMES = {
+  'daily-loss': 'Daily loss limit',
+  'risk-per-trade': 'Risk per trade',
+  'max-trades-day': 'Max trades per day',
+  'max-total-loss': 'Max total loss',
+  'daily-target': 'Daily target',
+  'close-after-losses': 'Losing streak',
+  'stop-loss-alert': 'Stop-loss alert',
+  'cooldown-block': 'Cooldown',
+};
+
+export function ruleNameOf(slug) {
+  if (!slug) return 'A rule';
+  const k = String(slug).replace(/_/g, '-');
+  return RULE_NAMES[k] ?? k.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+}
+
+/** The engine records a hit it could not act on as `enforcement_unavailable`. */
+export function isUnenforced(breach) {
+  return breach?.breachType === 'enforcement_unavailable';
+}
+
+/**
+ * "{Rule} reached · not enforced (no active plan)" — the Activity row and the
+ * trade tag. The reason is the plan only when the engine says so (context
+ * reason `unentitled`) or, for older rows, when the user has no plan now;
+ * otherwise the cause was the key, and the row says only "not enforced".
+ */
+export function unenforcedLabel(breach, { unprotected = false, timeline = false } = {}) {
+  const plan = breach?.context?.reason === 'unentitled' || (unprotected && breach?.context?.reason == null);
+  const suffix = plan ? (timeline ? ': plan inactive' : ' (no active plan)') : '';
+  return `${ruleNameOf(breach?.ruleSlug)} reached · not enforced${suffix}`;
 }

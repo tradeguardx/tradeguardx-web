@@ -5,6 +5,8 @@ import { useGuard } from '../context/GuardContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useShare } from '../context/ShareContext';
 import { fetchUnifiedTrades } from '../api/tradesApi';
+import { fetchBreaches } from '../api/breachesApi';
+import { isUnenforced } from '../lib/lifecycle';
 import { useTradeAnnotationsBulk } from '../hooks/useTradeAnnotations';
 import { fmtMoney } from '../lib/session';
 import { inference } from '../lib/sample';
@@ -83,7 +85,7 @@ export default function AllTradesPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const { selectedTradingAccountId, accountsLoading, selectedAccount } = useTradingAccounts();
-  const { now } = useGuard();
+  const { now, life } = useGuard();
   const { openShare, canShare } = useShare();
   const [params, setParams] = useSearchParams();
   const get = (k, valid) => { const v = params.get(k) ?? DEFAULTS[k]; return valid && !valid.includes(v) ? DEFAULTS[k] : v; };
@@ -123,6 +125,18 @@ export default function AllTradesPage() {
     fetchUnifiedTrades({ accessToken, tradingAccountId: selectedTradingAccountId, limit: 500, signal: ctrl.signal })
       .then((r) => { if (!ctrl.signal.aborted) setRows((Array.isArray(r) ? r : []).filter(isMeaningful)); })
       .catch((e) => { if (!ctrl.signal.aborted) { setRows([]); setError(e?.message || 'Could not load trades'); } });
+    return () => ctrl.abort();
+  }, [accessToken, selectedTradingAccountId]);
+
+  /* Trades the engine flagged but could not act on — tagged "not enforced"
+     (spec §1.5). From the breach log, which is where the engine says so. */
+  const [unenforced, setUnenforced] = useState(() => new Set());
+  useEffect(() => {
+    if (!accessToken || !selectedTradingAccountId) return undefined;
+    const ctrl = new AbortController();
+    fetchBreaches({ accessToken, tradingAccountId: selectedTradingAccountId, limit: 200, signal: ctrl.signal })
+      .then((list) => { if (!ctrl.signal.aborted) setUnenforced(new Set((list || []).filter(isUnenforced).map((b) => b.tradeUid).filter(Boolean))); })
+      .catch(() => {});
     return () => ctrl.abort();
   }, [accessToken, selectedTradingAccountId]);
 
@@ -281,7 +295,12 @@ export default function AllTradesPage() {
               <span data-c="side" style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: long ? 'var(--mint)' : 'var(--red)' })}>{long ? 'Long' : 'Short'}</span>
               <span data-c="size">{pick(t, 'quantity', 'volume') ?? '—'}</span>
               <span data-c="hold" style={sx('color:var(--ink-3)')}>{fmtHold(pick(t, 'openedAt'), pick(t, 'closedAt'))}</span>
-              <span data-c="blocks"><span style={sx('font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px', blocks > 0 ? { background: 'var(--red-tint)', color: 'var(--red)' } : { background: 'var(--surface-3)', color: 'var(--ink-3)' })}>{blocks > 0 ? `${blocks} ${blocks === 1 ? 'break' : 'breaks'}` : 'clean'}</span></span>
+              <span data-c="blocks" style={sx('display:flex;gap:5px;flex-wrap:wrap;align-items:center')}>
+                <span style={sx('font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px', blocks > 0 ? { background: 'var(--red-tint)', color: 'var(--red)' } : { background: 'var(--surface-3)', color: 'var(--ink-3)' })}>{blocks > 0 ? `${blocks} ${blocks === 1 ? 'break' : 'breaks'}` : 'clean'}</span>
+                {t.tradeUid && unenforced.has(t.tradeUid) && (
+                  <span title={life?.setup ? 'Not enforced: setup not finished' : 'A rule was reached and nothing was closed'} style={sx('font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--amber-tint);color:var(--amber);white-space:nowrap')}>not enforced</span>
+                )}
+              </span>
               <span data-c="pnl" style={sx('text-align:right;font-weight:600', { color: !closed ? 'var(--ink-3)' : pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink)' })}>{closed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : 'open'}</span>
               <span data-c="share" style={sx('display:flex;justify-content:flex-end')}>
                 {closed && canShare && t.tradeUid && (

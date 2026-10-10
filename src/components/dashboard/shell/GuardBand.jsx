@@ -20,12 +20,25 @@ import { sx } from './sx';
  */
 const DISMISS_KEY = 'tgx.band.dismissed';
 
+/** { id, until } — the notice dismissed, and when it comes back. */
 function readDismissed() {
-  try { return window.localStorage.getItem(DISMISS_KEY); } catch { return null; }
+  try {
+    const v = JSON.parse(window.localStorage.getItem(DISMISS_KEY) ?? 'null');
+    return v && typeof v.id === 'string' && typeof v.until === 'number' ? v : null;
+  } catch { return null; }
+}
+
+/* t6: hidden for the rest of the day. pc: hidden for 3 days. Each then
+   returns until the date it is about (spec §t6, §pc). */
+function dismissUntil(days, now = new Date()) {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + days);
+  return d.getTime();
 }
 
 export default function GuardBand() {
-  const { selected, loaded, life } = useGuard();
+  const { selected, loaded, life, now } = useGuard();
   const { user } = useAuth();
   const { pathname } = useLocation();
   const [dismissed, setDismissed] = useState(readDismissed);
@@ -59,10 +72,10 @@ export default function GuardBand() {
   }
 
   let notice = life?.unprotected || life?.setup ? null : planNoticeOf(life, user);
-  // A dismissible notice stays dismissed for that exact sentence only — a
-  // new date is a new notice.
+  // Dismissed for that exact sentence only (a new date is a new notice), and
+  // only until its window runs out — then it is back.
   const noticeId = notice?.dismissible ? `${life?.id}:${notice.strong}` : null;
-  if (noticeId && dismissed === noticeId) notice = null;
+  if (noticeId && dismissed?.id === noticeId && now < dismissed.until) notice = null;
   const noticeLink = notice && elsewhere(notice.to) ? notice : null;
   if (!guard && !notice) return null;
 
@@ -115,8 +128,9 @@ export default function GuardBand() {
           type="button"
           aria-label="Dismiss"
           onClick={() => {
-            try { window.localStorage.setItem(DISMISS_KEY, noticeId); } catch { /* still hides for this visit */ }
-            setDismissed(noticeId);
+            const v = { id: noticeId, until: dismissUntil(notice.dismissDays ?? 1) };
+            try { window.localStorage.setItem(DISMISS_KEY, JSON.stringify(v)); } catch { /* still hides for this visit */ }
+            setDismissed(v);
           }}
           style={sx('flex:none;display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:var(--ink-3)')}
         >

@@ -185,7 +185,7 @@ describe('trial cancelled, but this account’s key was never connected (s2)', (
     expect(screen.getAllByText('Not protected').length).toBeGreaterThan(0);
     expect(screen.getByText('Nothing is watching Delta main yet.')).toBeTruthy();
     expect(screen.getByText('Setup · step 3 of 4')).toBeTruthy();
-    expect(screen.getAllByRole('link', { name: 'Connect key' }).some((a) => a.getAttribute('href') === '/dashboard/connect')).toBe(true);
+    expect(screen.getAllByRole('link', { name: 'Connect key' }).some((a) => a.getAttribute('href') === '/dashboard/setup?return=%2Fdashboard%2Flive')).toBe(true);
     expect(screen.getByRole('button', { name: 'Kill switch' }).getAttribute('aria-disabled')).toBe('true');
   });
 });

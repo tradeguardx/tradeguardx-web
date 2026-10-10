@@ -14,11 +14,10 @@ import { sx } from './sx';
  * Trades and Tax included — the two the spec keeps readable in every state.
  */
 export default function LifecycleLock({ lock, from, children }) {
-  /* Keep where they were trying to go, so paying can bring them back.
-     The billing page reads `return` when it supports it. */
-  const to = from && lock.to.startsWith('/dashboard/account/billing')
-    ? `${lock.to}?return=${encodeURIComponent(from)}`
-    : lock.to;
+  /* Every lock CTA carries where they were (spec §1.3), so paying or
+     finishing setup can bring them back. TODO: Plan & billing and
+     onboarding do not read `return` yet. */
+  const to = from ? `${lock.to}?return=${encodeURIComponent(from)}` : lock.to;
   return (
     <div style={{ position: 'relative' }}>
       <div inert aria-hidden="true" style={sx('filter:blur(6px);pointer-events:none;user-select:none;max-height:calc(100vh - 140px);overflow:hidden')}>

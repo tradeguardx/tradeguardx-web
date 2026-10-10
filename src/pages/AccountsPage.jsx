@@ -176,7 +176,10 @@ export default function AccountsPage() {
            the wrong thing. */
         const d = life?.unprotected
           ? { ...st.describe, label: life.accountLabel, tone: 'red', action: life.band?.cta ?? st.describe.action, to: life.band?.to ?? st.describe.to }
-          : st.describe;
+          : life?.accountSuffix && !st.describe.loading
+            // tc / pc: every label carries the date protection ends.
+            ? { ...st.describe, label: `${st.describe.label} · ${life.accountSuffix}` }
+            : st.describe;
         const tone = d.tone;
         const locked = st.guard === 'locked';
         /*

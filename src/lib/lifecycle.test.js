@@ -116,7 +116,9 @@ describe('setup states carry the spec’s own pill and band', () => {
     const v = lifecycleView('s2', { accountName: 'Shark' });
     expect(v.pill).toBe('Not protected');
     expect(v.band.title).toBe('Nothing is watching Shark yet.');
-    expect(v.band.to).toBe('/dashboard/connect');
+    // Setup CTAs go to onboarding, which opens at the case's step (handoff 11).
+    expect(v.band.to).toBe('/dashboard/setup');
+    expect(v.lock.to).toBe('/dashboard/setup');
     expect(v.lock.title).toBe('Connect your key to see this');
   });
 
@@ -124,6 +126,49 @@ describe('setup states carry the spec’s own pill and band', () => {
     const v = lifecycleView('s3');
     expect(v.pill).toBe('Guard off');
     expect(v.band.body).toMatch(/₹0 today/);
+  });
+});
+
+describe('handoff 11 details', () => {
+  it('s0 band is grey', () => {
+    expect(lifecycleView('s0').band.tone).toBe('neutral');
+  });
+
+  it('states the amount where the spec does, and drops it when unknown', () => {
+    const pf = lifecycleView('pf', { price: '₹1,299', periodEnd: '2026-10-15T12:00:00Z' });
+    expect(pf.band.cta).toBe('Pay ₹1,299');
+    expect(pf.lock.cta).toBe('Pay ₹1,299');
+    expect(pf.hero.sub).toMatch(/declined ₹1,299 on 15 Oct/);
+    expect(lifecycleView('pf').band.cta).toBe('Pay now');
+    expect(lifecycleView('p', { price: '₹1,299' }).toast).toBe('Payment received · ₹1,299. Invoice in Plan & billing.');
+    expect(lifecycleView('t6', { price: '₹1,299', autoRenews: true, endsAt: '2026-10-15T12:00:00Z' }).band.body).toMatch(/We’ll charge ₹1,299/);
+  });
+
+  it('t6 hides for the day, pc for three', () => {
+    expect(lifecycleView('t6', { autoRenews: true, endsAt: '2026-10-15T12:00:00Z' }).band.dismissDays).toBe(1);
+    expect(lifecycleView('pc', { endsAt: '2026-11-15T12:00:00Z' }).band.dismissDays).toBe(3);
+    expect(lifecycleView('tc', { endsAt: '2026-10-15T12:00:00Z' }).band.dismissible).toBeFalsy();
+  });
+
+  it('suffixes account labels in tc and pc', () => {
+    expect(lifecycleView('tc', { endsAt: '2026-10-15T12:00:00Z' }).accountSuffix).toBe('until 15 Oct');
+  });
+
+  it('names the switch-off reason, with lf as "plan ended"', () => {
+    expect(lifecycleView('lf').offReason).toBe('plan ended');
+    expect(lifecycleView('te').offReason).toBe('trial ended');
+    expect(lifecycleView('pf').offReason).toBe('payment failed');
+  });
+
+  it('a flip with no toast of its own says "Your guard is on/off."', () => {
+    expect(entryToastFor('tx', 'pf', lifecycleView('pf'))).toBe('Payment failed. Your guard is off until it goes through.');
+    expect(entryToastFor('pc', 'pe', lifecycleView('pe'))).toBe('Your guard is off.');
+    expect(entryToastFor('p', 'pc', { toast: null })).toBeNull();
+  });
+
+  it('names the account in t1 and tx', () => {
+    expect(lifecycleView('t1', { accountName: 'Delta · Main' }).toast).toBe('Guard on. Delta · Main is protected.');
+    expect(lifecycleView('tx', { accountName: 'Delta · Main', autoRenews: true }).hero.title).toBe('Delta · Main is protected.');
   });
 });
 
@@ -190,5 +235,17 @@ describe('entry toasts', () => {
 
   it('uses the state’s own toast otherwise', () => {
     expect(entryToastFor('t1', 'tc', lifecycleView('tc'))).toBe('Trial cancelled. You won’t be charged.');
+  });
+});
+
+describe('not enforced (spec §1.5)', () => {
+  it('names the rule and the plan as the reason when the engine says so', async () => {
+    const { unenforcedLabel, isUnenforced } = await import('./lifecycle');
+    const b = { breachType: 'enforcement_unavailable', ruleSlug: 'daily-loss', context: { reason: 'unentitled' } };
+    expect(isUnenforced(b)).toBe(true);
+    expect(unenforcedLabel(b)).toBe('Daily loss limit reached · not enforced (no active plan)');
+    expect(unenforcedLabel(b, { timeline: true })).toBe('Daily loss limit reached · not enforced: plan inactive');
+    // A key problem is not blamed on the plan.
+    expect(unenforcedLabel({ ...b, context: { reason: 'incapable' } }, { unprotected: true })).toBe('Daily loss limit reached · not enforced');
   });
 });
