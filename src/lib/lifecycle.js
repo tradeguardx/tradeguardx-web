@@ -48,8 +48,10 @@ export function lockedRouteOf(pathname, locks) {
   return null;
 }
 
-/** Key statuses that mean a key WAS connected and has since failed. */
-const FAILED_KEY = ['invalid', 'revoked'];
+/** Key statuses that mean a key WAS connected and is not working now.
+ *  `revoked` is a disconnect (by the user, or the exchange killed the key);
+ *  `failed` is the engine giving up on it; `invalid` is an older spelling. */
+const FAILED_KEY = ['invalid', 'revoked', 'failed'];
 
 /** 'none' (never connected) | 'ok' | 'failed', from the credentials status. */
 export function keyStateOf(connection) {
@@ -71,6 +73,11 @@ export function lifecycleIdOf({ planState, accountsCount, keyState }) {
   if (!planState) return null;
   if (!accountsCount) return 's0';
   if (keyState === 'none') return 's2';
+  /* No plan yet and no WORKING key: setup is not finished. A key connected
+     once and since disconnected must not read "Key connected. Guard is off."
+     With a plan, a dead key keeps the plan's case and the account's own key
+     message says what to fix (§5, scenario Q). */
+  if (planState === 'none' && keyState !== 'ok') return 's2';
   if (planState === 'none') return 's3';
   return planState;
 }
@@ -102,6 +109,8 @@ const ENDED_LOCK_BODY = 'Your rules and entries are saved, not deleted. Subscrib
  *                prompt instead of the spec's charge notice: there is no
  *                charge coming, and saying there is would be false.
  *   accountName — the selected account, for "Nothing is watching {account}"
+ *   keyState   — keyStateOf the selected account: s2 says "disconnected"
+ *                rather than "not connected yet" when a key once worked
  *   price      — the plan's price for their billing period, "₹1,299". The
  *                list price: TODO(api) the provider's actual amount due,
  *                which differs only while a coupon applies. Sentences that
@@ -151,7 +160,9 @@ export function lifecycleView(id, ctx = {}) {
         plan: id === 's0' ? 'Setup · step 1 of 4' : 'Setup · step 3 of 4',
         band: id === 's0'
           ? { tone: 'neutral', title: 'Finish setup to switch your guard on.', body: 'About three minutes. Until then nothing is watching your trades.', cta: 'Continue setup', to: ONBOARDING }
-          : { tone: 'red', title: `Nothing is watching ${ctx.accountName || 'this account'} yet.`, body: 'Connect the key to turn your rules into actions.', cta: 'Connect key', to: ONBOARDING },
+          : ctx.keyState === 'failed'
+            ? { tone: 'red', title: `${ctx.accountName || 'This account'}'s key is disconnected.`, body: 'Reconnect it to turn your rules into actions.', cta: 'Reconnect key', to: ONBOARDING }
+            : { tone: 'red', title: `Nothing is watching ${ctx.accountName || 'this account'} yet.`, body: 'Connect the key to turn your rules into actions.', cta: 'Connect key', to: ONBOARDING },
         locks: ['live', 'journal', 'trades', 'tax'],
         lock: {
           title: 'Connect your key to see this',
@@ -165,7 +176,7 @@ export function lifecycleView(id, ctx = {}) {
         ks: { enabled: false, tip: 'Works once your key is connected' },
         badges: id === 's2' ? { connect: '!' } : {},
         rulesBadge: 'DRAFT',
-        facts: [['Rules', 'Draft', 'Nothing enforced yet'], ['Key', 'Not connected', 'Needed to act on trades'], ['Guard', 'Off', 'Switches on with your trial']],
+        facts: [['Rules', 'Draft', 'Nothing enforced yet'], ['Key', ctx.keyState === 'failed' ? 'Disconnected' : 'Not connected', 'Needed to act on trades'], ['Guard', 'Off', 'Switches on with your trial']],
         dial: { label: 'guard off · finish setup' },
         plainEnglish: 'Until setup is finished we are not watching or closing anything. Your rules are saved as a draft.',
         toast: id === 's0' ? 'Welcome. Three minutes to your first protected trade.' : null,

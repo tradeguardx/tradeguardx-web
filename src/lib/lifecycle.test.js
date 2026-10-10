@@ -31,12 +31,24 @@ describe('which state, in the spec’s order (first match wins)', () => {
 
   it('a key that failed after connecting keeps the plan state (§5, scenario Q)', () => {
     expect(lifecycleIdOf({ planState: 'p', accountsCount: 1, keyState: 'failed' })).toBe('p');
+    expect(lifecycleIdOf({ planState: 'pe', accountsCount: 1, keyState: 'failed' })).toBe('pe');
+  });
+
+  it('no plan and a disconnected key is setup (s2), never "Key connected" (s3)', () => {
+    expect(lifecycleIdOf({ planState: 'none', accountsCount: 1, keyState: 'failed' })).toBe('s2');
+    const v = lifecycleView('s2', { accountName: 'Delta-Ex', keyState: 'failed' });
+    expect(v.band.title).toBe("Delta-Ex's key is disconnected.");
+    expect(v.band.cta).toBe('Reconnect key');
+    expect(lifecycleView('s2', { accountName: 'Delta-Ex', keyState: 'none' }).band.title).toBe('Nothing is watching Delta-Ex yet.');
   });
 
   it('reads key states from the credentials status', () => {
     expect(keyStateOf({ status: 'active' })).toBe('ok');
     expect(keyStateOf({ status: 'invalid' })).toBe('failed');
     expect(keyStateOf({ status: 'revoked' })).toBe('failed');
+    // the engine writes `failed`; reading it as "never connected" put paying
+    // users with a dead key into setup
+    expect(keyStateOf({ status: 'failed' })).toBe('failed');
     expect(keyStateOf(null)).toBe('none');
     expect(keyStateOf({ status: 'not_connected' })).toBe('none');
   });

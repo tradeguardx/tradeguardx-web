@@ -263,6 +263,7 @@ export function GuardProvider({ children }) {
    */
   // Memoised: the context value below must stay referentially stable.
   const selectedState = useMemo(() => stateFor(selectedTradingAccountId), [stateFor, selectedTradingAccountId]);
+  const keyState = keyStateOf(selectedState.connection);
   const lifeId = (() => {
     const planState = user?.planState ?? null;
     if (accountsLoading) return null;
@@ -271,7 +272,7 @@ export function GuardProvider({ children }) {
     return lifecycleIdOf({
       planState,
       accountsCount: accounts.length,
-      keyState: keyStateOf(selectedState.connection),
+      keyState,
     });
   })();
   const accountName = selectedState.account?.name ?? '';
@@ -295,9 +296,10 @@ export function GuardProvider({ children }) {
       periodEnd: user?.currentPeriodEnd ?? null,
       autoRenews: Boolean(user?.trialAutoRenews),
       accountName,
+      keyState,
       price,
     }),
-    [lifeId, accountName, price, user?.planStateEndsAt, user?.currentPeriodEnd, user?.trialAutoRenews],
+    [lifeId, accountName, keyState, price, user?.planStateEndsAt, user?.currentPeriodEnd, user?.trialAutoRenews],
   );
 
   /*

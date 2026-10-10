@@ -19,14 +19,14 @@ Every message the dashboard shows about protection, plan and setup: where it app
 Every user is in exactly one case. They're checked in this order, and the first match wins:
 
 1. No trading account → `s0`
-2. Selected account's key never connected → `s2`
-3. No plan yet → `s3`
+2. Selected account's key never connected → `s2`. With no plan yet, a key that is disconnected or failed also counts: setup isn't finished.
+3. No plan yet, key working → `s3`
 4. Otherwise, the plan case.
 
 | Case | Meaning | Protected |
 |---|---|---|
 | `s0` | Signed up, no account | no |
-| `s2` | Key not connected | no |
+| `s2` | Key not connected (or, with no plan, disconnected) | no |
 | `s3` | Key on, no trial yet | no |
 | `t1` | Trial running (more than 2 days left) | yes |
 | `t6` | Trial ending (2 days or less) | yes |
@@ -57,6 +57,7 @@ The band under the top bar shows **only the highest-ranked message**. One banner
 | 10 | **Your account has no active plan.** "…Subscribe to switch your guard on." | `lf` | red | Subscribe | no |
 | 20 | **Finish setup to switch your guard on.** "About three minutes. Until then nothing is watching your trades." | `s0` | grey | Continue setup | no |
 | 20 | **Nothing is watching {account} yet.** "Connect the key to turn your rules into actions." | `s2` | red | Connect key | no |
+| 20 | **{account}'s key is disconnected.** "Reconnect it to turn your rules into actions." | `s2`, key once worked | red | Reconnect key | no |
 | 20 | **Key connected. Guard is off.** "Start your 7-day free trial to switch it on. ₹0 today." | `s3` | amber | Start free trial | no |
 | 30 | **This account cannot trade until the lockout expires** | account locked (manual or by a rule) | red | See the countdown | no |
 | 40 | **This account is not set up yet** | account missing venue or balance | red | Finish setup | no |
