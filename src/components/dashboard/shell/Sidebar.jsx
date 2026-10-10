@@ -51,6 +51,7 @@ export default function Sidebar({ onNavigate }) {
   const { user } = useAuth();
   const g = guard.selected;
   const life = guard.life;
+  const ready = guard.ready;
   // Global count of upcoming high-impact releases — not scoped to the range being browsed.
   const upcoming = useUpcomingCalendar();
   const upcomingHigh = (upcoming.data?.days ?? []).reduce((n, d) => n + d.events.filter((e) => e.impact === 3 && e.time_status === 'exact' && new Date(e.event_time_utc).getTime() > guard.now).length, 0);
@@ -58,7 +59,9 @@ export default function Sidebar({ onNavigate }) {
   // Until the subscription answers, say nothing about the plan rather than
   // "Free" — a paying user reading that on every login is a small betrayal.
   const planWord = user?.planKnown ? user.planLabel || 'Free' : '';
-  const planLine = lifecyclePlanLine(life, user, accounts.length) ?? (planWord
+  // Blank until ready: "Free plan" → "Trial ended" → "No plan" on a reload
+  // was the same flicker as the pages, in miniature.
+  const planLine = !ready ? '' : lifecyclePlanLine(life, user, accounts.length) ?? (planWord
     ? (accounts.length > 1 ? `${planWord} · ${accounts.length} accounts` : `${planWord} plan`)
     : (accounts.length > 1 ? `${accounts.length} accounts` : ''));
 
@@ -87,6 +90,7 @@ export default function Sidebar({ onNavigate }) {
      LOCKED, and the "!" goes where the fix is — Plan & billing for a plan
      problem, Connect key only when the key is what is missing. */
   const decorate = (it) => {
+    if (!ready) return { ...it, badge: '' };
     const mark = life?.badges?.[it.id];
     if (mark) return { ...it, badge: mark, badgeFg: 'var(--red)' };
     if (life?.locks?.includes(it.id)) return { ...it, badge: 'LOCKED', badgeFg: 'var(--ink-faint)', locked: true };

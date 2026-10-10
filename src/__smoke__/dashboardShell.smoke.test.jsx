@@ -14,7 +14,7 @@ const account = {
 };
 
 vi.mock('../context/AuthContext', () => ({
-  useAuth: () => ({ session: { access_token: 'tok' }, user: { id: 'u1', name: 'Prashant Pathak', email: 'p@x.com' }, logout: vi.fn() }),
+  useAuth: () => ({ session: { access_token: 'tok' }, user: { id: 'u1', name: 'Prashant Pathak', email: 'p@x.com', planKnown: true }, logout: vi.fn() }),
 }));
 vi.mock('../lib/supabaseClient', () => ({
   supabase: { channel: () => ({ on() { return this; }, subscribe() { return this; } }), removeChannel: vi.fn() },

@@ -66,6 +66,9 @@ vi.mock('../api/tradesApi', () => ({
   fetchUnifiedTrades: vi.fn(async () => closedTrades),
   fetchBehaviorTags: vi.fn(async () => ({ behaviorTags: [{ tag: 'OVERTRADER', severity: 'HIGH', matchCount: 2, tradeCount: 3, description: 'You take too many trades.' }], disciplineScore: { overall: 72 } })),
 }));
+vi.mock('../api/pricingApi', () => ({
+  getPricingPlans: vi.fn(async () => [{ slug: 'pro', intervals: [{ interval: 'monthly', price: 1299 }] }]),
+}));
 vi.mock('../api/userApi', () => ({ armLockout: vi.fn(), LOCKOUT_HOUR_OPTIONS: [3, 6, 12] }));
 vi.mock('../components/support/SupportChat', () => ({ default: () => null }));
 vi.mock('../components/dashboard/WelcomeCelebration', () => ({ default: () => null }));
@@ -110,7 +113,7 @@ describe('payment failed (pf)', () => {
     mount('/dashboard/overview');
     await waitFor(() => expect(screen.getAllByText('Not protected · payment failed').length).toBeGreaterThan(0));
     expect(screen.getByText('Payment failed. Your guard is off.')).toBeTruthy();
-    expect(screen.getAllByRole('link', { name: 'Pay now' })[0].getAttribute('href')).toBe('/dashboard/account/billing');
+    expect(screen.getAllByRole('link', { name: 'Pay ₹1,299' })[0].getAttribute('href')).toBe('/dashboard/account/billing');
   });
 
   it('turns the Overview dial off and stops implying enforcement', async () => {
@@ -125,7 +128,7 @@ describe('payment failed (pf)', () => {
   it('locks Live guard with one way out, and leaves the page underneath', async () => {
     mount('/dashboard/live');
     await waitFor(() => expect(screen.getByText('Off until your payment goes through')).toBeTruthy());
-    const cta = screen.getAllByRole('link', { name: 'Pay now' }).find((a) => a.getAttribute('href').includes('return='));
+    const cta = screen.getAllByRole('link', { name: 'Pay ₹1,299' }).find((a) => a.getAttribute('href').includes('return='));
     expect(cta.getAttribute('href')).toBe('/dashboard/account/billing?return=%2Fdashboard%2Flive');
   });
 
@@ -197,5 +200,27 @@ describe('an API that does not send the lifecycle state yet', () => {
     mount('/dashboard/live');
     await waitFor(() => expect(screen.getAllByText(/ARMED/i).length).toBeGreaterThan(0));
     expect(screen.queryByText('LOCKED')).toBeNull();
+  });
+});
+
+describe('a reload shows one skeleton, then the real page — nothing in between', () => {
+  beforeEach(() => { auth.user = failed; });
+  afterEach(() => {
+    getExchangeCredentialsStatus.mockImplementation(async () => ({ status: 'active', enforcementCapable: true, lastValidatedAt: new Date().toISOString() }));
+  });
+
+  it('holds every state-dependent part until the key status is known', async () => {
+    let release;
+    const held = new Promise((r) => { release = () => r({ status: 'active', enforcementCapable: true }); });
+    getExchangeCredentialsStatus.mockImplementation(() => held);
+    mount('/dashboard/live');
+    expect(await screen.findByText('Loading your dashboard…')).toBeTruthy();
+    // No guess on screen: no lock, no band, no page, no plan line.
+    expect(screen.queryByText('Off until your payment goes through')).toBeNull();
+    expect(screen.queryByText('Payment failed. Your guard is off.')).toBeNull();
+    expect(screen.queryByText('Pro · payment failed')).toBeNull();
+    release();
+    expect(await screen.findByText('Off until your payment goes through')).toBeTruthy();
+    expect(screen.queryByText('Loading your dashboard…')).toBeNull();
   });
 });

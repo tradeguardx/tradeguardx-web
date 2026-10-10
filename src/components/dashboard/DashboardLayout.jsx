@@ -23,6 +23,7 @@ import { KillSwitchButton, KillSwitchModal } from './shell/KillSwitch';
 import BottomTabs from './shell/BottomTabs';
 import LifecycleLock from './shell/LifecycleLock';
 import LifecycleToast from './shell/LifecycleToast';
+import DashboardSkeleton from './shell/DashboardSkeleton';
 import { lockedRouteOf } from '../../lib/lifecycle';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { sx } from './shell/sx';
@@ -43,7 +44,7 @@ import { sx } from './shell/sx';
 
 function Shell() {
   const { user } = useAuth();
-  const { life } = useGuard();
+  const { life, ready } = useGuard();
   const { theme } = useDashboardTheme();
   const { prefs } = usePrefs();
   const { pathname } = useLocation();
@@ -185,7 +186,9 @@ function Shell() {
             <NotificationPanel />
             <AvatarMenu />
           </div>
-          {!setupFlow && <GuardBand />}
+          {/* The band waits for `ready` too: a band that appears, changes
+              colour and then disappears is the flicker this gate removes. */}
+          {!setupFlow && ready && <GuardBand />}
         </header>
 
         <BreachToast />
@@ -195,7 +198,11 @@ function Shell() {
           {/* The trial banner used to sit here, directly under the guard band
               and the same size as it — two alarms competing. It is now a line
               inside GuardBand. */}
-          {lockedRoute && life.lock ? (
+          {/* One skeleton until everything that decides this page is known,
+              then the real page once — never a guess that is replaced. */}
+          {!ready ? (
+            <DashboardSkeleton />
+          ) : lockedRoute && life.lock ? (
             <LifecycleLock lock={life.lock} from={pathname}><Outlet /></LifecycleLock>
           ) : legacyLocked ? <UpgradeWall /> : <Outlet />}
         </main>

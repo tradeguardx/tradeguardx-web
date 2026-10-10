@@ -4,7 +4,7 @@ import { pillOf } from './lifecycleShell';
 
 /** Guard pill — reference lines 327–330. */
 export default function GuardPill() {
-  const { selected, life } = useGuard();
+  const { selected, life, ready } = useGuard();
   if (!selected.account) {
     // s0: nothing to describe yet but the setup itself.
     if (life?.id !== 's0') return null;
@@ -18,7 +18,7 @@ export default function GuardPill() {
   // Until the guard state is known the pill shows a neutral placeholder: a
   // coloured verdict here was the first thing people saw on login, and it was
   // wrong for the half-second before the fetch landed.
-  if (selected.describe.loading) {
+  if (!ready || selected.describe.loading) {
     return (
       <div data-tgx-mdhide="1" aria-hidden style={sx('display:flex;align-items:center;gap:9px;padding:7px 13px 7px 11px;border-radius:999px;white-space:nowrap;flex:none;border:1px solid var(--line);background:var(--surface-2)')}>
         <span style={sx('flex:none;width:7px;height:7px;border-radius:50%;background:var(--surface-3);animation:tgxPulse 1.4s ease-in-out infinite')} />

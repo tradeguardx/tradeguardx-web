@@ -28,6 +28,7 @@ import {
 import { billingPageOf } from '../lib/billingPage';
 import { openSupport } from '../components/support/supportBus';
 import BillingStep from '../components/dashboard/billing/BillingStep';
+import DashboardSkeleton from '../components/dashboard/shell/DashboardSkeleton';
 
 /**
  * Plan & billing, after the user has a subscription.
@@ -77,7 +78,10 @@ export default function BillingPage() {
   const { accounts } = useTradingAccounts();
   const { selected: g, life } = useGuard();
 
-  const [plans, setPlans] = useState([]);
+  /* null until the pricing call answers: every amount on this page comes from
+     it, and "Pro · —" flashing into "₹1,299" is the flicker we just removed
+     from the shell. */
+  const [plans, setPlans] = useState(null);
   const [busy, setBusy] = useState('');
   const [confirming, setConfirming] = useState(false);
   /* What the subscription is scheduled to become. Read from the provider, not
@@ -152,7 +156,7 @@ export default function BillingPage() {
 
   const interval = me?.subscription?.billingInterval ?? 'monthly';
   const options = useMemo(() => {
-    const rows = plans.find((p) => String(p.slug || '').toLowerCase() === 'pro')?.intervals ?? [];
+    const rows = (plans ?? []).find((p) => String(p.slug || '').toLowerCase() === 'pro')?.intervals ?? [];
     return ['monthly', 'quarterly', 'yearly']
       .map((id) => {
         const r = rows.find((x) => x.interval === id);
@@ -366,6 +370,8 @@ export default function BillingPage() {
    * onboarding ends with. Before a key is verified (s0, s2) a trial cannot
    * start, so its button says "Continue setup" and goes back to onboarding.
    */
+  if (plans === null && state !== 'setup' && state !== 'setupEarly') return <DashboardSkeleton />;
+
   if (state === 'setup' || state === 'setupEarly') {
     return <BillingStep setupCta={state === 'setupEarly' ? { label: 'Continue setup', to: '/dashboard/setup' } : undefined} />;
   }

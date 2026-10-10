@@ -33,6 +33,8 @@ import { getPricingPlans } from '../api/pricingApi';
 
 const GuardContext = createContext(null);
 const POLL_MS = 20_000;
+/** Longest the dashboard waits for its inputs before rendering regardless. */
+const READY_TIMEOUT_MS = 8_000;
 const TICK_MS = 1_000;
 
 function settle(p) {
@@ -40,7 +42,7 @@ function settle(p) {
 }
 
 export function GuardProvider({ children }) {
-  const { session, user, subscription } = useAuth();
+  const { session, user, subscription, subscriptionError } = useAuth();
   /*
    * Entitlement, mirroring isEntitled() in the engine's exchange/credentials.ts
    * and the `access` the subscription API computes. The engine stopped acting
@@ -293,8 +295,36 @@ export function GuardProvider({ children }) {
     [lifeId, accountName, price, user?.planStateEndsAt, user?.currentPeriodEnd, user?.trialAutoRenews],
   );
 
+  /*
+   * READY: EVERYTHING THAT DECIDES WHAT THE DASHBOARD SAYS IS KNOWN.
+   *
+   * On a reload the inputs land one at a time — session, then the plan,
+   * then the accounts, then the selected account's key — and every screen
+   * used to render its best guess at each step: the "no plan" card before
+   * the plan, step one of setup before the accounts, an open page before its
+   * lock. Each guess was replaced a moment later, so a reload walked through
+   * three or four different pages before settling.
+   *
+   * Nothing state-dependent renders until all of them are in; the shell
+   * shows one skeleton meanwhile and then the real page, once. A failed
+   * plan call counts as an answer (the old behaviour takes over), and a
+   * safety valve renders anyway after READY_TIMEOUT_MS so a hung request can
+   * never leave someone staring at a skeleton.
+   */
+  const planAnswered = Boolean(user?.planKnown) || Boolean(subscriptionError) || !accessToken;
+  const keyAnswered = accounts.length === 0 || selectedState.loaded;
+  const inputsReady = planAnswered && !accountsLoading && keyAnswered;
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    if (inputsReady) return undefined;
+    const t = setTimeout(() => setTimedOut(true), READY_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [inputsReady]);
+  const ready = inputsReady || timedOut;
+
   const value = useMemo(
     () => ({
+      ready,
       life,
       loaded,
       now,
@@ -311,7 +341,7 @@ export function GuardProvider({ children }) {
       user,
       subscribeTick,
     }),
-    [life, loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedState, accounts, refresh, user, subscribeTick],
+    [ready, life, loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedState, accounts, refresh, user, subscribeTick],
   );
 
   return <GuardContext.Provider value={value}>{children}</GuardContext.Provider>;

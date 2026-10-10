@@ -1456,6 +1456,10 @@
 @keyframes tgxStripes { from { background-position:0 0 } to { background-position:40px 0 } }
 @keyframes tgxDraw    { from { stroke-dashoffset:440 } to { stroke-dashoffset:0 } }
 @keyframes tgxShimmer { from { transform:translateX(-100%) } to { transform:translateX(260%) } }
+/* Dashboard skeleton: one soft sweep per block (DashboardSkeleton.jsx). */
+.tgx-skel__sweep { position:absolute; inset:0; width:45%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.055),transparent); animation:tgxShimmer 1.6s ease-in-out infinite; }
+[data-dash-theme="light"] .tgx-skel__sweep { background:linear-gradient(90deg,transparent,rgba(15,23,42,.06),transparent); }
+@media (prefers-reduced-motion: reduce) { .tgx-skel__sweep { animation:none; display:none; } }
 
 @media (prefers-reduced-motion: reduce) {
   .live-card * { animation: none !important; transition: none !important; }
