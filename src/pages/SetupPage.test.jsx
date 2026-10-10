@@ -43,6 +43,8 @@ const accountsCtx = {
   setSelectedTradingAccountId: vi.fn(),
 };
 vi.mock('../context/TradingAccountContext', () => ({ useTradingAccounts: () => accountsCtx }));
+const toastInfo = vi.fn();
+vi.mock('../components/common/ToastProvider', () => ({ useToast: () => ({ info: toastInfo, success: vi.fn(), error: vi.fn() }) }));
 
 const { default: SetupPage } = await import('./SetupPage');
 
@@ -114,6 +116,20 @@ describe('setup, as a page', () => {
    * billing already ticked and the flow skipped the step entirely, so it
    * never asked, and the day the trial lapsed the guard simply stopped.
    */
+  /* With no active plan the new account inherits the case: billing is the
+     user's plan, restarted on Plan & billing, not a step of this account. */
+  it('skips billing when the plan is off, and says the guard is off', async () => {
+    auth.user = { access: 'expired', isExpired: true, planState: 'te' };
+    toastInfo.mockClear();
+    mount();
+    fireEvent.click(await screen.findByText('Delta'));
+    fireEvent.click(await screen.findByText('create account'));
+    fireEvent.click(await screen.findByText('connect'));
+    await screen.findByText('Set up your guard');
+    expect(screen.queryByText('billing step')).toBeNull();
+    expect(toastInfo).toHaveBeenCalledWith('Account connected. Your guard is off until your plan is active.');
+  });
+
   it('still asks a no-card trialist for billing', async () => {
     auth.user = { access: 'trial', isTrial: true, trialAutoRenews: false };
     mount();

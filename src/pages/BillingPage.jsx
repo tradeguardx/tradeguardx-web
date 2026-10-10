@@ -23,8 +23,11 @@ import { sx } from '../components/dashboard/shell/sx';
 import CelebrationOverlay from '../components/dashboard/CelebrationOverlay';
 import { debitMayBeInFlight, MANDATE_NOTE, IN_FLIGHT_NOTE } from '../lib/mandateWindow';
 import {
-  BAR_COLOUR, BODY, CANCEL_COPY, EVERY, NEXT_LABEL, PER, PLAN_NOTE, STATE_CHIP, STATE_SKIN,
+  BAR_COLOUR, BODY, CANCEL_COPY, ENDED_BODY, EVERY, NEXT_LABEL, PER, PLAN_NOTE, STATE_CHIP, STATE_SKIN,
 } from './billing/billingCopy';
+import { billingPageOf } from '../lib/billingPage';
+import { openSupport } from '../components/support/supportBus';
+import BillingStep from '../components/dashboard/billing/BillingStep';
 
 /**
  * Plan & billing, after the user has a subscription.
@@ -72,7 +75,7 @@ export default function BillingPage() {
   const toast = useToast();
   const { session, user, subscription, refetchSubscription } = useAuth();
   const { accounts } = useTradingAccounts();
-  const { selected: g } = useGuard();
+  const { selected: g, life } = useGuard();
 
   const [plans, setPlans] = useState([]);
   const [busy, setBusy] = useState('');
@@ -91,6 +94,30 @@ export default function BillingPage() {
     if (params.get('checkout') === 'success') { clearPendingCheckoutPlan(); refetchSubscription?.(); }
   }, [params, refetchSubscription]);
   useEffect(() => { getPricingPlans().then(setPlans).catch(() => setPlans([])); }, []);
+
+  /*
+   * BACK TO WHERE THEY WERE (spec §1.3).
+   *
+   * A lock sends people here with ?return=/dashboard/live. It is kept across
+   * the trip to checkout, and once protection is back they land on the page
+   * they were trying to use. Only dashboard paths: a return link that could
+   * point anywhere is an open redirect.
+   */
+  useEffect(() => {
+    const r = params.get('return');
+    if (r && /^\/dashboard\/[\w\-/]*$/.test(r)) {
+      try { window.sessionStorage.setItem('tgx.billing.return', r); } catch { /* best effort */ }
+    }
+  }, [params]);
+  useEffect(() => {
+    if (!life?.protected) return;
+    let r = null;
+    try { r = window.sessionStorage.getItem('tgx.billing.return'); } catch { /* none */ }
+    if (!r) return;
+    try { window.sessionStorage.removeItem('tgx.billing.return'); } catch { /* none */ }
+    // Only once a payment has actually brought protection back.
+    if (params.get('checkout') === 'success' || params.get('return')) navigate(r, { replace: true });
+  }, [life?.protected, params, navigate]);
   useEffect(() => {
     if (!accessToken) return;
     let live = true;
@@ -103,12 +130,24 @@ export default function BillingPage() {
   }, [accessToken]);
 
   const me = subscription ?? null;
-  const state = billingStateOf({
+  /*
+   * WHICH PAGE, FROM THE LIFECYCLE CASE.
+   *
+   * The case (t1 … nr) decides the page state (lifecycle spec §3.9). Before
+   * the case is known — or on an API that does not send it — the page falls
+   * back to deriving it from the subscription, exactly as it used to.
+   */
+  const bp = billingPageOf(life, { autoRenews: Boolean(user?.trialAutoRenews) });
+  const derived = billingStateOf({
     access: user?.access,
     trial: user?.trialAutoRenews ? { autoRenews: true } : null,
     canceled: user?.subscriptionCanceled,
     subscription: me?.subscription ?? null,
   });
+  const state = bp ? (bp.page === 'legacy' ? 'none' : bp.page) : derived;
+  const endedFrom = bp?.endedFrom ?? null;
+  /* tc counts down to the trial end, pc to the period end (spec ⚠ on tc). */
+  const trialCancelled = state === 'cancelled' && (bp ? bp.trial : Boolean(me?.subscription?.trialEndsAt));
   useEffect(() => { trackBilling('billing_page_viewed', { state }); }, [state]);
 
   const interval = me?.subscription?.billingInterval ?? 'monthly';
@@ -127,7 +166,9 @@ export default function BillingPage() {
   /* Trial ends on trialEndsAt; a paid period ends on currentPeriodEnd. Both
      are the same question — "when does the next thing happen" — but reading
      the wrong one tells a trialist their renewal date. */
-  const nextAt = state === 'trial' ? me?.subscription?.trialEndsAt : me?.subscription?.currentPeriodEnd;
+  const nextAt = state === 'trial' || state === 'confirming' || trialCancelled
+    ? me?.subscription?.trialEndsAt ?? me?.subscription?.currentPeriodEnd
+    : me?.subscription?.currentPeriodEnd;
   const nextDate = fmtDate(nextAt);
   const left = daysUntil(nextAt);
   const createdAt = me?.subscription?.createdAt ?? null;
@@ -235,7 +276,9 @@ export default function BillingPage() {
       setConfirming(false);
       toast.success(
         inFlight ? 'Cancelled' : state === 'trial' ? 'Cancelled — you will not be charged' : 'Cancelled',
-        `You keep everything until ${nextDate ?? 'the end of your period'}.`,
+        state === 'failed'
+          ? 'We have stopped retrying. Your rules, journal and tax history are kept.'
+          : `You keep everything until ${nextDate ?? 'the end of your period'}.`,
       );
       refetchSubscription?.();
     } catch (e) {
@@ -274,9 +317,9 @@ export default function BillingPage() {
     trackBilling('billing_resume_clicked', { to: toInterval ?? interval });
     setBusy(toInterval ? `switch:${toInterval}` : 'resume');
     try {
-      const res = await resumeSubscription({ accessToken, interval: toInterval });
-      const name = options.find((o) => o.id === (res?.interval ?? interval))?.name ?? 'Pro';
-      toast.success(`Back on ${name}`, 'Your guard keeps running. Nothing was charged today.');
+      await resumeSubscription({ accessToken, interval: toInterval });
+      // Protection never changed, so there is nothing more to say (spec, tc/pc).
+      toast.success('Resumed. Nothing changes.', 'Your guard keeps running. Nothing was charged today.');
       refetchSubscription?.();
     } catch (e) {
       if (e?.status === 409) {
@@ -296,7 +339,36 @@ export default function BillingPage() {
     } finally {
       setBusy('');
     }
-  }, [accessToken, interval, options, refetchSubscription, toast]);
+  }, [accessToken, interval, refetchSubscription, toast]);
+
+  /*
+   * Ended: a new subscription, charged now — there is no second trial, and
+   * the server gives a spent trial 0 free days whatever we send.
+   */
+  const subscribeNow = useCallback(async (toInterval) => {
+    if (!accessToken) { toast.error('Not signed in', 'Please sign in again.'); return; }
+    trackBilling('billing_subscribe_clicked', { state, interval: toInterval });
+    setBusy(`switch:${toInterval}`);
+    try {
+      const res = await createCheckoutSession({ accessToken, planSlug: 'pro', interval: toInterval });
+      if (!res?.checkoutUrl) throw new Error('Could not open checkout.');
+      window.location.href = res.checkoutUrl;
+    } catch (e) {
+      toast.error('Could not open checkout', e?.message || 'Please try again.');
+      setBusy('');
+    }
+  }, [accessToken, state, toast]);
+
+  /*
+   * SETUP: THE BILLING SETUP STEP ITSELF.
+   *
+   * Nothing about a subscription exists yet, so this page is the same step
+   * onboarding ends with. Before a key is verified (s0, s2) a trial cannot
+   * start, so its button says "Continue setup" and goes back to onboarding.
+   */
+  if (state === 'setup' || state === 'setupEarly') {
+    return <BillingStep setupCta={state === 'setupEarly' ? { label: 'Continue setup', to: '/dashboard/setup' } : undefined} />;
+  }
 
   if (state === 'none') {
     /*
@@ -328,26 +400,42 @@ export default function BillingPage() {
      */
     const spent = Boolean(user?.isExpired);
     const endedOn = spent ? fmtDate(me?.subscription?.currentPeriodEnd) : null;
+    /* The old no-card trial, ended but still inside the engine's 3-day grace
+       (tx without a card): protected for now, no payment coming. */
+    const settling = life?.id === 'tx';
+    const guardUntil = settling ? fmtDate(user?.planStateEndsAt) : null;
     return (
       <div style={sxw('max-width:1120px;margin:0 auto')}>
         <h1 style={sxw("margin:0;font:600 28px/1.1 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Plan &amp; billing</h1>
         <p style={sxw('margin:6px 0 0;font-size:13.5px;color:#8a96a8')}>Prices include 18% GST. Invoices are GST-compliant.</p>
         <section style={sxw(`margin-top:20px;${CARD}`)}>
           <p style={sxw('margin:0 0 14px;font-size:13.5px;line-height:1.55;color:#c9d2e0')}>
-            {carrying
+            {settling
+              ? `Your free trial has ended and no payment method is set up. Your guard stays on${guardUntil ? ` until ${guardUntil}` : ' for a short while'}. Subscribe to keep it on — your free week is used, so the first charge is today.`
+              : carrying
               ? `Your free trial has ${left} day${left === 1 ? '' : 's'} left and no payment method attached, so your guard stops when it ends. Add one and you keep all ${left} — nothing is charged today.`
               : spent
                 ? `Your free trial ended${endedOn ? ` on ${endedOn}` : ''}, so nothing is enforcing your rules. Subscribe to switch the guard back on${cur ? ` — ${inr(cur.price)} ${PER[interval]}` : ''}. Your free week is already used, so the first charge is today.`
                 : 'You don’t have a plan yet. Setting one up switches your guard on — the first 7 days are free and nothing is charged today.'}
           </p>
           <button type="button" onClick={() => navigate('/dashboard/activate')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
-            {carrying ? `Set up billing · keep your ${left} days` : spent ? 'Subscribe' : 'Start 7 days free'}
+            {settling ? 'Subscribe' : carrying ? `Set up billing · keep your ${left} days` : spent ? 'Subscribe' : 'Start 7 days free'}
           </button>
         </section>
       </div>
     );
   }
 
+  /* Only trial, cancelled and active have a bar. A failed payment has none:
+     there is no grace period, so nothing is counting down (spec, pf). */
+  const periodDays = { monthly: 30, quarterly: 91, yearly: 365 }[interval] ?? 30;
+  const periodStart = (() => {
+    if (!nextAt) return null;
+    const d = new Date(nextAt);
+    d.setMonth(d.getMonth() - ({ monthly: 1, quarterly: 3, yearly: 12 }[interval] ?? 1));
+    return fmtDate(d);
+  })();
+  const windowDays = trialCancelled ? trialDays : periodDays;
   const bar =
     state === 'trial'
       ? {
@@ -356,14 +444,52 @@ export default function BillingPage() {
           w: left != null ? `${Math.round(((trialDays - left) / trialDays) * 100)}%` : '0%',
         }
       : state === 'cancelled'
-        ? { l: 'Protection ends', r: left != null ? `${left} days left` : '', w: '58%' }
-        : state === 'failed'
-          ? { l: 'Grace period', r: left != null ? `${left} days left` : '', w: '14%' }
-          : { l: nextDate ? `Renews ${nextDate}` : 'Renews', r: left != null ? `${left} days to renewal` : '', w: '23%' };
+        ? { l: 'Protection ends', r: left != null ? `${left} ${left === 1 ? 'day' : 'days'} left` : '', w: left != null ? `${Math.max(2, Math.min(100, Math.round((1 - left / windowDays) * 100)))}%` : '50%' }
+        : state === 'active'
+          ? { l: periodStart && nextDate ? `${periodStart} → ${nextDate}` : nextDate ? `Renews ${nextDate}` : 'Renews', r: left != null ? `${left} days to renewal` : '', w: left != null ? `${Math.max(2, Math.min(100, Math.round((1 - left / periodDays) * 100)))}%` : '0%' }
+          : null;
+
+  const price = inr(cur?.price);
+  const failedOn = fmtDate(me?.subscription?.currentPeriodEnd);
+  /* The line beside the chip. Dates we do not hold are left out, never guessed. */
+  const since = state === 'trial' ? (startedAt ? `Started ${startedAt}` : null)
+    : state === 'active' ? (startedAt ? `Member since ${startedAt}` : null)
+      : state === 'failed' ? (failedOn ? `Tried ${failedOn}` : null)
+        : state === 'cancelled' ? 'Cancelled'
+          : state === 'confirming' ? (nextDate ? `Trial ended ${nextDate}` : 'Trial ended')
+            : state === 'comp' ? 'Granted by TradeGuardX'
+              : state === 'unknown' ? 'Plan details unavailable'
+                : state === 'ended'
+                  ? bp?.legacyFree ? 'No active plan'
+                    : endedFrom === 'pro' ? (failedOn ? `Pro ended ${failedOn}` : 'Pro ended')
+                      : endedFrom === 'unpaid' ? (failedOn ? `Ended ${failedOn} · retries failed` : 'Ended · retries failed')
+                        : (failedOn ? `Trial ended ${failedOn}` : 'Trial ended')
+                  : null;
+  const body = state === 'ended'
+    ? fill(ENDED_BODY[bp?.legacyFree ? 'legacyFree' : endedFrom ?? 'pro'], { price })
+    : fill(BODY[state] ?? '', { date: nextDate ?? 'your renewal date' });
+  /* Period picker: trial and active change the plan; ended picks the plan to
+     subscribe to; cancelled resumes onto one. Hidden while a payment is
+     failing or confirming, and for comp or an unknown plan. */
+  const showPeriod = ['trial', 'active', 'cancelled', 'ended'].includes(state);
+  const neverCharged = state === 'ended' && endedFrom === 'trial';
+  const invoiceText = state === 'trial'
+    ? `No invoices yet. Your first one arrives on ${nextDate ?? 'your first payment'}, by email and here.`
+    : state === 'cancelled' && trialCancelled ? 'No invoices. You won’t be charged.'
+      : state === 'comp' ? 'No invoices. Your plan is complimentary.'
+        : state === 'unknown' ? 'Invoices are unavailable right now.'
+          : neverCharged ? 'No invoices. You were never charged.'
+            : state === 'confirming' ? ''
+              : 'Your invoices, with GST, are in the billing portal.';
+  const showPortalInvoices = !(state === 'trial' || state === 'comp' || state === 'unknown' || state === 'confirming' || neverCharged || (state === 'cancelled' && trialCancelled));
 
   const rulesOn = g?.rulesOn ?? 0;
   const rulesTotal = g?.rulesTotal ?? 0;
-  const cancelCopy = CANCEL_COPY[state];
+  const cancelCopy = state === 'cancelled' && trialCancelled
+    ? { ...CANCEL_COPY.cancelled, btn: 'Resume trial' }
+    : state === 'ended' && endedFrom === 'unpaid'
+      ? { ...CANCEL_COPY.ended, btn: `Pay ${price}` }
+      : CANCEL_COPY[state] ?? null;
 
   return (
     <div style={sxw('max-width:1120px;margin:0 auto;padding-bottom:40px')}>
@@ -383,24 +509,24 @@ export default function BillingPage() {
                 <span aria-hidden style={sxw(`width:6px;height:6px;border-radius:50%;background:${chip.fg}`)} />
                 {chip.label}
               </span>
-              {startedAt && <span style={sxw('font-size:12.5px;color:#8a96a8')}>{state === 'trial' ? `Started ${startedAt}` : `Member since ${startedAt}`}</span>}
+              {since && <span style={sxw('font-size:12.5px;color:#8a96a8')}>{since}</span>}
             </div>
 
             <div style={sxw('margin-top:14px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap')}>
-              <h2 style={sxw("margin:0;font:600 26px/1.1 'Space Grotesk',sans-serif;letter-spacing:-.03em")}>Pro · {cur?.name ?? '—'}</h2>
+              <h2 style={sxw("margin:0;font:600 26px/1.1 'Space Grotesk',sans-serif;letter-spacing:-.03em")}>{state === 'comp' ? 'Pro · complimentary' : state === 'unknown' ? 'Pro' : `Pro · ${cur?.name ?? '—'}`}</h2>
               {/* A cancelled plan that still prices itself per month reads as
                   a live subscription. The price is no longer a recurring fact
                   about them, so the date they lose it takes its place. */}
               <span style={sxw(`font:600 15px/1 'Space Grotesk',sans-serif;color:${state === 'cancelled' ? '#fbc94f' : '#a3b0c2'}`)}>
-                {state === 'cancelled' ? `Ends ${nextDate ?? 'soon'}` : `${inr(cur?.price)} ${PER[interval]}`}
+                {state === 'cancelled' ? `Ends ${nextDate ?? 'soon'}` : state === 'comp' || state === 'unknown' ? '' : `${inr(cur?.price)} ${PER[interval]}`}
               </span>
             </div>
 
             <p style={sxw('margin:10px 0 0;font-size:14px;line-height:1.55;color:#c9d2e0;max-width:58ch')}>
-              {fill(BODY[state], { date: nextDate ?? 'your renewal date' })}
+              {body}
             </p>
 
-            <div style={sxw('margin-top:16px;max-width:460px')}>
+            {bar && <div style={sxw('margin-top:16px;max-width:460px')}>
               <div style={sxw('display:flex;justify-content:space-between;font-size:12px;color:#8a96a8')}>
                 <span>{bar.l}</span><span>{bar.r}</span>
               </div>
@@ -414,7 +540,7 @@ export default function BillingPage() {
               >
                 <div style={sxw(`height:100%;border-radius:999px;width:${bar.w};background:${BAR_COLOUR[state]}`)} />
               </div>
-            </div>
+            </div>}
 
             <div style={sxw('margin-top:18px;display:flex;gap:8px;flex-wrap:wrap')}>
               {state === 'trial' && rulesOn === 0 && (
@@ -429,27 +555,55 @@ export default function BillingPage() {
               )}
               {state === 'cancelled' && (
                 <button type="button" disabled={busy === 'resume'} onClick={() => resume()} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
-                  {busy === 'resume' ? 'Opening…' : 'Resume Pro'}
+                  {busy === 'resume' ? 'Opening…' : trialCancelled ? 'Resume trial' : 'Resume Pro'}
                 </button>
               )}
-              <a href="#change" style={sxw('display:inline-flex;align-items:center;min-height:44px;padding:11px 16px;border-radius:11px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);color:#f6f9fc;font-size:13.5px;font-weight:700;text-decoration:none')}>
-                Change plan
-              </a>
+              {state === 'active' && (
+                /* TODO(api): the invoice PDF itself. Until payments lists
+                   invoices, the last one lives in the provider's portal. */
+                <button type="button" disabled={busy === 'portal'} onClick={() => { trackBilling('billing_invoice_downloaded'); portal('portal'); }} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
+                  {busy === 'portal' ? 'Opening…' : 'Download last invoice'}
+                </button>
+              )}
+              {state === 'ended' && (
+                <button type="button" disabled={busy.startsWith('switch') || busy === 'card'} onClick={() => (endedFrom === 'unpaid' ? portal('card') : subscribeNow(interval))} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
+                  {busy.startsWith('switch') || busy === 'card' ? 'Opening…' : endedFrom === 'unpaid' ? `Pay ${price}` : `Subscribe · ${price}`}
+                </button>
+              )}
+              {state === 'unknown' && (
+                <button type="button" onClick={() => openSupport('I can’t see my plan details on Plan & billing.')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:rgba(255,255,255,.1);color:#f6f9fc;font-size:13.5px;font-weight:800')}>
+                  Contact support
+                </button>
+              )}
+              {showPeriod && state !== 'ended' && (
+                <a href="#change" style={sxw('display:inline-flex;align-items:center;min-height:44px;padding:11px 16px;border-radius:11px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);color:#f6f9fc;font-size:13.5px;font-weight:700;text-decoration:none')}>
+                  Change plan
+                </a>
+              )}
             </div>
           </div>
 
           <div style={sxw('flex:1 1 300px;min-width:0;padding:24px;border-left:1px solid rgba(255,255,255,.07);display:grid;gap:14px;align-content:start')}>
             <div>
               <div style={sxw(KICKER)}>{NEXT_LABEL[state]}</div>
-              <div style={sxw(`margin-top:9px;font:700 30px/1 'Space Grotesk',sans-serif;letter-spacing:-.03em;color:${state === 'failed' ? '#ff8178' : state === 'cancelled' ? '#7f8ca0' : '#f6f9fc'}`)}>
-                {state === 'cancelled' ? 'None' : inr(cur?.price)}
+              <div style={sxw(`margin-top:9px;font:700 30px/1 'Space Grotesk',sans-serif;letter-spacing:-.03em;color:${state === 'failed' ? '#ff8178' : ['cancelled', 'comp', 'unknown', 'ended'].includes(state) ? '#7f8ca0' : '#f6f9fc'}`)}>
+                {state === 'unknown' ? '—' : ['cancelled', 'comp', 'ended'].includes(state) ? 'None' : inr(cur?.price)}
               </div>
               <div style={sxw('margin-top:6px;font-size:12.5px;color:#a3b0c2')}>
                 {state === 'cancelled'
-                  ? `Plan ends ${nextDate ?? ''}`
+                  ? `${trialCancelled ? 'Trial ends' : 'Plan ends'} ${nextDate ?? ''}`
                   : state === 'failed'
-                    ? 'We retry automatically'
-                    : `on ${nextDate ?? '—'} · ${state === 'trial' ? `then ${EVERY[interval]}` : 'auto-renews'}`}
+                    /* TODO(api): Dodo's retry dates ("Or we retry on 17 Oct and 20 Oct"). */
+                    ? 'Or we retry automatically'
+                    : state === 'confirming'
+                      ? `Charged ${nextDate ?? 'at the end of your trial'} · confirming`
+                      : state === 'comp'
+                        ? (nextDate ? `Complimentary until ${nextDate}` : 'Complimentary')
+                        : state === 'unknown'
+                          ? 'Not available'
+                          : state === 'ended'
+                            ? 'No active plan'
+                            : `on ${nextDate ?? '—'} · ${state === 'trial' ? `then ${EVERY[interval]}` : 'auto-renews'}`}
               </div>
             </div>
 
@@ -460,7 +614,7 @@ export default function BillingPage() {
               * they are checking what will be charged.
               * TODO(api): surface brand, last4 and expiry on /subscriptions/me.
               */}
-            <div style={sxw(`display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#070a12;box-shadow:inset 0 0 0 1px ${state === 'failed' ? 'rgba(239,68,68,.4)' : 'rgba(255,255,255,.07)'}`)}>
+            <div style={sxw(`display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#070a12;box-shadow:inset 0 0 0 1px ${state === 'failed' || endedFrom === 'unpaid' ? 'rgba(239,68,68,.4)' : 'rgba(255,255,255,.07)'}`)}>
               {/*
                 * Not "CARD". Most people here pay by UPI mandate, and a card
                 * tile on a UPI subscription is the same class of error as
@@ -476,13 +630,22 @@ export default function BillingPage() {
               </span>
               <span style={sxw('flex:1;min-width:0')}>
                 <span style={sxw('display:block;font-size:13px;font-weight:700')}>Payment method on file</span>
-                <span style={sxw(`display:block;margin-top:2px;font-size:11.5px;color:${state === 'failed' ? '#ff8178' : '#7f8ca0'}`)}>
-                  {state === 'failed' ? 'Declined by your bank' : state === 'cancelled' ? 'Will not be charged again' : nextDate ? `Saved for ${nextDate}` : 'Saved'}
+                <span style={sxw(`display:block;margin-top:2px;font-size:11.5px;color:${state === 'failed' || endedFrom === 'unpaid' ? '#ff8178' : '#7f8ca0'}`)}>
+                  {state === 'failed' || endedFrom === 'unpaid' ? (failedOn ? `Declined by bank on ${failedOn}` : 'Declined by your bank')
+                    : state === 'cancelled' ? 'Will not be charged'
+                      : state === 'confirming' ? 'Charge pending'
+                        : state === 'comp' ? 'No card needed'
+                          : state === 'unknown' ? 'Not available'
+                            : state === 'ended' ? 'Saved · charged only when you subscribe'
+                              : state === 'active' ? 'Default'
+                                : nextDate ? `Saved for ${nextDate}` : 'Saved'}
                 </span>
               </span>
-              <button type="button" disabled={busy === 'card'} onClick={() => portal('card')} style={sxw('flex:none;min-height:36px;padding:7px 11px;border:0;border-radius:9px;background:rgba(255,255,255,.07);color:#f6f9fc;font-size:12px;font-weight:700')}>
-                {busy === 'card' ? '…' : 'Update'}
-              </button>
+              {state !== 'comp' && state !== 'unknown' && (
+                <button type="button" disabled={busy === 'card'} onClick={() => portal('card')} style={sxw('flex:none;min-height:36px;padding:7px 11px;border:0;border-radius:9px;background:rgba(255,255,255,.07);color:#f6f9fc;font-size:12px;font-weight:700')}>
+                  {busy === 'card' ? '…' : 'Update'}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -538,7 +701,7 @@ export default function BillingPage() {
         </section>
       </div>
 
-      <section id="change" style={sxw(`margin-top:16px;${CARD}`)}>
+      {showPeriod && <section id="change" style={sxw(`margin-top:16px;${CARD}`)}>
         <div style={sxw('display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap')}>
           <h3 style={sxw(H3)}>Change billing period</h3>
           <span style={sxw('font-size:12px;color:#7f8ca0')}>Every plan includes all five protections</span>
@@ -567,7 +730,8 @@ export default function BillingPage() {
         })()}
         <div style={sxw('margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px')}>
           {options.map((o) => {
-            const isCur = o.id === interval;
+            // With no plan there is no "current" period, only a choice.
+            const isCur = o.id === interval && state !== 'ended';
             const isPending = pending?.interval === o.id;
             const saving = savingVsMonthly(o, monthlyPrice);
             return (
@@ -599,12 +763,13 @@ export default function BillingPage() {
                     the label says so rather than un-cancelling them quietly. */}
                 <button
                   type="button"
-                  disabled={(isCur && state !== 'cancelled') || isPending || state === 'failed' || busy.startsWith('switch') || busy === 'undo'}
-                  onClick={() => (state === 'cancelled' ? resume(o.id) : switchTo(o))}
-                  style={sxw(`min-height:42px;padding:10px;border:0;border-radius:10px;background:${state === 'cancelled' ? '#00d4aa' : isCur || isPending ? 'transparent' : 'rgba(255,255,255,.08)'};color:${state === 'cancelled' ? '#02241d' : isCur || isPending ? '#7f8ca0' : '#f6f9fc'};font-size:13px;font-weight:700;cursor:${(isCur && state !== 'cancelled') || isPending ? 'default' : 'pointer'}`)}
+                  disabled={(isCur && state !== 'cancelled' && state !== 'ended') || isPending || state === 'failed' || busy.startsWith('switch') || busy === 'undo'}
+                  onClick={() => (state === 'ended' ? subscribeNow(o.id) : state === 'cancelled' ? resume(o.id) : switchTo(o))}
+                  style={sxw(`min-height:42px;padding:10px;border:0;border-radius:10px;background:${state === 'cancelled' || state === 'ended' ? '#00d4aa' : isCur || isPending ? 'transparent' : 'rgba(255,255,255,.08)'};color:${state === 'cancelled' || state === 'ended' ? '#02241d' : isCur || isPending ? '#7f8ca0' : '#f6f9fc'};font-size:13px;font-weight:700;cursor:${(isCur && state !== 'cancelled' && state !== 'ended') || isPending ? 'default' : 'pointer'}`)}
                 >
                   {busy === `switch:${o.id}`
                     ? (state === 'cancelled' ? 'Resuming…' : 'Switching…')
+                    : state === 'ended' ? `Subscribe · ${inr(o.price)}`
                     : state === 'cancelled' ? `Resume on ${o.name}`
                       : isCur ? 'Your plan'
                         : isPending ? 'Scheduled' : `Switch to ${o.name}`}
@@ -620,7 +785,12 @@ export default function BillingPage() {
               : `Your card is still saved, so picking a period brings you back on it. Nothing is charged until ${nextDate ?? 'your trial ends'}.`}
           </p>
         )}
-      </section>
+        {state === 'ended' && (
+          <p style={sxw('margin:12px 0 0;font-size:12.5px;color:#7f8ca0')}>
+            Pick the period for your new subscription. It is charged today — there is no second free trial.
+          </p>
+        )}
+      </section>}
 
       <section style={sxw('margin-top:16px;border-radius:20px;background:#0d1422;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);overflow:hidden')}>
         <div style={sxw('padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.07)')}>
@@ -628,19 +798,29 @@ export default function BillingPage() {
         </div>
         {/* TODO(api): list invoices inline once payments exposes them. Until
             then the provider's portal is the only place they exist, and a
-            fabricated row on a GST document is not a placeholder. */}
+            fabricated row on a GST document is not a placeholder. The one
+            row shown is the pending first charge, which is a fact we hold. */}
+        {state === 'confirming' && cur && (
+          <div style={sxw('display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px;flex-wrap:wrap')}>
+            <span style={sxw('min-width:90px;color:#a3b0c2')}>{nextDate ?? '—'}</span>
+            <span style={sxw('flex:1;min-width:140px')}>
+              <span style={sxw('display:block;font-weight:600')}>Pro · {cur.name}</span>
+              <span style={sxw('display:block;margin-top:2px;font-size:11.5px;color:#7f8ca0')}>Invoice is issued once the payment confirms</span>
+            </span>
+            <span style={sxw("font:600 13px/1 'Space Grotesk',sans-serif")}>{inr(cur.price)}</span>
+            <span style={sxw("font:700 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:5px 7px;border-radius:6px;background:rgba(240,180,41,.14);color:#fbc94f")}>PENDING</span>
+          </div>
+        )}
         <div style={sxw('padding:22px 20px;text-align:center;font-size:13px;color:#8a96a8')}>
-          {state === 'trial'
-            ? `No invoices yet. Your first one arrives on ${nextDate ?? 'your first payment'}, by email and here.`
-            : 'Your invoices, with GST, are in the billing portal.'}
-          {state !== 'trial' && (
+          {invoiceText}
+          {showPortalInvoices && (
             <div style={sxw('margin-top:12px')}>
               <button type="button" disabled={busy === 'portal'} onClick={() => { trackBilling('billing_invoice_downloaded'); portal('portal'); }} style={sxw('min-height:40px;padding:9px 14px;border:0;border-radius:10px;background:rgba(255,255,255,.07);color:#f6f9fc;font-size:12.5px;font-weight:700')}>
                 {busy === 'portal' ? 'Opening…' : 'Open invoices'}
               </button>
             </div>
           )}
-          {cur && (
+          {cur && !['comp', 'unknown'].includes(state) && (
             <p style={sxw('margin:10px 0 0;font-size:11.5px;color:#7f8ca0')}>
               {`A ${cur.name.toLowerCase()} invoice of ${inr(cur.price)} includes ₹${gstInside(cur.price).toFixed(2)} GST.`}
             </p>
@@ -648,7 +828,9 @@ export default function BillingPage() {
         </div>
       </section>
 
-      <section style={sxw('margin-top:16px;display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);flex-wrap:wrap')}>
+      {/* No bottom row while a charge is confirming: it resolves to paid or
+          failed on its own, and cannot be cancelled mid-flight (spec, tx). */}
+      {cancelCopy && <section style={sxw('margin-top:16px;display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);flex-wrap:wrap')}>
         <span style={sxw('flex:1;min-width:240px')}>
           <span style={sxw('display:block;font-size:14px;font-weight:700')}>{cancelCopy.title}</span>
           <span style={sxw('display:block;margin-top:4px;font-size:12.5px;line-height:1.5;color:#8a96a8')}>
@@ -657,12 +839,18 @@ export default function BillingPage() {
         </span>
         <button
           type="button"
-          onClick={() => { if (state === 'cancelled') { resume(); return; } trackBilling('billing_cancel_clicked', { state }); setConfirming(true); }}
-          style={sxw(`flex:none;min-height:42px;padding:10px 15px;border:0;border-radius:10px;background:${state === 'cancelled' ? '#00d4aa' : 'transparent'};color:${state === 'cancelled' ? '#02241d' : '#ff8178'};font-size:13px;font-weight:700`)}
+          onClick={() => {
+            if (state === 'cancelled') { resume(); return; }
+            if (state === 'comp' || state === 'unknown') { openSupport('A question about my plan.'); return; }
+            if (state === 'ended') { if (endedFrom === 'unpaid') portal('card'); else subscribeNow(interval); return; }
+            trackBilling('billing_cancel_clicked', { state });
+            setConfirming(true);
+          }}
+          style={sxw(`flex:none;min-height:42px;padding:10px 15px;border:0;border-radius:10px;background:${state === 'cancelled' || state === 'ended' ? '#00d4aa' : 'transparent'};color:${state === 'cancelled' || state === 'ended' ? '#02241d' : state === 'comp' || state === 'unknown' ? '#c9d2e0' : '#ff8178'};font-size:13px;font-weight:700`)}
         >
           {cancelCopy.btn}
         </button>
-      </section>
+      </section>}
 
       <CelebrationOverlay
         open={Boolean(celebrating)}

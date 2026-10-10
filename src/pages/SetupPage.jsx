@@ -11,6 +11,8 @@ import VenuePicker from '../components/dashboard/VenuePicker';
 import VenueMark from '../components/dashboard/VenueMark';
 import { venueFor } from '../lib/venues';
 import { sx } from '../components/dashboard/shell/sx';
+import { useToast } from '../components/common/ToastProvider';
+import { UNPROTECTED_STATES } from '../lib/lifecycle';
 
 /**
  * Setup, as a page.
@@ -155,6 +157,15 @@ export default function SetupPage() {
    */
   const hasMandate =
     user?.access === 'active' || Boolean(user?.trialAutoRenews) || Boolean(user?.subscriptionCanceled);
+  /*
+   * NO ACTIVE PLAN: THE NEW ACCOUNT INHERITS IT (lifecycle spec, pf te pe pg
+   * lf). Billing is not this account's step — the plan is the user's, and
+   * Plan & billing is where it is restarted — so the flow ends at the key.
+   * Read from the server's plan state, not the guard's case: while the new
+   * account has no key yet the guard reads "setup" for it.
+   */
+  const planOff = UNPROTECTED_STATES.includes(user?.planState);
+  const toast = useToast();
   const hasAccount = Boolean(selectedAccount) || (Array.isArray(accounts) && accounts.length > 0);
   const done = useMemo(() => {
     const noGap = (k) => Boolean(g?.gaps) && !g.gaps.some((x) => x.key === k);
@@ -165,9 +176,9 @@ export default function SetupPage() {
       Boolean(slug) || account,
       account,
       account && noGap('key'),
-      hasMandate,
+      hasMandate || planOff,
     ];
-  }, [slug, hasAccount, hasMandate, fresh, createdHere, g]);
+  }, [slug, hasAccount, hasMandate, planOff, fresh, createdHere, g]);
 
   /*
    * RESUME WHERE THEY STOPPED.
@@ -206,7 +217,13 @@ export default function SetupPage() {
   /* Someone who already has a method attached has nothing to buy, so billing
      is skipped rather than shown and dismissed. With billing last, that means
      they are done. A no-card trialist is NOT in that group. */
-  const afterKey = () => (hasMandate ? finish() : go(3));
+  const afterKey = () => {
+    if (planOff) {
+      toast.info('Account connected. Your guard is off until your plan is active.');
+      return finish();
+    }
+    return hasMandate ? finish() : go(3);
+  };
 
   const finish = async () => {
     await refreshTradingAccounts();

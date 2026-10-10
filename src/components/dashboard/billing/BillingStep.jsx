@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { createCheckoutSession, validateCoupon, fetchTrialEligibility } from '../../../api/paymentsApi';
 import { getPricingPlans } from '../../../api/pricingApi';
@@ -55,7 +56,13 @@ const TRIAL_DAYS = 7;
 const inr = (n) => (Number.isFinite(n) ? `₹${Math.round(n).toLocaleString('en-IN')}` : '—');
 const fmtDay = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
 
-export default function BillingStep({ onStarted }) {
+/**
+ * `setupCta` — Plan & billing renders this step before a key is verified
+ * (s0, s2). A trial cannot start then, so the button names the step that is
+ * actually next and goes there instead of to checkout.
+ */
+export default function BillingStep({ onStarted, setupCta }) {
+  const navigate = useNavigate();
   const { user, session } = useAuth();
   const [plans, setPlans] = useState([]);
   /*
@@ -291,6 +298,7 @@ export default function BillingStep({ onStarted }) {
   };
 
   const start = async () => {
+    if (setupCta) { navigate(setupCta.to); return; }
     if (busy) return;
     setBusy(true);
     setError('');
@@ -629,7 +637,9 @@ export default function BillingStep({ onStarted }) {
 
                 <div style={{ marginTop: 18, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                   <span style={{ fontSize: 13, color: '#a3b0c2' }}>Due today</span>
-                  <span style={{ font: "700 30px/1 'Space Grotesk',sans-serif", letterSpacing: '-.03em', color: '#2fe3bd' }}>₹0</span>
+                  {/* Not a constant: someone whose free week is used is charged
+                      in full today, and this line said ₹0 to them too. */}
+                  <span style={{ font: "700 30px/1 'Space Grotesk',sans-serif", letterSpacing: '-.03em', color: charged ? '#f6f9fc' : '#2fe3bd' }}>{charged ? inr(payable) : '₹0'}</span>
                 </div>
 
                 <button
@@ -639,7 +649,9 @@ export default function BillingStep({ onStarted }) {
                   className="bs-cta"
                   style={{ marginTop: 14, width: '100%', minHeight: 54, padding: 15, border: 0, borderRadius: 14, background: '#00d4aa', color: '#02241d', fontSize: 15, fontWeight: 800, boxShadow: '0 14px 34px -14px rgba(0,212,170,.8)', opacity: busy ? 0.75 : 1 }}
                 >
-                  {busy
+                  {setupCta
+                    ? setupCta.label
+                    : busy
                     ? (charged ? 'Starting…' : 'Starting your trial…')
                     : charged
                       ? `Subscribe · ${cur.name}`

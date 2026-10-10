@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 /**
  * The acceptance checks from the billing-step brief, as tests.
@@ -36,6 +36,8 @@ const autoCoupon = { value: undefined };
 vi.mock('../../../lib/checkoutCoupon', () => ({ checkoutCouponCode: () => autoCoupon.value }));
 const auth = { user: { access: 'none', isTrial: false }, session: { access_token: 't' } };
 vi.mock('../../../context/AuthContext', () => ({ useAuth: () => auth }));
+const navigate = vi.fn();
+vi.mock('react-router-dom', async (orig) => ({ ...(await orig()), useNavigate: () => navigate }));
 
 const { default: BillingStep } = await import('./BillingStep');
 
@@ -82,10 +84,28 @@ describe('billing step', () => {
     expect(screen.getByText(/First charge of ₹1,299, then every month until you cancel\./)).toBeTruthy();
   });
 
-  it('always says ₹0 is due today', async () => {
+  it('says ₹0 is due today while there are free days', async () => {
     render(<BillingStep />);
     await screen.findByText('Due today');
     expect(screen.getAllByText('₹0').length).toBeGreaterThan(0);
+  });
+
+  /* It used to say ₹0 here unconditionally — to someone about to be charged
+     in full because their free week was already used. */
+  it('says the full amount is due today when there are no free days', async () => {
+    eligibility = { trialDays: 0, fullTrialDays: 7 };
+    render(<BillingStep />);
+    await screen.findByText('Due today');
+    await waitFor(() => expect(screen.queryByText('₹0')).toBeNull());
+    expect(screen.getAllByText('₹1,299').length).toBeGreaterThan(0);
+  });
+
+  it('before a key exists, says "Continue setup" and goes to onboarding instead of checkout', async () => {
+    navigate.mockClear();
+    render(<BillingStep setupCta={{ label: 'Continue setup', to: '/dashboard/setup' }} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Continue setup' }));
+    expect(navigate).toHaveBeenCalledWith('/dashboard/setup');
+    expect(checkout).not.toHaveBeenCalled();
   });
 
   it('sends the chosen interval to checkout', async () => {
