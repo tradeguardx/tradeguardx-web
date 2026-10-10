@@ -45,24 +45,6 @@ function buildFields(template, instance) {
   }));
 }
 
-/** Group rules by catalog plan tier (from API: minPlanSlug + section title). */
-function groupRulesByPlanSection(rules) {
-  const map = new Map();
-  for (const r of rules) {
-    const key = r.minPlanSlug ?? '__none';
-    if (!map.has(key)) {
-      map.set(key, {
-        key,
-        title: r.planSectionTitle || 'Rules',
-        sortOrder: r.planSectionSortOrder ?? 99,
-        rules: [],
-      });
-    }
-    map.get(key).rules.push(r);
-  }
-  return [...map.values()].sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
-}
-
 // Detailed, plain-English documentation per rule — surfaced by the "How it
 // works" toggle in each card. Kept accurate to the current engine behaviour
 // (soft profit target, kill-switch flatten, cooldown locks).
@@ -248,7 +230,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
   // account actually settles in.
   const sym = currencySymbol(currency);
   const toast = useToast();
-  const isOn = !rule.locked && rule.enabled;
+  const isOn = rule.enabled;
   // Reference A7/A8 derivations. Off wins over everything.
   const state = !isOn ? 'off' : enforcement === 'armed' ? 'on' : enforcement === 'watching' ? 'alerts' : 'inactive';
   const status = { off: 'Off', on: 'On', alerts: 'Alerts only', inactive: 'Not working yet' }[state];
@@ -260,7 +242,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
      false sense of being covered. The rule lock keeps its own clock. */
   const onUnlocked = isOn && !ruleLocked && !cooled && !viewOnly;
   const toggleBlocked = isOn && (ruleLocked || cooled) && !viewOnly;
-  const editable = !rule.locked && isOn && !ruleLocked && !cooled && !viewOnly;
+  const editable = isOn && !ruleLocked && !cooled && !viewOnly;
   const frozen = isOn && ruleLocked && !cooled;
   const isCooled = isOn && cooled;
 
@@ -292,7 +274,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
 
   /** Flip on/off. Off is a loosening the backend may defer; on is immediate. */
   const toggleEnabled = async () => {
-    if (busy || rule.locked || viewOnly) return;
+    if (busy || viewOnly) return;
     const next = !rule.enabled;
     setBusy(true);
     try {
@@ -314,7 +296,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
   };
 
   const handleSave = async () => {
-    if (!accessToken || !tradingAccountId || rule.locked || busy) return;
+    if (!accessToken || !tradingAccountId || busy) return;
     setBusy(true);
     try {
       const res = await saveRuleInstance({ accessToken, tradingAccountId, templateSlug: rule.id, config: configFromValues(), enabled: rule.enabled !== false });
@@ -340,10 +322,10 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
   };
 
   const slug = rule.templateSlug ?? rule.id;
-  const accent = rule.locked ? { color: 'var(--ink-3)', tint: 'var(--surface-3)' } : ruleAccent(slug);
+  const accent = ruleAccent(slug);
   const glyph = RULE_GLYPH[slug] ?? ICON.rules;
   const plain = REF_PLAIN[slug] || (RULE_DOCS[slug] ? `${RULE_DOCS[slug].summary} ${RULE_DOCS[slug].trigger}` : rule.description);
-  const summary = rule.locked ? rule.description : ruleSummaryLine(rule.id, values, rule.description, sym);
+  const summary = ruleSummaryLine(rule.id, values, rule.description, sym);
 
   return (
     <div style={sx('border-bottom:1px solid var(--line)')}>
@@ -355,20 +337,18 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
           <span style={sx('display:block;font-size:14px;font-weight:600;letter-spacing:-.005em')}>{rule.name}</span>
           <span style={sx('display:block;font-size:12.5px;color:var(--ink-3);margin-top:3px')}>{summary}</span>
         </span>
-        {rule.pendingEffectiveAt && !rule.locked && (
+        {rule.pendingEffectiveAt && (
           <span style={sx('flex:none;display:inline-flex;align-items:center;gap:6px')} title={`${rule.pendingEnabled === false ? 'This rule turns off' : 'Looser limit takes effect'} ${new Date(rule.pendingEffectiveAt).toLocaleString()}`}>
             <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:rgba(31,111,208,0.12);color:var(--blue)')}>{rule.pendingEnabled === false ? 'Turns off when lock lifts' : 'Looser limit pending'}</span>
             <span role="button" tabIndex={0} onClick={cancelPending} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') cancelPending(e); }} title="Keep the current, stricter setting" style={sx('font-size:10.5px;font-weight:700;padding:4px 8px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2)')}>{cancelling ? 'Cancelling…' : 'Cancel'}</span>
           </span>
         )}
-        <span data-tgx-rxstatus="1" style={sx('flex:none;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px', { background: rule.locked ? 'var(--surface-3)' : tone.bg, color: rule.locked ? 'var(--ink-3)' : tone.fg })}>{rule.locked ? 'Upgrade' : status}</span>
+        <span data-tgx-rxstatus="1" style={sx('flex:none;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px', { background: tone.bg, color: tone.fg })}>{status}</span>
 
-        {viewOnly && !rule.locked ? (
+        {viewOnly ? (
           <span role="switch" aria-checked={isOn} aria-disabled="true" title="Saved, not enforced while your plan is inactive" onClick={(e) => e.stopPropagation()} style={sx('flex:none;position:relative;display:block;width:38px;height:22px;border-radius:999px;border:1px solid var(--line);background:var(--surface-3);cursor:not-allowed;opacity:.6')}>
             <span style={sx('position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-faint)', { left: isOn ? '18px' : '2px' })} />
           </span>
-        ) : rule.locked ? (
-          <Link to="/pricing" onClick={(e) => e.stopPropagation()} style={sx('flex:none;padding:6px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none')}>Upgrade</Link>
         ) : onUnlocked ? (
           <span role="switch" tabIndex={0} aria-checked="true" aria-label={`Turn off ${rule.name}`} title="Turn this rule off"
             onClick={(e) => { e.stopPropagation(); void toggleEnabled(); }}
@@ -396,15 +376,15 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
 
       {expanded && (
         <div data-tgx-rxpanel="1" style={sx('padding:2px 18px 19px 63px')}>
-          <span data-tgx-rxstatus-sm="1" style={sx('display:none;margin-bottom:12px;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px', { background: rule.locked ? 'var(--surface-3)' : tone.bg, color: rule.locked ? 'var(--ink-3)' : tone.fg })}>{rule.locked ? 'Upgrade' : status}</span>
+          <span data-tgx-rxstatus-sm="1" style={sx('display:none;margin-bottom:12px;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px', { background: tone.bg, color: tone.fg })}>{status}</span>
           <p style={sx('margin:0 0 15px;font-size:13px;line-height:1.6;color:var(--ink-2);max-width:82ch')}>{plain}</p>
 
           <div style={sx('display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px')}>
             {visibleFields.map((field) => (
               <div key={field.key} style={sx('min-width:132px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)', editing ? { minWidth: 180 } : {})}>
                 <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{field.label}</div>
-                {!editing || rule.locked ? (
-                  <div style={sx("margin-top:5px;font:600 15px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums")}>{rule.locked ? 'Upgrade to configure' : fieldDisplay(field, values[field.key], sym)}</div>
+                {!editing ? (
+                  <div style={sx("margin-top:5px;font:600 15px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums")}>{fieldDisplay(field, values[field.key], sym)}</div>
                 ) : field.type === 'select' ? (
                   <div style={sx('margin-top:6px;display:flex;gap:4px')}>
                     {(field.options || []).map((opt) => {
@@ -442,14 +422,9 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
             </div>
           )}
 
-          {viewOnly && !rule.locked ? (
+          {viewOnly ? (
             <div style={sx('padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
               {isOn ? 'Saved and switched on — not enforced while your plan is inactive.' : 'Saved and switched off.'}
-            </div>
-          ) : rule.locked ? (
-            <div style={sx('display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--ink-3)')}>
-              <span>Included on a higher plan.</span>
-              <Link to="/pricing" style={sx(BTN_GHOST, { textDecoration: 'none' })}>View plans</Link>
             </div>
           ) : !isOn ? (
             <div style={sx('display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2);flex-wrap:wrap')}>
@@ -581,19 +556,17 @@ export default function RulesTerminal() {
       const inst = instanceBySlug.get(t.slug);
       return {
         id: t.slug, templateSlug: t.slug, name: t.name, description: t.description,
-        locked: !t.eligible, eligible: t.eligible,
         hasSavedInstance: Boolean(inst),
         enabled: inst ? inst.enabled !== false : false,
         pendingEnabled: inst?.pendingEnabled ?? null, pendingEffectiveAt: inst?.pendingEffectiveAt ?? null,
         fields: buildFields(t, inst),
-        planSlugs: t.planSlugs, minPlanSlug: t.minPlanSlug, planSectionTitle: t.planSectionTitle, planSectionSortOrder: t.planSectionSortOrder,
       };
     });
   }, [bundle, instanceBySlug]);
 
-  const availableRules = displayRules.filter((r) => r.eligible);
-  const lockedRules = displayRules.filter((r) => !r.eligible);
-  const lockedByPlan = useMemo(() => groupRulesByPlanSection(lockedRules), [lockedRules]);
+  // One plan, and every rule is on it: nothing here is ever behind an upgrade.
+  // Whether a rule can be edited follows the lifecycle case (viewOnly).
+  const availableRules = displayRules;
   const onCount = availableRules.filter((r) => r.enabled).length;
   const total = availableRules.length;
 
@@ -776,17 +749,6 @@ export default function RulesTerminal() {
             </section>
           )}
 
-          {lockedByPlan.map((section) => (
-            <section key={`locked-${section.key}`} style={sx('margin-bottom:22px')}>
-              <div style={sx('display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap')}>
-                <h2 style={sx("margin:0;font:600 16px/1.2 'Space Grotesk',sans-serif")}>{section.title && section.title !== 'Rules' ? section.title : 'On a higher plan'}</h2>
-                <span style={sx('font-size:12.5px;color:var(--ink-3)')}>Included when you upgrade — <Link to="/pricing" style={sx('color:var(--mint);font-weight:700;text-decoration:underline')}>view plans</Link>.</span>
-              </div>
-              <div className="rx-group" style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
-                {section.rules.map((rule) => <RuleRow {...rowProps(rule)} />)}
-              </div>
-            </section>
-          ))}
         </>
       )}
     </div>

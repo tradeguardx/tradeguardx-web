@@ -172,7 +172,8 @@ Every other page stays usable in every case. Trades and Tax are your own record.
 | Accounts, each label | `tc` `pc` | …· until {date} |
 | Setup, after a key connects | plan off | Account connected. Your guard is off until your plan is active. |
 | Activity / All trades / Trade detail | a rule hit with no plan | {Rule} reached · not enforced (no active plan), shown with an amber "not enforced" tag |
-| Push (engine) | a rule hit with no plan, at most once per rule per day | {Rule} reached · not enforced. Your plan isn't active. |
+| Push (engine) | a rule hit with no plan, at most once per rule per day | {Rule} reached · not enforced. Your plan isn't active. (`s3`, never had a plan: …Start your free trial to switch your guard on.) |
+| Rules page | every case | All rules in one list. No plan tiers, no Upgrade chips: setup drafts, protected edits, plan off is view only (server refuses saves too). |
 
 ---
 
