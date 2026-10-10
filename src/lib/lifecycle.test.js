@@ -84,6 +84,19 @@ describe('the view of every state', () => {
   });
 });
 
+describe('tx without a card (the old no-card trial)', () => {
+  it('never claims a payment is being confirmed', () => {
+    const v = lifecycleView('tx', { endsAt: '2026-10-13T12:00:00Z', autoRenews: false });
+    expect(JSON.stringify(v)).not.toMatch(/confirming/i);
+    expect(v.protected).toBe(true);
+    expect(v.band.to).toBe('/dashboard/activate');
+  });
+
+  it('a card trial does wait on its first payment', () => {
+    expect(lifecycleView('tx', { autoRenews: true }).pill).toBe('Protected · confirming payment');
+  });
+});
+
 describe('locked routes', () => {
   it('matches the page and its children only', () => {
     expect(lockedRouteOf('/dashboard/live', ['live'])).toBe('live');
@@ -105,7 +118,7 @@ describe('the pill, in the spec’s precedence', () => {
   });
 
   it('a protected plan names itself once the account is armed', () => {
-    expect(pillOf(lifecycleView('tx'), ARMED, 'armed').pill).toBe('Protected · confirming payment');
+    expect(pillOf(lifecycleView('tx', { autoRenews: true }), ARMED, 'armed').pill).toBe('Protected · confirming payment');
     expect(pillOf(lifecycleView('p'), ARMED, 'armed').pill).toBe('Armed');
   });
 
@@ -126,8 +139,9 @@ describe('the plan line in the band', () => {
     expect(planNoticeOf(lifecycleView('t1', { autoRenews: false }), noCardTrial).to).toBe('/dashboard/activate');
   });
 
-  it('says nothing about a plan in tx, p, ac or nr', () => {
-    for (const id of ['tx', 'p', 'ac', 'nr']) expect(planNoticeOf(lifecycleView(id), cardTrial)).toBeNull();
+  it('says nothing about a plan in tx (card), p, ac or nr', () => {
+    expect(planNoticeOf(lifecycleView('tx', { autoRenews: true }), cardTrial)).toBeNull();
+    for (const id of ['p', 'ac', 'nr']) expect(planNoticeOf(lifecycleView(id), cardTrial)).toBeNull();
   });
 
   it('carries the cancelled band in tc', () => {

@@ -199,6 +199,31 @@ export function lifecycleView(id, ctx = {}) {
         toast: 'Trial cancelled. You won’t be charged.',
       };
     case 'tx':
+      /* The spec's tx is a card trial waiting on its first charge. The old
+         no-card trial lands here too — the engine graces any trial for 3
+         days — but no payment is coming, so "confirming your payment" would
+         be false. Same protection, its own true sentence, and a prompt. */
+      if (!ctx.autoRenews) {
+        return {
+          ...base,
+          pill: until ? `Protected · until ${until}` : 'Protected',
+          tone: 'amber',
+          plan: 'Trial ended',
+          band: {
+            tone: 'amber',
+            title: 'Your free trial has ended.',
+            body: until
+              ? `Your guard stays on until ${until}. Set up billing to keep it on.`
+              : 'Your guard stays on for a short while. Set up billing to keep it on.',
+            cta: 'Set up billing',
+            to: '/dashboard/activate',
+          },
+          hero: {
+            title: until ? `Protected until ${until}.` : 'Still protected, for now.',
+            sub: 'Your free trial has ended and no payment method is set up. Add one and the guard stays on without a gap.',
+          },
+        };
+      }
       return {
         ...base,
         pill: 'Protected · confirming payment',
