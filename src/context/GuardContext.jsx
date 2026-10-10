@@ -166,8 +166,13 @@ export function GuardProvider({ children }) {
         return next;
       });
       if (notif.ok) setNotifications(notif.v);
-      if (breaches.ok) setUnreadBreaches(Array.isArray(breaches.v) ? breaches.v.length : 0);
-      if (breaches.ok) setUnreadList(Array.isArray(breaches.v) ? breaches.v : []);
+      /* Only what needs the user's attention counts as unread: the engine also
+         logs every trade opened and closed (severity info), and counting those
+         put "143 NEW" on the bell and a red "Limit hit" toast after an
+         ordinary trade. They stay in the notifications list. */
+      const attention = breaches.ok && Array.isArray(breaches.v) ? breaches.v.filter((b) => String(b?.severity).toLowerCase() !== 'info') : null;
+      if (attention) setUnreadBreaches(attention.length);
+      if (attention) setUnreadList(attention);
       setLoaded(true);
     },
     [accessToken, accounts, accountsLoading, selectedTradingAccountId],

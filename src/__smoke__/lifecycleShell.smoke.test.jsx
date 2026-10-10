@@ -8,6 +8,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { getExchangeCredentialsStatus } from '../api/exchangeCredentialsApi';
 import { fetchNotificationSettings } from '../api/notificationsApi';
+import { fetchBreaches } from '../api/breachesApi';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 const account = {
@@ -245,5 +246,31 @@ describe('a cancelled trial, armed, with no alert channel — each fact said onc
     expect(screen.queryByText(/Finish setup to turn the guard on/)).toBeNull();
     // The optional step waits in "What to do next".
     expect(await screen.findByText('Turn on alerts')).toBeTruthy();
+  });
+});
+
+describe('breach toasts', () => {
+  afterEach(() => { fetchBreaches.mockImplementation(async () => []); });
+
+  it('an ordinary trade opened/closed note never raises a "Limit hit" toast', async () => {
+    auth.user = cancelled;
+    fetchBreaches.mockImplementation(async () => [
+      { id: 'i1', severity: 'info', breachType: 'trade_closed', ruleSlug: null, message: 'Trade closed: BTCUSD', tradingAccountId: 'acc-1', createdAt: new Date().toISOString() },
+    ]);
+    mount('/dashboard/overview');
+    await waitFor(() => expect(screen.getAllByText(/Protected · until 15 Nov/).length).toBeGreaterThan(0));
+    expect(screen.queryByText('Limit hit')).toBeNull();
+  });
+
+  it('a rule reached with no plan is an amber "Not enforced" toast that goes to Plan & billing', async () => {
+    auth.user = failed;
+    fetchBreaches.mockImplementation(async () => [
+      { id: 'u1', severity: 'warning', breachType: 'enforcement_unavailable', ruleSlug: 'daily-loss', context: { reason: 'unentitled' }, message: "Daily loss limit reached · not enforced. Your plan isn't active.", tradingAccountId: 'acc-1', createdAt: new Date().toISOString() },
+    ]);
+    mount('/dashboard/overview');
+    expect(await screen.findByText('Not enforced')).toBeTruthy();
+    expect(screen.getByText('Daily loss limit reached on Delta main')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'See plans' })).toBeTruthy();
+    expect(screen.queryByText('Limit hit')).toBeNull();
   });
 });

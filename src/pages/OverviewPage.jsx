@@ -118,7 +118,9 @@ export default function OverviewPage() {
     ]).then(([breaches, trades]) => {
       if (ctrl.signal.aborted) return;
       const ev = [];
-      for (const b of breaches || []) {
+      // Trades come from the journal below; the engine's own "Trade opened /
+      // closed" info rows would list each one twice.
+      for (const b of (breaches || []).filter((x) => String(x?.severity).toLowerCase() !== 'info')) {
         // A hit the engine could not act on is an amber "not enforced" row
         // (spec §1.5), not a red one that reads as if something was closed.
         if (isUnenforced(b)) {
