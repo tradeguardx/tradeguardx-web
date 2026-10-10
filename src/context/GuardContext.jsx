@@ -16,7 +16,7 @@ import {
   lockUntilOf,
   totalRuleCount,
 } from '../lib/guard';
-import { lifecycleIdOf, lifecycleView } from '../lib/lifecycle';
+import { lifecycleIdOf, lifecycleView, withMissingKey } from '../lib/lifecycle';
 
 /**
  * Guard state for every account the user has, kept fresh, read everywhere.
@@ -265,14 +265,22 @@ export function GuardProvider({ children }) {
       keyConnected: selectedState.connection?.status === 'active',
     });
   })();
-  const life = useMemo(
-    () => lifecycleView(lifeId, {
+  /* Setup already locks for a missing key (s0/s2). Any other state gets the
+     same account-level lock once the selected account's key is KNOWN to be
+     missing — never while the fetch is still in flight. */
+  const keyMissing = Boolean(
+    lifeId && !['s0', 's2', 's3'].includes(lifeId)
+    && selectedState.account && selectedState.loaded
+    && selectedState.connection?.status !== 'active',
+  );
+  const life = useMemo(() => {
+    const v = lifecycleView(lifeId, {
       endsAt: user?.planStateEndsAt ?? null,
       periodEnd: user?.currentPeriodEnd ?? null,
       autoRenews: Boolean(user?.trialAutoRenews),
-    }),
-    [lifeId, user?.planStateEndsAt, user?.currentPeriodEnd, user?.trialAutoRenews],
-  );
+    });
+    return keyMissing ? withMissingKey(v) : v;
+  }, [lifeId, keyMissing, user?.planStateEndsAt, user?.currentPeriodEnd, user?.trialAutoRenews]);
 
   const value = useMemo(
     () => ({

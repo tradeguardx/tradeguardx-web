@@ -4,6 +4,7 @@ import {
   lifecycleIdOf,
   lifecycleView,
   lockedRouteOf,
+  withMissingKey,
   PROTECTED_STATES,
   UNPROTECTED_STATES,
 } from './lifecycle';
@@ -94,6 +95,23 @@ describe('tx without a card (the old no-card trial)', () => {
 
   it('a card trial does wait on its first payment', () => {
     expect(lifecycleView('tx', { autoRenews: true }).pill).toBe('Protected · confirming payment');
+  });
+});
+
+describe('an account with no key, under any plan', () => {
+  it('locks the pages that read the exchange, even on a protected plan', () => {
+    const v = withMissingKey(lifecycleView('tc', { endsAt: '2026-10-15T12:00:00Z' }));
+    expect(v.locks).toEqual(['live', 'journal', 'trades', 'tax']);
+    expect(v.lockFor('live').title).toBe('Connect your key to see this');
+    expect(v.lockFor('live').to).toBe('/dashboard/connect');
+    expect(v.ks.enabled).toBe(false);
+    expect(v.badges.connect).toBe('!');
+  });
+
+  it('keeps the plan lock on Live guard and Journal when the plan is off too', () => {
+    const v = withMissingKey(lifecycleView('te'));
+    expect(v.lockFor('live').title).toBe('Needs an active plan');
+    expect(v.lockFor('trades').title).toBe('Connect your key to see this');
   });
 });
 

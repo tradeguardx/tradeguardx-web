@@ -4,8 +4,9 @@
  * this checks the pieces arrive on screen together — pill, band, lock,
  * sidebar, kill switch, rules — for a user the server calls unprotected.
  */
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { getExchangeCredentialsStatus } from '../api/exchangeCredentialsApi';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 const account = {
@@ -166,6 +167,23 @@ describe('Pro cancelled, still inside the period (pc)', () => {
     expect(screen.getByText('Pro ends 15 Nov.')).toBeTruthy();
     expect(screen.queryByText('LOCKED')).toBeNull();
     expect(screen.queryByText(/Needs an active plan/)).toBeNull();
+  });
+});
+
+describe('trial cancelled, and this account has no key yet', () => {
+  beforeEach(() => {
+    auth.user = { ...base, planState: 'tc', planProtected: true, planStateEndsAt: '2026-10-15T12:00:00Z', access: 'trial', isTrial: true, subscriptionCanceled: true };
+    getExchangeCredentialsStatus.mockImplementation(async () => ({ status: 'not_connected' }));
+  });
+  afterEach(() => {
+    getExchangeCredentialsStatus.mockImplementation(async () => ({ status: 'active', enforcementCapable: true, lastValidatedAt: new Date().toISOString() }));
+  });
+
+  it('locks Live guard behind "Connect your key"', async () => {
+    mount('/dashboard/live');
+    await waitFor(() => expect(screen.getByText('Connect your key to see this')).toBeTruthy());
+    expect(screen.getAllByRole('link', { name: 'Connect key' }).some((a) => a.getAttribute('href') === '/dashboard/connect')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Kill switch' }).getAttribute('aria-disabled')).toBe('true');
   });
 });
 

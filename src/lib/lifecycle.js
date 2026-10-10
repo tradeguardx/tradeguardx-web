@@ -356,6 +356,37 @@ export function lifecycleView(id, ctx = {}) {
   }
 }
 
+/**
+ * The selected account has no working key — on top of ANY plan state.
+ *
+ * The spec locks pages for a missing key only in setup (s2), but a protected
+ * plan with a keyless account is the same situation for that account:
+ * nothing to read, nothing to act with. So Live guard, Journal, Trades and
+ * Tax show "Connect your key to see this" whatever the plan, the kill switch
+ * waits for a key, and Connect key carries the "!". With no active plan,
+ * Live guard and Journal keep the plan's lock — paying is the bigger fix and
+ * the band already says so.
+ */
+export function withMissingKey(view) {
+  if (!view) return view;
+  const keyLock = {
+    title: 'Connect your key to see this',
+    body: 'Nothing can show here until we can read your exchange. About two minutes on a laptop.',
+    cta: 'Connect key',
+    to: '/dashboard/connect',
+  };
+  const planLocks = view.unprotected ? view.locks : [];
+  return {
+    ...view,
+    keyMissing: true,
+    locks: [...new Set([...planLocks, 'live', 'journal', 'trades', 'tax'])],
+    lockFor: (route) => (planLocks.includes(route) ? view.lock : keyLock),
+    lock: view.unprotected ? view.lock : keyLock,
+    ks: { enabled: false, tip: 'Works once your key is connected' },
+    badges: { ...view.badges, connect: '!' },
+  };
+}
+
 /** What every red, key-in-place state shares. */
 function ended(base, endedFrom) {
   const failed = endedFrom === 'failed';
