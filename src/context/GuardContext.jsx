@@ -327,7 +327,25 @@ export function GuardProvider({ children }) {
     const t = setTimeout(() => setTimedOut(true), READY_TIMEOUT_MS);
     return () => clearTimeout(t);
   }, [inputsReady]);
-  const ready = inputsReady || timedOut;
+  /*
+   * READY LATCHES. The skeleton is for the FIRST load only. Without the
+   * latch, any later refresh (creating an account, switching the selected
+   * one) dropped `ready` back to false, swapped the page for the skeleton
+   * and unmounted it — so setup lost its place after "Continue" and came
+   * back on an empty "Name the account" form, and users created the same
+   * account twice. After the first answer, pages stay mounted and a moment
+   * of unknown reads as "unknown" (life is null), never as a verdict.
+   * Re-arms for a different session (sign-out, another user).
+   */
+  // Keyed on the user, not the token: the token refreshes hourly.
+  const sessionUserId = session?.user?.id ?? null;
+  const [latch, setLatch] = useState({ who: sessionUserId, ready: false });
+  if (latch.who !== sessionUserId) {
+    setLatch({ who: sessionUserId, ready: false });
+  } else if (!latch.ready && (inputsReady || timedOut)) {
+    setLatch({ who: sessionUserId, ready: true });
+  }
+  const ready = (latch.who === sessionUserId && latch.ready) || inputsReady || timedOut;
 
   const value = useMemo(
     () => ({

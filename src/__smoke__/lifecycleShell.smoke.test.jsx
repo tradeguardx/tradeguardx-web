@@ -84,6 +84,22 @@ import LiveGuardPage from '../pages/LiveGuardPage';
 import RulesTerminal from '../components/dashboard/RulesTerminal';
 import AllTradesPage from '../pages/AllTradesPage';
 import { ToastProvider } from '../components/common/ToastProvider';
+import { useState } from 'react';
+import { useTradingAccounts } from '../context/TradingAccountContext';
+import { fetchTradingAccounts } from '../api/tradingAccountsApi';
+
+/* A page with its own state that refreshes the accounts, as setup does
+   after "Continue" on Name the account. */
+function RefreshProbe() {
+  const { refreshTradingAccounts } = useTradingAccounts();
+  const [step, setStep] = useState(1);
+  return (
+    <div>
+      <span>{`probe step ${step}`}</span>
+      <button type="button" onClick={() => { setStep(2); void refreshTradingAccounts(); }}>probe continue</button>
+    </div>
+  );
+}
 
 function mount(path) {
   return render(
@@ -95,6 +111,7 @@ function mount(path) {
             <Route path="live" element={<LiveGuardPage />} />
             <Route path="rules" element={<RulesTerminal />} />
             <Route path="trades" element={<AllTradesPage />} />
+            <Route path="probe" element={<RefreshProbe />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -224,6 +241,25 @@ describe('a reload shows one skeleton, then the real page — nothing in between
     expect(screen.queryByText('Pro · payment failed')).toBeNull();
     release();
     expect(await screen.findByText('Off until your payment goes through')).toBeTruthy();
+    expect(screen.queryByText('Loading your dashboard…')).toBeNull();
+  });
+});
+
+describe('after the first load, a refresh never swaps the page for the skeleton', () => {
+  beforeEach(() => { auth.user = cancelledTrial; });
+  afterEach(() => { fetchTradingAccounts.mockImplementation(async () => [account]); });
+
+  it('keeps the page mounted, and its state, while accounts reload', async () => {
+    mount('/dashboard/probe');
+    expect(await screen.findByText('probe step 1')).toBeTruthy();
+    let release;
+    fetchTradingAccounts.mockImplementation(() => new Promise((r) => { release = () => r([account]); }));
+    screen.getByText('probe continue').click();
+    // Setup used to be unmounted here and come back on step one, empty.
+    expect(await screen.findByText('probe step 2')).toBeTruthy();
+    expect(screen.queryByText('Loading your dashboard…')).toBeNull();
+    release?.();
+    await waitFor(() => expect(screen.getByText('probe step 2')).toBeTruthy());
     expect(screen.queryByText('Loading your dashboard…')).toBeNull();
   });
 });

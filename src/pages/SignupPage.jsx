@@ -28,6 +28,7 @@ export default function SignupPage() {
   // The interval card they clicked on /pricing, so checkout opens on it.
   const interval = searchParams.get('interval') || 'monthly';
   const pm = planMeta[plan] || planMeta.free;
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pwError, setPwError] = useState(null);
@@ -56,7 +57,7 @@ export default function SignupPage() {
     setPwError(null);
     setIsSubmitting(true);
     try {
-      const result = await signup(email, password);
+      const result = await signup(email, password, name.trim());
       if (result?.requiresEmailConfirmation) {
         // No session exists yet, so the dashboard is unreachable. Land them on a
         // page that says exactly that and can re-send the email — bouncing to
@@ -158,6 +159,23 @@ export default function SignupPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* The name is what the dashboard, the emails and support call
+                you. Google sign-ups bring theirs; this is the email path's. */}
+            <div>
+              <label htmlFor="signup-name" className="block text-[14px] font-medium text-slate-300 mb-2">Full name</label>
+              <input
+                id="signup-name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onFocus={() => setFocused('name')}
+                onBlur={() => setFocused(null)}
+                placeholder="Your name"
+                className={`w-full h-[54px] px-5 rounded-2xl border text-white text-[14px] placeholder-slate-600 focus:outline-none transition-all ${ring('name')}`}
+              />
+            </div>
+
             <div>
               <label className="block text-[14px] font-medium text-slate-300 mb-2">Email</label>
               <input

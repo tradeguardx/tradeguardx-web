@@ -300,7 +300,10 @@ export default function SetupPage() {
           supportedProps={venues}
           onCreated={afterCreate}
           onCancel={() => go(0)}
-          toast={{ success: () => {}, error: () => {} }}
+          /* Success is said by the next step appearing. A failure must be
+             said: a silent no-op here looked like a button that does
+             nothing. */
+          toast={{ success: () => {}, error: (title, description) => toast.error(title, description) }}
           presetSlug={slug}
           /* The key is step three's job. Collecting it here too left that step
              with nothing to do and put two instruction lists on screen. */
