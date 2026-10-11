@@ -373,7 +373,13 @@ export default function BillingPage() {
   if (plans === null && state !== 'setup' && state !== 'setupEarly') return <DashboardSkeleton />;
 
   if (state === 'setup' || state === 'setupEarly') {
-    return <BillingStep setupCta={state === 'setupEarly' ? { label: 'Continue setup', to: '/dashboard/setup' } : undefined} />;
+    return (
+      <BillingStep
+        setupCta={state === 'setupEarly' ? { label: 'Continue setup', to: '/dashboard/setup' } : undefined}
+        // s0: nothing set up yet · s2: exchange and account done, key not
+        stepsDone={life?.id === 's0' ? 0 : life?.id === 's2' ? 2 : 3}
+      />
+    );
   }
 
   if (state === 'none') {

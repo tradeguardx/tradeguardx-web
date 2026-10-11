@@ -68,6 +68,23 @@ describe('billing step', () => {
     expect(band[0].querySelector('button')).toBeNull();
   });
 
+  it('never says the key is connected, or ticks it, before it is (s2)', async () => {
+    render(<BillingStep stepsDone={2} />);
+    expect(await screen.findByText(/Connect your key first/)).toBeInTheDocument();
+    expect(screen.queryByText(/Your key is connected/)).toBeNull();
+    // exchange and account ticked; "Connect key" is the current step, numbered
+    const current = document.querySelector('[aria-current="step"]');
+    expect(current?.textContent).toBe('3');
+  });
+
+  it('keeps every colour on the left side themeable (light mode)', () => {
+    const { container } = render(<BillingStep />);
+    const left = container.querySelector('.bs-protections')?.parentElement;
+    // the dark plan panel is meant to stay dark; the left column must not
+    // hardcode the dark theme's near-white text
+    expect(left?.innerHTML ?? '').not.toMatch(/#f6f9fc|#a3b0c2|#7f8ca0|rgb\(246, 249, 252\)|rgb\(163, 176, 194\)/i);
+  });
+
   /* Monthly by default. This is the first money conversation with someone who
      signed up today, and a year preselected reads as the choice being made
      for them; the saving is on screen for anyone who wants it. */

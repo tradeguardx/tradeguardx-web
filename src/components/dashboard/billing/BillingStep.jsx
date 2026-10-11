@@ -60,8 +60,13 @@ const fmtDay = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'sh
  * `setupCta` — Plan & billing renders this step before a key is verified
  * (s0, s2). A trial cannot start then, so the button names the step that is
  * actually next and goes there instead of to checkout.
+ *
+ * `stepsDone` — how many of the four setup steps are finished (default 3:
+ * everything but billing). Plan & billing passes fewer in s0/s2, so the
+ * step list and the band never tick "Connect key" for a key that is not
+ * connected.
  */
-export default function BillingStep({ onStarted, setupCta }) {
+export default function BillingStep({ onStarted, setupCta, stepsDone = 3 }) {
   const navigate = useNavigate();
   const { user, session } = useAuth();
   const [plans, setPlans] = useState([]);
@@ -325,16 +330,21 @@ export default function BillingStep({ onStarted, setupCta }) {
   const guardOff = !(user?.isTrial || user?.access === 'active');
 
   return (
-    <div style={{ color: '#f6f9fc', fontSize: 14 }}>
+    <div style={{ color: 'var(--ink)', fontSize: 14 }}>
       {/* ONE status band, and no button on it: the panel's button is the only
           action on this page. */}
       {guardOff && (
-        <div className="bs-band" style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(240,180,41,.09)', borderBottom: '1px solid rgba(240,180,41,.28)', flexWrap: 'wrap' }}>
-          <span style={{ flex: 'none', width: 30, height: 30, borderRadius: 9, background: 'rgba(240,180,41,.16)', display: 'grid', placeItems: 'center', color: '#fbc94f' }}>
+        <div className="bs-band" style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'var(--amber-tint)', borderBottom: '1px solid var(--amber-line)', flexWrap: 'wrap' }}>
+          <span style={{ flex: 'none', width: 30, height: 30, borderRadius: 9, background: 'var(--amber-tint)', display: 'grid', placeItems: 'center', color: 'var(--amber)' }}>
             <Glyph d={GLYPH.warn} size={16} />
           </span>
-          <div style={{ flex: 1, minWidth: 240, fontSize: 13.5, lineHeight: 1.5, color: '#c9d2e0' }}>
-            <b style={{ color: '#fbc94f' }}>Your guard is off.</b> Your key is connected and your rules are saved, but nothing is enforced until you finish this step.
+          <div style={{ flex: 1, minWidth: 240, fontSize: 13.5, lineHeight: 1.5, color: 'var(--ink-2)' }}>
+            <b style={{ color: 'var(--amber)' }}>Your guard is off.</b>{' '}
+            {stepsDone >= 3
+              ? 'Your key is connected and your rules are saved, but nothing is enforced until you finish this step.'
+              : stepsDone === 0
+                ? 'Add an account and connect its key first, then set up billing to switch it on.'
+                : 'Connect your key first, then set up billing to switch it on.'}
           </div>
         </div>
       )}
@@ -342,17 +352,18 @@ export default function BillingStep({ onStarted, setupCta }) {
       <div style={{ maxWidth: 1220, margin: '0 auto', padding: '26px 0 80px' }}>
         <ol style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: 0, padding: 0, listStyle: 'none' }}>
           {STEP_NAMES.map((name, i) => {
-            const done = i < 3;
+            const done = i < Math.min(stepsDone, 3);
+            const current = i === Math.min(stepsDone, 3);
             return (
               <li key={name} className="bs-step" data-done={done ? '1' : '0'} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span
-                  aria-current={done ? undefined : 'step'}
-                  style={{ width: 26, height: 26, borderRadius: 8, display: 'grid', placeItems: 'center', background: done ? '#00d4aa' : '#f6f9fc', color: done ? '#04140f' : '#070a12', font: "700 12px/1 'Space Grotesk',sans-serif", boxShadow: done ? 'none' : '0 0 0 4px rgba(255,255,255,.12)' }}
+                  aria-current={current ? 'step' : undefined}
+                  style={{ width: 26, height: 26, borderRadius: 8, display: 'grid', placeItems: 'center', background: done ? 'var(--mint-solid)' : current ? 'var(--ink)' : 'transparent', color: done ? '#04140f' : current ? 'var(--bg)' : 'var(--ink-3)', font: "700 12px/1 'Space Grotesk',sans-serif", boxShadow: done ? 'none' : current ? '0 0 0 4px var(--line-strong)' : 'inset 0 0 0 1px var(--line-strong)' }}
                 >
-                  {done ? '✓' : '4'}
+                  {done ? '✓' : i + 1}
                 </span>
-                <span className="bs-step__label" style={{ fontSize: 13, fontWeight: 600, color: done ? '#a3b0c2' : '#f6f9fc' }}>{name}</span>
-                {i < 3 && <span aria-hidden className="bs-step__bar" style={{ width: 26, height: 1, background: 'rgba(255,255,255,.14)' }} />}
+                <span className="bs-step__label" style={{ fontSize: 13, fontWeight: 600, color: current ? 'var(--ink)' : done ? 'var(--ink-2)' : 'var(--ink-3)' }}>{name}</span>
+                {i < 3 && <span aria-hidden className="bs-step__bar" style={{ width: 26, height: 1, background: 'var(--line-strong)' }} />}
               </li>
             );
           })}
@@ -374,8 +385,8 @@ export default function BillingStep({ onStarted, setupCta }) {
             * one makes the same point where it is being demonstrated.
             */}
           <div style={{ marginTop: 0, marginBottom: 22, maxWidth: 720 }}>
-            <div style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.18em', textTransform: 'uppercase', color: '#2fe3bd' }}>
-              Step 4 of 4 · Last step
+            <div style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--mint)' }}>
+              {stepsDone >= 3 ? 'Step 4 of 4 · Last step' : 'Step 4 of 4'}
             </div>
             <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.4vw,28px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.03em', textWrap: 'pretty' }}>
               {charged
@@ -383,7 +394,7 @@ export default function BillingStep({ onStarted, setupCta }) {
                 : (
                   <>
                     Set up billing and get{' '}
-                    <span style={{ color: '#2fe3bd' }}>
+                    <span style={{ color: 'var(--mint)' }}>
                       {freeDays == null ? 'your free trial' : `${freeDays} day${freeDays === 1 ? '' : 's'} free`}
                     </span>
                   </>
@@ -394,12 +405,12 @@ export default function BillingStep({ onStarted, setupCta }) {
                 once told lapsed trialists "nothing is charged today" directly
                 under a headline that was about to charge them. The date only
                 appears once the server has said how many days are free. */}
-            <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: '#a3b0c2', textWrap: 'pretty' }}>
+            <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: 'var(--ink-2)', textWrap: 'pretty' }}>
               {charged ? (
-                <>Your free week is already used, so <b style={{ color: '#e8edf5' }}>{inr(payable)} is charged today</b>. Cancel any time.</>
+                <>Your free week is already used, so <b style={{ color: 'var(--ink)' }}>{inr(payable)} is charged today</b>. Cancel any time.</>
               ) : (
                 <>
-                  <b style={{ color: '#2fe3bd' }}>Pay ₹0 today</b>
+                  <b style={{ color: 'var(--mint)' }}>Pay ₹0 today</b>
                   {freeDays == null
                     ? ' · cancel any time.'
                     : ` · ${inr(payable)} on ${fmtDay(chargeOn)} · cancel any time before.`}
@@ -443,24 +454,24 @@ export default function BillingStep({ onStarted, setupCta }) {
                 {PROTECTIONS.map((p, i) => {
                   const open = openRows.includes(p.id);
                   return (
-                    <li key={p.id} style={{ borderTop: i === 0 ? 0 : '1px solid rgba(255,255,255,.07)' }}>
+                    <li key={p.id} style={{ borderTop: i === 0 ? 0 : '1px solid var(--line)' }}>
                       <button
                         type="button"
                         onClick={() => toggleRow(p.id)}
                         aria-expanded={open}
                         aria-controls={`prot-${p.id}`}
-                        style={{ width: '100%', display: 'flex', gap: 12, padding: '13px 6px', alignItems: 'flex-start', background: 'transparent', border: 0, color: '#f6f9fc', textAlign: 'left' }}
+                        style={{ width: '100%', display: 'flex', gap: 12, padding: '13px 6px', alignItems: 'flex-start', background: 'transparent', border: 0, color: 'var(--ink)', textAlign: 'left' }}
                       >
                         <span aria-hidden style={{ flex: 'none', width: 28, height: 28, borderRadius: 9, background: p.gradient, color: p.color, display: 'grid', placeItems: 'center', marginTop: 1 }}>
                           <Glyph d={GLYPH[p.glyph]} />
                         </span>
                         <span style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, letterSpacing: '-.005em' }}>{p.title}</span>
-                          <span style={{ display: 'block', marginTop: 2, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>{p.body}</span>
+                          <span style={{ display: 'block', marginTop: 2, fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-2)' }}>{p.body}</span>
                         </span>
                         <span
                           aria-hidden
-                          style={{ flex: 'none', marginTop: 6, color: '#7f8ca0', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }}
+                          style={{ flex: 'none', marginTop: 6, color: 'var(--ink-3)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }}
                         >
                           <Glyph d={['M6 9l6 6 6-6']} size={14} />
                         </span>
@@ -468,15 +479,15 @@ export default function BillingStep({ onStarted, setupCta }) {
 
                       {open && (
                         <div id={`prot-${p.id}`} style={{ padding: '0 6px 14px 50px', display: 'grid', gap: 7 }}>
-                          <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#a3b0c2' }}>
-                            <b style={{ color: '#ff8178', fontWeight: 700 }}>Pain:</b> {p.pain}
+                          <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-2)' }}>
+                            <b style={{ color: 'var(--red)', fontWeight: 700 }}>Pain:</b> {p.pain}
                           </p>
                           {/* No "Fix:" label — the summary above already is
                               the fix. This line is what the summary cannot
                               carry: the caveat, or the specific. */}
-                          <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: '#f6f9fc' }}>{p.detail}</p>
+                          <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink)' }}>{p.detail}</p>
                           {p.note && (
-                            <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: '#7f8ca0' }}>{p.note}</p>
+                            <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.45, color: 'var(--ink-3)' }}>{p.note}</p>
                           )}
                         </div>
                       )}
@@ -485,7 +496,7 @@ export default function BillingStep({ onStarted, setupCta }) {
                 })}
               </ul>
 
-              <p style={{ margin: '12px 2px 0', fontSize: 12, lineHeight: 1.55, color: '#7f8ca0' }}>
+              <p style={{ margin: '12px 2px 0', fontSize: 12, lineHeight: 1.55, color: 'var(--ink-3)' }}>
                 All five come with every plan. Plans only change how often you pay.
               </p>
             </div>
@@ -497,7 +508,7 @@ export default function BillingStep({ onStarted, setupCta }) {
               class drops `position: sticky` at the same width the columns
               stack — see index.css. */}
           <aside className="bs-panel" style={{ flex: '1 1 340px', maxWidth: 440, minWidth: 0 }}>
-            <div style={{ position: 'relative', overflow: 'hidden', padding: 22, borderRadius: 24, background: '#0d1422', boxShadow: 'inset 0 0 0 1px rgba(0,212,170,.28),0 30px 70px -40px rgba(0,212,170,.5)' }}>
+            <div style={{ position: 'relative', overflow: 'hidden', padding: 22, borderRadius: 24, color: '#f6f9fc', background: '#0d1422', boxShadow: 'inset 0 0 0 1px rgba(0,212,170,.28),0 30px 70px -40px rgba(0,212,170,.5)' }}>
               <div aria-hidden style={{ position: 'absolute', width: 360, height: 360, left: -140, top: -200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,212,170,.18),transparent 66%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative' }}>
                 <h2 style={{ margin: 0, font: "600 20px/1.2 'Space Grotesk',sans-serif", letterSpacing: '-.02em' }}>Choose how you pay</h2>
