@@ -675,9 +675,29 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = 3 }) {
 
                 {/* No promise of a reminder email: none is sent for a
                     payment-sourced trial. See the TODO above. */}
-                <p style={{ margin: '11px 0 0', fontSize: 12, lineHeight: 1.5, color: '#7f8ca0', textAlign: 'center' }}>
-                  Cancel any time in Plan &amp; billing.
-                </p>
+                {setupCta ? (
+                  <p style={{ margin: '11px 0 0', fontSize: 12, lineHeight: 1.5, color: '#7f8ca0', textAlign: 'center' }}>
+                    Cancel any time in Plan &amp; billing.
+                  </p>
+                ) : (
+                  /*
+                   * WHAT THE BANK SCREEN WILL SAY, BEFORE IT SAYS IT.
+                   *
+                   * We say ₹0 today; the UPI app then shows a ₹1 check and
+                   * "up to ₹15,000". Read cold, that is a bait-and-switch at
+                   * the moment of trust. Card AutoPay is set to the plan's
+                   * own price (payments: mandateFloor); UPI keeps its own
+                   * ceiling, which we cannot change, so we name it. No
+                   * promise the ₹1 is refunded until Dodo confirms it, and
+                   * no "a day before": the bank decides the notice.
+                   */
+                  <p data-autopay-note="1" style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.55, color: '#a3b0c2', textAlign: 'left' }}>
+                    Your bank or UPI app will ask you to approve AutoPay for {inr(payable)} {cur.per}. UPI may also show a ₹1 check and a limit of
+                    {' '}&ldquo;up to ₹15,000&rdquo; &mdash; that&rsquo;s UPI&rsquo;s standard ceiling, not what we charge.
+                    {!charged && freeDays != null ? ` First charge ${fmtDay(chargeOn)}.` : ''} Your bank tells you before every debit.
+                    {' '}Cancel any time in Plan &amp; billing or your UPI app.
+                  </p>
+                )}
               </div>
             </div>
           </aside>

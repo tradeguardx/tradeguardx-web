@@ -77,6 +77,16 @@ describe('billing step', () => {
     expect(current?.textContent).toBe('3');
   });
 
+  it('says what the bank screen will show before it shows it (no refund promise)', async () => {
+    const { container } = render(<BillingStep />);
+    await waitFor(() => expect(container.querySelector('[data-autopay-note]')).not.toBeNull());
+    const note = container.querySelector('[data-autopay-note]').textContent;
+    expect(note).toMatch(/approve AutoPay for ₹1,299 per month/);
+    expect(note).toMatch(/₹1 check/);
+    expect(note).toMatch(/up to ₹15,000/);
+    expect(note).not.toMatch(/refund/i);
+  });
+
   it('keeps every colour on the left side themeable (light mode)', () => {
     const { container } = render(<BillingStep />);
     const left = container.querySelector('.bs-protections')?.parentElement;

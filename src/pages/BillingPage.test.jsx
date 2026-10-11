@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { lifecycleView } from '../lib/lifecycle';
 
@@ -36,6 +36,7 @@ vi.mock('../components/dashboard/billing/BillingStep', () => ({
 }));
 
 import BillingPage from './BillingPage';
+import { changeSubscriptionPlan } from '../api/paymentsApi';
 
 const sub = (s) => ({ subscription: { status: 'active', source: 'payment', billingInterval: 'monthly', createdAt: '2026-10-08T00:00:00Z', ...s } });
 const show = (lifeId, { user = {}, subscription = {}, ctx = {} } = {}) => {
@@ -120,5 +121,23 @@ describe('Plan & billing, case by case', () => {
     show('t1', { user: { access: 'trial', isTrial: true, trialAutoRenews: true }, subscription: { status: 'trialing', trialEndsAt: '2026-10-15T00:00:00Z' }, ctx: { autoRenews: true } });
     expect(await screen.findByText('FREE TRIAL')).toBeTruthy();
     expect(screen.getByText(/Your guard stays on until 15 Oct 2026, then switches off\./)).toBeTruthy();
+  });
+});
+
+describe('switching period on the same AutoPay', () => {
+  it('asks first, says it is the existing AutoPay, and only then switches', async () => {
+    changeSubscriptionPlan.mockClear();
+    changeSubscriptionPlan.mockResolvedValue({ pending: null });
+    show('p', { user: { access: 'active' }, subscription: { status: 'active', currentPeriodEnd: '2026-10-18T00:00:00Z' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Switch to Quarterly' }));
+    // nothing sent yet: the question comes first
+    expect(changeSubscriptionPlan).not.toHaveBeenCalled();
+    const dialog = screen.getByRole('dialog', { name: 'Switch to Quarterly' });
+    expect(dialog.textContent).toMatch(/₹3,299 every 3 months on your existing AutoPay\. Nothing to approve, nothing charged today\./);
+    fireEvent.click(screen.getByRole('button', { name: /Keep/ }));
+    expect(screen.queryByRole('dialog', { name: 'Switch to Quarterly' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Quarterly' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Switch to Quarterly' }).at(-1));
+    await waitFor(() => expect(changeSubscriptionPlan).toHaveBeenCalledWith(expect.objectContaining({ interval: 'quarterly' })));
   });
 });

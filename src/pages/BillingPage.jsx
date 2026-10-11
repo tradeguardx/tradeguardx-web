@@ -66,6 +66,11 @@ const H3 = "margin:0;font:600 16px/1.2 'Space Grotesk',sans-serif;letter-spacing
 const KICKER = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7f8ca0";
 
 const inr = (n) => (Number.isFinite(n) ? `₹${Math.round(n).toLocaleString('en-IN')}` : '—');
+/* Said wherever a plan change is: a bigger debit arriving on an AutoPay
+   they approved as "monthly" reads like fraud, and a mandate cancelled in
+   the bank app is a failed renewal and a guard that switches off. The bank
+   writes the notice, so no promise of when. */
+const BANK_NOTICE = (price) => `Your bank will notify you before the ${inr(price)} debit — that's this change, not a new charge.`;
 const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : null;
 const fill = (tpl, vals) => tpl.replace(/\{(\w+)\}/g, (_, k) => vals[k] ?? '');
@@ -83,6 +88,9 @@ export default function BillingPage() {
      from the shell. */
   const [plans, setPlans] = useState(null);
   const [busy, setBusy] = useState('');
+  /* The period they pressed Switch on, waiting for a yes. A change of what
+     their AutoPay charges is said before it happens, not after. */
+  const [confirmSwitch, setConfirmSwitch] = useState(null);
   const [confirming, setConfirming] = useState(false);
   /* What the subscription is scheduled to become. Read from the provider, not
      assumed from the last click — the schedule can also be applied or
@@ -312,8 +320,8 @@ export default function BillingPage() {
     const saved = savingVsMonthly(opt, monthlyPrice);
     const saving = saved > 0 ? ` That is ${inr(saved)} a year less than paying monthly.` : '';
     return state === 'trial'
-      ? `Your free days run on exactly as they are — nothing is charged today. From ${when} you are on ${opt.name} at ${inr(opt.price)} ${PER[opt.id]}.${saving}`
-      : `You stay on your current plan until ${when}. From then you are on ${opt.name} at ${inr(opt.price)} ${PER[opt.id]}.${saving}`;
+      ? `Your free days run on exactly as they are — nothing is charged today. From ${when} you are on ${opt.name} at ${inr(opt.price)} ${PER[opt.id]}.${saving} ${BANK_NOTICE(opt.price)}`
+      : `You stay on your current plan until ${when}. From then you are on ${opt.name} at ${inr(opt.price)} ${PER[opt.id]}.${saving} ${BANK_NOTICE(opt.price)}`;
   };
 
   const resume = useCallback(async (toInterval) => {
@@ -727,7 +735,7 @@ export default function BillingPage() {
               <p style={sxw('flex:1;min-width:200px;margin:0;font-size:12.5px;line-height:1.5;color:#f0d79a')}>
                 Changes to <strong style={sxw('color:#fbc94f')}>{to?.name ?? pending.interval}</strong>
                 {to ? ` (${inr(to.price)} ${PER[pending.interval]})` : ''} on {fmtDate(pending.effectiveAt) ?? 'your next renewal'}.
-                {cur ? ` You stay on ${cur.name} until then.` : ''} No charge today.
+                {cur ? ` You stay on ${cur.name} until then.` : ''} No charge today. {to ? BANK_NOTICE(to.price) : ''}
               </p>
               <button
                 type="button"
@@ -776,7 +784,7 @@ export default function BillingPage() {
                 <button
                   type="button"
                   disabled={(isCur && state !== 'cancelled' && state !== 'ended') || isPending || state === 'failed' || busy.startsWith('switch') || busy === 'undo'}
-                  onClick={() => (state === 'ended' ? subscribeNow(o.id) : state === 'cancelled' ? resume(o.id) : switchTo(o))}
+                  onClick={() => (state === 'ended' ? subscribeNow(o.id) : state === 'cancelled' ? resume(o.id) : setConfirmSwitch(o))}
                   style={sxw(`min-height:42px;padding:10px;border:0;border-radius:10px;background:${state === 'cancelled' || state === 'ended' ? '#00d4aa' : isCur || isPending ? 'transparent' : 'rgba(255,255,255,.08)'};color:${state === 'cancelled' || state === 'ended' ? '#02241d' : isCur || isPending ? '#7f8ca0' : '#f6f9fc'};font-size:13px;font-weight:700;cursor:${(isCur && state !== 'cancelled' && state !== 'ended') || isPending ? 'default' : 'pointer'}`)}
                 >
                   {busy === `switch:${o.id}`
@@ -790,6 +798,30 @@ export default function BillingPage() {
             );
           })}
         </div>
+        {confirmSwitch && (
+          <div role="dialog" aria-label={`Switch to ${confirmSwitch.name}`} data-confirm-switch="1" style={sxw('margin-top:12px;padding:14px 15px;border-radius:13px;background:rgba(0,212,170,.06);box-shadow:inset 0 0 0 1px rgba(0,212,170,.3)')}>
+            <p style={sxw('margin:0;font-size:13px;line-height:1.55;color:#e8edf5')}>
+              <strong>Switch to {confirmSwitch.name}?</strong> From {nextDate ?? 'your next renewal'} you pay {inr(confirmSwitch.price)} {EVERY[confirmSwitch.id]} on your existing AutoPay. Nothing to approve, nothing charged today.
+            </p>
+            <div style={sxw('margin-top:11px;display:flex;gap:8px;flex-wrap:wrap')}>
+              <button
+                type="button"
+                disabled={busy.startsWith('switch')}
+                onClick={async () => { const o = confirmSwitch; setConfirmSwitch(null); await switchTo(o); }}
+                style={sxw('min-height:40px;padding:9px 15px;border:0;border-radius:10px;background:#00d4aa;color:#02241d;font-size:13px;font-weight:800')}
+              >
+                Switch to {confirmSwitch.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmSwitch(null)}
+                style={sxw('min-height:40px;padding:9px 15px;border:0;border-radius:10px;background:rgba(255,255,255,.08);color:#f6f9fc;font-size:13px;font-weight:700')}
+              >
+                Keep {cur?.name ?? 'my plan'}
+              </button>
+            </div>
+          </div>
+        )}
         {(state === 'failed' || state === 'cancelled') && (
           <p style={sxw('margin:12px 0 0;font-size:12.5px;color:#7f8ca0')}>
             {state === 'failed'
