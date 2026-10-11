@@ -1773,6 +1773,11 @@
     font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.12em;
     text-transform: uppercase; color: #052418; font-weight: 700;
   }
+  /* Scenario 2 shows a position that FILLED and was then closed — the engine
+     can't veto an order before it executes, so the visual mustn't imply it. */
+  .tgx-home .sv2-place-btn.sv2-closed{
+    background: var(--danger-glow); border-color: rgba(239, 68, 68, 0.45); color: var(--danger);
+  }
   .tgx-home .sv2-stamp{
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%) rotate(-12deg) scale(2);

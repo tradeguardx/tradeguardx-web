@@ -120,7 +120,7 @@
         <div class="scenario-content">
           <div class="scenario-stage">Stage 1 &middot; Soft alert</div>
           <h3>You forgot the stop loss.</h3>
-          <p>Market's moving. You hit BUY on BTCUSD with no stop. Two minutes later your phone buzzes &mdash; TradeGuardX caught it.</p>
+          <p>Market's moving. You hit BUY on BTCUSD with no stop. Half a minute later your phone buzzes &mdash; TradeGuardX caught it.</p>
           <div class="scenario-action">
             <div class="you-did">
               <span class="micro-lbl">You did</span>
@@ -128,7 +128,7 @@
             </div>
             <div class="we-did">
               <span class="micro-lbl">We did</span>
-              <b>Alert sent</b> on all your channels
+              <b>Alert sent</b> on Telegram and email
             </div>
           </div>
         </div>
@@ -148,7 +148,7 @@
             </div>
             <div class="msg">
               <b>Stop loss missing on BTCUSD</b>
-              Set one in 5 min or we'll auto-close the position
+              Add a stop &mdash; this position has no protection
             </div>
           </div>
         </div>
@@ -158,17 +158,17 @@
       <div class="scenario-card escalate-2">
         <div class="scenario-time">11:30<span class="ampm">IST</span></div>
         <div class="scenario-content">
-          <div class="scenario-stage">Stage 2 &middot; Trade rejected</div>
+          <div class="scenario-stage">Stage 2 &middot; Position closed</div>
           <h3>You sized up after a loss.</h3>
-          <p>Down ₹7,000 from earlier. You try a bigger entry to "make it back". The order would risk 1.6% of your account &mdash; over your 1% cap. We cancel it before it executes.</p>
+          <p>Down ₹7,000 from earlier. You go bigger to &ldquo;make it back&rdquo;, with a stop that would cost 1.6% of your account &mdash; over your 1% cap. The moment that stop is set, we close the position at market. The rest of your account is untouched.</p>
           <div class="scenario-action">
             <div class="you-did">
               <span class="micro-lbl">You did</span>
-              Order at <b>1.6% risk</b> &middot; over cap
+              Stop at <b>1.6% risk</b> &middot; over cap
             </div>
             <div class="we-did">
               <span class="micro-lbl">We did</span>
-              <b>Order cancelled</b> &middot; pre-execution
+              <b>Closed at market</b> &middot; in seconds
             </div>
           </div>
         </div>
@@ -190,10 +190,10 @@
               <span class="now">Risk: <span class="risk-pct" style="color: var(--danger);">1.6%</span></span>
               <span class="cap">Cap: 1.0%</span>
             </div>
-            <div class="sv2-place-btn">Place order</div>
+            <div class="sv2-place-btn sv2-closed">Position closed at market</div>
           </div>
           <div class="sv2-stamp">
-            REJECTED
+            CLOSED
             <span class="stamp-sub">Risk per trade exceeded</span>
           </div>
         </div>
@@ -319,46 +319,46 @@
   <div class="wrap">
     <div class="section-head">
       <span class="eyebrow">Manual kill switch</span>
-      <h2 class="display h2">Feel the tilt coming?<br>Lock yourself out.</h2>
-      <p>Your rules catch you once you break them. This is for the moment before, when you already know the next trade is a bad idea.</p>
+      <h2 class="display h2">Need a break?<br>Lock your account.</h2>
+      <p>For when you know your next trade is a bad idea.</p>
     </div>
 
     <div class="mks-grid">
       <ul class="mks-points">
         <li>
-          <span class="mks-num">3h · 6h · 12h</span>
-          <h4>Pick how long, between trades.</h4>
-          <p>One tap from the top of your dashboard. You start it once your positions are closed, before the next one.</p>
+          <span class="mks-num">3, 6 or 12 hours</span>
+          <h4>Choose how long.</h4>
+          <p>Press the button at the top of your dashboard. Close your open trades first, then lock.</p>
         </li>
         <li>
           <span class="mks-num">No cancel</span>
-          <h4>There is no way to end it early.</h4>
-          <p>You can make it longer, never shorter. Your rules and API key are locked too, so there&rsquo;s no back door.</p>
+          <h4>You can&rsquo;t undo it.</h4>
+          <p>You can make the lock longer, but never shorter. You also can&rsquo;t change your rules or remove your API key until it ends.</p>
         </li>
         <li>
-          <span class="mks-num">Closed on sight</span>
-          <h4>Anything you open gets closed.</h4>
-          <p>Orders placed on the website, the app or a bot are closed by our servers until the clock runs out.</p>
+          <span class="mks-num">Trades closed</span>
+          <h4>Any trade you open is closed.</h4>
+          <p>If you place a trade on the exchange website, its app or a bot, we close it right away until the time is up.</p>
         </li>
       </ul>
 
-      <div class="mks-demo" role="img" aria-label="The lock-yourself-out dialog: Delta Main, 3 hours selected, no cancel, then the account shown locked with a countdown">
+      <div class="mks-demo" role="img" aria-label="The lock dialog: Delta Main, 3 hours selected, cannot be cancelled, then the account shown locked with a countdown">
         <div class="mks-dialog">
           <div class="mks-dh">
-            <b>Lock yourself out</b>
+            <b>Lock my account</b>
             <span><img src="/brokers/delta-exchange.svg" alt="" width="12" height="12">Delta &middot; Main</span>
           </div>
           <div class="mks-hours">
             <span class="on">3h</span><span>6h</span><span>12h</span>
           </div>
-          <p class="mks-warn">You won&rsquo;t be able to trade this account until <b>18:42&nbsp;IST</b>. There is no cancel.</p>
-          <span class="mks-btn">Lock me out</span>
+          <p class="mks-warn">You can&rsquo;t trade on this account until <b>18:42&nbsp;IST</b>. You can&rsquo;t cancel this.</p>
+          <span class="mks-btn">Lock my account</span>
         </div>
         <div class="mks-locked">
           <span class="mks-dot"></span>
           <span class="mks-l1">Locked</span>
           <span class="mks-clock">02:59:41</span>
-          <span class="mks-l2">left &middot; new orders closed on sight</span>
+          <span class="mks-l2">left &middot; new trades are closed right away</span>
         </div>
       </div>
     </div>
