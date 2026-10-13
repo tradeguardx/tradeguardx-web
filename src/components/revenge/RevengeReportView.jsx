@@ -11,7 +11,7 @@ const RANK = { problem: 0, warning: 1, good: 2, na: 3 };
  * `reveal`: the moment it unlocks — the score counts up and each section
  * drops in after the one before. Otherwise it simply renders.
  */
-export default function RevengeReportView({ report, periodLabel, months = 1, reveal = false }) {
+export default function RevengeReportView({ report, periodLabel, months = 1, reveal = false, animateScore = reveal }) {
   const money = moneyOf(report?.currency);
   const grade = report?.grade ? GRADE[report.grade] : null;
   const p = report.profile;
@@ -22,7 +22,7 @@ export default function RevengeReportView({ report, periodLabel, months = 1, rev
   return (
     <div>
       <section className={reveal ? 'rv-pop' : undefined} style={sx(`margin-top:20px;padding:22px 24px;${CARD};display:flex;align-items:center;gap:24px;flex-wrap:wrap`)}>
-        <ScoreRing score={report.score} tone={grade?.tone ?? 'neutral'} animate={reveal} />
+        <ScoreRing score={report.score} tone={grade?.tone ?? 'neutral'} animate={animateScore} />
         <div style={sx('flex:1;min-width:min(260px,100%)')}>
           <div style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap')}>
             <span style={sx(LABEL)}>Revenge score{periodLabel ? ` · ${periodLabel}` : ''}</span>

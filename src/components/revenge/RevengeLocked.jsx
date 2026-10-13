@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { sx } from '../dashboard/shell/sx';
 import { DEMO_REPORT, PERIODS } from './revengeFormat';
@@ -9,13 +10,32 @@ import RevengeReportView from './RevengeReportView';
  *
  * The blurred report is made-up (DEMO_REPORT) and never legible — it shows
  * what kind of thing is coming, not a guess at their numbers.
+ *
+ * ALIVE, NOT A PICTURE. The preview breathes (blur and opacity drift), a soft
+ * light sweeps across it like a scanner, and the score ring keeps filling to
+ * a new number — a report being worked out, waiting for them. Reduced motion:
+ * a still preview.
  */
+const DEMO_SCORES = [41, 67, 29, 54];
 export default function RevengeLocked({ months, onMonths, onUnlock, keyState, accountName, exchangeName }) {
   const noKey = keyState === 'none' || keyState === 'failed';
+  const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (reduce) return undefined;
+    const t = setInterval(() => setTick((n) => n + 1), 2800);
+    return () => clearInterval(t);
+  }, [reduce]);
+  const demoScore = DEMO_SCORES[tick % DEMO_SCORES.length];
+  const demoGrade = demoScore >= 60 ? 'someTilt' : demoScore >= 40 ? 'revengeProne' : 'onTilt';
   return (
     <div style={sx('position:relative;margin-top:20px')}>
-      <div inert aria-hidden="true" style={sx('filter:blur(9px);opacity:.75;pointer-events:none;user-select:none;max-height:640px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)')}>
-        <RevengeReportView report={DEMO_REPORT} periodLabel="1 month" />
+      <div inert aria-hidden="true" style={sx('position:relative;pointer-events:none;user-select:none;max-height:640px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)')}>
+        <div className="rv-motion" style={sx('filter:blur(9px);opacity:.75;animation:rvBreath 4.5s ease-in-out infinite')}>
+          <RevengeReportView report={{ ...DEMO_REPORT, score: demoScore, grade: demoGrade }} periodLabel="1 month" animateScore={!reduce} />
+        </div>
+        {/* The scanner light, sweeping across the blurred report. */}
+        <div className="rv-motion" style={sx('position:absolute;top:0;bottom:0;left:0;width:45%;animation:rvScan 3.2s cubic-bezier(.45,.05,.55,.95) infinite', { background: 'linear-gradient(100deg,transparent,var(--mint-tint) 45%,rgba(255,255,255,.07) 50%,var(--mint-tint) 55%,transparent)' })} />
       </div>
 
       <div style={sx('position:absolute;inset:0;display:grid;place-items:start center;padding:56px 16px 0')}>
