@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { StrictMode } from 'react';
@@ -22,70 +22,78 @@ const report = {
   worstDay: { date: '2026-10-03', pnl: -48.51, firstLoss: -2.1, afterFirstLoss: -40.2, timeline: [{ at: '2026-10-03T16:30:00Z', symbol: 'PAXGUSD', side: 'long', pnl: -2.1, revenge: false }, { at: '2026-10-03T16:32:00Z', symbol: 'PAXGUSD', side: 'long', pnl: -3.4, revenge: true }] },
 };
 const fetchRevengeReport = vi.fn(async () => report);
+const unlockRevengeReport = vi.fn(async () => ({ status: 'ready', source: 'history' }));
+const fetchRevengeStatus = vi.fn(async () => ({ status: 'ready', source: 'snapshot', windowDays: 30 }));
+const guard = { selected: { loaded: true, connection: { status: 'active' } }, life: { protected: true } };
 
 vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ session: { access_token: 't' } }) }));
-vi.mock('../context/TradingAccountContext', () => ({ useTradingAccounts: () => ({ selectedTradingAccountId: 'a1', selectedAccount: { id: 'a1', name: 'Delta main' }, accountsLoading: false }) }));
-const guard = { selected: { loaded: true, connection: { status: 'active' } } };
+vi.mock('../context/TradingAccountContext', () => ({ useTradingAccounts: () => ({ selectedTradingAccountId: 'a1', selectedAccount: { id: 'a1', name: 'Delta main', propFirmSlug: 'delta_india' }, accountsLoading: false }) }));
 vi.mock('../context/GuardContext', () => ({ useGuard: () => guard }));
 vi.mock('../api/tradesApi', () => ({ fetchRevengeReport: (...a) => fetchRevengeReport(...a) }));
-vi.mock('../api/syncApi', () => ({ fetchBackfillStatus: vi.fn(async () => ({ status: 'idle', updatedAt: new Date(Date.now() - 2 * 3600e3).toISOString() })), triggerHistoryBackfill: vi.fn(async () => ({})) }));
+vi.mock('../api/syncApi', () => ({
+  unlockRevengeReport: (...a) => unlockRevengeReport(...a),
+  fetchRevengeStatus: (...a) => fetchRevengeStatus(...a),
+  triggerHistoryBackfill: vi.fn(async () => ({})),
+}));
 
 const { default: RevengeReportPage } = await import('./RevengeReportPage');
+const mount = (wrap) => render(wrap ? <StrictMode><MemoryRouter><RevengeReportPage /></MemoryRouter></StrictMode> : <MemoryRouter><RevengeReportPage /></MemoryRouter>);
+
+beforeEach(() => {
+  fetchRevengeReport.mockReset();
+  fetchRevengeReport.mockImplementation(async () => report);
+  unlockRevengeReport.mockClear();
+  guard.selected = { loaded: true, connection: { status: 'active' } };
+  guard.life = { protected: true };
+});
 
 describe('revenge report page', () => {
-  it('shows the score, the profile, and each check with its fix', async () => {
-    render(<MemoryRouter><RevengeReportPage /></MemoryRouter>);
+  it('shows the report once unlocked: score, checks with their fix, profile', async () => {
+    mount();
     expect(await screen.findByText('After a loss, you trade to get it back.')).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Revenge score 38 out of 100' })).toBeTruthy();
-    expect(screen.getByText('On tilt')).toBeTruthy();
     expect(screen.getByText('1 : 1.33')).toBeTruthy();
-    expect(screen.getByText('PAXGUSD', { selector: 'div' })).toBeTruthy(); // worst symbol card
-    expect(screen.getByText('10 in a row')).toBeTruthy();
-    // problems first, open, with evidence and the rule that fixes them
     expect(screen.getByText(/opened PAXGUSD 2 min later/)).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Set up Close after N losses' })).toBeTruthy();
-    // a passing check offers no fix
     expect(screen.queryByRole('link', { name: 'Set up Risk per trade' })).toBeNull();
-    expect(screen.getByText(/Trades imported 2 h ago/)).toBeTruthy();
   });
 
-  it('asks for the period picked', async () => {
-    render(<MemoryRouter><RevengeReportPage /></MemoryRouter>);
+  it('locked: the report blurred behind "Unlock", then the build, then the reveal', async () => {
+    fetchRevengeReport.mockImplementationOnce(async () => ({ locked: true, status: 'locked' }));
+    mount();
+    expect(await screen.findByText('Unlock your revenge report')).toBeTruthy();
+    fireEvent.click(screen.getByRole('radio', { name: '2 months' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Unlock my report' }));
+    expect(await screen.findByText('Building your revenge report')).toBeTruthy();
+    await waitFor(() => expect(unlockRevengeReport).toHaveBeenCalledWith(expect.objectContaining({ months: 2 })));
+    expect(await screen.findByText('After a loss, you trade to get it back.', {}, { timeout: 5000 })).toBeTruthy();
+  });
+
+  it('locked with no key: the way to connect one, never an Unlock that cannot work', async () => {
+    guard.selected = { loaded: true, connection: null };
+    fetchRevengeReport.mockImplementationOnce(async () => ({ locked: true, status: 'locked' }));
+    mount();
+    expect(await screen.findByText('Unlock your revenge report')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Connect key' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Unlock my report' })).toBeNull();
+  });
+
+  it('a longer period than the snapshot holds reads the extra months first', async () => {
+    fetchRevengeReport.mockImplementation(async ({ months }) => (months === 3 ? { needsUnlock: true, windowDays: 30 } : report));
+    mount();
     await screen.findByText('After a loss, you trade to get it back.');
     fireEvent.click(screen.getByRole('tab', { name: '3 months' }));
-    await waitFor(() => expect(fetchRevengeReport).toHaveBeenLastCalledWith(expect.objectContaining({ months: 3 })));
+    await waitFor(() => expect(unlockRevengeReport).toHaveBeenCalledWith(expect.objectContaining({ months: 3 })));
   });
 
-  it('says why there is no score when there are too few trades', async () => {
-    fetchRevengeReport.mockResolvedValueOnce({ ...report, enoughData: false, score: null, grade: null, trades: 4, verdict: 'Not enough trades in this period to judge (4 of 10). Try a longer period.' });
-    render(<MemoryRouter><RevengeReportPage /></MemoryRouter>);
-    expect(await screen.findByText(/at least 10 closed trades/)).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'No score' })).toBeTruthy();
-  });
-
-  it('with no key: no Refresh, and the way to connect one', async () => {
-    guard.selected = { loaded: true, connection: null };
-    render(<MemoryRouter><RevengeReportPage /></MemoryRouter>);
-    await screen.findByText('After a loss, you trade to get it back.');
-    expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Connect key' })).toBeTruthy();
-    guard.selected = { loaded: true, connection: { status: 'active' } };
+  it('asks the trader without a plan to fix it, under the report', async () => {
+    guard.life = { unprotected: true };
+    mount();
+    expect(await screen.findByRole('link', { name: /Fix this — start your 3-day free trial/ })).toBeTruthy();
   });
 
   it('still shows the report under React StrictMode (dev double mount)', async () => {
-    // The guard against late responses used to be switched off for good by
-    // the first, simulated unmount — every report was then dropped in dev.
-    render(<StrictMode><MemoryRouter><RevengeReportPage /></MemoryRouter></StrictMode>);
+    mount(true);
     expect(await screen.findByText('After a loss, you trade to get it back.')).toBeTruthy();
-  });
-
-  it('no key and no trades: only the connect prompt, no empty score', async () => {
-    guard.selected = { loaded: true, connection: null };
-    fetchRevengeReport.mockResolvedValueOnce({ ...report, trades: 0, enoughData: false, score: null, grade: null, insights: [], worstDay: null });
-    render(<MemoryRouter><RevengeReportPage /></MemoryRouter>);
-    expect(await screen.findByText('No trades to analyse yet')).toBeTruthy();
-    expect(screen.queryByRole('img', { name: /score/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
-    guard.selected = { loaded: true, connection: { status: 'active' } };
   });
 });

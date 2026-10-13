@@ -1,0 +1,127 @@
+import { useEffect, useRef, useState } from 'react';
+import { sx } from '../dashboard/shell/sx';
+import { fetchRevengeReport } from '../../api/tradesApi';
+import { useRevengeUnlock } from '../../hooks/useRevengeUnlock';
+import { CARD, GRADE, LABEL, monthsForDays, PERIODS } from './revengeFormat';
+import { Chip, RevengeStyles, ScoreRing } from './RevengeParts';
+import RevengeBuilding from './RevengeBuilding';
+import RevengeReportView from './RevengeReportView';
+
+/**
+ * Setup, between "Connect key" and billing: the moment their own trading is
+ * shown back to them, right before we ask them to protect it.
+ *
+ * Reads the last 30 days (60, then 90 if that is thin) — from the tax import
+ * when it already has them, otherwise straight from the exchange, once — then
+ * unlocks with the score counting up and the one finding that matters most.
+ * The full report is a tap away; "Fix this" carries on to billing. Skipping
+ * is always one click: this step informs, it never blocks.
+ */
+export default function RevengeSetupStep({ accessToken, tradingAccountId, accountName, exchangeName, onContinue, continueLabel }) {
+  const unlock = useRevengeUnlock({ accessToken, tradingAccountId });
+  const [report, setReport] = useState(null);
+  const [months, setMonths] = useState(1);
+  const [full, setFull] = useState(false);
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (started.current || !accessToken || !tradingAccountId) return undefined;
+    started.current = true;
+    const t = setTimeout(async () => {
+      const out = await unlock.start('auto');
+      if (out !== 'ready') return;
+      // The snapshot says how far it read; the tax import has it all, so walk
+      // 1 → 3 months until there is enough to score.
+      const st = unlock.statusRef.current;
+      const first = st?.source === 'snapshot' && st?.windowDays ? monthsForDays(st.windowDays) : 1;
+      for (let m = first; m <= 3; m++) {
+        const r = await fetchRevengeReport({ accessToken, tradingAccountId, months: m }).catch(() => null);
+        if (r && !r.locked && !r.building && !r.needsUnlock && (r.enoughData || m === 3)) {
+          setMonths(m);
+          setReport(r);
+          return;
+        }
+      }
+      setReport({ trades: 0, enoughData: false });
+    }, 0);
+    return () => clearTimeout(t);
+  }, [accessToken, tradingAccountId, unlock]);
+
+  const grade = report?.grade ? GRADE[report.grade] : null;
+  const worst = report?.checks?.find((c) => c.status === 'problem') ?? report?.checks?.find((c) => c.status === 'warning') ?? null;
+  const skip = (
+    <button type="button" onClick={onContinue} style={sx('padding:6px 2px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
+      Skip to {continueLabel ? continueLabel.toLowerCase() : 'billing'}
+    </button>
+  );
+
+  return (
+    <div>
+      <RevengeStyles />
+      {unlock.phase !== 'ready' || !report ? (
+        unlock.phase === 'error' ? (
+          <div style={sx(`padding:24px;${CARD};text-align:center`)}>
+            <div style={sx("font:600 18px/1.3 'Space Grotesk',sans-serif")}>We couldn’t read your trades just now</div>
+            <p style={sx('margin:8px auto 0;max-width:48ch;font-size:13.5px;line-height:1.55;color:var(--ink-3)')}>{unlock.error} Your report will be waiting under Review → Revenge report.</p>
+            <button type="button" onClick={onContinue} style={sx('margin-top:16px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:#02241d;font-size:13.5px;font-weight:800;cursor:pointer')}>{continueLabel || 'Continue'}</button>
+          </div>
+        ) : (
+          <>
+            <RevengeBuilding status={unlock.status ?? { status: 'queued' }} accountName={accountName} exchangeName={exchangeName} />
+            <div style={sx('margin-top:10px;text-align:center')}>{skip}</div>
+          </>
+        )
+      ) : !report.enoughData ? (
+        <div className="rv-in" style={sx(`padding:28px 24px;${CARD};text-align:center`)}>
+          <div style={sx("font:600 20px/1.3 'Space Grotesk',sans-serif;letter-spacing:-.015em")}>Not enough trades to read yet</div>
+          <p style={sx('margin:8px auto 0;max-width:50ch;font-size:13.5px;line-height:1.6;color:var(--ink-3)')}>
+            We found {report.trades || 'no'} closed trade{report.trades === 1 ? '' : 's'} in the last few months — too few to call it a pattern. Your revenge report builds itself as you trade; it lives under Review → Revenge report.
+          </p>
+          <button type="button" onClick={onContinue} style={sx('margin-top:18px;padding:12px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14px;font-weight:800;cursor:pointer')}>{continueLabel || 'Continue'}</button>
+        </div>
+      ) : (
+        <>
+          <section className="rv-pop" style={sx(`padding:26px 24px;${CARD};text-align:center;position:relative;overflow:hidden`)}>
+            <div style={sx('position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 55% at 50% 0%,var(--mint-tint),transparent 70%)')} />
+            <div style={sx('position:relative;display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--mint-tint);border:1px solid var(--mint-line);color:var(--mint);font-size:12px;font-weight:800;letter-spacing:.02em')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 11V8a5 5 0 019.6-2" /><path d="M5 11h14v9H5z" /></svg>
+              Your revenge report is unlocked
+            </div>
+            <div style={sx('position:relative;margin-top:18px;display:grid;place-items:center')}>
+              <ScoreRing score={report.score} tone={grade?.tone ?? 'neutral'} animate size={150} />
+            </div>
+            <div style={sx('position:relative;margin-top:10px;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap')}>
+              <span style={sx(LABEL)}>Revenge score · {PERIODS.find((p) => p.months === months)?.label}</span>
+              {grade && <Chip tone={grade.tone}>{grade.label}</Chip>}
+            </div>
+            <div className="rv-in" style={sx("position:relative;margin-top:10px;font:600 21px/1.3 'Space Grotesk',sans-serif;letter-spacing:-.02em", { animationDelay: '1s' })}>{report.verdict}</div>
+            {worst && (
+              <p className="rv-in" style={sx('position:relative;margin:10px auto 0;max-width:56ch;font-size:14px;line-height:1.6;color:var(--ink-2)', { animationDelay: '1.25s' })}>{worst.finding}</p>
+            )}
+            <div className="rv-in" style={sx('position:relative;margin-top:20px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap', { animationDelay: '1.5s' })}>
+              <button type="button" onClick={onContinue} style={sx('padding:12px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint)')}>
+                Fix this — {continueLabel ? continueLabel.toLowerCase() : 'start your 3-day free trial'} →
+              </button>
+              <button type="button" onClick={() => setFull((v) => !v)} aria-expanded={full} style={sx('padding:12px 18px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer')}>
+                {full ? 'Hide the full report' : 'See my full report'}
+              </button>
+            </div>
+          </section>
+
+          {full && (
+            <div className="rv-unblur">
+              <RevengeReportView report={report} periodLabel={PERIODS.find((p) => p.months === months)?.label} months={months} />
+              <div style={sx('position:sticky;bottom:12px;margin-top:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-radius:14px;border:1px solid var(--mint-line);background:var(--surface);box-shadow:var(--shadow-card)')}>
+                <span style={sx('flex:1;min-width:min(220px,100%);font-size:13px;color:var(--ink-2)')}>TradeGuardX enforces the fixes above on your account.</span>
+                <button type="button" onClick={onContinue} style={sx('flex:none;padding:10px 16px;border:0;border-radius:11px;background:var(--mint-solid);color:#02241d;font-size:13.5px;font-weight:800;cursor:pointer')}>
+                  Fix this — {continueLabel ? continueLabel.toLowerCase() : 'start your 3-day free trial'} →
+                </button>
+              </div>
+            </div>
+          )}
+          <div style={sx('margin-top:12px;text-align:center')}>{skip}</div>
+        </>
+      )}
+    </div>
+  );
+}

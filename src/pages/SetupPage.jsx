@@ -7,6 +7,7 @@ import { fetchSupportedProps } from '../api/tradingAccountsApi';
 import { AddAccountForm } from './TradingAccountsPage';
 import { ConnectKeyFlow } from './ConnectKeyPage';
 import BillingStep from '../components/dashboard/billing/BillingStep';
+import RevengeSetupStep from '../components/revenge/RevengeSetupStep';
 import VenuePicker from '../components/dashboard/VenuePicker';
 import VenueMark from '../components/dashboard/VenueMark';
 import { venueFor } from '../lib/venues';
@@ -217,6 +218,18 @@ export default function SetupPage() {
   /* Someone who already has a method attached has nothing to buy, so billing
      is skipped rather than shown and dismissed. With billing last, that means
      they are done. A no-card trialist is NOT in that group. */
+  /*
+   * THE REVENGE REPORT, between the key and billing. Shown only after a key
+   * actually connects (never after "I'll connect the key later") — it is the
+   * trader's own last month read back to them, right before we ask them to
+   * protect it. Its "Fix this" / "Skip" both carry on exactly as before.
+   */
+  const [reportFor, setReportFor] = useState(null);
+  const afterReport = () => {
+    setReportFor(null);
+    afterKey();
+  };
+
   const afterKey = () => {
     if (planOff) {
       toast.info('Account connected. Your guard is off until your plan is active.');
@@ -242,13 +255,38 @@ export default function SetupPage() {
     try { window.localStorage?.removeItem('tgx_setup_dismissed'); } catch { /* blocked storage */ }
   }, [done]);
 
+  const venue = slug ? venueFor(slug) : null;
+
+  /* Before the "all done" redirect: connecting the key can be the last step
+     for someone who already pays, and they still get to see their report. */
+  if (reportFor) {
+    const v = venue ?? (selectedAccount?.propFirmSlug ? venueFor(selectedAccount.propFirmSlug) : null);
+    return (
+      <div style={sx('max-width:1040px;margin:0 auto;padding-bottom:56px')}>
+        <Rail at={2} done={[true, true, true, hasMandate || planOff]} />
+        <div style={sx('margin-bottom:18px;max-width:74ch')}>
+          <h2 style={sx("margin:0;font:600 23px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.026em")}>Your revenge report</h2>
+          <p style={sx('margin:7px 0 0;font-size:13.5px;line-height:1.6;color:var(--ink-3)')}>
+            Key connected. Before anything else, here is how you have been trading after a loss.
+          </p>
+        </div>
+        <RevengeSetupStep
+          accessToken={session?.access_token}
+          tradingAccountId={reportFor}
+          accountName={selectedAccount?.name}
+          exchangeName={v?.name}
+          onContinue={afterReport}
+          continueLabel={planOff || hasMandate ? 'Go to your dashboard' : undefined}
+        />
+      </div>
+    );
+  }
+
   /* Everything already done — they followed a stale link or finished in
      another tab. There is nothing to set up, so do not pretend otherwise. */
   if (!accountsLoading && guard.loaded !== false && done.every(Boolean)) {
     return <Navigate to="/dashboard/overview" replace />;
   }
-
-  const venue = slug ? venueFor(slug) : null;
 
   /*
    * Step 4 owns its whole screen — band, stepper, headline and plan panel —
@@ -311,7 +349,8 @@ export default function SetupPage() {
         />
       )}
 
-      {at === 2 && <ConnectKeyFlow embedded onConnected={afterKey} />}
+      {/* No account id to read (should not happen): carry on as before rather than stall. */}
+      {at === 2 && <ConnectKeyFlow embedded onConnected={() => (selectedAccount?.id ? setReportFor(selectedAccount.id) : afterKey())} />}
 
       {at > 0 && (
         <footer style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:30px;padding-top:18px;border-top:1px solid var(--line)')}>

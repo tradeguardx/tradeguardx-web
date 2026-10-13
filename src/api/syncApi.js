@@ -42,3 +42,29 @@ export async function fetchBackfillStatus({ accessToken, tradingAccountId, signa
   });
   return payload?.data ?? payload;
 }
+
+/**
+ * Unlock the revenge report for an account. The server picks the source:
+ * the tax import if it already covers the period (ready at once), otherwise a
+ * one-time read of the exchange (queued — follow fetchRevengeStatus).
+ * months: 1 | 2 | 3 | 'auto' (30 days, reading further back only if thin).
+ */
+export async function unlockRevengeReport({ accessToken, tradingAccountId, months = 'auto' } = {}) {
+  const payload = await apiPost(
+    '/sync/revenge/unlock',
+    { tradingAccountId, months },
+    { baseUrl: SYNC_API_BASE_URL, headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  return payload?.data ?? payload;
+}
+
+/** Where a revenge report's data read stands — what the animation follows. */
+export async function fetchRevengeStatus({ accessToken, tradingAccountId, signal } = {}) {
+  const params = new URLSearchParams({ tradingAccountId });
+  const payload = await apiGet(`/sync/revenge/status?${params}`, {
+    baseUrl: SYNC_API_BASE_URL,
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal,
+  });
+  return payload?.data ?? payload;
+}
