@@ -19,12 +19,14 @@ export default function LifecycleLock({ lock, from, children }) {
      onboarding do not read `return` yet. */
   const to = from ? `${lock.to}?return=${encodeURIComponent(from)}` : lock.to;
   return (
-    <div style={{ position: 'relative' }}>
+    /* At least one screen tall, so the card centres on what is visible even
+       when the page underneath is short. */
+    <div style={sx('position:relative;min-height:calc(100vh - 140px)')}>
       <div inert aria-hidden="true" style={sx('filter:blur(6px);pointer-events:none;user-select:none;max-height:calc(100vh - 140px);overflow:hidden')}>
         {children}
       </div>
       <div style={sx('position:absolute;inset:0;z-index:20;background:color-mix(in srgb,var(--bg) 62%,transparent)')}>
-        <div style={sx('position:sticky;top:120px;display:grid;place-items:center;padding:40px 16px')}>
+        <div style={sx('display:grid;place-items:center;height:100%;max-height:calc(100vh - 140px);padding:24px 16px')}>
           <div role="dialog" aria-modal="false" aria-labelledby="tgx-lock-title" style={sx('width:100%;max-width:420px;padding:26px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-card);text-align:center;animation:tgxSlide .25s ease-out both')}>
             <span style={sx('margin:0 auto;display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2)')}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M7 11V8a5 5 0 0110 0v3" /><path d="M5 11h14v9H5z" /></svg>
