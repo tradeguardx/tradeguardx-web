@@ -55,6 +55,12 @@ describe('which state, in the spec’s order (first match wins)', () => {
 });
 
 describe('the view of every state', () => {
+  it('key connected, never paid: only setup, the revenge report, draft rules and account pages stay open', () => {
+    const { locks } = lifecycleView('s3');
+    for (const p of ['/dashboard/overview', '/dashboard/trades', '/dashboard/tax', '/dashboard/journal', '/dashboard/live']) expect(lockedRouteOf(p, locks)).not.toBeNull();
+    for (const p of ['/dashboard/setup', '/dashboard/revenge', '/dashboard/rules', '/dashboard/account/billing', '/dashboard/connect']) expect(lockedRouteOf(p, locks)).toBeNull();
+  });
+
   it.each(ALL)('%s is complete and consistent', (id) => {
     const v = lifecycleView(id, { endsAt: '2026-10-15T12:00:00Z', periodEnd: '2026-10-01T12:00:00Z', autoRenews: true });
     expect(v.id).toBe(id);

@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useTradingAccounts } from '../context/TradingAccountContext';
+import { useGuard } from '../context/GuardContext';
 
 /**
  * Where /dashboard actually goes.
@@ -23,10 +24,13 @@ import { useTradingAccounts } from '../context/TradingAccountContext';
  */
 export default function DashboardLanding() {
   const { accounts, accountsLoading } = useTradingAccounts();
+  const { life } = useGuard();
   const { search } = useLocation();
 
   if (accountsLoading) return null;
 
   const hasAccount = Array.isArray(accounts) && accounts.length > 0;
-  return <Navigate to={hasAccount ? `/dashboard/overview${search}` : `/dashboard/setup${search}`} replace />;
+  // Overview locked (key connected, never paid): land on setup's last step.
+  const toSetup = !hasAccount || life?.locks?.includes('overview');
+  return <Navigate to={toSetup ? `/dashboard/setup${search}` : `/dashboard/overview${search}`} replace />;
 }

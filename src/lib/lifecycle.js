@@ -39,6 +39,7 @@ export const LOCK_ROUTES = {
   journal: ['/dashboard/journal'],
   trades: ['/dashboard/trades'],
   tax: ['/dashboard/tax'],
+  overview: ['/dashboard/overview'],
 };
 
 export function lockedRouteOf(pathname, locks) {
@@ -188,7 +189,10 @@ export function lifecycleView(id, ctx = {}) {
         tone: 'amber',
         plan: 'Setup · step 5 of 5',
         band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Start your 3-day free trial to switch it on. ₹0 today.', cta: 'Start free trial', to: ONBOARDING },
-        locks: ['live', 'journal'],
+        /* Never paid: everything but setup, the revenge report (the reason
+           to start), rules as drafts, and the account pages waits for the
+           trial. */
+        locks: ['live', 'journal', 'trades', 'tax', 'overview'],
         lock: {
           title: 'Starts with your free trial',
           body: 'Your key is connected and history is filling in. This switches on the moment the trial starts.',
