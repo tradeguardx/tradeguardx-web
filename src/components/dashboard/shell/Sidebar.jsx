@@ -72,6 +72,7 @@ export default function Sidebar({ onNavigate }) {
   ];
   const review = [
     { id: 'journal', to: '/dashboard/journal', label: 'Journal' },
+    { id: 'revenge', to: '/dashboard/revenge', label: 'Revenge report' },
     { id: 'trades', to: '/dashboard/trades', label: 'All trades' },
     { id: 'tax', to: '/dashboard/tax', label: 'Tax centre' },
   ];

@@ -24,6 +24,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import ActivateGuardPage from './pages/ActivateGuardPage';
 import SetupPage from './pages/SetupPage';
+import RevengeReportPage from './pages/RevengeReportPage';
 import InfluencerLayout from './components/influencer/InfluencerLayout';
 import InfluencerOverview from './pages/influencer/InfluencerOverview';
 import InfluencerCommissions from './pages/influencer/InfluencerCommissions';
@@ -140,6 +141,7 @@ function App() {
                   <Route path="setup" element={<SetupPage />} />
                   <Route path="rules" element={<RulesTerminal />} />
                   <Route path="journal" element={<JournalPage />} />
+                  <Route path="revenge" element={<RevengeReportPage />} />
                   <Route path="calendar" element={<EconomicCalendarPage />} />
                   <Route path="trades" element={<AllTradesPage />} />
                   <Route path="tax" element={<TaxPage />} />

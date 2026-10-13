@@ -1,4 +1,4 @@
-import { apiPost } from './httpClient';
+import { apiGet, apiPost } from './httpClient';
 import { SYNC_API_BASE_URL } from './config';
 
 /**
@@ -25,4 +25,20 @@ export async function triggerHistoryBackfill({ accessToken, tradingAccountId, de
     { tradingAccountId, deepSync },
     { baseUrl: SYNC_API_BASE_URL, headers: { Authorization: `Bearer ${accessToken}` } },
   );
+}
+
+/**
+ * Where the history import for one account stands: idle | queued |
+ * in_progress | error, plus when it last moved. The revenge report's Refresh
+ * waits on this before asking for the report again.
+ */
+export async function fetchBackfillStatus({ accessToken, tradingAccountId, signal } = {}) {
+  if (!accessToken || !tradingAccountId) return null;
+  const params = new URLSearchParams({ tradingAccountId });
+  const payload = await apiGet(`/sync/delta/backfill/status?${params}`, {
+    baseUrl: SYNC_API_BASE_URL,
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal,
+  });
+  return payload?.data ?? payload;
 }

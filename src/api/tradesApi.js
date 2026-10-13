@@ -312,3 +312,20 @@ export async function fetchTaxPositions({ accessToken, tradingAccountId, fy, cat
   });
   return unwrap(payload);
 }
+
+/**
+ * The revenge report for one account over the last 1, 2 or 3 months.
+ * Computed on request from imported history; see trade-service
+ * services/revengeReport.ts for every number on the page.
+ */
+export async function fetchRevengeReport({ accessToken, tradingAccountId, months = 1, signal } = {}) {
+  if (!accessToken) throw new Error('Missing access token');
+  if (!tradingAccountId) throw new Error('Missing trading account');
+  const params = new URLSearchParams({ tradingAccountId, months: String(months) });
+  const payload = await apiGet(`/reports/revenge?${params}`, {
+    baseUrl: TRADE_API_BASE_URL,
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal,
+  });
+  return unwrap(payload);
+}

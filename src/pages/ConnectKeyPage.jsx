@@ -5,6 +5,7 @@ import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useGuard } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
 import { connectExchangeCredentials, exchangeFromBrokerSlug } from '../api/exchangeCredentialsApi';
+import { triggerHistoryBackfill } from '../api/syncApi';
 import { trySplitPastedCredentials, SUGGESTED_KEY_NAME } from '../components/dashboard/deltaConnectShared';
 import { ENGINE_EGRESS_IP, venueFor } from '../lib/venues';
 import { brokerLabel } from '../lib/labels';
@@ -106,6 +107,12 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
     setBusy(true);
     try {
       const summary = await connectExchangeCredentials({ accessToken, accountId: selectedAccount.id, exchange: exchangeSlug, apiKey: keyVal.trim(), apiSecret: secretVal.trim() });
+      /* Start importing their history the moment the key verifies. This is
+         the path almost everyone connects through, and it never asked: the
+         journal, tax centre and revenge report waited for the 04:00 sweep —
+         2 to 20 hours after connecting. Fire and forget: history is a bonus,
+         never a blocker, and the nightly sweep still gap-fills. */
+      triggerHistoryBackfill({ accessToken, tradingAccountId: selectedAccount.id }).catch(() => {});
       onConnected?.(summary);
       setResult({ ok: true, summary });
       setKeyVal(''); setSecretVal('');
