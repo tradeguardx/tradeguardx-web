@@ -1,6 +1,7 @@
 import { sx } from '../dashboard/shell/sx';
 import { CARD, GRADE, GRID, LABEL, istDay, istTime, moneyOf } from './revengeFormat';
 import { CheckCard, Chip, ScoreRing, Section, Stat } from './RevengeParts';
+import RulePlan from './RevengeRulePlan';
 
 const RANK = { problem: 0, warning: 1, good: 2, na: 3 };
 
@@ -11,7 +12,7 @@ const RANK = { problem: 0, warning: 1, good: 2, na: 3 };
  * `reveal`: the moment it unlocks — the score counts up and each section
  * drops in after the one before. Otherwise it simply renders.
  */
-export default function RevengeReportView({ report, periodLabel, months = 1, reveal = false, animateScore = reveal }) {
+export default function RevengeReportView({ report, periodLabel, months = 1, reveal = false, animateScore = reveal, cta }) {
   const money = moneyOf(report?.currency);
   const grade = report?.grade ? GRADE[report.grade] : null;
   const p = report.profile;
@@ -118,6 +119,9 @@ export default function RevengeReportView({ report, periodLabel, months = 1, rev
           </Section>
         </div>
       )}
+
+      {/* The end: what to switch on, then the one ask. */}
+      {report.enoughData && <RulePlan report={report} cta={cta} enterProps={enter()} />}
     </div>
   );
 }

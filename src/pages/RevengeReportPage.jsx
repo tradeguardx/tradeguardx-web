@@ -177,18 +177,17 @@ export default function RevengeReportPage() {
             )}
           </div>
           <div className={reveal ? 'rv-unblur' : undefined} style={sx('transition:opacity .15s', { opacity: loading ? 0.55 : 1 })}>
-            <RevengeReportView key={`${months}:${reveal}`} report={report} periodLabel={period?.label} months={months} reveal={reveal} />
+            <RevengeReportView
+              key={`${months}:${reveal}`}
+              report={report}
+              periodLabel={period?.label}
+              months={months}
+              reveal={reveal}
+              cta={planOff
+                ? { label: 'Start my 3-day free trial →', to: '/dashboard/account/billing', note: 'Free for 3 days · nothing is charged today' }
+                : { label: 'Set up these rules →', to: '/dashboard/rules' }}
+            />
           </div>
-          {planOff && report.enoughData && (
-            <div className="rv-in" style={sx('position:sticky;bottom:16px;margin-top:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;border-radius:16px;border:1px solid var(--mint-line);background:var(--surface);box-shadow:var(--shadow-card)', { animationDelay: '1.2s' })}>
-              <span style={sx('flex:1;min-width:min(240px,100%);font-size:13.5px;line-height:1.5;color:var(--ink-2)')}>
-                <b style={sx('color:var(--ink)')}>Stop this from happening.</b> TradeGuardX enforces the rules above on your exchange account.
-              </span>
-              <Link to="/dashboard/account/billing" style={sx('flex:none;padding:11px 16px;border-radius:11px;background:var(--mint-solid);color:#02241d;font-size:13.5px;font-weight:800;text-decoration:none')}>
-                Fix this — start your 3-day free trial
-              </Link>
-            </div>
-          )}
         </>
       ) : (
         <Placeholder />

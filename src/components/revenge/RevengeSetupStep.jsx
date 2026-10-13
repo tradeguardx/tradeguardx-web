@@ -6,6 +6,7 @@ import { CARD, GRADE, LABEL, monthsForDays, PERIODS } from './revengeFormat';
 import { Chip, RevengeStyles, ScoreRing } from './RevengeParts';
 import RevengeBuilding from './RevengeBuilding';
 import RevengeReportView from './RevengeReportView';
+import { RuleChips } from './RevengeRulePlan';
 
 /**
  * Setup, between "Connect key" and billing: the moment their own trading is
@@ -114,7 +115,10 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
             {worst && (
               <p className="rv-in" style={sx('position:relative;margin:10px auto 0;max-width:56ch;font-size:14px;line-height:1.6;color:var(--ink-2)', { animationDelay: '1.25s' })}>{worst.finding}</p>
             )}
-            <div className="rv-in" style={sx('position:relative;margin-top:20px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap', { animationDelay: '1.5s' })}>
+            <div className="rv-in" style={sx('position:relative;margin-top:18px', { animationDelay: '1.4s' })}>
+              <RuleChips report={report} />
+            </div>
+            <div className="rv-in" style={sx('position:relative;margin-top:20px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap', { animationDelay: '1.6s' })}>
               <button type="button" onClick={onContinue} style={sx('padding:12px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint)')}>
                 Fix this — {continueLabel ? continueLabel.toLowerCase() : 'start your 3-day free trial'} →
               </button>
@@ -126,13 +130,16 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
 
           {full && (
             <div className="rv-unblur">
-              <RevengeReportView report={report} periodLabel={PERIODS.find((p) => p.months === months)?.label} months={months} />
-              <div style={sx('position:sticky;bottom:12px;margin-top:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-radius:14px;border:1px solid var(--mint-line);background:var(--surface);box-shadow:var(--shadow-card)')}>
-                <span style={sx('flex:1;min-width:min(220px,100%);font-size:13px;color:var(--ink-2)')}>TradeGuardX enforces the fixes above on your account.</span>
-                <button type="button" onClick={onContinue} style={sx('flex:none;padding:10px 16px;border:0;border-radius:11px;background:var(--mint-solid);color:#02241d;font-size:13.5px;font-weight:800;cursor:pointer')}>
-                  Fix this — {continueLabel ? continueLabel.toLowerCase() : 'start your 3-day free trial'} →
-                </button>
-              </div>
+              <RevengeReportView
+                report={report}
+                periodLabel={PERIODS.find((p) => p.months === months)?.label}
+                months={months}
+                cta={{
+                  label: continueLabel || 'Start my 3-day free trial →',
+                  onClick: onContinue,
+                  note: continueLabel ? null : 'Free for 3 days · nothing is charged today',
+                }}
+              />
             </div>
           )}
           <div style={sx('margin-top:12px;text-align:center')}>{skip}</div>

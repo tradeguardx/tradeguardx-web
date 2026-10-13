@@ -69,3 +69,29 @@ export function ago(iso, now = Date.now()) {
 
 /** The period a snapshot actually covered, as the 1/2/3-month picker reads it. */
 export const monthsForDays = (days) => (days >= 90 ? 3 : days >= 60 ? 2 : 1);
+
+const RULE_RANK = { problem: 0, warning: 1, good: 2, na: 3 };
+// Calm traders still get a plan: the two rules that keep a calm month calm.
+const BASELINE = ['daily-loss', 'risk-per-trade'];
+
+/**
+ * The rules this report asks for — one per rule, worst finding first, each
+ * with the checks it answers. Every word comes from the server's own `fix`
+ * on each check; nothing here invents a setting or a saving.
+ */
+export function rulesFrom(report) {
+  const checks = [...(report?.checks ?? [])].sort((a, b) => RULE_RANK[a.status] - RULE_RANK[b.status] || b.weight - a.weight);
+  const byRule = new Map();
+  for (const c of checks) {
+    if (!c.fix?.rule || (c.status !== 'problem' && c.status !== 'warning')) continue;
+    const r = byRule.get(c.fix.rule) ?? { rule: c.fix.rule, text: c.fix.text, status: c.status, because: [] };
+    r.because.push(c.title);
+    byRule.set(c.fix.rule, r);
+  }
+  if (byRule.size) return { calm: false, rules: [...byRule.values()] };
+  const rules = BASELINE.map((rule) => {
+    const c = checks.find((x) => x.fix?.rule === rule);
+    return c ? { rule, text: c.fix.text, status: 'good', because: [] } : null;
+  }).filter(Boolean);
+  return { calm: true, rules };
+}
