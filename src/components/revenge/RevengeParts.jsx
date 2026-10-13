@@ -18,8 +18,6 @@ export function RevengeStyles() {
 @keyframes rvBar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
 @keyframes rvShine{from{background-position:-200% 0}to{background-position:200% 0}}
 @keyframes rvPop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
-@keyframes rvBreath{0%,100%{filter:blur(10px);opacity:.6}50%{filter:blur(7px);opacity:.85}}
-@keyframes rvScan{0%{transform:translateX(-120%)}100%{transform:translateX(220%)}}
 .rv-in{animation:rvFadeUp .55s cubic-bezier(.2,.7,.2,1) both}
 .rv-unblur{animation:rvUnblur .9s cubic-bezier(.2,.7,.2,1) both}
 .rv-pop{animation:rvPop .5s cubic-bezier(.2,.7,.2,1) both}
