@@ -7,7 +7,7 @@ import { Chip, RevengeStyles, ScoreRing } from './RevengeParts';
 import RevengeBuilding from './RevengeBuilding';
 import RevengeReportView from './RevengeReportView';
 import { RuleChips } from './RevengeRulePlan';
-import { DamageStrip, GuardOffLine, LastTime, MoreInReport } from './RevengeHook';
+import { DamageStrip, GuardOffLine } from './RevengeHook';
 
 /**
  * Setup, between "Connect key" and billing: the moment their own trading is
@@ -29,9 +29,10 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
   const [months, setMonths] = useState(initial?.months ?? 1);
   const [full, setFull] = useState(false);
   const fullRef = useRef(null);
-  const openFull = () => {
-    setFull(true);
-    setTimeout(() => { try { fullRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* jsdom */ } }, 80);
+  const toggleFull = () => {
+    const opening = !full;
+    setFull(opening);
+    if (opening) setTimeout(() => { try { fullRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* jsdom */ } }, 80);
   };
   const started = useRef(Boolean(initial?.report));
   const onReportRef = useRef(onReport);
@@ -71,8 +72,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
 
   const ready = Boolean(report) && (unlock.phase === 'ready' || Boolean(initial?.report));
   const grade = report?.grade ? GRADE[report.grade] : null;
-  const worst = report?.checks?.find((c) => c.status === 'problem') ?? report?.checks?.find((c) => c.status === 'warning') ?? null;
-  const skip = (
+    const skip = (
     <button type="button" onClick={onContinue} style={sx('padding:6px 2px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
       Skip to {continueLabel ? continueLabel.toLowerCase() : 'your free trial'}
     </button>
@@ -112,32 +112,27 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
             </div>
             <div style={sx('position:relative;margin-top:18px;display:grid;place-items:center')}>
               {/* A slow glow in the grade's colour behind the number: alive, not alarming. */}
-              <span aria-hidden className="rv-motion" style={sx('position:absolute;width:190px;height:190px;border-radius:50%;filter:blur(34px);animation:rvPulse 2.8s ease-in-out infinite', { background: grade?.tone && grade.tone !== 'mint' ? `var(--${grade.tone}-tint)` : 'var(--mint-tint)' })} />
-              <ScoreRing score={report.score} tone={grade?.tone ?? 'neutral'} animate size={150} />
+              <span aria-hidden className="rv-motion" style={sx('position:absolute;width:150px;height:150px;border-radius:50%;filter:blur(34px);animation:rvPulse 2.8s ease-in-out infinite', { background: grade?.tone && grade.tone !== 'mint' ? `var(--${grade.tone}-tint)` : 'var(--mint-tint)' })} />
+              <ScoreRing score={report.score} tone={grade?.tone ?? 'neutral'} animate size={124} />
             </div>
             <div style={sx('position:relative;margin-top:10px;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap')}>
               <span style={sx(LABEL)}>Revenge score · {PERIODS.find((p) => p.months === months)?.label}</span>
               {grade && <Chip tone={grade.tone}>{grade.label}</Chip>}
             </div>
             <div className="rv-in" style={sx("position:relative;margin-top:10px;font:600 21px/1.3 'Space Grotesk',sans-serif;letter-spacing:-.02em", { animationDelay: '1s' })}>{report.verdict}</div>
-            {worst && (
-              <p className="rv-in" style={sx('position:relative;margin:10px auto 0;max-width:56ch;font-size:14px;line-height:1.6;color:var(--ink-2)', { animationDelay: '1.25s' })}>{worst.finding}</p>
-            )}
-            <DamageStrip report={report} periodLabel={PERIODS.find((p) => p.months === months)?.label} delay={1.4} />
-            <LastTime report={report} delay={1.8} />
-            <div className="rv-in" style={sx('position:relative;margin-top:20px', { animationDelay: '2s' })}>
+            <DamageStrip report={report} periodLabel={PERIODS.find((p) => p.months === months)?.label} delay={1.2} />
+            <div className="rv-in" style={sx('position:relative;margin-top:16px', { animationDelay: '1.5s' })}>
               <RuleChips report={report} />
             </div>
-            {!continueLabel && <GuardOffLine delay={2.2} />}
-            <div className="rv-in" style={sx('position:relative;margin-top:14px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap', { animationDelay: '2.3s' })}>
+            <div className="rv-in" style={sx('position:relative;margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap', { animationDelay: '1.7s' })}>
               <button type="button" onClick={onContinue} className="rv-motion" style={sx('padding:13px 22px;border:0;border-radius:12px;color:#02241d;font-size:14.5px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint);background-size:200% 100%;animation:rvShine 2.8s linear infinite', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#fff6 50%,var(--mint-solid) 60%)', backgroundColor: 'var(--mint-solid)' })}>
                 Fix this — {continueLabel ? continueLabel.toLowerCase() : 'start your 3-day free trial'} →
               </button>
-              <button type="button" onClick={() => setFull((v) => !v)} aria-expanded={full} style={sx('padding:12px 18px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer')}>
+              <button type="button" onClick={toggleFull} aria-expanded={full} style={sx('padding:12px 18px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer')}>
                 {full ? 'Hide the full report' : 'See my full report'}
               </button>
             </div>
-            {!full && <MoreInReport report={report} onOpen={openFull} delay={2.5} />}
+            {!continueLabel && <GuardOffLine delay={1.9} />}
           </section>
 
           {full && (
