@@ -101,9 +101,9 @@ function FundedStatus({ account, accessToken, onUpdated, toast }) {
           <span
             className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
             style={{
-              borderColor: 'rgba(0,212,170,0.3)',
-              backgroundColor: 'rgba(0,212,170,0.08)',
-              color: 'var(--accent, #00d4aa)',
+              borderColor: 'var(--mint-line)',
+              backgroundColor: 'var(--mint-tint)',
+              color: 'var(--mint)',
             }}
           >
             Funded
@@ -116,7 +116,7 @@ function FundedStatus({ account, accessToken, onUpdated, toast }) {
           <button
             type="button"
             onClick={openForm}
-            className="text-xs font-semibold text-accent hover:underline"
+            className="text-xs font-semibold text-[var(--mint)] hover:underline"
           >
             Adjust balance →
           </button>
@@ -146,7 +146,7 @@ function FundedStatus({ account, accessToken, onUpdated, toast }) {
               href={account.dashboardUrl}
               target="_blank"
               rel="noreferrer"
-              className="text-accent hover:underline"
+              className="text-[var(--mint)] hover:underline"
             >
               Open prop dashboard ↗
             </a>
@@ -172,7 +172,7 @@ function FundedStatus({ account, accessToken, onUpdated, toast }) {
               onChange={(e) => setDeclared(e.target.value)}
               placeholder="e.g. 99480"
               autoFocus
-              className="flex-1 rounded-xl border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+              className="flex-1 rounded-xl border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
               style={{
                 borderColor: 'var(--dash-border)',
                 backgroundColor: 'var(--dash-bg-input)',
@@ -183,7 +183,7 @@ function FundedStatus({ account, accessToken, onUpdated, toast }) {
               type="button"
               onClick={submit}
               disabled={saving}
-              className="px-3 py-2 rounded-xl text-sm font-semibold bg-accent text-surface-950 hover:bg-accent-hover disabled:opacity-50"
+              className="px-3 py-2 rounded-xl text-sm font-semibold bg-[var(--mint-solid)] text-[var(--on-mint)] hover:brightness-110 disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -210,7 +210,7 @@ function Stat({ label, value, emphasis = false }) {
       </p>
       <p
         className={`font-mono ${emphasis ? 'text-base font-bold' : 'text-sm font-semibold'}`}
-        style={{ color: emphasis ? 'var(--accent, #00d4aa)' : 'var(--dash-text-primary)' }}
+        style={{ color: emphasis ? 'var(--mint)' : 'var(--dash-text-primary)' }}
       >
         {value}
       </p>
@@ -288,10 +288,10 @@ function PairingStatusBadge({ accessToken, tradingAccountId, propFirmSlug }) {
 
   const pillLabel = loading ? 'Checking…' : connected ? 'Connected' : 'Not connected';
   const pillStyle = loading
-    ? { backgroundColor: 'rgba(148, 163, 184, 0.15)', color: 'var(--dash-text-secondary)' }
+    ? { backgroundColor: 'var(--surface-3)', color: 'var(--dash-text-secondary)' }
     : connected
-    ? { backgroundColor: 'rgba(34, 197, 94, 0.15)', color: 'rgb(34, 197, 94)' }
-    : { backgroundColor: 'rgba(148, 163, 184, 0.15)', color: 'var(--dash-text-secondary)' };
+    ? { backgroundColor: 'var(--mint-tint)', color: 'var(--mint)' }
+    : { backgroundColor: 'var(--surface-3)', color: 'var(--dash-text-secondary)' };
 
   return (
     <div className="flex flex-col gap-1">
@@ -305,7 +305,7 @@ function PairingStatusBadge({ accessToken, tradingAccountId, propFirmSlug }) {
               aria-hidden="true"
               className="inline-block w-1.5 h-1.5 rounded-full"
               style={{
-                backgroundColor: connected ? 'rgb(34, 197, 94)' : 'var(--dash-text-muted)',
+                backgroundColor: connected ? 'var(--mint-solid)' : 'var(--dash-text-muted)',
               }}
             />
           )}
@@ -370,8 +370,8 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
     <span
       className="text-[10px] font-semibold rounded-full px-2 py-0.5"
       style={{
-        backgroundColor: 'rgba(0, 212, 170, 0.12)',
-        color: '#00d4aa',
+        backgroundColor: 'var(--mint-tint)',
+        color: 'var(--mint)',
       }}
     >
       {formatCurrency(account.accountSize, account.accountCurrency || 'USD')}
@@ -406,7 +406,7 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
               <span
                 className="text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5"
                 style={{
-                  backgroundColor: 'rgba(148, 163, 184, 0.12)',
+                  backgroundColor: 'var(--surface-3)',
                   color: 'var(--dash-text-secondary)',
                 }}
               >
@@ -430,7 +430,7 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
       <Link
         to="/dashboard/rules"
         onClick={(e) => e.stopPropagation()}
-        className="text-xs font-semibold text-accent hover:underline"
+        className="text-xs font-semibold text-[var(--mint)] hover:underline"
       >
         Rules for this account →
       </Link>
@@ -452,7 +452,7 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
         <button
           type="button"
           onClick={onToggle}
-          className="w-full text-left px-5 py-4 hover:bg-white/[0.02] transition-colors"
+          className="w-full text-left px-5 py-4 hover:bg-[var(--surface-2)] transition-colors"
           style={{ borderBottom: expanded ? '1px solid var(--dash-border)' : 'none' }}
           aria-expanded={expanded}
         >
@@ -492,7 +492,7 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent/40"
+              className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
               style={{
                 borderColor: 'var(--dash-border)',
                 backgroundColor: 'var(--dash-bg-input)',
@@ -508,7 +508,7 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
               value={platform}
               onChange={(e) => setPlatform(e.target.value)}
               placeholder="e.g. MT5, web"
-              className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent/40"
+              className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
               style={{
                 borderColor: 'var(--dash-border)',
                 backgroundColor: 'var(--dash-bg-input)',
@@ -523,7 +523,7 @@ function AccountCard({ account, accessToken, onUpdated, toast, collapsible = fal
             type="button"
             onClick={save}
             disabled={saving}
-            className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-surface-950 hover:bg-accent-hover disabled:opacity-50 transition-colors"
+            className="px-4 py-2 rounded-xl text-sm font-semibold bg-[var(--mint-solid)] text-[var(--on-mint)] hover:brightness-110 disabled:opacity-50 transition-colors"
           >
             {saving ? 'Saving…' : 'Save changes'}
           </button>
@@ -717,9 +717,9 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 disabled={disabled}
                 className="rounded-xl border px-3 py-3 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
-                  borderColor: active ? 'var(--accent, #00d4aa)' : 'var(--dash-border)',
-                  backgroundColor: active ? 'rgba(0,212,170,0.08)' : 'var(--dash-bg-card)',
-                  boxShadow: active ? '0 0 0 2px rgba(0,212,170,0.25)' : 'none',
+                  borderColor: active ? 'var(--mint-solid)' : 'var(--dash-border)',
+                  backgroundColor: active ? 'var(--mint-tint)' : 'var(--dash-bg-card)',
+                  boxShadow: active ? '0 0 0 2px color-mix(in srgb, var(--mint-solid) 25%, transparent)' : 'none',
                 }}
               >
                 <div className="flex items-center gap-2.5">
@@ -733,17 +733,17 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                     style={{
                       backgroundColor:
                         p.equityMode === 'funded'
-                          ? 'rgba(251, 191, 36, 0.15)'
-                          : 'rgba(0, 212, 170, 0.12)',
+                          ? 'var(--amber-tint)'
+                          : 'var(--mint-tint)',
                       color:
-                        p.equityMode === 'funded' ? 'rgb(251, 191, 36)' : 'var(--accent, #00d4aa)',
+                        p.equityMode === 'funded' ? 'var(--amber)' : 'var(--mint)',
                     }}
                   >
                     {equityModeLabel(p.equityMode)}
                   </span>
                 </div>
                 {isPlanned ? (
-                  <p className="text-[10px] mt-1.5 ml-[38px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(168, 85, 247)' }}>
+                  <p className="text-[10px] mt-1.5 ml-[38px] font-semibold uppercase tracking-wider" style={{ color: 'var(--violet)' }}>
                     Coming soon
                   </p>
                 ) : (
@@ -788,7 +788,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                    example on a crypto venue picker, and the name only has to
                    tell two accounts apart. */
                 placeholder={selected?.name ? `e.g. ${selected.name}` : 'e.g. your broker name'}
-                className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent/40"
+                className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
                 style={{
                   borderColor: 'var(--dash-border)',
                   backgroundColor: 'var(--dash-bg-input)',
@@ -820,9 +820,9 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                         }}
                         className="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold border transition-all"
                         style={{
-                          borderColor: active ? 'var(--accent, #00d4aa)' : 'var(--dash-border)',
-                          backgroundColor: active ? 'rgba(0,212,170,0.08)' : 'transparent',
-                          color: active ? 'var(--accent, #00d4aa)' : 'var(--dash-text-primary)',
+                          borderColor: active ? 'var(--mint-solid)' : 'var(--dash-border)',
+                          backgroundColor: active ? 'var(--mint-tint)' : 'transparent',
+                          color: active ? 'var(--mint)' : 'var(--dash-text-primary)',
                         }}
                       >
                         ${size.toLocaleString()}
@@ -841,7 +841,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   value={customSize}
                   onChange={(e) => setCustomSize(e.target.value)}
                   placeholder="e.g. 75000"
-                  className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                  className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
                   style={{
                     borderColor: 'var(--dash-border)',
                     backgroundColor: 'var(--dash-bg-input)',
@@ -866,7 +866,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                     type="time"
                     value={resetTime}
                     onChange={(e) => setResetTime(e.target.value)}
-                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
                     style={{
                       borderColor: 'var(--dash-border)',
                       backgroundColor: 'var(--dash-bg-input)',
@@ -882,7 +882,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
                     placeholder="America/New_York"
-                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
                     style={{
                       borderColor: 'var(--dash-border)',
                       backgroundColor: 'var(--dash-bg-input)',
@@ -926,13 +926,13 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 style={{ color: 'var(--dash-text-muted)' }}
               >
                 {isFunded ? '5.' : '3.'} Connect {v.name} API key{' '}
-                <span style={{ color: '#f59e0b' }}>(required)</span>
+                <span style={{ color: 'var(--amber)' }}>(required)</span>
               </p>
               <div
                 className="rounded-xl border px-3.5 py-3.5 mb-3"
                 style={{
-                  borderColor: 'rgba(0,212,170,0.25)',
-                  backgroundColor: 'rgba(0,212,170,0.04)',
+                  borderColor: 'var(--mint-line)',
+                  backgroundColor: 'color-mix(in srgb, var(--mint-solid) 4%, transparent)',
                 }}
               >
                 {isMobile && v.appGuide?.length ? (
@@ -948,7 +948,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                       // show again, is the worst place to learn it.
                       <div
                         className="mb-2.5 rounded-lg border px-3 py-2"
-                        style={{ borderColor: 'rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.07)' }}
+                        style={{ borderColor: 'var(--amber-line)', backgroundColor: 'var(--amber-tint)' }}
                       >
                         <p className="text-[12px] font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
                           Not in the {v.name} app
@@ -1137,7 +1137,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                       }
                     }}
                     placeholder="Paste API Key"
-                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
                     style={{
                       borderColor: 'var(--dash-border)',
                       backgroundColor: 'var(--dash-bg-input)',
@@ -1155,7 +1155,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                     onChange={(e) => setApiSecret(e.target.value)}
                     placeholder="Paste API Secret"
                     wrapperClassName="mt-1"
-                    className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                    className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
                     style={{
                       borderColor: 'var(--dash-border)',
                       backgroundColor: 'var(--dash-bg-input)',
@@ -1165,7 +1165,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 </label>
               </div>
               {(!apiKey.trim() || !apiSecret.trim()) && (
-                <p className="text-[11px] mt-2" style={{ color: 'rgb(251, 191, 36)' }}>
+                <p className="text-[11px] mt-2" style={{ color: 'var(--amber)' }}>
                   Both the API Key and Secret are required to create a {v.name} account.
                 </p>
               )}
@@ -1178,7 +1178,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
               type="button"
               onClick={submit}
               disabled={!canCreate || creating}
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-surface-950 hover:bg-accent-hover disabled:opacity-50"
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-[var(--mint-solid)] text-[var(--on-mint)] hover:brightness-110 disabled:opacity-50"
             >
               {creating
                 ? (isDelta && !skipKey && apiKey && apiSecret ? 'Creating & connecting…' : 'Creating…')
@@ -1308,14 +1308,14 @@ export default function TradingAccountsPage() {
       className="max-w-3xl"
     >
       {error && (
-        <p className="mb-4 text-sm text-amber-400/90">{error}</p>
+        <p className="mb-4 text-sm text-[var(--amber)]">{error}</p>
       )}
 
       <div className="mb-6">
         {atAccountLimit ? (
           <p className="text-sm rounded-xl border px-4 py-3" style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}>
             You&apos;ve reached your plan limit ({accountCap} trading account{accountCap === 1 ? '' : 's'}).{' '}
-            <Link to="/pricing" className="font-semibold text-accent hover:underline">
+            <Link to="/pricing" className="font-semibold text-[var(--mint)] hover:underline">
               View plans
             </Link>
             {' '}to add more.
@@ -1324,7 +1324,7 @@ export default function TradingAccountsPage() {
           <button
             type="button"
             onClick={() => setShowAdd((v) => !v)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:border-accent/30"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:border-[var(--mint-line)]"
             style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-primary)' }}
           >
             {showAdd ? 'Cancel' : '+ Add trading account'}
@@ -1332,7 +1332,7 @@ export default function TradingAccountsPage() {
         )}
 
         {propsError && showAdd && (
-          <p className="mt-2 text-xs text-amber-400/90">{propsError}</p>
+          <p className="mt-2 text-xs text-[var(--amber)]">{propsError}</p>
         )}
 
         {showAdd && !atAccountLimit && !propsLoading && (

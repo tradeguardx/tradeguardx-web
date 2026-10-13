@@ -572,19 +572,19 @@ export default function TaxPage() {
           <div
             className="overflow-hidden rounded-[18px]"
             style={{
-              background: 'linear-gradient(155deg,#070d18,#0f2033 62%,#0b1a2a)',
-              boxShadow: '0 16px 38px -22px rgba(7,13,24,0.8)',
+              background: 'var(--wash), var(--surface)',
+              boxShadow: 'var(--shadow-card), 0 0 0 1px var(--line)',
             }}
           >
             <div className="flex flex-wrap gap-8 px-7 pb-6 pt-7">
               <div className="flex min-w-[296px] flex-1 flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: MINT }} />
-                  <span className="text-[10.5px] font-extrabold tracking-[0.1em]" style={{ color: '#7d8ea3' }}>
+                  <span className="text-[10.5px] font-extrabold tracking-[0.1em]" style={{ color: 'var(--ink-3)' }}>
                     STEP 1 · WHAT ACTUALLY HAPPENED
                   </span>
                 </div>
-                <div className="text-[11px] font-extrabold tracking-wider" style={{ color: '#5c6b81' }}>
+                <div className="text-[11px] font-extrabold tracking-wider" style={{ color: 'var(--ink-faint)' }}>
                   COMPLETE ECONOMIC P&amp;L · {fyLabelFor(fy)}
                 </div>
 
@@ -599,12 +599,12 @@ export default function TaxPage() {
                   >
                     {money(view.economic, currency)}
                   </span>
-                  <span style={{ color: '#5c6b81', paddingTop: 6 }}>
+                  <span style={{ color: 'var(--ink-faint)', paddingTop: 6 }}>
                     <Icon d={P.info} size={17} />
                   </span>
                 </button>
 
-                <p className="max-w-[440px] text-[13px] leading-relaxed" style={{ color: '#93a5ba' }}>
+                <p className="max-w-[440px] text-[13px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
                   Your {fyLabelFor(fy)} economic trading result, rebuilt from {view.c.positions} validated
                   positions and reconciled wallet activity.
                 </p>
@@ -625,9 +625,9 @@ export default function TaxPage() {
               {/* the four-line build, always visible */}
               <div
                 className="min-w-[250px] rounded-[14px] border p-5"
-                style={{ backgroundColor: '#0e1725', borderColor: '#1b2637' }}
+                style={{ backgroundColor: 'var(--surface-2)', borderColor: 'var(--line)' }}
               >
-                <div className="mb-3 text-[9.5px] font-extrabold tracking-wider" style={{ color: '#5c6b81' }}>
+                <div className="mb-3 text-[9.5px] font-extrabold tracking-wider" style={{ color: 'var(--ink-faint)' }}>
                   HOW IT WAS BUILT
                 </div>
                 {[
@@ -639,11 +639,11 @@ export default function TaxPage() {
                   <div
                     key={r.label}
                     className="flex items-center gap-4 py-1.5"
-                    style={{ borderTop: i === 0 ? 'none' : `1px solid ${r.strong ? '#2c3a4f' : '#1b2637'}` }}
+                    style={{ borderTop: i === 0 ? 'none' : `1px solid ${r.strong ? 'var(--line-strong)' : 'var(--line)'}` }}
                   >
                     <span
                       className="flex-1 whitespace-nowrap text-[11.5px]"
-                      style={{ color: r.strong ? '#fff' : '#93a5ba', fontWeight: r.strong ? 800 : 600 }}
+                      style={{ color: r.strong ? 'var(--ink)' : 'var(--ink-2)', fontWeight: r.strong ? 800 : 600 }}
                     >
                       {r.label}
                     </span>
@@ -661,10 +661,10 @@ export default function TaxPage() {
             <Panel open={showWhy}>
               <div
                 className="flex flex-wrap gap-8 px-7 pb-6 pt-5"
-                style={{ borderTop: '1px solid #1b2637', backgroundColor: '#0a121e' }}
+                style={{ borderTop: '1px solid var(--line)', backgroundColor: 'var(--surface-2)' }}
               >
                 <div className="min-w-[260px] flex-1">
-                  <div className="mb-3 text-[9.5px] font-extrabold tracking-wider" style={{ color: '#5c6b81' }}>
+                  <div className="mb-3 text-[9.5px] font-extrabold tracking-wider" style={{ color: 'var(--ink-faint)' }}>
                     THE FORMULA
                   </div>
                   {[
@@ -676,14 +676,14 @@ export default function TaxPage() {
                     <div
                       key={f.label}
                       className="flex items-center gap-3 py-2"
-                      style={{ borderTop: i === 0 ? 'none' : `1px solid ${f.strong ? '#2c3a4f' : '#16202f'}` }}
+                      style={{ borderTop: i === 0 ? 'none' : `1px solid ${f.strong ? 'var(--line-strong)' : 'var(--line)'}` }}
                     >
-                      <span className="w-3 shrink-0 font-mono text-xs" style={{ color: '#5c6b81' }}>
+                      <span className="w-3 shrink-0 font-mono text-xs" style={{ color: 'var(--ink-faint)' }}>
                         {f.op}
                       </span>
                       <span
                         className="flex-1 text-xs"
-                        style={{ color: f.strong ? '#fff' : '#93a5ba', fontWeight: f.strong ? 800 : 600 }}
+                        style={{ color: f.strong ? 'var(--ink)' : 'var(--ink-2)', fontWeight: f.strong ? 800 : 600 }}
                       >
                         {f.label}
                       </span>
@@ -698,7 +698,7 @@ export default function TaxPage() {
                 </div>
 
                 <div className="min-w-[230px]">
-                  <div className="mb-3 text-[9.5px] font-extrabold tracking-wider" style={{ color: '#5c6b81' }}>
+                  <div className="mb-3 text-[9.5px] font-extrabold tracking-wider" style={{ color: 'var(--ink-faint)' }}>
                     SOURCE &amp; RECONCILIATION
                   </div>
                   {[
@@ -718,7 +718,7 @@ export default function TaxPage() {
                   ].map((s) => (
                     <div key={s.label} className="flex items-center gap-2.5 py-1.5">
                       <Icon d={s.ok ? P.check : P.alert} size={13} color={s.ok ? GREEN : AMBER} width={2.2} />
-                      <span className="flex-1 text-[11.5px]" style={{ color: '#93a5ba' }}>
+                      <span className="flex-1 text-[11.5px]" style={{ color: 'var(--ink-2)' }}>
                         {s.label}
                       </span>
                       <span
@@ -792,7 +792,7 @@ export default function TaxPage() {
                       key={r.label}
                       className="flex items-center gap-3 py-3"
                       style={{
-                        borderTop: i === 0 ? 'none' : `1px solid ${isTotal ? BORDER : 'rgba(255,255,255,0.04)'}`,
+                        borderTop: i === 0 ? 'none' : `1px solid ${isTotal ? BORDER : 'var(--line)'}`,
                       }}
                     >
                       <span
@@ -817,7 +817,7 @@ export default function TaxPage() {
                       </div>
                       <div
                         className="hidden h-[7px] max-w-[280px] flex-1 overflow-hidden rounded sm:block"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                        style={{ backgroundColor: 'var(--surface-3)' }}
                       >
                         <div
                           style={{
@@ -841,7 +841,7 @@ export default function TaxPage() {
 
               <div
                 className="mt-4 flex items-start gap-3 rounded-xl border p-3.5"
-                style={{ borderColor: BORDER, backgroundColor: 'rgba(255,255,255,0.02)' }}
+                style={{ borderColor: BORDER, backgroundColor: 'var(--surface-2)' }}
               >
                 <span style={{ color: MINT, marginTop: 1 }}>
                   <Icon d={P.info} size={15} />
@@ -927,7 +927,7 @@ export default function TaxPage() {
                   <div
                     key={x.label}
                     className="flex flex-wrap items-center gap-3 py-3"
-                    style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+                    style={{ borderTop: '1px solid var(--line)' }}
                   >
                     <div className="min-w-[180px] flex-1">
                       <div className="text-[12.5px] font-semibold" style={{ color: PRIMARY }}>
@@ -941,7 +941,7 @@ export default function TaxPage() {
                       className="whitespace-nowrap rounded px-2 py-1 text-[9px] font-extrabold tracking-wider"
                       style={{
                         backgroundColor:
-                          x.treatment === 'EXCLUDED FROM TRADING P&L' ? VIOLET_SOFT : 'rgba(255,255,255,0.06)',
+                          x.treatment === 'EXCLUDED FROM TRADING P&L' ? VIOLET_SOFT : 'var(--surface-3)',
                         color: x.treatment === 'EXCLUDED FROM TRADING P&L' ? VIOLET : MUTED,
                       }}
                     >
@@ -958,7 +958,7 @@ export default function TaxPage() {
 
                 <div
                   className="mt-3 flex items-start gap-3 rounded-xl border p-3.5"
-                  style={{ borderColor: BORDER, backgroundColor: 'rgba(255,255,255,0.02)' }}
+                  style={{ borderColor: BORDER, backgroundColor: 'var(--surface-2)' }}
                 >
                   <span style={{ color: GREEN, marginTop: 1 }}>
                     <Icon d={P.check} size={15} width={2.2} />
@@ -1055,7 +1055,7 @@ export default function TaxPage() {
                   <div
                     key={l.label}
                     className="flex items-center gap-2.5 py-2"
-                    style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+                    style={{ borderTop: '1px solid var(--line)' }}
                   >
                     <Icon d={l.icon} size={13} color={l.iconColor} width={2.2} />
                     <span className="flex-1 text-xs" style={{ color: MUTED }}>
@@ -1147,7 +1147,7 @@ export default function TaxPage() {
                   <div
                     key={l.label}
                     className="flex items-center gap-2.5 py-2"
-                    style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+                    style={{ borderTop: '1px solid var(--line)' }}
                   >
                     <Icon d={l.icon} size={13} color={l.iconColor} width={2.2} />
                     <span className="flex-1 text-xs" style={{ color: MUTED }}>
@@ -1229,7 +1229,7 @@ export default function TaxPage() {
                   <div
                     key={d.item}
                     className="flex flex-wrap items-center gap-3 rounded-xl border p-3"
-                    style={{ borderColor: BORDER, backgroundColor: 'rgba(255,255,255,0.02)' }}
+                    style={{ borderColor: BORDER, backgroundColor: 'var(--surface-2)' }}
                   >
                     <span className="min-w-[150px] flex-1 text-xs font-bold" style={{ color: PRIMARY }}>
                       {d.item}
@@ -1305,7 +1305,7 @@ export default function TaxPage() {
                   reserved
                 </span>
               </div>
-              <div className="h-[7px] overflow-hidden rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+              <div className="h-[7px] overflow-hidden rounded" style={{ backgroundColor: 'var(--surface-3)' }}>
                 <div
                   style={{
                     height: '100%',
@@ -1352,7 +1352,7 @@ export default function TaxPage() {
                     <div
                       key={d.date}
                       className="flex items-center gap-3 py-2.5"
-                      style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+                      style={{ borderTop: '1px solid var(--line)' }}
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-[12.5px] font-bold" style={{ color: SECONDARY }}>
@@ -1392,7 +1392,7 @@ export default function TaxPage() {
           {view.vdaIsHypothetical && (
             <div
               className="flex items-start gap-3 rounded-2xl border p-5"
-              style={{ borderColor: BORDER, backgroundColor: 'rgba(255,255,255,0.02)' }}
+              style={{ borderColor: BORDER, backgroundColor: 'var(--surface-2)' }}
             >
               <span style={{ color: GREEN, marginTop: 1 }}>
                 <Icon d={P.check} size={15} width={2.2} />
@@ -1511,7 +1511,7 @@ export default function TaxPage() {
           {/* 10 ── disclaimer */}
           <div
             className="flex items-start gap-3 rounded-2xl border p-5"
-            style={{ borderColor: BORDER, backgroundColor: 'rgba(255,255,255,0.02)' }}
+            style={{ borderColor: BORDER, backgroundColor: 'var(--surface-2)' }}
           >
             <span style={{ color: FAINT, marginTop: 1 }}>
               <Icon d={P.info} size={15} />
@@ -1555,7 +1555,7 @@ export default function TaxPage() {
 
             <div
               className="flex flex-wrap items-center gap-5 px-6 py-5"
-              style={{ borderBottom: `1px solid ${BORDER}`, background: 'linear-gradient(150deg,rgba(45,212,191,0.06),transparent)' }}
+              style={{ borderBottom: `1px solid ${BORDER}`, background: 'linear-gradient(150deg,color-mix(in srgb, var(--tax-accent) 6%, transparent),transparent)' }}
             >
               <div className="min-w-[260px] flex-1">
                 <div className="mb-1.5 text-base font-extrabold tracking-tight" style={{ color: PRIMARY }}>
@@ -1591,7 +1591,7 @@ export default function TaxPage() {
                   type="button"
                   disabled
                   className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl px-5 py-3.5 text-[13.5px] font-extrabold opacity-50"
-                  style={{ backgroundColor: MINT, color: '#04241d' }}
+                  style={{ backgroundColor: 'var(--mint-solid)', color: 'var(--on-mint)' }}
                 >
                   <Icon d="M12 5v13M6.5 12.5L12 18l5.5-5.5" size={16} width={2.2} />
                   Generate CA pack
@@ -1609,7 +1609,7 @@ export default function TaxPage() {
               {[
                 { name: 'CA report', fmt: 'PDF', what: 'Complete tax summary, workings, assumptions and both treatment scenarios.', c: RED },
                 { name: 'Transaction schedule', fmt: 'XLSX', what: 'Positions, FIFO lots, fees, funding and tax classification.', c: GREEN },
-                { name: 'Raw exchange data', fmt: 'CSV', what: 'Original fills and wallet transactions.', c: '#60a5fa' },
+                { name: 'Raw exchange data', fmt: 'CSV', what: 'Original fills and wallet transactions.', c: 'var(--blue)' },
                 { name: 'Reconciliation pack', fmt: 'ZIP', what: 'Fill → position → wallet → tax reconciliation.', c: VIOLET },
               ].map((e) => (
                 <div
@@ -1647,7 +1647,7 @@ export default function TaxPage() {
           {/* 10 ── disclaimer */}
           <div
             className="flex items-start gap-3 rounded-2xl border p-5"
-            style={{ borderColor: BORDER, backgroundColor: 'rgba(255,255,255,0.02)' }}
+            style={{ borderColor: BORDER, backgroundColor: 'var(--surface-2)' }}
           >
             <span style={{ color: FAINT, marginTop: 1 }}>
               <Icon d={P.info} size={15} />

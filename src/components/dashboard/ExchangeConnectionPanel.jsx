@@ -198,8 +198,8 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
           <span
             className="text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5"
             style={{
-              backgroundColor: isConnected ? 'rgba(0, 212, 170, 0.12)' : 'rgba(148, 163, 184, 0.12)',
-              color: isConnected ? '#00d4aa' : 'var(--dash-text-secondary)',
+              backgroundColor: isConnected ? 'var(--mint-tint)' : 'var(--surface-3)',
+              color: isConnected ? 'var(--mint)' : 'var(--dash-text-secondary)',
             }}
           >
             {isConnected ? 'Connected' : 'Not connected'}
@@ -214,7 +214,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
       )}
 
       {loadError && (
-        <p className="text-xs" style={{ color: 'rgb(248, 113, 113)' }}>
+        <p className="text-xs" style={{ color: 'var(--red)' }}>
           {loadError}
         </p>
       )}
@@ -227,9 +227,9 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
           {connection.enforcementCapable === false && (
             <div
               className="rounded-lg border px-3 py-2 text-[11px] leading-relaxed"
-              style={{ borderColor: 'rgba(245,158,11,0.4)', backgroundColor: 'rgba(245,158,11,0.08)', color: 'var(--dash-text-secondary)' }}
+              style={{ borderColor: 'var(--amber-line)', backgroundColor: 'var(--amber-tint)', color: 'var(--dash-text-secondary)' }}
             >
-              <strong style={{ color: 'rgb(245,158,11)' }}>Alerts only.</strong>{' '}
+              <strong style={{ color: 'var(--amber)' }}>Alerts only.</strong>{' '}
               This key can&apos;t take action — it&apos;s read-only, or our IP isn&apos;t whitelisted.
               The kill switch and auto-cooldown can&apos;t close positions. Use <strong>Replace key</strong> with a
               Trading-scope key and whitelist the IP to arm protection.
@@ -274,7 +274,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               disabled={disconnecting || locked}
               title={locked ? 'Locked during an active cooldown' : undefined}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold border disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ borderColor: 'rgba(248,113,113,0.4)', color: 'rgb(248, 113, 113)' }}
+              style={{ borderColor: 'var(--red-line)', color: 'var(--red)' }}
             >
               {disconnecting ? 'Disconnecting…' : 'Disconnect'}
             </button>
@@ -306,8 +306,8 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
           <div
             className="rounded-xl border px-3 py-3"
             style={{
-              borderColor: 'rgba(0,212,170,0.25)',
-              backgroundColor: 'rgba(0,212,170,0.04)',
+              borderColor: 'var(--mint-line)',
+              backgroundColor: 'color-mix(in srgb, var(--mint-solid) 4%, transparent)',
             }}
           >
             {isMobile && v.appGuide?.length ? (
@@ -321,7 +321,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                 {v.desktopOnly ? (
                   <div
                     className="mb-2.5 rounded-lg border px-3 py-2"
-                    style={{ borderColor: 'rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.07)' }}
+                    style={{ borderColor: 'var(--amber-line)', backgroundColor: 'var(--amber-tint)' }}
                   >
                     <p className="text-[12px] font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
                       Not in the {v.name} app
@@ -490,7 +490,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                   }
                 }}
                 placeholder="Paste API Key"
-                className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
                 style={{
                   borderColor: 'var(--dash-border)',
                   backgroundColor: 'var(--dash-bg-input)',
@@ -506,7 +506,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                 onChange={(e) => setApiSecret(e.target.value)}
                 placeholder="Paste API Secret"
                 wrapperClassName="mt-1"
-                className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+                className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
                 style={{
                   borderColor: 'var(--dash-border)',
                   backgroundColor: 'var(--dash-bg-input)',
@@ -520,7 +520,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               type="button"
               onClick={onConnect}
               disabled={!canSubmit}
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-surface-950 hover:bg-accent-hover disabled:opacity-50"
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-[var(--mint-solid)] text-[var(--on-mint)] hover:brightness-110 disabled:opacity-50"
             >
               {submitting ? 'Verifying…' : isConnected ? 'Replace key' : 'Connect'}
             </button>

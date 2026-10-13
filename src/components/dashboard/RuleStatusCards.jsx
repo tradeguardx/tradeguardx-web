@@ -8,21 +8,21 @@ import { staggerContainer, staggerItem } from './dashboardMotion';
 
 const FALLBACK_POLL_MS = 30000;
 
-const RED = '#ef4444';
-const AMBER = '#f59e0b';
-const GREEN = '#34d399';
-const ACCENT = 'var(--accent, #00d4aa)';
+const RED = 'var(--red-solid)';
+const AMBER = 'var(--amber-solid)';
+const GREEN = 'var(--mint)';
+const ACCENT = 'var(--mint-solid)';
 
 // Per-rule accent + icon (single-path heroicon-style).
 const RULE_META = {
-  'daily-loss': { tint: '#f87171', icon: 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z' },
-  'daily-profit-target': { tint: '#34d399', icon: 'M2.25 18 9 11.25l3 3L21.75 6M21.75 6h-4.5m4.5 0v4.5' },
-  'max-trades-day': { tint: '#2dd4bf', icon: 'M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5' },
-  'close-after-losses': { tint: '#f472b6', icon: 'M15.75 5.25v13.5m-7.5-13.5v13.5' },
-  'risk-per-trade': { tint: '#60a5fa', icon: 'M9 14.25 15 8.25M9.75 9a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm6 6a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' },
-  'max-total-loss': { tint: '#a78bfa', icon: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' },
-  'stop-loss-alert': { tint: '#fb923c', icon: 'M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0' },
-  _default: { tint: '#94a3b8', icon: 'M9 12.75 11.25 15 15 9.75' },
+  'daily-loss': { tint: 'var(--red)', icon: 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z' },
+  'daily-profit-target': { tint: 'var(--mint)', icon: 'M2.25 18 9 11.25l3 3L21.75 6M21.75 6h-4.5m4.5 0v4.5' },
+  'max-trades-day': { tint: 'var(--mint)', icon: 'M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5' },
+  'close-after-losses': { tint: 'color-mix(in srgb, var(--red) 55%, var(--violet))', icon: 'M15.75 5.25v13.5m-7.5-13.5v13.5' },
+  'risk-per-trade': { tint: 'var(--blue)', icon: 'M9 14.25 15 8.25M9.75 9a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm6 6a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' },
+  'max-total-loss': { tint: 'var(--violet)', icon: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' },
+  'stop-loss-alert': { tint: 'var(--amber)', icon: 'M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0' },
+  _default: { tint: 'var(--ink-3)', icon: 'M9 12.75 11.25 15 15 9.75' },
 };
 
 function n(v) {
@@ -157,10 +157,10 @@ export function computeRule(slug, cfg, live, balance, fmt) {
 }
 
 const TONE_PILL = {
-  danger: { label: 'Triggered', bg: 'rgba(239,68,68,0.14)', fg: RED },
-  warn: { label: 'Close', bg: 'rgba(245,158,11,0.14)', fg: AMBER },
-  target: { label: 'Target hit', bg: 'rgba(52,211,153,0.14)', fg: GREEN },
-  ok: { label: 'Armed', bg: 'rgba(0,212,170,0.12)', fg: '#00d4aa' },
+  danger: { label: 'Triggered', bg: 'var(--red-tint)', fg: 'var(--red)' },
+  warn: { label: 'Close', bg: 'var(--amber-tint)', fg: 'var(--amber)' },
+  target: { label: 'Target hit', bg: 'var(--mint-tint)', fg: 'var(--mint)' },
+  ok: { label: 'Armed', bg: 'var(--mint-tint)', fg: 'var(--mint)' },
   muted: { label: 'Configured', bg: 'var(--dash-bg-input)', fg: 'var(--dash-text-faint)' },
 };
 
@@ -174,7 +174,7 @@ function Pips({ filled, total, mark, color }) {
           className="h-2 flex-1 rounded-full transition-colors"
           style={{
             backgroundColor: i < filled ? color : 'var(--dash-bg-input)',
-            outline: mark && i === mark - 1 ? `1px solid ${color}66` : 'none',
+            outline: mark && i === mark - 1 ? `1px solid color-mix(in srgb, ${color} 40%, transparent)` : 'none',
             outlineOffset: '1px',
           }}
         />
@@ -282,7 +282,7 @@ export default function RuleStatusCards({ accessToken, tradingAccountId, account
         style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)', color: 'var(--dash-text-muted)' }}
       >
         No rules enabled for this account yet.{' '}
-        <Link to="/dashboard/rules" className="text-accent hover:underline">
+        <Link to="/dashboard/rules" className="text-[var(--mint)] hover:underline">
           Configure rules
         </Link>
       </div>
@@ -296,11 +296,11 @@ export default function RuleStatusCards({ accessToken, tradingAccountId, account
           <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--dash-text-muted)' }}>
             Active guardrails
           </span>
-          <span className="rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold" style={{ backgroundColor: 'rgba(0,212,170,0.12)', color: '#00d4aa' }}>
+          <span className="rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold" style={{ backgroundColor: 'var(--mint-tint)', color: 'var(--mint)' }}>
             {cards.length}
           </span>
         </div>
-        <Link to="/dashboard/rules" className="font-mono text-[10px] font-semibold uppercase tracking-wider text-accent hover:underline">
+        <Link to="/dashboard/rules" className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--mint)] hover:underline">
           Edit rules →
         </Link>
       </div>
@@ -312,14 +312,14 @@ export default function RuleStatusCards({ accessToken, tradingAccountId, account
             <motion.div
               key={c.slug}
               variants={staggerItem}
-              className="group relative overflow-hidden rounded-2xl border p-4 transition-colors hover:border-white/15"
+              className="group relative overflow-hidden rounded-2xl border p-4 transition-colors hover:border-[var(--line-strong)]"
               style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)' }}
             >
               <div className="pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full opacity-[0.09] blur-2xl" style={{ backgroundColor: c.tint }} />
 
               <div className="relative flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: c.tint }}>
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: c.tint, boxShadow: `0 0 6px ${c.tint}80` }} />
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: c.tint, boxShadow: `0 0 6px color-mix(in srgb, ${c.tint} 50%, transparent)` }} />
                   {c.name}
                 </span>
                 <span

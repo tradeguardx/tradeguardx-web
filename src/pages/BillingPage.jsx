@@ -61,9 +61,9 @@ import DashboardSkeleton from '../components/dashboard/shell/DashboardSkeleton';
  * Invoices are the same: the list is the provider's until we have an endpoint.
  */
 
-const CARD = 'padding:20px;border-radius:20px;background:#0d1422;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)';
+const CARD = 'padding:20px;border-radius:20px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)';
 const H3 = "margin:0;font:600 16px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.015em";
-const KICKER = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7f8ca0";
+const KICKER = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;color:var(--ink-faint)";
 
 const inr = (n) => (Number.isFinite(n) ? `₹${Math.round(n).toLocaleString('en-IN')}` : '—');
 /* Said wherever a plan change is: a bigger debit arriving on an AutoPay
@@ -427,9 +427,9 @@ export default function BillingPage() {
     return (
       <div style={sxw('max-width:1120px;margin:0 auto')}>
         <h1 style={sxw("margin:0;font:600 28px/1.1 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Plan &amp; billing</h1>
-        <p style={sxw('margin:6px 0 0;font-size:13.5px;color:#8a96a8')}>Prices include 18% GST. Invoices are GST-compliant.</p>
+        <p style={sxw('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>Prices include 18% GST. Invoices are GST-compliant.</p>
         <section style={sxw(`margin-top:20px;${CARD}`)}>
-          <p style={sxw('margin:0 0 14px;font-size:13.5px;line-height:1.55;color:#c9d2e0')}>
+          <p style={sxw('margin:0 0 14px;font-size:13.5px;line-height:1.55;color:var(--ink-2)')}>
             {settling
               ? `Your free trial has ended and no payment method is set up. Your guard stays on${guardUntil ? ` until ${guardUntil}` : ' for a short while'}. Subscribe to keep it on — your free trial is used, so the first charge is today.`
               : carrying
@@ -438,7 +438,7 @@ export default function BillingPage() {
                 ? `Your free trial ended${endedOn ? ` on ${endedOn}` : ''}, so nothing is enforcing your rules. Subscribe to switch the guard back on${cur ? ` — ${inr(cur.price)} ${PER[interval]}` : ''}. Your free trial is already used, so the first charge is today.`
                 : 'You don’t have a plan yet. Setting one up switches your guard on — the first 3 days are free and nothing is charged today.'}
           </p>
-          <button type="button" onClick={() => navigate('/dashboard/activate')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
+          <button type="button" onClick={() => navigate('/dashboard/activate')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800')}>
             {settling ? 'Subscribe' : carrying ? `Set up billing · keep your ${left} days` : spent ? 'Subscribe' : 'Start 3 days free'}
           </button>
         </section>
@@ -516,11 +516,11 @@ export default function BillingPage() {
       <div style={sxw('display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap')}>
         <div>
           <h1 style={sxw("margin:0;font:600 28px/1.1 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Plan &amp; billing</h1>
-          <p style={sxw('margin:6px 0 0;font-size:13.5px;color:#8a96a8')}>Prices include 18% GST. Invoices are GST-compliant.</p>
+          <p style={sxw('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>Prices include 18% GST. Invoices are GST-compliant.</p>
         </div>
       </div>
 
-      <section style={sxw(`position:relative;overflow:hidden;margin-top:20px;border-radius:22px;background:#0d1422;box-shadow:inset 0 0 0 1px ${skin.line}`)}>
+      <section style={sxw(`position:relative;overflow:hidden;margin-top:20px;border-radius:22px;background:var(--surface);box-shadow:inset 0 0 0 1px ${skin.line}`)}>
         <div aria-hidden style={sxw(`position:absolute;width:440px;height:440px;left:-170px;top:-230px;border-radius:50%;background:radial-gradient(circle,${skin.orb},transparent 66%);pointer-events:none`)} />
         <div style={sxw('position:relative;display:flex;flex-wrap:wrap')}>
           <div style={sxw('flex:1.4 1 380px;min-width:0;padding:24px')}>
@@ -529,7 +529,7 @@ export default function BillingPage() {
                 <span aria-hidden style={sxw(`width:6px;height:6px;border-radius:50%;background:${chip.fg}`)} />
                 {chip.label}
               </span>
-              {since && <span style={sxw('font-size:12.5px;color:#8a96a8')}>{since}</span>}
+              {since && <span style={sxw('font-size:12.5px;color:var(--ink-3)')}>{since}</span>}
             </div>
 
             <div style={sxw('margin-top:14px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap')}>
@@ -537,17 +537,17 @@ export default function BillingPage() {
               {/* A cancelled plan that still prices itself per month reads as
                   a live subscription. The price is no longer a recurring fact
                   about them, so the date they lose it takes its place. */}
-              <span style={sxw(`font:600 15px/1 'Space Grotesk',sans-serif;color:${state === 'cancelled' ? '#fbc94f' : '#a3b0c2'}`)}>
+              <span style={sxw(`font:600 15px/1 'Space Grotesk',sans-serif;color:${state === 'cancelled' ? 'var(--amber)' : 'var(--ink-2)'}`)}>
                 {state === 'cancelled' ? `Ends ${nextDate ?? 'soon'}` : state === 'comp' || state === 'unknown' ? '' : `${inr(cur?.price)} ${PER[interval]}`}
               </span>
             </div>
 
-            <p style={sxw('margin:10px 0 0;font-size:14px;line-height:1.55;color:#c9d2e0;max-width:58ch')}>
+            <p style={sxw('margin:10px 0 0;font-size:14px;line-height:1.55;color:var(--ink-2);max-width:58ch')}>
               {body}
             </p>
 
             {bar && <div style={sxw('margin-top:16px;max-width:460px')}>
-              <div style={sxw('display:flex;justify-content:space-between;font-size:12px;color:#8a96a8')}>
+              <div style={sxw('display:flex;justify-content:space-between;font-size:12px;color:var(--ink-3)')}>
                 <span>{bar.l}</span><span>{bar.r}</span>
               </div>
               <div
@@ -556,7 +556,7 @@ export default function BillingPage() {
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-label={bar.l}
-                style={sxw('margin-top:7px;height:6px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden')}
+                style={sxw('margin-top:7px;height:6px;border-radius:999px;background:var(--surface-3);overflow:hidden')}
               >
                 <div style={sxw(`height:100%;border-radius:999px;width:${bar.w};background:${BAR_COLOUR[state]}`)} />
               </div>
@@ -564,52 +564,52 @@ export default function BillingPage() {
 
             <div style={sxw('margin-top:18px;display:flex;gap:8px;flex-wrap:wrap')}>
               {state === 'trial' && rulesOn === 0 && (
-                <button type="button" onClick={() => navigate('/dashboard/rules')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
+                <button type="button" onClick={() => navigate('/dashboard/rules')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800')}>
                   Switch on rules
                 </button>
               )}
               {state === 'failed' && (
-                <button type="button" disabled={busy === 'card'} onClick={() => { trackBilling('billing_pay_now_clicked'); portal('card'); }} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#ef4444;color:#fff;font-size:13.5px;font-weight:800')}>
+                <button type="button" disabled={busy === 'card'} onClick={() => { trackBilling('billing_pay_now_clicked'); portal('card'); }} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--red-btn);color:#fff;font-size:13.5px;font-weight:800')}>
                   {busy === 'card' ? 'Opening…' : `Pay ${inr(cur?.price)} now`}
                 </button>
               )}
               {state === 'cancelled' && (
-                <button type="button" disabled={busy === 'resume'} onClick={() => resume()} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
+                <button type="button" disabled={busy === 'resume'} onClick={() => resume()} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800')}>
                   {busy === 'resume' ? 'Opening…' : trialCancelled ? 'Resume trial' : 'Resume Pro'}
                 </button>
               )}
               {state === 'active' && (
                 /* TODO(api): the invoice PDF itself. Until payments lists
                    invoices, the last one lives in the provider's portal. */
-                <button type="button" disabled={busy === 'portal'} onClick={() => { trackBilling('billing_invoice_downloaded'); portal('portal'); }} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
+                <button type="button" disabled={busy === 'portal'} onClick={() => { trackBilling('billing_invoice_downloaded'); portal('portal'); }} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800')}>
                   {busy === 'portal' ? 'Opening…' : 'Download last invoice'}
                 </button>
               )}
               {state === 'ended' && (
-                <button type="button" disabled={busy.startsWith('switch') || busy === 'card'} onClick={() => (endedFrom === 'unpaid' ? portal('card') : subscribeNow(interval))} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
+                <button type="button" disabled={busy.startsWith('switch') || busy === 'card'} onClick={() => (endedFrom === 'unpaid' ? portal('card') : subscribeNow(interval))} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800')}>
                   {busy.startsWith('switch') || busy === 'card' ? 'Opening…' : endedFrom === 'unpaid' ? `Pay ${price}` : `Subscribe · ${price}`}
                 </button>
               )}
               {state === 'unknown' && (
-                <button type="button" onClick={() => openSupport('I can’t see my plan details on Plan & billing.')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:rgba(255,255,255,.1);color:#f6f9fc;font-size:13.5px;font-weight:800')}>
+                <button type="button" onClick={() => openSupport('I can’t see my plan details on Plan & billing.')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--surface-3);color:var(--ink);font-size:13.5px;font-weight:800')}>
                   Contact support
                 </button>
               )}
               {showPeriod && state !== 'ended' && (
-                <a href="#change" style={sxw('display:inline-flex;align-items:center;min-height:44px;padding:11px 16px;border-radius:11px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);color:#f6f9fc;font-size:13.5px;font-weight:700;text-decoration:none')}>
+                <a href="#change" style={sxw('display:inline-flex;align-items:center;min-height:44px;padding:11px 16px;border-radius:11px;box-shadow:inset 0 0 0 1px var(--line-strong);color:var(--ink);font-size:13.5px;font-weight:700;text-decoration:none')}>
                   Change plan
                 </a>
               )}
             </div>
           </div>
 
-          <div style={sxw('flex:1 1 300px;min-width:0;padding:24px;border-left:1px solid rgba(255,255,255,.07);display:grid;gap:14px;align-content:start')}>
+          <div style={sxw('flex:1 1 300px;min-width:0;padding:24px;border-left:1px solid var(--line);display:grid;gap:14px;align-content:start')}>
             <div>
               <div style={sxw(KICKER)}>{NEXT_LABEL[state]}</div>
-              <div style={sxw(`margin-top:9px;font:700 30px/1 'Space Grotesk',sans-serif;letter-spacing:-.03em;color:${state === 'failed' ? '#ff8178' : ['cancelled', 'comp', 'unknown', 'ended'].includes(state) ? '#7f8ca0' : '#f6f9fc'}`)}>
+              <div style={sxw(`margin-top:9px;font:700 30px/1 'Space Grotesk',sans-serif;letter-spacing:-.03em;color:${state === 'failed' ? 'var(--red)' : ['cancelled', 'comp', 'unknown', 'ended'].includes(state) ? 'var(--ink-faint)' : 'var(--ink)'}`)}>
                 {state === 'unknown' ? '—' : ['cancelled', 'comp', 'ended'].includes(state) ? 'None' : inr(cur?.price)}
               </div>
-              <div style={sxw('margin-top:6px;font-size:12.5px;color:#a3b0c2')}>
+              <div style={sxw('margin-top:6px;font-size:12.5px;color:var(--ink-2)')}>
                 {state === 'cancelled'
                   ? `${trialCancelled ? 'Trial ends' : 'Plan ends'} ${nextDate ?? ''}`
                   : state === 'failed'
@@ -634,7 +634,7 @@ export default function BillingPage() {
               * they are checking what will be charged.
               * TODO(api): surface brand, last4 and expiry on /subscriptions/me.
               */}
-            <div style={sxw(`display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#070a12;box-shadow:inset 0 0 0 1px ${state === 'failed' || endedFrom === 'unpaid' ? 'rgba(239,68,68,.4)' : 'rgba(255,255,255,.07)'}`)}>
+            <div style={sxw(`display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--surface-2);box-shadow:inset 0 0 0 1px ${state === 'failed' || endedFrom === 'unpaid' ? 'var(--red-line)' : 'var(--line)'}`)}>
               {/*
                 * Not "CARD". Most people here pay by UPI mandate, and a card
                 * tile on a UPI subscription is the same class of error as
@@ -643,14 +643,14 @@ export default function BillingPage() {
                 * TODO(api): once /subscriptions/me carries the method, show
                 * the real brand or "UPI Autopay" here.
                 */}
-              <span aria-hidden style={sxw('flex:none;width:40px;height:28px;border-radius:6px;background:rgba(255,255,255,.07);display:grid;place-items:center;color:#a3b0c2')}>
+              <span aria-hidden style={sxw('flex:none;width:40px;height:28px;border-radius:6px;background:var(--surface-3);display:grid;place-items:center;color:var(--ink-2)')}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 7h18v12H3z" /><path d="M3 11h18M8 15h4" />
                 </svg>
               </span>
               <span style={sxw('flex:1;min-width:0')}>
                 <span style={sxw('display:block;font-size:13px;font-weight:700')}>Payment method on file</span>
-                <span style={sxw(`display:block;margin-top:2px;font-size:11.5px;color:${state === 'failed' || endedFrom === 'unpaid' ? '#ff8178' : '#7f8ca0'}`)}>
+                <span style={sxw(`display:block;margin-top:2px;font-size:11.5px;color:${state === 'failed' || endedFrom === 'unpaid' ? 'var(--red)' : 'var(--ink-faint)'}`)}>
                   {state === 'failed' || endedFrom === 'unpaid' ? (failedOn ? `Declined by bank on ${failedOn}` : 'Declined by your bank')
                     : state === 'cancelled' ? 'Will not be charged'
                       : state === 'confirming' ? 'Charge pending'
@@ -662,7 +662,7 @@ export default function BillingPage() {
                 </span>
               </span>
               {state !== 'comp' && state !== 'unknown' && (
-                <button type="button" disabled={busy === 'card'} onClick={() => portal('card')} style={sxw('flex:none;min-height:36px;padding:7px 11px;border:0;border-radius:9px;background:rgba(255,255,255,.07);color:#f6f9fc;font-size:12px;font-weight:700')}>
+                <button type="button" disabled={busy === 'card'} onClick={() => portal('card')} style={sxw('flex:none;min-height:36px;padding:7px 11px;border:0;border-radius:9px;background:var(--surface-3);color:var(--ink);font-size:12px;font-weight:700')}>
                   {busy === 'card' ? '…' : 'Update'}
                 </button>
               )}
@@ -685,8 +685,8 @@ export default function BillingPage() {
             <Row
               k="Rules switched on"
               v={`${rulesOn} of ${rulesTotal}`}
-              fg={rulesOn === 0 ? '#fbc94f' : '#f6f9fc'}
-              bar={{ w: rulesTotal ? `${Math.max(2, (rulesOn / rulesTotal) * 100)}%` : '2%', c: rulesOn === 0 ? '#f0b429' : '#00d4aa' }}
+              fg={rulesOn === 0 ? 'var(--amber)' : 'var(--ink)'}
+              bar={{ w: rulesTotal ? `${Math.max(2, (rulesOn / rulesTotal) * 100)}%` : '2%', c: rulesOn === 0 ? 'var(--amber-solid)' : 'var(--mint-solid)' }}
               note={rulesOn === 0 ? 'Nothing is being enforced yet.' : null}
               cta={rulesOn === 0 ? { label: 'Switch on rules →', to: '/dashboard/rules' } : null}
               navigate={navigate}
@@ -698,7 +698,7 @@ export default function BillingPage() {
         <section style={sxw(CARD)}>
           <div style={sxw('display:flex;align-items:center;justify-content:space-between;gap:10px')}>
             <h3 style={sxw(H3)}>Billing details</h3>
-            <button type="button" disabled={busy === 'portal'} onClick={() => portal('portal')} style={sxw('min-height:34px;padding:6px 11px;border:0;border-radius:9px;background:rgba(255,255,255,.07);color:#f6f9fc;font-size:12px;font-weight:700')}>
+            <button type="button" disabled={busy === 'portal'} onClick={() => portal('portal')} style={sxw('min-height:34px;padding:6px 11px;border:0;border-radius:9px;background:var(--surface-3);color:var(--ink);font-size:12px;font-weight:700')}>
               {busy === 'portal' ? '…' : 'Edit'}
             </button>
           </div>
@@ -715,7 +715,7 @@ export default function BillingPage() {
             />
             <Detail k="Billing details & GSTIN" v="Managed in the billing portal" muted />
           </div>
-          <p style={sxw('margin:10px 0 0;font-size:11.5px;line-height:1.5;color:#7f8ca0')}>
+          <p style={sxw('margin:10px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink-faint)')}>
             Add a GSTIN to claim input tax credit on your invoices.
           </p>
         </section>
@@ -724,16 +724,16 @@ export default function BillingPage() {
       {showPeriod && <section id="change" style={sxw(`margin-top:16px;${CARD}`)}>
         <div style={sxw('display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap')}>
           <h3 style={sxw(H3)}>Change billing period</h3>
-          <span style={sxw('font-size:12px;color:#7f8ca0')}>Every plan includes all five protections</span>
+          <span style={sxw('font-size:12px;color:var(--ink-faint)')}>Every plan includes all five protections</span>
         </div>
         {pending && (() => {
           /* The one thing the user needs to know between pressing Switch and
              the renewal: what changes, when, and that today costs nothing. */
           const to = options.find((o) => o.id === pending.interval);
           return (
-            <div style={sxw('margin-top:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:13px;background:rgba(240,180,41,.09);box-shadow:inset 0 0 0 1px rgba(240,180,41,.26)')}>
-              <p style={sxw('flex:1;min-width:200px;margin:0;font-size:12.5px;line-height:1.5;color:#f0d79a')}>
-                Changes to <strong style={sxw('color:#fbc94f')}>{to?.name ?? pending.interval}</strong>
+            <div style={sxw('margin-top:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:13px;background:var(--amber-tint);box-shadow:inset 0 0 0 1px var(--amber-line)')}>
+              <p style={sxw('flex:1;min-width:200px;margin:0;font-size:12.5px;line-height:1.5;color:var(--amber)')}>
+                Changes to <strong style={sxw('color:var(--amber)')}>{to?.name ?? pending.interval}</strong>
                 {to ? ` (${inr(to.price)} ${PER[pending.interval]})` : ''} on {fmtDate(pending.effectiveAt) ?? 'your next renewal'}.
                 {cur ? ` You stay on ${cur.name} until then.` : ''} No charge today. {to ? BANK_NOTICE(to.price) : ''}
               </p>
@@ -741,7 +741,7 @@ export default function BillingPage() {
                 type="button"
                 disabled={busy === 'undo' || busy.startsWith('switch')}
                 onClick={undoChange}
-                style={sxw('flex:none;min-height:36px;padding:8px 13px;border:0;border-radius:9px;background:rgba(255,255,255,.1);color:#f6f9fc;font-size:12px;font-weight:700')}
+                style={sxw('flex:none;min-height:36px;padding:8px 13px;border:0;border-radius:9px;background:var(--surface-3);color:var(--ink);font-size:12px;font-weight:700')}
               >
                 {busy === 'undo' ? '…' : 'Undo'}
               </button>
@@ -755,22 +755,22 @@ export default function BillingPage() {
             const isPending = pending?.interval === o.id;
             const saving = savingVsMonthly(o, monthlyPrice);
             return (
-              <div key={o.id} style={sxw(`display:flex;flex-direction:column;gap:10px;padding:15px;border-radius:15px;background:${isCur ? (state === 'cancelled' ? 'rgba(240,180,41,.05)' : 'rgba(0,212,170,.06)') : 'rgba(255,255,255,.02)'};box-shadow:${isCur ? `inset 0 0 0 1.5px ${state === 'cancelled' ? '#f0b429' : '#00d4aa'}` : 'inset 0 0 0 1px rgba(255,255,255,.09)'}`)}>
+              <div key={o.id} style={sxw(`display:flex;flex-direction:column;gap:10px;padding:15px;border-radius:15px;background:${isCur ? (state === 'cancelled' ? 'color-mix(in srgb, var(--amber-solid) 5%, transparent)' : 'color-mix(in srgb, var(--mint-solid) 6%, transparent)') : 'var(--surface-2)'};box-shadow:${isCur ? `inset 0 0 0 1.5px ${state === 'cancelled' ? 'var(--amber-solid)' : 'var(--mint-solid)'}` : 'inset 0 0 0 1px var(--line-strong)'}`)}>
                 <div style={sxw('display:flex;align-items:center;gap:8px;flex-wrap:wrap')}>
                   <span style={sxw('font-size:14px;font-weight:700')}>{o.name}</span>
                   {isCur && (
-                    <span style={sxw(`font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:${state === 'cancelled' ? 'rgba(240,180,41,.16)' : 'rgba(0,212,170,.16)'};color:${state === 'cancelled' ? '#fbc94f' : '#2fe3bd'}`)}>
+                    <span style={sxw(`font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:${state === 'cancelled' ? 'var(--amber-tint)' : 'var(--mint-tint)'};color:${state === 'cancelled' ? 'var(--amber)' : 'var(--mint)'}`)}>
                       {state === 'cancelled' ? 'ENDING' : 'CURRENT'}
                     </span>
                   )}
-                  {isPending && <span style={sxw("font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:rgba(240,180,41,.16);color:#fbc94f")}>SCHEDULED</span>}
-                  {!isCur && !isPending && saving > 0 && <span style={sxw("font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:rgba(240,180,41,.14);color:#fbc94f")}>{`SAVE ${inr(saving)}`}</span>}
+                  {isPending && <span style={sxw("font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:var(--amber-tint);color:var(--amber)")}>SCHEDULED</span>}
+                  {!isCur && !isPending && saving > 0 && <span style={sxw("font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:var(--amber-tint);color:var(--amber)")}>{`SAVE ${inr(saving)}`}</span>}
                 </div>
                 <div>
                   <span style={sxw("font:700 22px/1 'Space Grotesk',sans-serif;letter-spacing:-.025em")}>{inr(o.price)}</span>{' '}
-                  <span style={sxw('font-size:12px;color:#8a96a8')}>{PER[o.id]}</span>
+                  <span style={sxw('font-size:12px;color:var(--ink-3)')}>{PER[o.id]}</span>
                 </div>
-                <div style={sxw('font-size:12px;line-height:1.45;color:#a3b0c2;min-height:34px')}>{PLAN_NOTE[o.id]}</div>
+                <div style={sxw('font-size:12px;line-height:1.45;color:var(--ink-2);min-height:34px')}>{PLAN_NOTE[o.id]}</div>
                 {/* Changes happen here now. This used to open the provider's
                     customer portal, which lists the subscription and the
                     invoices but has no plan switcher — so "Switch to Yearly"
@@ -785,7 +785,7 @@ export default function BillingPage() {
                   type="button"
                   disabled={(isCur && state !== 'cancelled' && state !== 'ended') || isPending || state === 'failed' || busy.startsWith('switch') || busy === 'undo'}
                   onClick={() => (state === 'ended' ? subscribeNow(o.id) : state === 'cancelled' ? resume(o.id) : setConfirmSwitch(o))}
-                  style={sxw(`min-height:42px;padding:10px;border:0;border-radius:10px;background:${state === 'cancelled' || state === 'ended' ? '#00d4aa' : isCur || isPending ? 'transparent' : 'rgba(255,255,255,.08)'};color:${state === 'cancelled' || state === 'ended' ? '#02241d' : isCur || isPending ? '#7f8ca0' : '#f6f9fc'};font-size:13px;font-weight:700;cursor:${(isCur && state !== 'cancelled' && state !== 'ended') || isPending ? 'default' : 'pointer'}`)}
+                  style={sxw(`min-height:42px;padding:10px;border:0;border-radius:10px;background:${state === 'cancelled' || state === 'ended' ? 'var(--mint-solid)' : isCur || isPending ? 'transparent' : 'var(--surface-3)'};color:${state === 'cancelled' || state === 'ended' ? 'var(--on-mint)' : isCur || isPending ? 'var(--ink-faint)' : 'var(--ink)'};font-size:13px;font-weight:700;cursor:${(isCur && state !== 'cancelled' && state !== 'ended') || isPending ? 'default' : 'pointer'}`)}
                 >
                   {busy === `switch:${o.id}`
                     ? (state === 'cancelled' ? 'Resuming…' : 'Switching…')
@@ -799,8 +799,8 @@ export default function BillingPage() {
           })}
         </div>
         {confirmSwitch && (
-          <div role="dialog" aria-label={`Switch to ${confirmSwitch.name}`} data-confirm-switch="1" style={sxw('margin-top:12px;padding:14px 15px;border-radius:13px;background:rgba(0,212,170,.06);box-shadow:inset 0 0 0 1px rgba(0,212,170,.3)')}>
-            <p style={sxw('margin:0;font-size:13px;line-height:1.55;color:#e8edf5')}>
+          <div role="dialog" aria-label={`Switch to ${confirmSwitch.name}`} data-confirm-switch="1" style={sxw('margin-top:12px;padding:14px 15px;border-radius:13px;background:color-mix(in srgb, var(--mint-solid) 6%, transparent);box-shadow:inset 0 0 0 1px var(--mint-line)')}>
+            <p style={sxw('margin:0;font-size:13px;line-height:1.55;color:var(--ink)')}>
               <strong>Switch to {confirmSwitch.name}?</strong> From {nextDate ?? 'your next renewal'} you pay {inr(confirmSwitch.price)} {EVERY[confirmSwitch.id]} on your existing AutoPay. Nothing to approve, nothing charged today.
             </p>
             <div style={sxw('margin-top:11px;display:flex;gap:8px;flex-wrap:wrap')}>
@@ -808,14 +808,14 @@ export default function BillingPage() {
                 type="button"
                 disabled={busy.startsWith('switch')}
                 onClick={async () => { const o = confirmSwitch; setConfirmSwitch(null); await switchTo(o); }}
-                style={sxw('min-height:40px;padding:9px 15px;border:0;border-radius:10px;background:#00d4aa;color:#02241d;font-size:13px;font-weight:800')}
+                style={sxw('min-height:40px;padding:9px 15px;border:0;border-radius:10px;background:var(--mint-solid);color:var(--on-mint);font-size:13px;font-weight:800')}
               >
                 Switch to {confirmSwitch.name}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmSwitch(null)}
-                style={sxw('min-height:40px;padding:9px 15px;border:0;border-radius:10px;background:rgba(255,255,255,.08);color:#f6f9fc;font-size:13px;font-weight:700')}
+                style={sxw('min-height:40px;padding:9px 15px;border:0;border-radius:10px;background:var(--surface-3);color:var(--ink);font-size:13px;font-weight:700')}
               >
                 Keep {cur?.name ?? 'my plan'}
               </button>
@@ -823,21 +823,21 @@ export default function BillingPage() {
           </div>
         )}
         {(state === 'failed' || state === 'cancelled') && (
-          <p style={sxw('margin:12px 0 0;font-size:12.5px;color:#7f8ca0')}>
+          <p style={sxw('margin:12px 0 0;font-size:12.5px;color:var(--ink-faint)')}>
             {state === 'failed'
               ? 'Sort the payment out first — then you can change the period.'
               : `Your card is still saved, so picking a period brings you back on it. Nothing is charged until ${nextDate ?? 'your trial ends'}.`}
           </p>
         )}
         {state === 'ended' && (
-          <p style={sxw('margin:12px 0 0;font-size:12.5px;color:#7f8ca0')}>
+          <p style={sxw('margin:12px 0 0;font-size:12.5px;color:var(--ink-faint)')}>
             Pick the period for your new subscription. It is charged today — there is no second free trial.
           </p>
         )}
       </section>}
 
-      <section style={sxw('margin-top:16px;border-radius:20px;background:#0d1422;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);overflow:hidden')}>
-        <div style={sxw('padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.07)')}>
+      <section style={sxw('margin-top:16px;border-radius:20px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden')}>
+        <div style={sxw('padding:18px 20px;border-bottom:1px solid var(--line)')}>
           <h3 style={sxw(H3)}>Invoices</h3>
         </div>
         {/* TODO(api): list invoices inline once payments exposes them. Until
@@ -845,27 +845,27 @@ export default function BillingPage() {
             fabricated row on a GST document is not a placeholder. The one
             row shown is the pending first charge, which is a fact we hold. */}
         {state === 'confirming' && cur && (
-          <div style={sxw('display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px;flex-wrap:wrap')}>
-            <span style={sxw('min-width:90px;color:#a3b0c2')}>{nextDate ?? '—'}</span>
+          <div style={sxw('display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);font-size:13px;flex-wrap:wrap')}>
+            <span style={sxw('min-width:90px;color:var(--ink-2)')}>{nextDate ?? '—'}</span>
             <span style={sxw('flex:1;min-width:140px')}>
               <span style={sxw('display:block;font-weight:600')}>Pro · {cur.name}</span>
-              <span style={sxw('display:block;margin-top:2px;font-size:11.5px;color:#7f8ca0')}>Invoice is issued once the payment confirms</span>
+              <span style={sxw('display:block;margin-top:2px;font-size:11.5px;color:var(--ink-faint)')}>Invoice is issued once the payment confirms</span>
             </span>
             <span style={sxw("font:600 13px/1 'Space Grotesk',sans-serif")}>{inr(cur.price)}</span>
-            <span style={sxw("font:700 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:5px 7px;border-radius:6px;background:rgba(240,180,41,.14);color:#fbc94f")}>PENDING</span>
+            <span style={sxw("font:700 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:5px 7px;border-radius:6px;background:var(--amber-tint);color:var(--amber)")}>PENDING</span>
           </div>
         )}
-        <div style={sxw('padding:22px 20px;text-align:center;font-size:13px;color:#8a96a8')}>
+        <div style={sxw('padding:22px 20px;text-align:center;font-size:13px;color:var(--ink-3)')}>
           {invoiceText}
           {showPortalInvoices && (
             <div style={sxw('margin-top:12px')}>
-              <button type="button" disabled={busy === 'portal'} onClick={() => { trackBilling('billing_invoice_downloaded'); portal('portal'); }} style={sxw('min-height:40px;padding:9px 14px;border:0;border-radius:10px;background:rgba(255,255,255,.07);color:#f6f9fc;font-size:12.5px;font-weight:700')}>
+              <button type="button" disabled={busy === 'portal'} onClick={() => { trackBilling('billing_invoice_downloaded'); portal('portal'); }} style={sxw('min-height:40px;padding:9px 14px;border:0;border-radius:10px;background:var(--surface-3);color:var(--ink);font-size:12.5px;font-weight:700')}>
                 {busy === 'portal' ? 'Opening…' : 'Open invoices'}
               </button>
             </div>
           )}
           {cur && !['comp', 'unknown'].includes(state) && (
-            <p style={sxw('margin:10px 0 0;font-size:11.5px;color:#7f8ca0')}>
+            <p style={sxw('margin:10px 0 0;font-size:11.5px;color:var(--ink-faint)')}>
               {`A ${cur.name.toLowerCase()} invoice of ${inr(cur.price)} includes ₹${gstInside(cur.price).toFixed(2)} GST.`}
             </p>
           )}
@@ -874,10 +874,10 @@ export default function BillingPage() {
 
       {/* No bottom row while a charge is confirming: it resolves to paid or
           failed on its own, and cannot be cancelled mid-flight (spec, tx). */}
-      {cancelCopy && <section style={sxw('margin-top:16px;display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);flex-wrap:wrap')}>
+      {cancelCopy && <section style={sxw('margin-top:16px;display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:20px;box-shadow:inset 0 0 0 1px var(--line);flex-wrap:wrap')}>
         <span style={sxw('flex:1;min-width:240px')}>
           <span style={sxw('display:block;font-size:14px;font-weight:700')}>{cancelCopy.title}</span>
-          <span style={sxw('display:block;margin-top:4px;font-size:12.5px;line-height:1.5;color:#8a96a8')}>
+          <span style={sxw('display:block;margin-top:4px;font-size:12.5px;line-height:1.5;color:var(--ink-3)')}>
             {fill(cancelCopy.body, { date: nextDate ?? 'the end of your period' })}
           </span>
         </span>
@@ -890,7 +890,7 @@ export default function BillingPage() {
             trackBilling('billing_cancel_clicked', { state });
             setConfirming(true);
           }}
-          style={sxw(`flex:none;min-height:42px;padding:10px 15px;border:0;border-radius:10px;background:${state === 'cancelled' || state === 'ended' ? '#00d4aa' : 'transparent'};color:${state === 'cancelled' || state === 'ended' ? '#02241d' : state === 'comp' || state === 'unknown' ? '#c9d2e0' : '#ff8178'};font-size:13px;font-weight:700`)}
+          style={sxw(`flex:none;min-height:42px;padding:10px 15px;border:0;border-radius:10px;background:${state === 'cancelled' || state === 'ended' ? 'var(--mint-solid)' : 'transparent'};color:${state === 'cancelled' || state === 'ended' ? 'var(--on-mint)' : state === 'comp' || state === 'unknown' ? 'var(--ink-2)' : 'var(--red)'};font-size:13px;font-weight:700`)}
         >
           {cancelCopy.btn}
         </button>
@@ -922,13 +922,13 @@ export default function BillingPage() {
             aria-modal="true"
             aria-label={cancelCopy.title}
             onClick={(e) => e.stopPropagation()}
-            style={sxw('width:min(460px,100%);padding:22px;border-radius:18px;background:#0d1422;box-shadow:inset 0 0 0 1px rgba(239,68,68,.35)')}
+            style={sxw('width:min(460px,100%);padding:22px;border-radius:18px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--red-line)')}
           >
             <h3 style={sxw("margin:0;font:600 18px/1.25 'Space Grotesk',sans-serif")}>{cancelCopy.title}</h3>
             {/* The dialog repeats the consequence rather than asking "are you
                 sure": the point of confirming is that they read what happens,
                 not that they click twice. */}
-            <p style={sxw('margin:10px 0 0;font-size:13px;line-height:1.55;color:#c9d2e0')}>
+            <p style={sxw('margin:10px 0 0;font-size:13px;line-height:1.55;color:var(--ink-2)')}>
               {fill(cancelCopy.body, { date: nextDate ?? 'the end of your period' })}
             </p>
             {/*
@@ -939,22 +939,22 @@ export default function BillingPage() {
               * then finds Autopay still listed at their bank concludes the
               * cancellation failed. Telling them where it lives costs a line.
               */}
-            <p style={sxw('margin:12px 0 0;font-size:12.5px;line-height:1.5;color:#8a96a8')}>
+            <p style={sxw('margin:12px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-3)')}>
               {MANDATE_NOTE}
             </p>
             {inFlight && (
               /* Indian UPI debits are initiated inside a ~48h window before
                  the date, and nothing we do here stops one already in flight.
                  Shown only to the people it can actually happen to. */
-              <p style={sxw('margin:10px 0 0;padding:10px 12px;border-radius:10px;background:rgba(240,180,41,.09);box-shadow:inset 0 0 0 1px rgba(240,180,41,.26);font-size:12.5px;line-height:1.5;color:#f0d79a')}>
+              <p style={sxw('margin:10px 0 0;padding:10px 12px;border-radius:10px;background:var(--amber-tint);box-shadow:inset 0 0 0 1px var(--amber-line);font-size:12.5px;line-height:1.5;color:var(--amber)')}>
                 {IN_FLIGHT_NOTE}
               </p>
             )}
             <div style={sxw('margin-top:18px;display:flex;gap:9px;flex-wrap:wrap')}>
-              <button type="button" disabled={busy === 'cancel'} onClick={doCancel} style={sxw('flex:1;min-width:150px;min-height:44px;padding:11px;border:0;border-radius:11px;background:#ef4444;color:#fff;font-size:13px;font-weight:800')}>
+              <button type="button" disabled={busy === 'cancel'} onClick={doCancel} style={sxw('flex:1;min-width:150px;min-height:44px;padding:11px;border:0;border-radius:11px;background:var(--red-btn);color:#fff;font-size:13px;font-weight:800')}>
                 {busy === 'cancel' ? 'Cancelling…' : 'Yes, cancel'}
               </button>
-              <button type="button" onClick={() => setConfirming(false)} style={sxw('flex:1;min-width:150px;min-height:44px;padding:11px;border:0;border-radius:11px;background:rgba(255,255,255,.08);color:#f6f9fc;font-size:13px;font-weight:700')}>
+              <button type="button" onClick={() => setConfirming(false)} style={sxw('flex:1;min-width:150px;min-height:44px;padding:11px;border:0;border-radius:11px;background:var(--surface-3);color:var(--ink);font-size:13px;font-weight:700')}>
                 Keep my guard
               </button>
             </div>
@@ -965,23 +965,23 @@ export default function BillingPage() {
   );
 }
 
-function Row({ k, v, fg = '#f6f9fc', bar, note, cta, navigate }) {
+function Row({ k, v, fg = 'var(--ink)', bar, note, cta, navigate }) {
   return (
     <div>
       <div style={sxw('display:flex;justify-content:space-between;align-items:baseline;gap:10px')}>
-        <span style={sxw('font-size:13px;color:#a3b0c2')}>{k}</span>
+        <span style={sxw('font-size:13px;color:var(--ink-2)')}>{k}</span>
         <span style={sxw(`font:700 14px/1 'Space Grotesk',sans-serif;color:${fg}`)}>{v}</span>
       </div>
       {bar && (
-        <div style={sxw('margin-top:7px;height:5px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden')}>
+        <div style={sxw('margin-top:7px;height:5px;border-radius:999px;background:var(--surface-3);overflow:hidden')}>
           <div style={sxw(`height:100%;border-radius:999px;width:${bar.w};background:${bar.c}`)} />
         </div>
       )}
       {note && (
-        <div style={sxw('margin-top:7px;display:flex;align-items:center;gap:8px;font-size:12px;color:#fbc94f;flex-wrap:wrap')}>
+        <div style={sxw('margin-top:7px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--amber);flex-wrap:wrap')}>
           {note}
           {cta && (
-            <button type="button" onClick={() => navigate(cta.to)} style={sxw('padding:0;border:0;background:none;color:#2fe3bd;font-size:12px;font-weight:700')}>
+            <button type="button" onClick={() => navigate(cta.to)} style={sxw('padding:0;border:0;background:none;color:var(--mint);font-size:12px;font-weight:700')}>
               {cta.label}
             </button>
           )}
@@ -993,9 +993,9 @@ function Row({ k, v, fg = '#f6f9fc', bar, note, cta, navigate }) {
 
 function Detail({ k, v, muted }) {
   return (
-    <div style={sxw('display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px')}>
-      <span style={sxw('color:#8a96a8')}>{k}</span>
-      <span style={sxw(`text-align:right;font-weight:600;color:${muted ? '#7f8ca0' : '#f6f9fc'}`)}>{v}</span>
+    <div style={sxw('display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px')}>
+      <span style={sxw('color:var(--ink-3)')}>{k}</span>
+      <span style={sxw(`text-align:right;font-weight:600;color:${muted ? 'var(--ink-faint)' : 'var(--ink)'}`)}>{v}</span>
     </div>
   );
 }

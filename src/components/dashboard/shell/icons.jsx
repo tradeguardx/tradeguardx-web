@@ -67,8 +67,8 @@ export const RULE_ACCENT = {
   'daily-loss': { color: 'var(--mint)', tint: 'var(--mint-tint)' },
   'daily-profit-target': { color: 'var(--mint)', tint: 'var(--mint-tint)' },
   'stop-loss-alert': { color: 'var(--amber)', tint: 'var(--amber-tint)' },
-  'risk-per-trade': { color: 'var(--blue)', tint: 'rgba(31,111,208,0.12)' },
-  'max-total-loss': { color: 'var(--violet)', tint: 'rgba(109,63,212,0.12)' },
+  'risk-per-trade': { color: 'var(--blue)', tint: 'color-mix(in srgb, var(--blue) 12%, transparent)' },
+  'max-total-loss': { color: 'var(--violet)', tint: 'color-mix(in srgb, var(--violet) 12%, transparent)' },
   'max-trades-day': { color: 'var(--mint)', tint: 'var(--mint-tint)' },
   'close-after-losses': { color: 'var(--red)', tint: 'var(--red-tint)' },
 };

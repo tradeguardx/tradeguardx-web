@@ -113,7 +113,7 @@ export default function BreachToast() {
             {canShare && !notEnforced && <button
               type="button"
               onClick={share}
-              style={sx('display:flex;align-items:center;gap:6px;padding:7px 12px;border:0;border-radius:8px;background:var(--mint-solid);color:#02241d;font-size:12px;font-weight:700')}
+              style={sx('display:flex;align-items:center;gap:6px;padding:7px 12px;border:0;border-radius:8px;background:var(--mint-solid);color:var(--on-mint);font-size:12px;font-weight:700')}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V3M7 8l5-5 5 5" /><path d="M5 13v6h14v-6" /></svg>
               Share this save

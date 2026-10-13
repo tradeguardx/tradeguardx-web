@@ -130,7 +130,7 @@ export default function AppGuide({ open, onClose, steps = [], docsUrl }) {
                     target="_blank"
                     rel="noreferrer"
                     className="mt-3 inline-block text-[12.5px] font-semibold underline"
-                    style={{ color: 'var(--accent, #00d4aa)' }}
+                    style={{ color: 'var(--mint-solid)' }}
                   >
                     Open the exchange&apos;s own page
                   </a>
@@ -192,7 +192,7 @@ export default function AppGuide({ open, onClose, steps = [], docsUrl }) {
                   className="h-2 rounded-full transition-all"
                   style={{
                     width: idx === i ? 22 : 8,
-                    backgroundColor: idx === i ? '#00d4aa' : 'rgba(255,255,255,0.25)',
+                    backgroundColor: idx === i ? 'var(--mint-solid)' : 'rgba(255,255,255,0.25)',
                   }}
                 />
               ))}
@@ -200,7 +200,7 @@ export default function AppGuide({ open, onClose, steps = [], docsUrl }) {
             <button
               type="button"
               onClick={() => (atEnd ? onClose() : go(1))}
-              className="w-full rounded-xl bg-accent px-5 py-3.5 text-[15px] font-bold text-surface-950 transition-transform active:scale-[0.99]"
+              className="w-full rounded-xl bg-[var(--mint-solid)] px-5 py-3.5 text-[15px] font-bold text-[var(--on-mint)] transition-transform active:scale-[0.99]"
             >
               {atEnd ? 'Got it — enter my key' : 'Next'}
             </button>
@@ -208,6 +208,6 @@ export default function AppGuide({ open, onClose, steps = [], docsUrl }) {
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body,
+    document.querySelector('[data-tgx]') ?? document.body,
   );
 }

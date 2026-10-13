@@ -57,7 +57,7 @@ export default function RevengeBuilding({ status, accountName, exchangeName, com
           const active = shown === i;
           return (
             <li key={st.label} style={sx('display:flex;align-items:center;gap:11px;font-size:13.5px', { color: done ? 'var(--ink)' : active ? 'var(--ink-2)' : 'var(--ink-faint)' })}>
-              <span style={sx('flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%', done ? { background: 'var(--mint-solid)', color: '#02241d' } : { border: '1.5px solid var(--line-strong)' })}>
+              <span style={sx('flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%', done ? { background: 'var(--mint-solid)', color: 'var(--on-mint)' } : { border: '1.5px solid var(--line-strong)' })}>
                 {done ? (
                   <svg className="rv-pop" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.2 4.2L19 7" /></svg>
                 ) : active ? (

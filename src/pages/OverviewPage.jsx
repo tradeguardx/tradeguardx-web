@@ -220,11 +220,11 @@ export default function OverviewPage() {
       : { title: 'Start your free trial', body: 'Free for 3 days, nothing charged today. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Start 3 days free' };
 
   const steps = [
-    { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.bank, to: '/dashboard/setup', cta: 'Add an account' },
+    { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'color-mix(in srgb, var(--blue) 12%, transparent)', d: ICON.bank, to: '/dashboard/setup', cta: 'Add an account' },
     { title: 'Connect your API key', body: 'It needs permission to trade. That is what lets us close a position for you.', accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.connect, to: '/dashboard/connect', cta: 'Connect the key' },
     billingStep,
     { title: 'Turn on alerts', body: 'Telegram is the fast one. Without a channel a breach happens silently.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.bell, to: '/dashboard/alerts', cta: 'Set up alerts' },
-    { title: 'Set your rules', body: 'Written while calm. Two are enough to start: a daily loss limit and a trade cap.', accent: 'var(--violet)', tint: 'rgba(109,63,212,0.12)', d: ICON.rules, to: '/dashboard/rules', cta: 'Choose rules' },
+    { title: 'Set your rules', body: 'Written while calm. Two are enough to start: a daily loss limit and a trade cap.', accent: 'var(--violet)', tint: 'color-mix(in srgb, var(--violet) 12%, transparent)', d: ICON.rules, to: '/dashboard/rules', cta: 'Choose rules' },
   ].map((st, i) => {
     const done = preds[i];
     const next = !done && firstUndone === i;
@@ -379,7 +379,7 @@ export default function OverviewPage() {
     ? [
       { title: g.gap?.title ?? 'Finish setup', body: g.gap?.body ?? 'A few steps remain before anything is enforced.', to: g.gap?.to ?? '/dashboard/setup', accent: 'var(--red)', tint: 'var(--red-tint)', d: ICON.rules },
       { title: 'Decide your rule-lock window while calm', body: 'Seven days is the default. Choosing the length before you need it is the whole point of the device.', to: '/dashboard/live', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.security },
-      { title: 'Read what the guard can and cannot do', body: 'We cannot stop an order being placed on the exchange — we close the position straight after and verify you are flat.', to: '/dashboard/rules', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.journal },
+      { title: 'Read what the guard can and cannot do', body: 'We cannot stop an order being placed on the exchange — we close the position straight after and verify you are flat.', to: '/dashboard/rules', accent: 'var(--blue)', tint: 'color-mix(in srgb, var(--blue) 12%, transparent)', d: ICON.journal },
     ]
     : [
       { title: 'Trade as you normally would', body: 'The guard is live. Nothing here changes until you have sessions behind you — that is the point.', to: '/dashboard/live', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.live },

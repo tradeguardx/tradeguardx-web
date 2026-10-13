@@ -81,20 +81,20 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
     return (
       <div
         className="rounded-xl border px-4 py-4"
-        style={{ borderColor: 'rgba(0,212,170,0.3)', backgroundColor: 'rgba(0,212,170,0.05)' }}
+        style={{ borderColor: 'var(--mint-line)', backgroundColor: 'color-mix(in srgb, var(--mint-solid) 5%, transparent)' }}
       >
-        <p className="mb-3 text-[13px] font-bold" style={{ color: 'var(--accent, #00d4aa)' }}>
+        <p className="mb-3 text-[13px] font-bold" style={{ color: 'var(--mint)' }}>
           {venueName} connected
         </p>
         <ul className="space-y-2 text-[13px]" style={{ color: 'var(--dash-text-primary)' }}>
           <li className="flex items-start gap-2">
-            <span style={{ color: 'var(--accent, #00d4aa)' }}>✓</span>
+            <span style={{ color: 'var(--mint)' }}>✓</span>
             <span>
               Connected{summary?.exchangeUserEmail ? <> as <span className="font-mono">{summary.exchangeUserEmail}</span></> : ''}
             </span>
           </li>
           <li className="flex items-start gap-2">
-            <span style={{ color: live ? 'var(--accent, #00d4aa)' : '#f59e0b' }}>{live ? '✓' : '!'}</span>
+            <span style={{ color: live ? 'var(--mint)' : 'var(--amber)' }}>{live ? '✓' : '!'}</span>
             <span>
               {live
                 ? 'Kill switch is live — this key can close positions and lock the account.'
@@ -118,7 +118,7 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
         <button
           type="button"
           onClick={onContinue}
-          className="mt-4 w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-surface-950 hover:bg-accent-hover"
+          className="mt-4 w-full rounded-xl bg-[var(--mint-solid)] px-4 py-2.5 text-sm font-bold text-[var(--on-mint)] hover:brightness-110"
         >
           Continue
         </button>
@@ -129,9 +129,9 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
   return (
     <div
       className="rounded-xl border px-4 py-4"
-      style={{ borderColor: 'rgba(239,68,68,0.35)', backgroundColor: 'rgba(239,68,68,0.06)' }}
+      style={{ borderColor: 'var(--red-line)', backgroundColor: 'var(--red-tint)' }}
     >
-      <p className="mb-2 text-[13px] font-bold" style={{ color: 'rgb(248,113,113)' }}>
+      <p className="mb-2 text-[13px] font-bold" style={{ color: 'var(--red)' }}>
         Could not connect
       </p>
       <p className="mb-4 text-[12.5px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
@@ -147,7 +147,7 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
             value={apiKey}
             onChange={onApiKeyChange}
             placeholder="Paste API Key"
-            className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+            className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
             style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)', color: 'var(--dash-text-primary)' }}
           />
         </label>
@@ -158,7 +158,7 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
             onChange={onApiSecretChange}
             placeholder="Paste API Secret"
             wrapperClassName="mt-1"
-            className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent/40"
+            className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
             style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)', color: 'var(--dash-text-primary)' }}
           />
         </label>
@@ -168,7 +168,7 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
           type="button"
           onClick={onRetry}
           disabled={retrying || !apiKey.trim() || !apiSecret.trim()}
-          className="rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-surface-950 hover:bg-accent-hover disabled:opacity-50"
+          className="rounded-xl bg-[var(--mint-solid)] px-4 py-2.5 text-sm font-bold text-[var(--on-mint)] hover:brightness-110 disabled:opacity-50"
         >
           {retrying ? 'Retrying…' : 'Retry connection'}
         </button>

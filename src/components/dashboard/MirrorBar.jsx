@@ -39,14 +39,14 @@ export default function MirrorBar() {
         /* Normal flow, not sticky. It sat on top of the guard band and made
            the top of the page unreadable — see DashboardLayout. It is the
            first thing on the page, so it does not need to float to be seen. */
-        'display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid rgba(124,58,237,.4)',
-        { background: dead ? 'rgba(239,68,68,.16)' : 'rgba(124,58,237,.16)' },
+        'display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid color-mix(in srgb,var(--violet) 40%,transparent)',
+        { background: dead ? 'var(--red-tint)' : 'color-mix(in srgb, var(--violet) 16%, transparent)' },
       )}
     >
       <span
         style={sx(
           "flex:none;font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;padding:4px 8px;border-radius:999px",
-          { background: dead ? 'var(--red-tint)' : 'rgba(124,58,237,.22)', color: dead ? 'var(--red)' : '#c4b0ff' },
+          { background: dead ? 'var(--red-tint)' : 'color-mix(in srgb, var(--violet) 22%, transparent)', color: dead ? 'var(--red)' : 'var(--violet)' },
         )}
       >
         {dead ? 'Mirror expired' : 'Mirror · read only'}

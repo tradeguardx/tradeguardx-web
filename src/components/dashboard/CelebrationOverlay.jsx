@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
  */
 
 const AUTO_DISMISS_MS = 7000;
-const PARTICLE_COLORS = ['#00d4aa', '#10b981', '#a78bfa', '#fbbf24', '#f43f5e'];
+const PARTICLE_COLORS = ['var(--mint-solid)', 'var(--mint)', 'var(--violet)', 'var(--amber-solid)', 'var(--red-solid)'];
 
 function makeParticles(count) {
   return Array.from({ length: count }, (_, i) => ({
@@ -76,10 +76,10 @@ export default function CelebrationOverlay({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: -8 }}
           transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-          className="relative overflow-visible rounded-3xl p-[1.5px] shadow-2xl max-w-md w-full"
-          style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.55), rgba(139,92,246,0.40), rgba(0,212,170,0.55))' }}
+          className="relative overflow-visible rounded-3xl p-[1.5px] max-w-md w-full"
+          style={{ boxShadow: 'var(--shadow-pop)', background: 'linear-gradient(135deg, color-mix(in srgb, var(--mint-solid) 55%, transparent), color-mix(in srgb, var(--violet) 40%, transparent), color-mix(in srgb, var(--mint-solid) 55%, transparent))' }}
         >
-          <div className="relative overflow-visible rounded-[calc(1.5rem-1px)] p-7 sm:p-8 text-center" style={{ backgroundColor: '#0d1425' }}>
+          <div className="relative overflow-visible rounded-[calc(1.5rem-1px)] p-7 sm:p-8 text-center" style={{ backgroundColor: 'var(--surface)' }}>
             <div className="pointer-events-none absolute left-1/2 top-[78px] -translate-x-1/2" aria-hidden>
               {particles.map((p) => (
                 <motion.span
@@ -88,7 +88,7 @@ export default function CelebrationOverlay({
                   style={{
                     width: p.size,
                     height: p.size,
-                    background: `radial-gradient(circle, ${p.color} 0%, ${p.color}00 70%)`,
+                    background: `radial-gradient(circle, ${p.color} 0%, transparent 70%)`,
                     filter: 'blur(0.4px)',
                   }}
                   initial={{ x: 0, y: 0, opacity: 0, scale: 0.6, rotate: 0 }}
@@ -106,27 +106,27 @@ export default function CelebrationOverlay({
 
             <motion.div
               className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full"
-              style={{ background: 'linear-gradient(135deg, #00d4aa 0%, #10b981 100%)', boxShadow: '0 0 35px rgba(0,212,170,0.55)' }}
+              style={{ background: 'linear-gradient(135deg, var(--mint-solid) 0%, color-mix(in srgb, var(--mint-solid) 70%, var(--mint)) 100%)', boxShadow: 'var(--glow-mint)' }}
               initial={{ scale: 0.3, rotate: -120 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 380, damping: 14 }}
             >
-              <motion.svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="#07090f" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round">
+              <motion.svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="var(--on-mint)" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round">
                 <motion.path d="M5 12.5l4.5 4.5L19 7" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.45, delay: 0.25, ease: 'easeOut' }} />
               </motion.svg>
             </motion.div>
 
             {kicker && (
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: '#7dffd4' }}>{kicker}</p>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--mint)' }}>{kicker}</p>
             )}
-            <h2 className="mb-2 font-display text-2xl font-bold leading-snug text-white">{headline}</h2>
-            <p className="text-sm leading-relaxed text-slate-300">{sub}</p>
+            <h2 className="mb-2 font-display text-2xl font-bold leading-snug text-[var(--ink)]">{headline}</h2>
+            <p className="text-sm leading-relaxed text-[var(--ink-2)]">{sub}</p>
 
             <button
               type="button"
               onClick={onClose}
               className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all"
-              style={{ background: 'linear-gradient(135deg, #00d4aa 0%, #10b981 100%)', color: '#07090f', boxShadow: '0 4px 18px rgba(0,212,170,0.30)' }}
+              style={{ background: 'linear-gradient(135deg, var(--mint-solid) 0%, color-mix(in srgb, var(--mint-solid) 70%, var(--mint)) 100%)', color: 'var(--on-mint)', boxShadow: 'var(--glow-mint)' }}
             >
               {cta}
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

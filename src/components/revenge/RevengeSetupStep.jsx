@@ -86,7 +86,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
           <div style={sx(`padding:24px;${CARD};text-align:center`)}>
             <div style={sx("font:600 18px/1.3 'Space Grotesk',sans-serif")}>We couldn’t read your trades just now</div>
             <p style={sx('margin:8px auto 0;max-width:48ch;font-size:13.5px;line-height:1.55;color:var(--ink-3)')}>{unlock.error} Your report will be waiting under Review → Revenge report.</p>
-            <button type="button" onClick={onContinue} style={sx('margin-top:16px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:#02241d;font-size:13.5px;font-weight:800;cursor:pointer')}>{continueLabel || 'Continue'}</button>
+            <button type="button" onClick={onContinue} style={sx('margin-top:16px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800;cursor:pointer')}>{continueLabel || 'Continue'}</button>
           </div>
         ) : (
           <>
@@ -100,7 +100,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
           <p style={sx('margin:8px auto 0;max-width:50ch;font-size:13.5px;line-height:1.6;color:var(--ink-3)')}>
             We found {report.trades || 'no'} closed trade{report.trades === 1 ? '' : 's'} in the last few months — too few to call it a pattern. Your revenge report builds itself as you trade; it lives under Review → Revenge report.
           </p>
-          <button type="button" onClick={onContinue} style={sx('margin-top:18px;padding:12px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14px;font-weight:800;cursor:pointer')}>{continueLabel || 'Continue'}</button>
+          <button type="button" onClick={onContinue} style={sx('margin-top:18px;padding:12px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:var(--on-mint);font-size:14px;font-weight:800;cursor:pointer')}>{continueLabel || 'Continue'}</button>
         </div>
       ) : (
         <>
@@ -125,7 +125,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
               <RuleChips report={report} />
             </div>
             <div className="rv-in" style={sx('position:relative;margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap', { animationDelay: '1.7s' })}>
-              <button type="button" onClick={onContinue} className="rv-motion" style={sx('padding:13px 22px;border:0;border-radius:12px;color:#02241d;font-size:14.5px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint);background-size:200% 100%;animation:rvShine 2.8s linear infinite', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#fff6 50%,var(--mint-solid) 60%)', backgroundColor: 'var(--mint-solid)' })}>
+              <button type="button" onClick={onContinue} className="rv-motion" style={sx('padding:13px 22px;border:0;border-radius:12px;color:var(--on-mint);font-size:14.5px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint);background-size:200% 100%;animation:rvShine 2.8s linear infinite', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#fff6 50%,var(--mint-solid) 60%)', backgroundColor: 'var(--mint-solid)' })}>
                 Fix this — {continueLabel ? continueLabel.toLowerCase() : 'start your 3-day free trial'} →
               </button>
               <button type="button" onClick={toggleFull} aria-expanded={full} style={sx('padding:12px 18px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer')}>

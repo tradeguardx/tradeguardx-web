@@ -67,11 +67,11 @@ export default function LifecycleToast() {
   return (
     <div
       role="status"
-      style={sx("position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:140;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:12px 16px;border-radius:13px;background:#141c2b;color:#f6f9fc;font-size:13px;font-weight:600;box-shadow:0 18px 40px -14px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.08);animation:tgxSlide .25s ease-out both")}
+      style={sx("position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:140;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:12px 16px;border-radius:13px;background:var(--surface-3);color:var(--ink);font-size:13px;font-weight:600;border:1px solid var(--line-strong);box-shadow:var(--shadow-pop);animation:tgxSlide .25s ease-out both")}
     >
-      <span style={sx('flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:#02241d', { background: msg.bad ? '#ef4444' : '#00d4aa' })}>
+      <span style={sx('flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center', { color: msg.bad ? '#fff' : 'var(--on-mint)', background: msg.bad ? 'var(--red-solid)' : 'var(--mint-solid)' })}>
         {msg.bad ? (
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M12 6v7M12 17.5h.01" /></svg>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M12 6v7M12 17.5h.01" /></svg>
         ) : (
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
         )}

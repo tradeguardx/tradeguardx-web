@@ -335,7 +335,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
             <button type="button" className="cx-head" onClick={() => toggleStep(st.n)} aria-expanded={open}>
               <span className="cx-step__n" style={sx("flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 12.5px/1 'Space Grotesk',sans-serif", {
                 background: done ? 'var(--mint-solid)' : open ? 'var(--ink)' : 'var(--surface-3)',
-                color: done ? '#04241d' : open ? 'var(--surface)' : 'var(--ink-3)',
+                color: done ? 'var(--on-mint)' : open ? 'var(--surface)' : 'var(--ink-3)',
                 boxShadow: open && !done ? '0 0 0 4px var(--mint-tint)' : 'none',
               })}>{done ? '✓' : st.n}</span>
               <span style={sx('flex:1;min-width:0;font-size:14.5px;font-weight:600;letter-spacing:-.005em', done && !open ? { color: 'var(--ink-3)' } : {})}>{st.title}</span>

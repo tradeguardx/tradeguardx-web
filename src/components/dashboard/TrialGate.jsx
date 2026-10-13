@@ -37,7 +37,7 @@ export function TrialBanner() {
    */
   if (user.subscriptionCanceled) {
     return (
-      <div className="guard-band" style={sx('align-items:center;gap:14px;padding:12px 15px;margin-bottom:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2,rgba(255,255,255,.03))')}>
+      <div className="guard-band" style={sx('align-items:center;gap:14px;padding:12px 15px;margin-bottom:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)')}>
         <div className="guard-band__main" style={sx('flex:1;min-width:0;align-items:center;gap:12px')}>
           <p style={sx('flex:1;min-width:0;margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)')}>
             <strong style={sx('color:var(--ink);font-weight:700')}>Cancelled.</strong>{' '}
@@ -88,7 +88,7 @@ export function TrialBanner() {
           Set up payment to keep access when it ends — you keep the days you have left.
         </p>
       </div>
-      <Link className="guard-band__cta" to="/pricing" style={sx('flex:none;padding:8px 13px;border:1px solid var(--mint-solid);border-radius:9px;background:var(--mint-solid);color:#05221c;font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap')}>Set up</Link>
+      <Link className="guard-band__cta" to="/pricing" style={sx('flex:none;padding:8px 13px;border:1px solid var(--mint-solid);border-radius:9px;background:var(--mint-solid);color:var(--on-mint);font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap')}>Set up</Link>
     </div>
   );
 }
@@ -110,8 +110,8 @@ export function UpgradeWall() {
   if (user?.needsMandate) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(0,212,170,0.12)', border: '1px solid rgba(0,212,170,0.3)' }}>
-          <svg className="h-7 w-7" style={{ color: 'var(--accent, #00d4aa)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 3L4 14h7l-1 7 9-11h-7z" /></svg>
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: 'var(--mint-tint)', border: '1px solid var(--mint-line)' }}>
+          <svg className="h-7 w-7" style={{ color: 'var(--mint)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 3L4 14h7l-1 7 9-11h-7z" /></svg>
         </span>
         <h2 className="mt-5 font-display text-2xl font-bold" style={{ color: 'var(--dash-text-primary)' }}>Start your 3 days free</h2>
         <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
@@ -121,7 +121,7 @@ export function UpgradeWall() {
           <Link
             to="/pricing"
             className="rounded-xl px-5 py-2.5 text-sm font-bold transition-transform hover:scale-[1.02]"
-            style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c' }}
+            style={{ backgroundColor: 'var(--mint-solid)', color: 'var(--on-mint)' }}
           >
             Start free trial
           </Link>
@@ -135,8 +135,8 @@ export function UpgradeWall() {
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center text-center">
-      <span className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
-        <svg className="h-7 w-7" style={{ color: '#f59e0b' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: 'var(--amber-tint)', border: '1px solid var(--amber-line)' }}>
+        <svg className="h-7 w-7" style={{ color: 'var(--amber)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
       </span>
       <h2 className="mt-5 font-display text-2xl font-bold" style={{ color: 'var(--dash-text-primary)' }}>Your free trial has ended</h2>
       <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
@@ -146,7 +146,7 @@ export function UpgradeWall() {
         <Link
           to="/pricing"
           className="rounded-xl px-5 py-2.5 text-sm font-bold transition-transform hover:scale-[1.02]"
-          style={{ backgroundColor: 'var(--accent, #00d4aa)', color: '#05221c' }}
+          style={{ backgroundColor: 'var(--mint-solid)', color: 'var(--on-mint)' }}
         >
           See plans &amp; upgrade
         </Link>

@@ -52,14 +52,14 @@ export default function VerifyEmailBanner() {
       animate={{ opacity: 1, y: 0 }}
       className="mb-6 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:p-5"
       style={{
-        borderColor: 'rgba(245,158,11,0.28)',
-        backgroundColor: 'rgba(245,158,11,0.06)',
+        borderColor: 'var(--amber-line)',
+        backgroundColor: 'color-mix(in srgb, var(--amber-solid) 6%, transparent)',
       }}
     >
       <div className="flex items-start gap-3.5">
         <span
           className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
-          style={{ backgroundColor: 'rgba(245,158,11,0.16)', color: '#f59e0b' }}
+          style={{ backgroundColor: 'var(--amber-tint)', color: 'var(--amber)' }}
         >
           <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
@@ -81,7 +81,7 @@ export default function VerifyEmailBanner() {
         onClick={resend}
         disabled={sending || cooldown > 0}
         className="flex-shrink-0 rounded-xl px-4 py-2.5 text-[13px] font-bold transition-colors disabled:opacity-50"
-        style={{ backgroundColor: 'rgba(245,158,11,0.16)', color: '#f59e0b' }}
+        style={{ backgroundColor: 'var(--amber-tint)', color: 'var(--amber)' }}
       >
         {cooldown > 0 ? `Resend in ${cooldown}s` : sending ? 'Sending…' : 'Resend email'}
       </button>

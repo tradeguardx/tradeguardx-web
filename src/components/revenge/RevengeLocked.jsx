@@ -83,7 +83,7 @@ export default function RevengeLocked({ months, onMonths, onUnlock, keyState, ac
                 ? 'Add your trading account and connect its key — then we can show your score.'
                 : keyState === 'failed' ? 'Your key is disconnected, so we can’t see your trades.' : `Connect your ${exchangeName || 'exchange'} key first, so we can see your trades.`}
             </p>
-            <Link to={noAccount ? '/dashboard/setup' : '/dashboard/connect'} style={sx('margin-top:14px;min-height:46px;padding:12px 22px;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14.5px;font-weight:800;text-decoration:none')}>
+            <Link to={noAccount ? '/dashboard/setup' : '/dashboard/connect'} style={sx('margin-top:14px;min-height:46px;padding:12px 22px;border-radius:12px;background:var(--mint-solid);color:var(--on-mint);font-size:14.5px;font-weight:800;text-decoration:none')}>
               {noAccount ? 'Get my revenge score' : keyState === 'failed' ? 'Reconnect key' : 'Connect key'}
             </Link>
             {noAccount && <p style={sx('margin:11px 0 0;font-size:11.5px;color:var(--ink-faint)')}>About three minutes. Your score is ready the moment your key connects.</p>}
@@ -108,7 +108,7 @@ export default function RevengeLocked({ months, onMonths, onUnlock, keyState, ac
               type="button"
               onClick={onUnlock}
               className="rv-motion"
-              style={sx('margin-top:14px;display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:12px 26px;border:0;border-radius:13px;color:#02241d;font-size:15px;font-weight:800;cursor:pointer;background-size:200% 100%;animation:rvShine 2.8s linear infinite;box-shadow:var(--glow-mint)', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#7cf5dc 50%,var(--mint-solid) 60%)' })}
+              style={sx('margin-top:14px;display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:12px 26px;border:0;border-radius:13px;color:var(--on-mint);font-size:15px;font-weight:800;cursor:pointer;background-size:200% 100%;animation:rvShine 2.8s linear infinite;box-shadow:var(--glow-mint)', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,color-mix(in srgb,var(--mint-solid) 55%,#fff) 50%,var(--mint-solid) 60%)' })}
             >
               <Lock size={16} /> Show my revenge score
             </button>

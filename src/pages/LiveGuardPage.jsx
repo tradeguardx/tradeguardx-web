@@ -443,7 +443,7 @@ export default function LiveGuardPage() {
                   Releases at <strong style={sx('color:var(--ink);font-weight:700')}>{clockAt(g.lockUntil)} {dayAt(g.lockUntil)}</strong> · {manual ? 'Lockout — you started this' : lockInfo ? `Lockout — ${lockInfo.name}` : 'Lockout — a rule started this'}
                 </div>
                 <div style={sx('margin-top:18px;height:10px;border-radius:999px;background:var(--surface-3);box-shadow:inset 0 1px 2px rgba(0,0,0,.25);overflow:hidden')}>
-                  <div style={sx('position:relative;height:100%;border-radius:999px;overflow:hidden;transition:width .6s ease', { width: remainingPct, background: 'linear-gradient(90deg, var(--red-solid), #f97366)', boxShadow: '0 0 16px -2px var(--red-solid)' })}>
+                  <div style={sx('position:relative;height:100%;border-radius:999px;overflow:hidden;transition:width .6s ease', { width: remainingPct, background: 'linear-gradient(90deg, var(--red-solid), color-mix(in srgb, var(--red-solid) 70%, #fff))', boxShadow: '0 0 16px -2px var(--red-solid)' })}>
                     <span aria-hidden style={sx('position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:tgxShimmer 2.2s ease-in-out infinite')} />
                   </div>
                 </div>

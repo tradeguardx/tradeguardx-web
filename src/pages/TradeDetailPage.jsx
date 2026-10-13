@@ -288,21 +288,24 @@ function useNarrativeTTS(text) {
   return { playing, paused, supported, toggle, stop, progress };
 }
 
+/** A token at a given strength over transparent — tints that follow theme + accent. */
+const mix = (c, pct) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
+
 // ─── Event type meta ─────────────────────────────────────────────────────────
 const EVENT_META = {
-  OPEN:        { label: 'Opened',           color: '#00d4aa', dot: '●', bg: 'rgba(0,212,170,0.12)' },
+  OPEN:        { label: 'Opened',           color: 'var(--mint)', dot: '●', bg: 'var(--mint-tint)' },
   // An execution the venue reported, not something the engine watched happen.
   // These appear on trades the engine joined late — a position already open
   // when it started watching is journalled CLOSE-only, and its opening fill
   // comes back from the importer afterwards.
-  FILL:        { label: 'Filled',           color: '#7dd3fc', dot: '◇', bg: 'rgba(125,211,252,0.1)' },
-  SNAPSHOT:    { label: 'Snapshot',         color: '#60a5fa', dot: '◈', bg: 'rgba(96,165,250,0.1)' },
-  SL_UPDATE:   { label: 'SL Updated',       color: '#f87171', dot: '▼', bg: 'rgba(248,113,113,0.1)' },
-  TP_UPDATE:   { label: 'TP Updated',       color: '#fb923c', dot: '△', bg: 'rgba(251,146,60,0.1)' },
-  SIZE_UPDATE: { label: 'Size Changed',     color: '#a78bfa', dot: '◆', bg: 'rgba(167,139,250,0.1)' },
-  PARTIAL_CLOSE: { label: 'Partial Close',  color: '#facc15', dot: '◐', bg: 'rgba(250,204,21,0.1)' },
-  CLOSE:       { label: 'Closed',           color: '#94a3b8', dot: '■', bg: 'rgba(148,163,184,0.1)' },
-  RULE_BLOCK:  { label: 'Rule Blocked',     color: '#f97316', dot: '⛔', bg: 'rgba(249,115,22,0.1)' },
+  FILL:        { label: 'Filled',           color: 'var(--blue)', dot: '◇', bg: mix('var(--blue)', 10) },
+  SNAPSHOT:    { label: 'Snapshot',         color: 'var(--blue)', dot: '◈', bg: mix('var(--blue)', 10) },
+  SL_UPDATE:   { label: 'SL Updated',       color: 'var(--red)', dot: '▼', bg: 'var(--red-tint)' },
+  TP_UPDATE:   { label: 'TP Updated',       color: 'var(--amber)', dot: '△', bg: 'var(--amber-tint)' },
+  SIZE_UPDATE: { label: 'Size Changed',     color: 'var(--violet)', dot: '◆', bg: mix('var(--violet)', 10) },
+  PARTIAL_CLOSE: { label: 'Partial Close',  color: 'var(--gold)', dot: '◐', bg: mix('var(--gold)', 10) },
+  CLOSE:       { label: 'Closed',           color: 'var(--ink-3)', dot: '■', bg: mix('var(--ink-3)', 10) },
+  RULE_BLOCK:  { label: 'Rule Blocked',     color: 'var(--red-solid)', dot: '⛔', bg: 'var(--red-tint)' },
 };
 
 // ─── Media Reel (stories-style carousel) ────────────────────────────────────
@@ -342,7 +345,7 @@ function MediaReel({ media }) {
   }
 
   const current = media[active];
-  const meta = EVENT_META[current.eventType] || { label: current.eventType, color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' };
+  const meta = EVENT_META[current.eventType] || { label: current.eventType, color: 'var(--ink-3)', bg: mix('var(--ink-3)', 10) };
 
   return (
     <div className="space-y-3" ref={containerRef}>
@@ -355,7 +358,7 @@ function MediaReel({ media }) {
               <div key={i} className="h-[2.5px] flex-1 overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
                 <motion.div
                   className="h-full rounded-full"
-                  style={{ backgroundColor: '#00d4aa' }}
+                  style={{ backgroundColor: 'var(--mint-solid)' }}
                   initial={false}
                   animate={{ width: i < active ? '100%' : i === active ? '100%' : '0%' }}
                   transition={{ duration: i === active ? 0.4 : 0.15, ease: 'easeOut' }}
@@ -426,7 +429,7 @@ function MediaReel({ media }) {
       {media.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1 px-0.5">
           {media.map((m, i) => {
-            const tmeta = EVENT_META[m.eventType] || { color: '#94a3b8' };
+            const tmeta = EVENT_META[m.eventType] || { color: 'var(--ink-3)' };
             const isActive = i === active;
             return (
               <button key={m.id} type="button" onClick={() => setActive(i)}
@@ -434,8 +437,8 @@ function MediaReel({ media }) {
                 style={{
                   width: isActive ? 88 : 72,
                   height: isActive ? 56 : 48,
-                  border: isActive ? '2px solid #00d4aa' : '2px solid transparent',
-                  boxShadow: isActive ? '0 0 12px rgba(0,212,170,0.25)' : 'none',
+                  border: isActive ? '2px solid var(--mint-solid)' : '2px solid transparent',
+                  boxShadow: isActive ? 'var(--glow-mint)' : 'none',
                   opacity: isActive ? 1 : 0.6,
                 }}>
                 <img src={m.storageUrl} alt={tmeta.label || m.eventType} className="h-full w-full object-cover transition-transform duration-300 group-hover/thumb:scale-110" loading="lazy" />
@@ -562,7 +565,7 @@ function StarRating({ value, onChange }) {
         <button key={s} type="button" onClick={() => onChange(s)}
           onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover(0)}
           className="text-lg transition-transform hover:scale-125"
-          style={{ color: s <= (hover || value) ? '#f59e0b' : 'var(--dash-text-faint)' }}>
+          style={{ color: s <= (hover || value) ? 'var(--amber-solid)' : 'var(--dash-text-faint)' }}>
           {s <= (hover || value) ? '★' : '☆'}
         </button>
       ))}
@@ -581,7 +584,7 @@ function ChipPicker({ label, options, selected, onToggle }) {
           return (
             <button key={opt} type="button" onClick={() => onToggle(opt)}
               className="rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all"
-              style={{ borderColor: on ? 'rgba(0,212,170,0.4)' : 'var(--dash-border)', backgroundColor: on ? 'rgba(0,212,170,0.12)' : 'transparent', color: on ? '#00d4aa' : 'var(--dash-text-muted)' }}>
+              style={{ borderColor: on ? 'var(--mint-line)' : 'var(--dash-border)', backgroundColor: on ? 'var(--mint-tint)' : 'transparent', color: on ? 'var(--mint)' : 'var(--dash-text-muted)' }}>
               {opt}
             </button>
           );
@@ -628,17 +631,17 @@ function JournalNotesPanel({ tradeUid, trade }) {
         <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-raised)' }}>
           <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--dash-text-faint)' }}>R-Multiple</p>
           {rMultiple != null ? (
-            <p className={`text-2xl font-bold ${rMultiple >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{rMultiple > 0 ? '+' : ''}{rMultiple}R</p>
+            <p className={`text-2xl font-bold ${rMultiple >= 0 ? 'text-[var(--mint)]' : 'text-[var(--red)]'}`}>{rMultiple > 0 ? '+' : ''}{rMultiple}R</p>
           ) : (
             <p className="text-sm" style={{ color: 'var(--dash-text-faint)' }}>No SL data — set stop loss to calculate</p>
           )}
           <div className="mt-2 flex items-center gap-2">
             <span className="text-[11px] font-semibold uppercase" style={{ color: 'var(--dash-text-faint)' }}>Plan followed?</span>
             <div className="flex gap-1">
-              {[{ label: 'Yes', v: true, c: '#22c55e' }, { label: 'No', v: false, c: '#ef4444' }].map((opt) => (
+              {[{ label: 'Yes', v: true, c: 'var(--mint)' }, { label: 'No', v: false, c: 'var(--red)' }].map((opt) => (
                 <button key={opt.label} type="button" onClick={() => ann.save({ followedPlan: opt.v })}
                   className="rounded-md border px-2.5 py-1.5 text-[11px] font-semibold transition-all"
-                  style={{ borderColor: ann.followedPlan === opt.v ? opt.c + '60' : 'var(--dash-border)', backgroundColor: ann.followedPlan === opt.v ? opt.c + '18' : 'transparent', color: ann.followedPlan === opt.v ? opt.c : 'var(--dash-text-muted)' }}>
+                  style={{ borderColor: ann.followedPlan === opt.v ? mix(opt.c, 38) : 'var(--dash-border)', backgroundColor: ann.followedPlan === opt.v ? mix(opt.c, 9) : 'transparent', color: ann.followedPlan === opt.v ? opt.c : 'var(--dash-text-muted)' }}>
                   {opt.label}
                 </button>
               ))}
@@ -671,14 +674,14 @@ function JournalNotesPanel({ tradeUid, trade }) {
           value={notes}
           onChange={(e) => { setNotes(e.target.value); setDirty(true); }}
           placeholder="What was your thesis? What did you observe? What would you do differently?"
-          className="w-full min-h-[120px] rounded-xl border bg-transparent p-3 text-sm outline-none resize-y transition-colors focus:border-accent/40"
+          className="w-full min-h-[120px] rounded-xl border bg-transparent p-3 text-sm outline-none resize-y transition-colors focus:border-[var(--mint-line)]"
           style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-primary)' }}
         />
         <div className="mt-2 flex items-center justify-between">
           <p className="text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>{notes.length > 0 ? `${notes.length} chars` : 'No notes yet'}</p>
           {dirty && (
             <button type="button" onClick={() => { ann.save({ notes }); setDirty(false); }}
-              className="rounded-lg bg-accent/15 px-3 py-1 text-xs font-semibold text-accent transition-colors hover:bg-accent/25">
+              className="rounded-lg bg-[var(--mint-tint)] px-3 py-1 text-xs font-semibold text-[var(--mint)] transition-colors hover:bg-[color-mix(in_srgb,var(--mint-solid)_25%,transparent)]">
               Save Notes
             </button>
           )}
@@ -695,20 +698,19 @@ function JournalNotesPanel({ tradeUid, trade }) {
 }
 
 // ─── Narrative Block ──────────────────────────────────────────────────────────
-const SEVERITY_COLORS = { CRITICAL: '#ef4444', HIGH: '#f97316', MEDIUM: '#facc15', LOW: '#94a3b8' };
-const SEVERITY_BG = { CRITICAL: 'rgba(239,68,68,0.08)', HIGH: 'rgba(249,115,22,0.08)', MEDIUM: 'rgba(250,204,21,0.06)', LOW: 'rgba(148,163,184,0.06)' };
-const SEVERITY_BORDER = { CRITICAL: 'rgba(239,68,68,0.20)', HIGH: 'rgba(249,115,22,0.18)', MEDIUM: 'rgba(250,204,21,0.15)', LOW: 'rgba(148,163,184,0.12)' };
+const SEVERITY_COLORS = { CRITICAL: 'var(--red)', HIGH: 'var(--amber)', MEDIUM: 'var(--gold)', LOW: 'var(--ink-3)' };
+const SEVERITY_BG = { CRITICAL: mix('var(--red-solid)', 8), HIGH: mix('var(--amber-solid)', 8), MEDIUM: mix('var(--gold)', 6), LOW: mix('var(--ink-3)', 6) };
+const SEVERITY_BORDER = { CRITICAL: mix('var(--red-solid)', 20), HIGH: mix('var(--amber-solid)', 18), MEDIUM: mix('var(--gold)', 15), LOW: mix('var(--ink-3)', 12) };
 
 function ScoreRing({ score, size = 56, stroke = 5 }) {
-  const { isDark } = useDashboardTheme();
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(score, 100)) / 100;
-  const color = score >= 80 ? '#22c55e' : score >= 50 ? '#facc15' : '#ef4444';
+  const color = score >= 80 ? 'var(--mint)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="rotate-[-90deg]">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'} strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--line)" strokeWidth={stroke} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
           strokeDasharray={c} strokeDashoffset={c * (1 - pct)} strokeLinecap="round" className="transition-all duration-700" />
       </svg>
@@ -720,7 +722,6 @@ function ScoreRing({ score, size = 56, stroke = 5 }) {
 }
 
 function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative }) {
-  const { isDark } = useDashboardTheme();
   const parsed = useMemo(() => parseNarrative(narrative?.narrative), [narrative?.narrative]);
   const violationsReadClean = useMemo(() => {
     if (!parsed.violations?.length) return false;
@@ -736,7 +737,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
   const behaviorTags = narrative?.behaviorTags;
   const tts = useNarrativeTTS(parsed.full);
 
-  const verdictColor = !vs ? '#94a3b8' : vs.total === 0 ? '#22c55e' : vs.critical > 0 ? '#ef4444' : vs.high > 0 ? '#f97316' : '#facc15';
+  const verdictColor = !vs ? 'var(--ink-3)' : vs.total === 0 ? 'var(--mint)' : vs.critical > 0 ? 'var(--red)' : vs.high > 0 ? 'var(--amber)' : 'var(--gold)';
 
   return (
     <div className="space-y-4">
@@ -752,13 +753,13 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                 <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--dash-text-faint)' }}>Discipline Score</p>
                 <div className="space-y-1.5">
                   {[
-                    { label: 'Risk', score: ds.breakdown.riskDiscipline.score, color: '#ef4444' },
-                    { label: 'Execution', score: ds.breakdown.executionDiscipline.score, color: '#60a5fa' },
-                    { label: 'Emotional', score: ds.breakdown.emotionalDiscipline.score, color: '#a78bfa' },
+                    { label: 'Risk', score: ds.breakdown.riskDiscipline.score, color: 'var(--red)' },
+                    { label: 'Execution', score: ds.breakdown.executionDiscipline.score, color: 'var(--blue)' },
+                    { label: 'Emotional', score: ds.breakdown.emotionalDiscipline.score, color: 'var(--violet)' },
                   ].map((p) => (
                     <div key={p.label} className="flex items-center gap-2">
                       <span className="text-[9px] font-semibold w-14 shrink-0" style={{ color: 'var(--dash-text-faint)' }}>{p.label}</span>
-                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }}>
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--line)' }}>
                         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${p.score}%`, backgroundColor: p.color }} />
                       </div>
                       <span className="text-[10px] font-bold w-7 text-right" style={{ color: p.color }}>{p.score}</span>
@@ -787,8 +788,8 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
               </div>
             ) : vs ? (
               <div className="flex items-center gap-2">
-                <span className="text-3xl font-black" style={{ color: '#22c55e' }}>0</span>
-                <span className="text-xs" style={{ color: '#22c55e' }}>Clean execution</span>
+                <span className="text-3xl font-black" style={{ color: 'var(--mint)' }}>0</span>
+                <span className="text-xs" style={{ color: 'var(--mint)' }}>Clean execution</span>
               </div>
             ) : null}
           </div>
@@ -799,16 +800,16 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
       {analysis?.violations?.length > 0 && (
         <div className="space-y-2">
           {analysis.violations.map((v) => {
-            const sColor = SEVERITY_COLORS[v.severity] || '#94a3b8';
+            const sColor = SEVERITY_COLORS[v.severity] || 'var(--ink-3)';
             return (
               <div key={v.id} className="flex items-start gap-3 rounded-xl border p-3" style={{ borderColor: SEVERITY_BORDER[v.severity], backgroundColor: SEVERITY_BG[v.severity] }}>
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black" style={{ backgroundColor: sColor + '20', color: sColor }}>
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black" style={{ backgroundColor: mix(sColor, 13), color: sColor }}>
                   {v.severity === 'CRITICAL' ? '!!' : v.severity === 'HIGH' ? '!' : v.severity === 'MEDIUM' ? '~' : '-'}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[10px] font-bold" style={{ color: sColor }}>{v.type.replace(/_/g, ' ')}</span>
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: sColor + '15', color: sColor }}>{v.severity}</span>
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: mix(sColor, 8), color: sColor }}>{v.severity}</span>
                     {v.durationSeconds != null && (
                       <span className="text-[9px]" style={{ color: 'var(--dash-text-faint)' }}>{v.durationSeconds}s</span>
                     )}
@@ -827,7 +828,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
           {/* Section header */}
           <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b" style={{ borderColor: 'var(--dash-border)' }}>
             <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: isDark ? 'rgba(167,139,250,0.15)' : 'rgba(167,139,250,0.10)', color: '#a78bfa' }}>
+              <div className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: mix('var(--violet)', 12), color: 'var(--violet)' }}>
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
               </div>
               <div>
@@ -835,7 +836,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                 <p className="text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>Patterns detected across your last {behaviorTags[0]?.tradeCount || 20} trades</p>
               </div>
             </div>
-            <span className="flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-[10px] font-bold" style={{ backgroundColor: isDark ? 'rgba(167,139,250,0.15)' : 'rgba(167,139,250,0.10)', color: '#a78bfa' }}>
+            <span className="flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-[10px] font-bold" style={{ backgroundColor: mix('var(--violet)', 12), color: 'var(--violet)' }}>
               {behaviorTags.length}
             </span>
           </div>
@@ -843,11 +844,9 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
           <div className="p-3 space-y-2.5">
             {behaviorTags.map((bt, btIdx) => {
               const isPositive = bt.severity === 'POSITIVE';
-              const tagColor = isPositive ? '#22c55e' : (SEVERITY_COLORS[bt.severity] || '#94a3b8');
-              const tagBgDark = isPositive ? 'rgba(34,197,94,0.06)' : (SEVERITY_BG[bt.severity] || 'rgba(148,163,184,0.06)');
-              const tagBgLight = isPositive ? '#f0fdf4' : ({ CRITICAL: '#fff8f8', HIGH: '#fff5f0', MEDIUM: '#fffdf0', LOW: '#f8fafc' }[bt.severity] || '#f8fafc');
-              const tagBorderLight = isPositive ? 'rgba(34,197,94,0.28)' : ({ CRITICAL: 'rgba(239,68,68,0.28)', HIGH: 'rgba(249,115,22,0.25)', MEDIUM: 'rgba(250,204,21,0.30)', LOW: 'rgba(148,163,184,0.22)' }[bt.severity] || 'rgba(148,163,184,0.22)');
-              const tagBorder = isDark ? (isPositive ? 'rgba(34,197,94,0.18)' : (SEVERITY_BORDER[bt.severity] || 'rgba(148,163,184,0.12)')) : tagBorderLight;
+              const tagColor = isPositive ? 'var(--mint)' : (SEVERITY_COLORS[bt.severity] || 'var(--ink-3)');
+              const tagBg = mix(tagColor, 6);
+              const tagBorder = mix(tagColor, 22);
               const pct = Math.round(bt.confidence * 100);
               const tagLabel = bt.tag.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
               return (
@@ -857,14 +856,14 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25, delay: btIdx * 0.07 }}
                   className="rounded-xl overflow-hidden border"
-                  style={{ borderColor: tagBorder, backgroundColor: isDark ? tagBgDark : tagBgLight, boxShadow: isDark ? 'none' : '0 1px 4px rgba(0,0,0,0.04)' }}
+                  style={{ borderColor: tagBorder, backgroundColor: tagBg, boxShadow: 'var(--shadow-card)' }}
                 >
                   <div className="px-4 pt-3.5 pb-3">
                     {/* Header row */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-1.5">
-                          <span className="text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md" style={{ backgroundColor: tagColor + (isDark ? '22' : '18'), color: tagColor }}>
+                          <span className="text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md" style={{ backgroundColor: mix(tagColor, 12), color: tagColor }}>
                             {isPositive ? 'Positive' : bt.severity}
                           </span>
                         </div>
@@ -880,13 +879,13 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                       </div>
                     </div>
                     {/* Frequency bar */}
-                    <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)' }}>
+                    <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--line)' }}>
                       <motion.div
                         className="h-full rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
                         transition={{ duration: 0.7, delay: btIdx * 0.07 + 0.1, ease: [0.22, 1, 0.36, 1] }}
-                        style={{ backgroundColor: tagColor, boxShadow: isDark ? `0 0 8px ${tagColor}50` : 'none' }}
+                        style={{ backgroundColor: tagColor, boxShadow: `0 0 8px ${mix(tagColor, 31)}` }}
                       />
                     </div>
                     <div className="flex items-center justify-between mt-1.5">
@@ -895,7 +894,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                     </div>
                   </div>
                   {/* Body */}
-                  <div className="px-4 pb-3.5 border-t" style={{ borderColor: isDark ? tagColor + '12' : tagColor + '1a' }}>
+                  <div className="px-4 pb-3.5 border-t" style={{ borderColor: mix(tagColor, 9) }}>
                     <p className="text-xs leading-relaxed pt-2.5" style={{ color: 'var(--dash-text-muted)' }}>{bt.description}</p>
                     {bt.evidence && (
                       <p className="text-[10px] mt-2 font-mono" style={{ color: 'var(--dash-text-faint)', opacity: 0.75 }}>{bt.evidence}</p>
@@ -912,12 +911,12 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
       {(upt?.timeWithoutSL?.totalSeconds > 0 || mc?.comparison?.riskExceededBy) && (
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
           {upt?.timeWithoutSL?.totalSeconds > 0 && (
-            <div className="rounded-xl border p-3.5" style={{ borderColor: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.25)', backgroundColor: isDark ? 'rgba(239,68,68,0.04)' : '#fff8f8' }}>
+            <div className="rounded-xl border p-3.5" style={{ borderColor: mix('var(--red-solid)', 20), backgroundColor: mix('var(--red-solid)', 4) }}>
               <div className="flex items-center gap-1.5 mb-2">
-                <svg className="h-3.5 w-3.5" style={{ color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#ef4444' }}>Unprotected Time</p>
+                <svg className="h-3.5 w-3.5" style={{ color: 'var(--red)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--red)' }}>Unprotected Time</p>
               </div>
-              <p className="text-2xl font-black" style={{ color: '#ef4444' }}>{upt.timeWithoutSL.percentOfTrade}%</p>
+              <p className="text-2xl font-black" style={{ color: 'var(--red)' }}>{upt.timeWithoutSL.percentOfTrade}%</p>
               <p className="text-[10px] mt-1" style={{ color: 'var(--dash-text-muted)' }}>
                 {upt.timeWithoutSL.totalSeconds}s without stop loss out of {upt.tradeDurationSeconds}s total
               </p>
@@ -929,12 +928,12 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
             </div>
           )}
           {mc?.comparison?.riskExceededBy && (
-            <div className="rounded-xl border p-3.5" style={{ borderColor: isDark ? 'rgba(249,115,22,0.15)' : 'rgba(249,115,22,0.28)', backgroundColor: isDark ? 'rgba(249,115,22,0.04)' : '#fff8f0' }}>
+            <div className="rounded-xl border p-3.5" style={{ borderColor: mix('var(--amber-solid)', 22), backgroundColor: mix('var(--amber-solid)', 5) }}>
               <div className="flex items-center gap-1.5 mb-2">
-                <svg className="h-3.5 w-3.5" style={{ color: '#f97316' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#f97316' }}>Mistake Cost</p>
+                <svg className="h-3.5 w-3.5" style={{ color: 'var(--amber)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--amber)' }}>Mistake Cost</p>
               </div>
-              <p className="text-2xl font-black" style={{ color: '#f97316' }}>{mc.comparison.riskExceededBy}</p>
+              <p className="text-2xl font-black" style={{ color: 'var(--amber)' }}>{mc.comparison.riskExceededBy}</p>
               <p className="text-[10px] mt-1" style={{ color: 'var(--dash-text-muted)' }}>risk exceeded vs planned</p>
               {mc.plannedRisk?.maxLoss != null && (
                 <p className="text-[10px] mt-0.5" style={{ color: 'var(--dash-text-faint)' }}>
@@ -951,27 +950,27 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
       <div
         className="rounded-2xl border overflow-hidden relative"
         style={{
-          borderColor: 'rgba(0,212,170,0.22)',
-          background: 'linear-gradient(165deg, rgba(0,212,170,0.07) 0%, var(--dash-bg-raised) 38%, var(--dash-bg-raised) 100%)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+          borderColor: mix('var(--mint-solid)', 22),
+          background: `linear-gradient(165deg, ${mix('var(--mint-solid)', 7)} 0%, var(--dash-bg-raised) 38%, var(--dash-bg-raised) 100%)`,
+          boxShadow: 'var(--dash-shadow-inset-top)',
         }}
       >
-        <div className="pointer-events-none absolute -right-20 -top-16 h-40 w-40 rounded-full blur-3xl opacity-30" style={{ background: 'radial-gradient(circle, rgba(0,212,170,0.25), transparent 70%)' }} />
-        <div className="pointer-events-none absolute -left-16 bottom-0 h-32 w-32 rounded-full blur-3xl opacity-20" style={{ background: 'radial-gradient(circle, rgba(96,165,250,0.2), transparent 70%)' }} />
+        <div className="pointer-events-none absolute -right-20 -top-16 h-40 w-40 rounded-full blur-3xl opacity-30" style={{ background: `radial-gradient(circle, ${mix('var(--mint-solid)', 25)}, transparent 70%)` }} />
+        <div className="pointer-events-none absolute -left-16 bottom-0 h-32 w-32 rounded-full blur-3xl opacity-20" style={{ background: `radial-gradient(circle, ${mix('var(--blue)', 20)}, transparent 70%)` }} />
 
         <div className="relative p-5 space-y-5">
           {/* Header */}
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0">
               <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg shadow-md ring-1 ring-white/10"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg shadow-md ring-1 ring-[var(--line)]"
                 style={{
-                  background: `linear-gradient(145deg, ${verdictColor}22, rgba(0,212,170,0.12))`,
+                  background: `linear-gradient(145deg, ${mix(verdictColor, 13)}, var(--mint-tint))`,
                   color: verdictColor,
                 }}
               >
                 {narrativeBusy ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: verdictColor + '35', borderTopColor: verdictColor }} />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: mix(verdictColor, 21), borderTopColor: verdictColor }} />
                 ) : (
                   <span aria-hidden>💬</span>
                 )}
@@ -989,14 +988,14 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                   <button
                     type="button"
                     onClick={tts.toggle}
-                    className="relative flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-semibold transition-all hover:bg-white/5 overflow-hidden"
+                    className="relative flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-semibold transition-all hover:bg-[var(--surface-2)] overflow-hidden"
                     style={{
-                      borderColor: tts.playing && !tts.paused ? 'rgba(0,212,170,0.45)' : 'var(--dash-border)',
-                      color: tts.playing && !tts.paused ? '#00d4aa' : 'var(--dash-text-muted)',
+                      borderColor: tts.playing && !tts.paused ? 'var(--mint-line)' : 'var(--dash-border)',
+                      color: tts.playing && !tts.paused ? 'var(--mint)' : 'var(--dash-text-muted)',
                     }}
                   >
                     {tts.playing && tts.progress > 0 && (
-                      <div className="absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-500" style={{ width: `${tts.progress}%`, backgroundColor: '#00d4aa' }} />
+                      <div className="absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-500" style={{ width: `${tts.progress}%`, backgroundColor: 'var(--mint-solid)' }} />
                     )}
                     {tts.playing && !tts.paused ? 'Pause' : tts.playing && tts.paused ? 'Resume' : 'Listen'}
                   </button>
@@ -1004,7 +1003,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                     <button
                       type="button"
                       onClick={tts.stop}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border transition-all hover:bg-white/5"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border transition-all hover:bg-[var(--surface-2)]"
                       style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-faint)' }}
                     >
                       <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
@@ -1018,7 +1017,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                 <button
                   type="button"
                   onClick={() => fetchNarrative(true)}
-                  className="rounded-xl border px-3 py-1.5 text-[10px] font-semibold transition-all hover:bg-white/5"
+                  className="rounded-xl border px-3 py-1.5 text-[10px] font-semibold transition-all hover:bg-[var(--surface-2)]"
                   style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-muted)' }}
                 >
                   Refresh take
@@ -1036,7 +1035,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
             </div>
           )}
 
-          {narrativeErr && <p className="text-xs text-amber-400">{narrativeErr}</p>}
+          {narrativeErr && <p className="text-xs text-[var(--amber)]">{narrativeErr}</p>}
 
           {narrative?.narrative && (
             <div className="space-y-4">
@@ -1048,18 +1047,16 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                   transition={{ duration: 0.3 }}
                   className="relative overflow-hidden rounded-2xl border"
                   style={{
-                    borderColor: verdictColor + '40',
+                    borderColor: mix(verdictColor, 25),
                     borderLeftWidth: 4,
                     borderLeftColor: verdictColor,
-                    background: isDark
-                      ? `linear-gradient(120deg, ${verdictColor}14 0%, ${verdictColor}05 60%, transparent 100%)`
-                      : `linear-gradient(120deg, ${verdictColor}10 0%, ${verdictColor}04 60%, #ffffff 100%)`,
+                    background: `linear-gradient(120deg, ${mix(verdictColor, 7)} 0%, ${mix(verdictColor, 2)} 60%, transparent 100%)`,
                   }}
                 >
                   <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full blur-2xl opacity-30" style={{ backgroundColor: verdictColor }} aria-hidden />
                   <div className="relative px-4 py-4">
                     <div className="flex items-center gap-2 mb-2.5">
-                      <span className="text-[9px] font-black uppercase tracking-[0.18em]" style={{ color: verdictColor + 'cc' }}>Real talk</span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.18em]" style={{ color: mix(verdictColor, 80) }}>Real talk</span>
                     </div>
                     <p className="text-sm leading-relaxed font-medium" style={{ color: 'var(--dash-text-primary)' }}>
                       {parsed.verdict}
@@ -1070,16 +1067,16 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
 
               {/* Timeline */}
               {parsed.timeline.length > 0 && (
-                <div className="rounded-2xl border p-4" style={{ borderColor: isDark ? 'var(--dash-border)' : 'rgba(96,165,250,0.25)', backgroundColor: isDark ? 'rgba(96,165,250,0.04)' : '#f0f8ff' }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: '#60a5fac0' }}>
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/15 text-[12px]">⏱</span>
+                <div className="rounded-2xl border p-4" style={{ borderColor: mix('var(--blue)', 20), backgroundColor: mix('var(--blue)', 4) }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: mix('var(--blue)', 75) }}>
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg text-[12px]" style={{ backgroundColor: mix('var(--blue)', 15) }}>⏱</span>
                     What happened
                   </p>
                   <ul className="relative space-y-0 pl-1">
-                    <span className="absolute left-[11px] top-1.5 bottom-1.5 w-px bg-gradient-to-b from-blue-400/40 via-blue-400/20 to-transparent" aria-hidden />
+                    <span className="absolute left-[11px] top-1.5 bottom-1.5 w-px" style={{ background: `linear-gradient(to bottom, ${mix('var(--blue)', 40)}, ${mix('var(--blue)', 20)}, transparent)` }} aria-hidden />
                     {parsed.timeline.map((t, i) => (
                       <li key={i} className="relative flex gap-3 pl-1">
-                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-400/80 ring-4 ring-blue-500/10" aria-hidden />
+                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: mix('var(--blue)', 80), boxShadow: `0 0 0 4px ${mix('var(--blue)', 10)}` }} aria-hidden />
                         <p className="text-xs leading-relaxed flex-1" style={{ color: 'var(--dash-text-muted)' }}>
                           {t.replace(/^[•\-\*]\s*/, '')}
                         </p>
@@ -1092,9 +1089,9 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
               {/* Violations / rules check */}
               {parsed.violations.length > 0 && (
                 violationsReadClean ? (
-                  <div className="rounded-2xl border p-4" style={{ borderColor: isDark ? 'rgba(34,197,94,0.22)' : 'rgba(34,197,94,0.28)', backgroundColor: isDark ? 'rgba(34,197,94,0.06)' : '#f0fdf4' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: '#4ade80cc' }}>
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/15 text-[12px]">✓</span>
+                  <div className="rounded-2xl border p-4" style={{ borderColor: mix('var(--mint-solid)', 25), backgroundColor: mix('var(--mint-solid)', 6) }}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: 'var(--mint)' }}>
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg text-[12px]" style={{ backgroundColor: mix('var(--mint-solid)', 15) }}>✓</span>
                         Rules check
                     </p>
                     <ul className="space-y-2">
@@ -1106,14 +1103,14 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                     </ul>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border p-4" style={{ borderColor: isDark ? 'rgba(251,146,60,0.2)' : 'rgba(251,146,60,0.30)', backgroundColor: isDark ? 'rgba(251,146,60,0.05)' : '#fffbf5' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: '#fb923ccc' }}>
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/15 text-[12px]">→</span>
+                  <div className="rounded-2xl border p-4" style={{ borderColor: mix('var(--amber-solid)', 25), backgroundColor: mix('var(--amber-solid)', 5) }}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: 'var(--amber)' }}>
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg text-[12px]" style={{ backgroundColor: mix('var(--amber-solid)', 15) }}>→</span>
                       Where it went wrong
                     </p>
                     <ul className="space-y-2">
                       {parsed.violations.map((v, i) => (
-                        <li key={i} className="text-xs leading-relaxed pl-1 border-l-2 border-amber-500/25 pl-3" style={{ color: 'var(--dash-text-muted)' }}>
+                        <li key={i} className="text-xs leading-relaxed pl-1 border-l-2 pl-3" style={{ color: 'var(--dash-text-muted)', borderColor: mix('var(--amber-solid)', 25) }}>
                           {v.replace(/^[•\-\*]\s*/, '')}
                         </li>
                       ))}
@@ -1124,9 +1121,9 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
 
               {/* Cost */}
               {parsed.cost && (
-                <div className="rounded-2xl border px-4 py-3.5" style={{ borderColor: isDark ? 'rgba(251,191,36,0.18)' : 'rgba(251,191,36,0.35)', backgroundColor: isDark ? 'rgba(251,191,36,0.06)' : '#fffdf0' }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: 'rgba(251,191,36,0.85)' }}>
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-amber-400/15 text-[12px]">$</span>
+                <div className="rounded-2xl border px-4 py-3.5" style={{ borderColor: mix('var(--gold)', 25), backgroundColor: mix('var(--gold)', 6) }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: 'var(--gold)' }}>
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg text-[12px]" style={{ backgroundColor: mix('var(--gold)', 15) }}>$</span>
                     The numbers
                   </p>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>
@@ -1140,20 +1137,18 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                 <div
                   className="relative overflow-hidden rounded-2xl"
                   style={{
-                    background: isDark
-                      ? 'linear-gradient(135deg, rgba(0,212,170,0.14) 0%, rgba(0,212,170,0.06) 100%)'
-                      : 'linear-gradient(135deg, #e6fdf8 0%, #f0fdf9 100%)',
-                    border: `1px solid rgba(0,212,170,${isDark ? 0.30 : 0.28})`,
-                    boxShadow: isDark ? '0 4px 24px rgba(0,212,170,0.07)' : '0 2px 12px rgba(0,212,170,0.08)',
+                    background: `linear-gradient(135deg, ${mix('var(--mint-solid)', 14)} 0%, ${mix('var(--mint-solid)', 6)} 100%)`,
+                    border: '1px solid var(--mint-line)',
+                    boxShadow: 'var(--glow-mint)',
                   }}
                 >
-                  <div className="pointer-events-none absolute -right-6 -bottom-6 h-20 w-20 rounded-full blur-2xl opacity-40" style={{ backgroundColor: '#00d4aa' }} aria-hidden />
+                  <div className="pointer-events-none absolute -right-6 -bottom-6 h-20 w-20 rounded-full blur-2xl opacity-40" style={{ backgroundColor: 'var(--mint-solid)' }} aria-hidden />
                   <div className="relative px-5 py-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ backgroundColor: isDark ? 'rgba(0,212,170,0.2)' : 'rgba(0,212,170,0.15)', color: '#00d4aa' }}>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ backgroundColor: mix('var(--mint-solid)', 18), color: 'var(--mint)' }}>
                         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                       </div>
-                      <p className="text-[9px] font-black uppercase tracking-[0.18em]" style={{ color: 'rgba(0,212,170,0.95)' }}>Try this next</p>
+                      <p className="text-[9px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--mint)' }}>Try this next</p>
                     </div>
                     <p className="text-sm leading-relaxed font-medium" style={{ color: 'var(--dash-text-primary)' }}>
                       {parsed.fix}
@@ -1392,15 +1387,15 @@ export default function TradeDetailPage() {
               {/* Quick stats */}
               <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
                 {[
-                  { label: 'Events', value: events.length, color: '#60a5fa', rgb: '96,165,250', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
-                  { label: 'Screenshots', value: media.length, color: '#00d4aa', rgb: '0,212,170', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
-                  { label: 'Source', value: sourceLabel(trade.source), color: '#94a3b8', rgb: '148,163,184', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg> },
-                  { label: 'Currency', value: trade.currency || 'USD', color: '#94a3b8', rgb: '148,163,184', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+                  { label: 'Events', value: events.length, color: 'var(--blue)', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
+                  { label: 'Screenshots', value: media.length, color: 'var(--mint)', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+                  { label: 'Source', value: sourceLabel(trade.source), color: 'var(--ink-3)', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg> },
+                  { label: 'Currency', value: trade.currency || 'USD', color: 'var(--ink-3)', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-2xl border p-4 transition-all hover:shadow-sm" style={{ borderColor: `rgba(${s.rgb},${isDark ? 0.15 : 0.22})`, backgroundColor: isDark ? `rgba(${s.rgb},0.06)` : '#ffffff', boxShadow: isDark ? 'none' : `0 1px 3px rgba(0,0,0,0.04)` }}>
+                  <div key={s.label} className="rounded-2xl border p-4 transition-all hover:shadow-sm" style={{ borderColor: mix(s.color, 20), backgroundColor: `color-mix(in srgb, ${s.color} 6%, var(--surface))`, boxShadow: 'var(--shadow-card)' }}>
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: `rgba(${s.rgb},${isDark ? 0.12 : 0.10})`, color: s.color }}>{s.icon}</div>
-                      <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: `rgba(${s.rgb},${isDark ? 0.5 : 0.65})` }}>{s.label}</p>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: mix(s.color, 11), color: s.color }}>{s.icon}</div>
+                      <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: mix(s.color, 60) }}>{s.label}</p>
                     </div>
                     <p className="text-xl font-black" style={{ color: s.color }}>{s.value}</p>
                   </div>
@@ -1412,7 +1407,7 @@ export default function TradeDetailPage() {
 
               {/* Snapshot preview */}
               {media.length > 0 && (
-                <div className="group relative overflow-hidden rounded-2xl border cursor-pointer transition-all hover:shadow-lg hover:border-accent/20" style={{ borderColor: 'var(--dash-border)' }} onClick={() => setTab('media')}>
+                <div className="group relative overflow-hidden rounded-2xl border cursor-pointer transition-all hover:shadow-lg hover:border-[var(--mint-line)]" style={{ borderColor: 'var(--dash-border)' }} onClick={() => setTab('media')}>
                   {/* Stacked card effect for multiple screenshots */}
                   {media.length > 1 && (
                     <>
@@ -1436,7 +1431,7 @@ export default function TradeDetailPage() {
                         <p className="text-sm font-bold text-white">Trade Snapshots</p>
                         <p className="text-[10px] text-white/50 mt-0.5">{media.length} screenshot{media.length !== 1 ? 's' : ''} during this trade</p>
                       </div>
-                      <span className="flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-[11px] font-bold text-white backdrop-blur-sm transition-all group-hover:bg-accent/25 group-hover:text-accent">
+                      <span className="flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-[11px] font-bold text-white backdrop-blur-sm transition-all group-hover:bg-[color-mix(in_srgb,var(--mint-solid)_25%,transparent)] group-hover:text-[var(--mint-solid)]">
                         View
                         <svg className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                       </span>
@@ -1447,7 +1442,7 @@ export default function TradeDetailPage() {
                   {media.length > 1 && (
                     <div className="flex gap-1.5 px-3 py-2.5" style={{ backgroundColor: 'var(--dash-bg-card)' }}>
                       {media.slice(0, 5).map((m, i) => {
-                        const tmeta = EVENT_META[m.eventType] || { color: '#94a3b8' };
+                        const tmeta = EVENT_META[m.eventType] || { color: 'var(--ink-3)' };
                         return (
                           <div key={m.id} className="relative h-8 flex-1 overflow-hidden rounded-md">
                             <img src={m.storageUrl} alt={m.eventType} className="h-full w-full object-cover" loading="lazy" />

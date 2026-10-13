@@ -31,7 +31,7 @@ export default function LifecycleLock({ lock, from, children }) {
             </span>
             <div id="tgx-lock-title" style={sx("margin-top:14px;font:600 19px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>{lock.title}</div>
             <p style={sx('margin:8px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink-2)')}>{lock.body}</p>
-            <Link to={to} style={sx('display:inline-block;margin-top:16px;min-height:44px;padding:12px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:#02241d;font-size:13.5px;font-weight:800;text-decoration:none')}>{lock.cta}</Link>
+            <Link to={to} style={sx('display:inline-block;margin-top:16px;min-height:44px;padding:12px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800;text-decoration:none')}>{lock.cta}</Link>
           </div>
         </div>
       </div>

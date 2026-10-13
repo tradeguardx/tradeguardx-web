@@ -412,7 +412,7 @@ export default function ShareCardModal({
                   apologising on click. The reel has no video export yet, and a
                   button that names a file it cannot write is the one thing the
                   simulated version of this modal did that we cannot keep. */}
-              <button type="button" onClick={download} disabled={busy} style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, padding: '11px 14px', border: 0, borderRadius: 11, background: 'var(--mint-solid)', color: '#02241d', fontSize: 13, fontWeight: 700, cursor: busy ? 'progress' : 'pointer', opacity: busy ? 0.75 : 1 }}>
+              <button type="button" onClick={download} disabled={busy} style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, padding: '11px 14px', border: 0, borderRadius: 11, background: 'var(--mint-solid)', color: 'var(--on-mint)', fontSize: 13, fontWeight: 700, cursor: busy ? 'progress' : 'pointer', opacity: busy ? 0.75 : 1 }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12M7 10l5 5 5-5" /><path d="M5 19h14" /></svg>
                 {busy ? 'Building…' : DOWNLOAD_LABEL()}
               </button>

@@ -340,7 +340,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
         </span>
         {rule.pendingEffectiveAt && (
           <span style={sx('flex:none;display:inline-flex;align-items:center;gap:6px')} title={`${rule.pendingEnabled === false ? 'This rule turns off' : 'Looser limit takes effect'} ${new Date(rule.pendingEffectiveAt).toLocaleString()}`}>
-            <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:rgba(31,111,208,0.12);color:var(--blue)')}>{rule.pendingEnabled === false ? 'Turns off when lock lifts' : 'Looser limit pending'}</span>
+            <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:color-mix(in srgb,var(--blue) 12%,transparent);color:var(--blue)')}>{rule.pendingEnabled === false ? 'Turns off when lock lifts' : 'Looser limit pending'}</span>
             <span role="button" tabIndex={0} onClick={cancelPending} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') cancelPending(e); }} title="Keep the current, stricter setting" style={sx('font-size:10.5px;font-weight:700;padding:4px 8px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2)')}>{cancelling ? 'Cancelling…' : 'Cancel'}</span>
           </span>
         )}
@@ -807,7 +807,7 @@ const SetupGate = forwardRef(function SetupGate({ lifeId, keyState, pulse, onGo 
             })}
           </ol>
         </div>
-        <button type="button" onClick={onGo} style={sx('flex:none;min-height:46px;padding:12px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint)')}>
+        <button type="button" onClick={onGo} style={sx('flex:none;min-height:46px;padding:12px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:var(--on-mint);font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint)')}>
           {c.cta} →
         </button>
       </div>

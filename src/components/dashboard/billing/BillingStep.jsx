@@ -273,14 +273,14 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
         {
           when: `Today · ${fmtDay(today)}`,
           what: `Your free trial has ended, so your first charge of ${inr(payable)} is today. Your guard switches on straight away.`,
-          dot: '#00d4aa',
-          glow: '0 0 0 4px rgba(0,212,170,.2)',
+          dot: 'var(--mint-solid)',
+          glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)',
           line: true,
         },
-        { when: `Then ${cur.next}`, what: 'Renews automatically until you cancel.', dot: '#5b687d', glow: 'none', line: false },
+        { when: `Then ${cur.next}`, what: 'Renews automatically until you cancel.', dot: 'var(--ink-faint)', glow: 'none', line: false },
       ]
     : [
-    { when: `Today · ${fmtDay(today)}`, what: 'Your guard switches on. All five protections start working. ₹0 charged.', dot: '#00d4aa', glow: '0 0 0 4px rgba(0,212,170,.2)', line: true },
+    { when: `Today · ${fmtDay(today)}`, what: 'Your guard switches on. All five protections start working. ₹0 charged.', dot: 'var(--mint-solid)', glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)', line: true },
     {
       when: fmtDay(chargeOn),
       /* The discounted figure, when one has been checked — the timeline is
@@ -290,7 +290,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
       what: `First charge of ${inr(payable)}${
         discount && discount.cycles === 1 ? `, then ${inr(cur.price)} ${cur.next}` : `, then ${cur.next}`
       } until you cancel.`,
-      dot: '#5b687d',
+      dot: 'var(--ink-faint)',
       glow: 'none',
       line: false,
     },
@@ -367,7 +367,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
               <li key={name} className="bs-step" data-done={done ? '1' : '0'} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span
                   aria-current={current ? 'step' : undefined}
-                  style={{ width: 26, height: 26, borderRadius: 8, display: 'grid', placeItems: 'center', background: done ? 'var(--mint-solid)' : current ? 'var(--ink)' : 'transparent', color: done ? '#04140f' : current ? 'var(--bg)' : 'var(--ink-3)', font: "700 12px/1 'Space Grotesk',sans-serif", boxShadow: done ? 'none' : current ? '0 0 0 4px var(--line-strong)' : 'inset 0 0 0 1px var(--line-strong)' }}
+                  style={{ width: 26, height: 26, borderRadius: 8, display: 'grid', placeItems: 'center', background: done ? 'var(--mint-solid)' : current ? 'var(--ink)' : 'transparent', color: done ? 'var(--on-mint)' : current ? 'var(--bg)' : 'var(--ink-3)', font: "700 12px/1 'Space Grotesk',sans-serif", boxShadow: done ? 'none' : current ? '0 0 0 4px var(--line-strong)' : 'inset 0 0 0 1px var(--line-strong)' }}
                 >
                   {done ? '✓' : i + 1}
                 </span>
@@ -523,11 +523,11 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
               class drops `position: sticky` at the same width the columns
               stack — see index.css. */}
           <aside className="bs-panel" style={{ flex: '1 1 340px', maxWidth: 440, minWidth: 0 }}>
-            <div style={{ position: 'relative', overflow: 'hidden', padding: 22, borderRadius: 24, color: '#f6f9fc', background: '#0d1422', boxShadow: 'inset 0 0 0 1px rgba(0,212,170,.28),0 30px 70px -40px rgba(0,212,170,.5)' }}>
-              <div aria-hidden style={{ position: 'absolute', width: 360, height: 360, left: -140, top: -200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,212,170,.18),transparent 66%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'relative', overflow: 'hidden', padding: 22, borderRadius: 24, color: 'var(--ink)', background: 'var(--surface)', boxShadow: 'inset 0 0 0 1px var(--mint-line),var(--glow-mint)' }}>
+              <div aria-hidden style={{ position: 'absolute', width: 360, height: 360, left: -140, top: -200, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb, var(--mint-solid) 18%, transparent),transparent 66%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative' }}>
                 <h2 style={{ margin: 0, font: "600 20px/1.2 'Space Grotesk',sans-serif", letterSpacing: '-.02em' }}>Choose how you pay</h2>
-                <p style={{ margin: '6px 0 0', fontSize: 13, color: '#a3b0c2' }}>Same protection on every plan.</p>
+                <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--ink-2)' }}>Same protection on every plan.</p>
 
                 <div role="radiogroup" aria-label="Billing interval" style={{ marginTop: 16, display: 'grid', gap: 9 }}>
                   {options.map((o, i) => {
@@ -542,19 +542,19 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                         tabIndex={on ? 0 : -1}
                         onClick={() => pick(o.id)}
                         onKeyDown={(e) => onKey(e, i)}
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, minHeight: 68, padding: '13px 15px', border: 0, borderRadius: 15, background: on ? 'rgba(0,212,170,.08)' : 'rgba(255,255,255,.03)', boxShadow: on ? 'inset 0 0 0 1.5px #00d4aa' : 'inset 0 0 0 1px rgba(255,255,255,.09)', color: '#f6f9fc', textAlign: 'left', transition: 'background .15s ease' }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, minHeight: 68, padding: '13px 15px', border: 0, borderRadius: 15, background: on ? 'color-mix(in srgb, var(--mint-solid) 8%, transparent)' : 'var(--surface-2)', boxShadow: on ? 'inset 0 0 0 1.5px var(--mint-solid)' : 'inset 0 0 0 1px var(--line-strong)', color: 'var(--ink)', textAlign: 'left', transition: 'background .15s ease' }}
                       >
-                        <span aria-hidden style={{ flex: 'none', width: 20, height: 20, borderRadius: '50%', boxShadow: on ? 'inset 0 0 0 2px #00d4aa' : 'inset 0 0 0 2px rgba(255,255,255,.22)', display: 'grid', placeItems: 'center' }}>
-                          <span style={{ width: 10, height: 10, borderRadius: '50%', background: on ? '#00d4aa' : 'transparent' }} />
+                        <span aria-hidden style={{ flex: 'none', width: 20, height: 20, borderRadius: '50%', boxShadow: on ? 'inset 0 0 0 2px var(--mint-solid)' : 'inset 0 0 0 2px var(--line-strong)', display: 'grid', placeItems: 'center' }}>
+                          <span style={{ width: 10, height: 10, borderRadius: '50%', background: on ? 'var(--mint-solid)' : 'transparent' }} />
                         </span>
                         <span style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ fontSize: 14, fontWeight: 700 }}>{o.name}</span>
                             {savingOf(o) > 0 && (
-                              <span style={{ font: "700 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', padding: '4px 6px', borderRadius: 5, background: 'rgba(0,212,170,.16)', color: '#2fe3bd' }}>{`SAVE ${savingOf(o)}%`}</span>
+                              <span style={{ font: "700 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', padding: '4px 6px', borderRadius: 5, background: 'var(--mint-tint)', color: 'var(--mint)' }}>{`SAVE ${savingOf(o)}%`}</span>
                             )}
                           </span>
-                          <span style={{ display: 'block', marginTop: 3, fontSize: 12, color: '#7f8ca0' }}>
+                          <span style={{ display: 'block', marginTop: 3, fontSize: 12, color: 'var(--ink-faint)' }}>
                             {o.id === 'monthly' ? o.sub : `${inr(Math.round(perMonthOf(o)))}/mo · ${SUB[o.id]}`}
                           </span>
                         </span>
@@ -564,31 +564,31 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                               shows exactly that. */}
                           {verified?.[o.id]?.valid ? (
                             <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>
-                              <span style={{ marginRight: 7, fontSize: 13, fontWeight: 600, color: '#7f8ca0', textDecoration: 'line-through' }}>{inr(o.price)}</span>
-                              <span style={{ color: '#2fe3bd' }}>{inr(priceOf(o))}</span>
+                              <span style={{ marginRight: 7, fontSize: 13, fontWeight: 600, color: 'var(--ink-faint)', textDecoration: 'line-through' }}>{inr(o.price)}</span>
+                              <span style={{ color: 'var(--mint)' }}>{inr(priceOf(o))}</span>
                             </span>
                           ) : (
                             <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>{inr(o.price)}</span>
                           )}
-                          <span style={{ display: 'block', marginTop: 4, fontSize: 11, color: '#7f8ca0' }}>{o.per}</span>
+                          <span style={{ display: 'block', marginTop: 4, fontSize: 11, color: 'var(--ink-faint)' }}>{o.per}</span>
                         </span>
                       </button>
                     );
                   })}
                 </div>
 
-                <div style={{ marginTop: 20, padding: 16, borderRadius: 16, background: '#070a12', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.07)' }}>
-                  <div style={{ font: "600 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.16em', color: '#7f8ca0' }}>WHAT HAPPENS NEXT</div>
+                <div style={{ marginTop: 20, padding: 16, borderRadius: 16, background: 'var(--surface-2)', boxShadow: 'inset 0 0 0 1px var(--line)' }}>
+                  <div style={{ font: "600 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.16em', color: 'var(--ink-faint)' }}>WHAT HAPPENS NEXT</div>
                   <div style={{ marginTop: 14, display: 'grid' }}>
                     {timeline.map((t) => (
                       <div key={t.when} style={{ display: 'flex', gap: 12 }}>
                         <span aria-hidden style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                           <span style={{ width: 11, height: 11, borderRadius: '50%', background: t.dot, boxShadow: t.glow }} />
-                          {t.line && <span style={{ flex: 1, width: 2, minHeight: 18, background: 'rgba(255,255,255,.1)' }} />}
+                          {t.line && <span style={{ flex: 1, width: 2, minHeight: 18, background: 'var(--line-strong)' }} />}
                         </span>
                         <span style={{ paddingBottom: 14, marginTop: -3 }}>
                           <span style={{ display: 'block', fontSize: 13, fontWeight: 700 }}>{t.when}</span>
-                          <span style={{ display: 'block', marginTop: 3, fontSize: 12, lineHeight: 1.5, color: '#a3b0c2' }}>{t.what}</span>
+                          <span style={{ display: 'block', marginTop: 3, fontSize: 12, lineHeight: 1.5, color: 'var(--ink-2)' }}>{t.what}</span>
                         </span>
                       </div>
                     ))}
@@ -611,7 +611,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 <div style={{ marginTop: 14 }}>
                   {couponOpen || coupon ? (
                     <div>
-                      <label htmlFor="bs-coupon" style={{ display: 'block', fontSize: 11.5, color: '#7f8ca0', marginBottom: 6 }}>Coupon code</label>
+                      <label htmlFor="bs-coupon" style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-faint)', marginBottom: 6 }}>Coupon code</label>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <input
                           id="bs-coupon"
@@ -621,31 +621,31 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                           placeholder="Enter code"
                           autoCapitalize="characters"
                           spellCheck={false}
-                          style={{ flex: 1, minWidth: 0, minHeight: 44, padding: '11px 13px', border: 0, borderRadius: 12, background: 'rgba(255,255,255,.04)', boxShadow: `inset 0 0 0 1px ${discount ? 'rgba(0,212,170,.45)' : 'rgba(255,255,255,.1)'}`, color: '#f6f9fc', font: "600 13px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', textTransform: 'uppercase' }}
+                          style={{ flex: 1, minWidth: 0, minHeight: 44, padding: '11px 13px', border: 0, borderRadius: 12, background: 'var(--surface-2)', boxShadow: `inset 0 0 0 1px ${discount ? 'var(--mint-line)' : 'var(--line-input)'}`, color: 'var(--ink)', font: "600 13px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', textTransform: 'uppercase' }}
                         />
                         <button
                           type="button"
                           onClick={apply}
                           disabled={!coupon.trim() || couponBusy}
-                          style={{ flex: 'none', minHeight: 44, padding: '0 14px', border: 0, borderRadius: 12, background: 'rgba(255,255,255,.06)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.12)', color: '#f6f9fc', fontSize: 13, fontWeight: 700, opacity: !coupon.trim() || couponBusy ? 0.5 : 1 }}
+                          style={{ flex: 'none', minHeight: 44, padding: '0 14px', border: 0, borderRadius: 12, background: 'var(--surface-3)', boxShadow: 'inset 0 0 0 1px var(--line-strong)', color: 'var(--ink)', fontSize: 13, fontWeight: 700, opacity: !coupon.trim() || couponBusy ? 0.5 : 1 }}
                         >
                           {couponBusy ? 'Checking…' : 'Apply'}
                         </button>
                       </div>
 
                       {discount ? (
-                        <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: '#2fe3bd' }}>
+                        <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--mint)' }}>
                           {discount.percentOff}% off applied.{' '}
                           {discount.cycles
                             ? `Covers your first ${discount.cycles === 1 ? 'payment' : `${discount.cycles} payments`}, then the full price.`
                             : 'Applies to every renewal.'}
                         </p>
                       ) : refusal ? (
-                        <p role="alert" style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: refusal === 'UNSUPPORTED' || refusal === 'LOOKUP' ? '#7f8ca0' : '#ff8178' }}>
+                        <p role="alert" style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: refusal === 'UNSUPPORTED' || refusal === 'LOOKUP' ? 'var(--ink-faint)' : 'var(--red)' }}>
                           {COUPON_REFUSAL[refusal] ?? COUPON_REFUSAL.UNKNOWN}
                         </p>
                       ) : (
-                        <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: '#7f8ca0' }}>
+                        <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--ink-faint)' }}>
                           Press Apply to see the new price. It is applied at checkout either way.
                         </p>
                       )}
@@ -654,7 +654,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                     <button
                       type="button"
                       onClick={() => setCouponOpen(true)}
-                      style={{ padding: 0, border: 0, background: 'none', color: '#7f8ca0', fontSize: 12, fontWeight: 600, textDecoration: 'underline' }}
+                      style={{ padding: 0, border: 0, background: 'none', color: 'var(--ink-faint)', fontSize: 12, fontWeight: 600, textDecoration: 'underline' }}
                     >
                       Have a coupon?
                     </button>
@@ -662,10 +662,10 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 </div>
 
                 <div style={{ marginTop: 18, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-                  <span style={{ fontSize: 13, color: '#a3b0c2' }}>Due today</span>
+                  <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>Due today</span>
                   {/* Not a constant: someone whose free week is used is charged
                       in full today, and this line said ₹0 to them too. */}
-                  <span style={{ font: "700 30px/1 'Space Grotesk',sans-serif", letterSpacing: '-.03em', color: charged ? '#f6f9fc' : '#2fe3bd' }}>{charged ? inr(payable) : '₹0'}</span>
+                  <span style={{ font: "700 30px/1 'Space Grotesk',sans-serif", letterSpacing: '-.03em', color: charged ? 'var(--ink)' : 'var(--mint)' }}>{charged ? inr(payable) : '₹0'}</span>
                 </div>
 
                 <button
@@ -673,7 +673,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   onClick={start}
                   disabled={busy}
                   className="bs-cta"
-                  style={{ marginTop: 14, width: '100%', minHeight: 54, padding: 15, border: 0, borderRadius: 14, background: '#00d4aa', color: '#02241d', fontSize: 15, fontWeight: 800, boxShadow: '0 14px 34px -14px rgba(0,212,170,.8)', opacity: busy ? 0.75 : 1 }}
+                  style={{ marginTop: 14, width: '100%', minHeight: 54, padding: 15, border: 0, borderRadius: 14, background: 'var(--mint-solid)', color: 'var(--on-mint)', fontSize: 15, fontWeight: 800, boxShadow: 'var(--glow-mint)', opacity: busy ? 0.75 : 1 }}
                 >
                   {setupCta
                     ? setupCta.label
@@ -685,13 +685,13 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 </button>
 
                 {error && (
-                  <p role="alert" style={{ margin: '10px 0 0', fontSize: 12.5, lineHeight: 1.5, color: '#ff8178', textAlign: 'center' }}>{error}</p>
+                  <p role="alert" style={{ margin: '10px 0 0', fontSize: 12.5, lineHeight: 1.5, color: 'var(--red)', textAlign: 'center' }}>{error}</p>
                 )}
 
                 {/* No promise of a reminder email: none is sent for a
                     payment-sourced trial. See the TODO above. */}
                 {setupCta ? (
-                  <p style={{ margin: '11px 0 0', fontSize: 12, lineHeight: 1.5, color: '#7f8ca0', textAlign: 'center' }}>
+                  <p style={{ margin: '11px 0 0', fontSize: 12, lineHeight: 1.5, color: 'var(--ink-faint)', textAlign: 'center' }}>
                     Cancel any time in Plan &amp; billing.
                   </p>
                 ) : (
@@ -706,7 +706,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                    * promise the ₹1 is refunded until Dodo confirms it, and
                    * no "a day before": the bank decides the notice.
                    */
-                  <p data-autopay-note="1" style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.55, color: '#a3b0c2', textAlign: 'left' }}>
+                  <p data-autopay-note="1" style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.55, color: 'var(--ink-2)', textAlign: 'left' }}>
                     Your bank or UPI app will ask you to approve AutoPay for {inr(payable)} {cur.per}. UPI may also show a ₹1 check and a limit of
                     {' '}&ldquo;up to ₹15,000&rdquo; &mdash; that&rsquo;s UPI&rsquo;s standard ceiling, not what we charge.
                     {!charged && freeDays != null ? ` First charge ${fmtDay(chargeOn)}.` : ''} Your bank tells you before every debit.

@@ -61,8 +61,8 @@ export const PROTECTIONS = [
     n: '04',
     title: 'Up to 5 trading accounts',
     body: 'Each with its own rules, limits and guard. Switch between them in one tap.',
-    gradient: 'linear-gradient(145deg,#5ff2d2,#00a98a)',
-    color: '#04140f',
+    gradient: 'linear-gradient(145deg,color-mix(in srgb, var(--mint-solid) 60%, white),var(--mint-solid))',
+    color: 'var(--on-mint)',
     glyph: 'windows',
   },
   {

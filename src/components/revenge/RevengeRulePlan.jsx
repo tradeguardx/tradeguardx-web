@@ -48,7 +48,7 @@ export default function RulePlan({ report, cta, enterProps = {} }) {
   const lead = !calm && report.revengeTrades > 0
     ? <><span style={sx('color:var(--red)')}>{report.revengeTrades} revenge trade{report.revengeTrades === 1 ? '' : 's'}.</span> {n === 1 ? 'One rule' : `${n} rules`} stop them.</>
     : calm ? 'Keep it this way with two rules' : `${n === 1 ? 'One rule' : `${n} rules`} that stop this`;
-  const btn = 'flex:none;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:46px;padding:11px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14.5px;font-weight:800;text-decoration:none;cursor:pointer;box-shadow:var(--glow-mint);white-space:nowrap';
+  const btn = 'flex:none;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:46px;padding:11px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:var(--on-mint);font-size:14.5px;font-weight:800;text-decoration:none;cursor:pointer;box-shadow:var(--glow-mint);white-space:nowrap';
   const btnInner = <>{switches && <Power />}{label}</>;
 
   return (

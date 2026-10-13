@@ -430,7 +430,7 @@
   --surface:#0a0e18; --surface-2:#111828; --surface-3:#1b2334;
   --line:rgba(255,255,255,.065); --line-strong:rgba(255,255,255,.15); --line-input:rgba(255,255,255,.26);
   --ink:#eef2f8; --ink-2:#9dacc1; --ink-3:#8593a8; --ink-faint:#72829a;
-  --mint:#3ae8c0; --mint-solid:#00d4aa;
+  --mint:#3ae8c0; --mint-solid:#00d4aa; --on-mint:#02241d;
   --mint-tint:rgba(0,212,170,.12); --mint-line:rgba(0,212,170,.34);
   --amber:#f8cd68; --amber-solid:#f0b429;
   --amber-tint:rgba(240,180,41,.12); --amber-line:rgba(240,180,41,.32);
@@ -515,7 +515,7 @@
   --surface:#ffffff; --surface-2:#f4f6fa; --surface-3:#e9edf3;
   --line:rgba(15,23,42,.10); --line-strong:rgba(15,23,42,.19); --line-input:rgba(15,23,42,.32);
   --ink:#0a1120; --ink-2:#2f3d52; --ink-3:#47566c; --ink-faint:#5b6a80;
-  --mint:#00755f; --mint-solid:#00b894;
+  --mint:#00755f; --mint-solid:#00b894; --on-mint:#02241d;
   --mint-tint:rgba(0,184,148,.13); --mint-line:rgba(0,160,128,.36);
   --amber:#8a4d00; --amber-solid:#e0a11c;
   --amber-tint:rgba(240,180,41,.17); --amber-line:rgba(200,110,6,.36);
@@ -958,10 +958,10 @@
 [data-tgx] .tnum{font-variant-numeric:tabular-nums}
 
 /* §6 tweak props — accent rewires the mint set; chrome reshapes depth */
-[data-dash-theme="dark"][data-accent="signal"]{--mint:#ffc861;--mint-solid:#f2a615;--mint-tint:rgba(242,166,21,.12);--mint-line:rgba(242,166,21,.34);--glow-mint:0 8px 24px -8px rgba(242,166,21,.55);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(242,166,21,.14),transparent 60%)}
-[data-dash-theme="light"][data-accent="signal"]{--mint:#8a4f00;--mint-solid:#d98c00;--mint-tint:rgba(217,140,0,.13);--mint-line:rgba(217,140,0,.36);--glow-mint:0 8px 24px -8px rgba(217,140,0,.45);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(217,140,0,.16),transparent 60%)}
-[data-dash-theme="dark"][data-accent="ion"]{--mint:#9fb4ff;--mint-solid:#5b76f7;--mint-tint:rgba(91,118,247,.12);--mint-line:rgba(91,118,247,.34);--glow-mint:0 8px 24px -8px rgba(91,118,247,.55);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(91,118,247,.14),transparent 60%)}
-[data-dash-theme="light"][data-accent="ion"]{--mint:#3040c4;--mint-solid:#4457e8;--mint-tint:rgba(68,87,232,.13);--mint-line:rgba(68,87,232,.36);--glow-mint:0 8px 24px -8px rgba(68,87,232,.45);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(68,87,232,.16),transparent 60%)}
+[data-dash-theme="dark"][data-accent="signal"]{--on-mint:#1f1300;--mint:#ffc861;--mint-solid:#f2a615;--mint-tint:rgba(242,166,21,.12);--mint-line:rgba(242,166,21,.34);--glow-mint:0 8px 24px -8px rgba(242,166,21,.55);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(242,166,21,.14),transparent 60%)}
+[data-dash-theme="light"][data-accent="signal"]{--on-mint:#1f1300;--mint:#8a4f00;--mint-solid:#d98c00;--mint-tint:rgba(217,140,0,.13);--mint-line:rgba(217,140,0,.36);--glow-mint:0 8px 24px -8px rgba(217,140,0,.45);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(217,140,0,.16),transparent 60%)}
+[data-dash-theme="dark"][data-accent="ion"]{--on-mint:#ffffff;--mint:#9fb4ff;--mint-solid:#5b76f7;--mint-tint:rgba(91,118,247,.12);--mint-line:rgba(91,118,247,.34);--glow-mint:0 8px 24px -8px rgba(91,118,247,.55);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(91,118,247,.14),transparent 60%)}
+[data-dash-theme="light"][data-accent="ion"]{--on-mint:#ffffff;--mint:#3040c4;--mint-solid:#4457e8;--mint-tint:rgba(68,87,232,.13);--mint-line:rgba(68,87,232,.36);--glow-mint:0 8px 24px -8px rgba(68,87,232,.45);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(68,87,232,.16),transparent 60%)}
 [data-chrome="flat"]{--shadow-card:none;--shadow-pop:0 0 0 1px var(--line-strong);--shadow-lift:none;--glow-mint:none;--grid:transparent;--wash:none;--line:var(--line-strong)}
 [data-chrome="print"]{--shadow-card:none;--shadow-pop:none;--shadow-lift:none;--glow-mint:none;--grid:transparent;--wash:none;--line:rgba(0,0,0,.2);--line-strong:rgba(0,0,0,.35)}
 [data-chrome="print"] .dsh-card,[data-chrome="print"] .dsh-panel,[data-chrome="print"] .dsh-inset,[data-chrome="print"] .dsh-btn,[data-chrome="print"] .dsh-input{border-radius:6px!important}

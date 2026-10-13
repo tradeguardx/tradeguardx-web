@@ -283,7 +283,7 @@ export default function EconomicCalendarPage() {
                 return (
                   <button key={c} type="button" role="option" aria-selected={on} onClick={() => toggleCcy(c)} className="ecal-opt" style={sx('display:flex;align-items:center;gap:10px;width:100%;padding:8px 9px;border:0;border-radius:8px;background:transparent;text-align:left;font-size:13px;color:var(--ink)')}>
                     <span style={sx('flex:none;width:15px;height:15px;border-radius:4px;display:grid;place-items:center', on ? { background: 'var(--mint-solid)' } : { border: '1px solid var(--line-strong)' })}>
-                      {on && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#02241d" strokeWidth="3.4" strokeLinecap="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>}
+                      {on && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--on-mint)" strokeWidth="3.4" strokeLinecap="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>}
                     </span>
                     <span style={sx("font:500 12px/1 'JetBrains Mono',monospace;letter-spacing:.06em")}>{c}</span>
                   </button>
@@ -358,7 +358,7 @@ export default function EconomicCalendarPage() {
           <section key={day.date} ref={day.is_today ? todayRef : undefined} style={sx(CARD, { scrollMarginTop: 16 })}>
             <button type="button" onClick={() => toggleDay(day.date)} aria-expanded={open} style={sx('width:100%;display:flex;align-items:center;gap:11px;padding:14px 20px;border:0;text-align:left;color:var(--ink)', { background: day.is_today ? 'var(--mint-tint)' : 'var(--surface-2)' })}>
               <span style={sx('font-size:13.5px;font-weight:700;letter-spacing:-.01em')}>{day.label}</span>
-              {day.is_today && <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:999px;background:var(--mint-solid);color:#02241d")}>Today</span>}
+              {day.is_today && <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:999px;background:var(--mint-solid);color:var(--on-mint)")}>Today</span>}
               <span style={{ flex: 1 }} />
               <span style={sx('font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums')}>{high > 0 ? `${high} high impact · ` : ''}{day.events.length} {day.events.length === 1 ? 'event' : 'events'}</span>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flex: 'none', color: 'var(--ink-3)' }}><path d={open ? 'M7 14l5-5 5 5' : 'M7 10l5 5 5-5'} /></svg>

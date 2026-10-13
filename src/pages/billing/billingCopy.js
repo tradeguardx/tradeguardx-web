@@ -11,32 +11,32 @@
  */
 
 export const STATE_CHIP = {
-  trial: { label: 'FREE TRIAL', bg: 'rgba(0,212,170,.14)', fg: '#2fe3bd' },
-  active: { label: 'ACTIVE', bg: 'rgba(0,212,170,.14)', fg: '#2fe3bd' },
-  failed: { label: 'PAYMENT FAILED', bg: 'rgba(239,68,68,.14)', fg: '#ff8178' },
-  cancelled: { label: 'CANCELLED', bg: 'rgba(240,180,41,.14)', fg: '#fbc94f' },
-  confirming: { label: 'CONFIRMING PAYMENT', bg: 'rgba(0,212,170,.14)', fg: '#2fe3bd' },
-  comp: { label: 'COMPLIMENTARY', bg: 'rgba(177,145,251,.16)', fg: '#c4b0ff' },
-  unknown: { label: 'CHECKING YOUR PLAN', bg: 'rgba(255,255,255,.08)', fg: '#c9d2e0' },
-  ended: { label: 'PLAN ENDED', bg: 'rgba(239,68,68,.14)', fg: '#ff8178' },
+  trial: { label: 'FREE TRIAL', bg: 'var(--mint-tint)', fg: 'var(--mint)' },
+  active: { label: 'ACTIVE', bg: 'var(--mint-tint)', fg: 'var(--mint)' },
+  failed: { label: 'PAYMENT FAILED', bg: 'var(--red-tint)', fg: 'var(--red)' },
+  cancelled: { label: 'CANCELLED', bg: 'var(--amber-tint)', fg: 'var(--amber)' },
+  confirming: { label: 'CONFIRMING PAYMENT', bg: 'var(--mint-tint)', fg: 'var(--mint)' },
+  comp: { label: 'COMPLIMENTARY', bg: 'color-mix(in srgb, var(--violet) 16%, transparent)', fg: 'var(--violet)' },
+  unknown: { label: 'CHECKING YOUR PLAN', bg: 'var(--surface-3)', fg: 'var(--ink-2)' },
+  ended: { label: 'PLAN ENDED', bg: 'var(--red-tint)', fg: 'var(--red)' },
 };
 
 export const STATE_SKIN = {
-  trial: { line: 'rgba(0,212,170,.28)', orb: 'rgba(0,212,170,.16)' },
-  active: { line: 'rgba(255,255,255,.1)', orb: 'rgba(0,212,170,.12)' },
-  failed: { line: 'rgba(239,68,68,.4)', orb: 'rgba(239,68,68,.18)' },
-  cancelled: { line: 'rgba(240,180,41,.35)', orb: 'rgba(240,180,41,.14)' },
-  confirming: { line: 'rgba(0,212,170,.28)', orb: 'rgba(0,212,170,.14)' },
-  comp: { line: 'rgba(177,145,251,.3)', orb: 'rgba(124,58,237,.16)' },
-  unknown: { line: 'rgba(255,255,255,.14)', orb: 'rgba(255,255,255,.06)' },
-  ended: { line: 'rgba(239,68,68,.35)', orb: 'rgba(239,68,68,.12)' },
+  trial: { line: 'var(--mint-line)', orb: 'color-mix(in srgb, var(--mint-solid) 16%, transparent)' },
+  active: { line: 'var(--line-strong)', orb: 'var(--mint-tint)' },
+  failed: { line: 'var(--red-line)', orb: 'color-mix(in srgb, var(--red-solid) 18%, transparent)' },
+  cancelled: { line: 'var(--amber-line)', orb: 'color-mix(in srgb, var(--amber-solid) 14%, transparent)' },
+  confirming: { line: 'var(--mint-line)', orb: 'color-mix(in srgb, var(--mint-solid) 14%, transparent)' },
+  comp: { line: 'color-mix(in srgb, var(--violet) 30%, transparent)', orb: 'color-mix(in srgb, var(--violet) 16%, transparent)' },
+  unknown: { line: 'var(--line-strong)', orb: 'color-mix(in srgb, var(--ink) 6%, transparent)' },
+  ended: { line: 'var(--red-line)', orb: 'var(--red-tint)' },
 };
 
 export const BAR_COLOUR = {
-  trial: '#00d4aa',
-  active: 'rgba(255,255,255,.35)',
-  failed: '#ef4444',
-  cancelled: '#f0b429',
+  trial: 'var(--mint-solid)',
+  active: 'color-mix(in srgb, var(--ink) 35%, transparent)',
+  failed: 'var(--red-solid)',
+  cancelled: 'var(--amber-solid)',
 };
 
 /** `{date}` and `{price}` are replaced with real values at render. */

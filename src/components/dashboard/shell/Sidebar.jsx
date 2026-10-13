@@ -103,8 +103,8 @@ export default function Sidebar({ onNavigate }) {
   return (
     <>
       <div style={sx('padding:19px 18px 16px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--line)')}>
-        <div style={sx('flex:none;width:33px;height:33px;border-radius:10px;background-image:linear-gradient(150deg,#3df2d2,#00b894);display:grid;place-items:center;box-shadow:var(--glow-mint)')}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#02241d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6l7-3z" /><path d="M9 12l2.2 2.2L15.5 10" /></svg>
+        <div style={sx('flex:none;width:33px;height:33px;border-radius:10px;background-image:linear-gradient(150deg,color-mix(in srgb,var(--mint-solid) 65%,#fff),var(--mint-solid));display:grid;place-items:center;box-shadow:var(--glow-mint)')}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--on-mint)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6l7-3z" /><path d="M9 12l2.2 2.2L15.5 10" /></svg>
         </div>
         <div style={sx('min-width:0;flex:1')}>
           <Link to="/dashboard/overview" onClick={onNavigate} style={sx("font:600 15px/1.1 'Space Grotesk',sans-serif;letter-spacing:-.015em;color:var(--ink);text-decoration:none;display:block")}>TradeGuardX</Link>
