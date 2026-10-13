@@ -6,6 +6,7 @@ import { getPricingPlans } from '../../../api/pricingApi';
 import { trackBilling } from '../../../lib/analytics';
 import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
 import { PROTECTIONS, GLYPH } from './billingContent';
+import NoticeCard from '../shell/NoticeCard';
 import { Chip, ScoreRing } from '../../revenge/RevengeParts';
 import { GRADE, PERIODS } from '../../revenge/revengeFormat';
 
@@ -343,18 +344,15 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
       {/* ONE status band, and no button on it: the panel's button is the only
           action on this page. */}
       {guardOff && (
-        <div className="bs-band" style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'var(--amber-tint)', borderBottom: '1px solid var(--amber-line)', flexWrap: 'wrap' }}>
-          <span style={{ flex: 'none', width: 30, height: 30, borderRadius: 9, background: 'var(--amber-tint)', display: 'grid', placeItems: 'center', color: 'var(--amber)' }}>
-            <Glyph d={GLYPH.warn} size={16} />
-          </span>
-          <div style={{ flex: 1, minWidth: 240, fontSize: 13.5, lineHeight: 1.5, color: 'var(--ink-2)' }}>
-            <b style={{ color: 'var(--amber)' }}>Your guard is off.</b>{' '}
-            {stepsDone >= 3
-              ? 'Your key is connected and your rules are saved, but nothing is enforced until you finish this step.'
+        <div style={{ maxWidth: 1220, margin: '0 auto', paddingTop: 22 }}>
+          <NoticeCard
+            title="Your guard is off."
+            body={stepsDone >= 3
+              ? 'Your key is connected, but nothing is enforced until you finish this step.'
               : stepsDone === 0
                 ? 'Add an account and connect its key first, then set up billing to switch it on.'
                 : 'Connect your key first, then set up billing to switch it on.'}
-          </div>
+          />
         </div>
       )}
 

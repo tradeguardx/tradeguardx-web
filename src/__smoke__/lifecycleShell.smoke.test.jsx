@@ -152,7 +152,7 @@ describe('payment failed (pf)', () => {
     mount('/dashboard/overview');
     await waitFor(() => expect(screen.getAllByText('Not protected · payment failed').length).toBeGreaterThan(0));
     expect(screen.getByText('Payment failed. Your guard is off.')).toBeTruthy();
-    expect(screen.getAllByRole('link', { name: 'Pay ₹1,299' })[0].getAttribute('href')).toBe('/dashboard/account/billing');
+    expect(screen.getAllByRole('link', { name: 'Pay ₹1,299 →' })[0].getAttribute('href')).toBe('/dashboard/account/billing');
   });
 
   it('turns the Overview dial off and stops implying enforcement', async () => {
@@ -225,7 +225,8 @@ describe('trial cancelled, but this account’s key was never connected (s2)', (
     mount('/dashboard/live');
     await waitFor(() => expect(screen.getByText('Connect your key to see this')).toBeTruthy());
     expect(screen.getAllByText('Not protected').length).toBeGreaterThan(0);
-    expect(screen.getByText('Nothing is watching Delta main yet.')).toBeTruthy();
+    // Locked page: the lock card makes the ask, so the band steps aside.
+    expect(screen.queryByText('Nothing is watching Delta main yet.')).toBeNull();
     expect(screen.getByText('Setup · step 3 of 5')).toBeTruthy();
     expect(screen.getAllByRole('link', { name: 'Connect key' }).some((a) => a.getAttribute('href') === '/dashboard/setup?return=%2Fdashboard%2Flive')).toBe(true);
     expect(screen.getByRole('button', { name: 'Kill switch' }).getAttribute('aria-disabled')).toBe('true');

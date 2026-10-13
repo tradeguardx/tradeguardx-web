@@ -11,6 +11,7 @@ import { ruleLockNow } from '../../lib/guard';
 import { keyStateOf } from '../../lib/lifecycle';
 import { Icon, RULE_GLYPH, ICON, ruleAccent } from './shell/icons';
 import { sx } from './shell/sx';
+import NoticeCard from './shell/NoticeCard';
 import { currencySymbol } from '../../lib/session';
 
 /**
@@ -788,29 +789,27 @@ function setupGateCopy(lifeId, keyState) {
 const SetupGate = forwardRef(function SetupGate({ lifeId, keyState, pulse, onGo }, ref) {
   const c = setupGateCopy(lifeId, keyState);
   return (
-    <section ref={ref} key={pulse} className={pulse ? 'rt-gate rt-gate--poke' : 'rt-gate'} style={sx('position:relative;margin-bottom:18px;padding:20px 22px;border:1px solid var(--mint-line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
-      <div aria-hidden style={sx('position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 90% at 0% 0%,var(--mint-tint),transparent 70%)')} />
-      <div style={sx('position:relative;display:flex;align-items:center;gap:18px;flex-wrap:wrap')}>
-        <div style={sx('flex:1;min-width:min(300px,100%)')}>
-          <div style={sx("font:600 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--mint)")}>Setup · step {c.step} of 5</div>
-          <h2 style={sx("margin:9px 0 0;font:600 19px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>{c.title}</h2>
-          <p style={sx('margin:6px 0 0;max-width:62ch;font-size:13px;line-height:1.55;color:var(--ink-2)')}>{c.body}</p>
-          <ol aria-label="Setup progress" style={sx('margin:14px 0 0;padding:0;list-style:none;display:flex;gap:6px;max-width:420px')}>
-            {SETUP_STEP_NAMES.map((name, i) => {
-              const done = i < c.step - 1;
-              const here = i === c.step - 1;
-              return (
-                <li key={name} title={name} aria-current={here ? 'step' : undefined} style={sx('flex:1;height:5px;border-radius:999px', { background: done ? 'var(--mint-solid)' : here ? 'var(--mint-line)' : 'var(--surface-3)' })}>
-                  <span style={sx('position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)')}>{name}{done ? ' — done' : here ? ' — next' : ''}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-        <button type="button" onClick={onGo} style={sx('flex:none;min-height:46px;padding:12px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:var(--on-mint);font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint)')}>
-          {c.cta} →
-        </button>
-      </div>
-    </section>
+    <NoticeCard
+      ref={ref}
+      key={pulse}
+      className={pulse ? 'rt-gate--poke' : ''}
+      eyebrow={`Setup · step ${c.step} of 5`}
+      title={c.title}
+      body={c.body}
+      cta={{ label: c.cta, onClick: onGo }}
+      style={{ marginBottom: 18 }}
+    >
+      <ol aria-label="Setup progress" style={sx('margin:14px 0 0;padding:0;list-style:none;display:flex;gap:6px;max-width:420px')}>
+        {SETUP_STEP_NAMES.map((name, i) => {
+          const done = i < c.step - 1;
+          const here = i === c.step - 1;
+          return (
+            <li key={name} title={name} aria-current={here ? 'step' : undefined} style={sx('flex:1;height:5px;border-radius:999px', { background: done ? 'var(--mint-solid)' : here ? 'var(--mint-line)' : 'var(--surface-3)' })}>
+              <span style={sx('position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)')}>{name}{done ? ' — done' : here ? ' — next' : ''}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </NoticeCard>
   );
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import NoticeCard from './shell/NoticeCard';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../common/ToastProvider';
 
@@ -47,44 +47,11 @@ export default function VerifyEmailBanner() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-6 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:p-5"
-      style={{
-        borderColor: 'var(--amber-line)',
-        backgroundColor: 'color-mix(in srgb, var(--amber-solid) 6%, transparent)',
-      }}
-    >
-      <div className="flex items-start gap-3.5">
-        <span
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
-          style={{ backgroundColor: 'var(--amber-tint)', color: 'var(--amber)' }}
-        >
-          <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-          </svg>
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-bold" style={{ color: 'var(--dash-text-primary)' }}>
-            Confirm your email so we can alert you
-          </p>
-          <p className="mt-0.5 text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>
-            We sent a link to <span className="font-medium">{email}</span>. Until it’s confirmed we can’t
-            email you when a rule trips.
-          </p>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={resend}
-        disabled={sending || cooldown > 0}
-        className="flex-shrink-0 rounded-xl px-4 py-2.5 text-[13px] font-bold transition-colors disabled:opacity-50"
-        style={{ backgroundColor: 'var(--amber-tint)', color: 'var(--amber)' }}
-      >
-        {cooldown > 0 ? `Resend in ${cooldown}s` : sending ? 'Sending…' : 'Resend email'}
-      </button>
-    </motion.div>
+    <NoticeCard
+      title="Confirm your email so we can alert you"
+      body={<>We sent a link to <b style={{ color: 'var(--ink)' }}>{email}</b>. Until it’s confirmed we can’t email you when a rule trips.</>}
+      cta={{ label: cooldown > 0 ? `Resend in ${cooldown}s` : sending ? 'Sending…' : 'Resend email', onClick: resend, disabled: sending || cooldown > 0, arrow: false }}
+      style={{ marginBottom: 20 }}
+    />
   );
 }

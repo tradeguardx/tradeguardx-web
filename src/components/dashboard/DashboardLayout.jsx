@@ -188,13 +188,16 @@ function Shell() {
           </div>
           {/* The band waits for `ready` too: a band that appears, changes
               colour and then disappears is the flicker this gate removes. */}
-          {!setupFlow && ready && <GuardBand />}
         </header>
 
         <BreachToast />
 
         <main ref={mainRef} data-tgx-main="1" key={pathname} style={sx('flex:1;padding:26px 24px 64px;max-width:1240px;width:100%;margin:0 auto;animation:tgxSlide .22s ease-out')}>
           <VerifyEmailBanner />
+          {/* The notice is a card at the top of the page, not a strip in the
+              header. It waits for `ready` (no flicker), and steps aside on a
+              locked page, whose lock card already makes the same ask. */}
+          {!setupFlow && ready && !(lockedRoute && life?.lock) && <GuardBand />}
           {/* The trial banner used to sit here, directly under the guard band
               and the same size as it — two alarms competing. It is now a line
               inside GuardBand. */}
