@@ -114,12 +114,12 @@ export default function RevengeReportPage() {
   const planOff = life?.unprotected || life?.setup;
 
   if (!accountId && accountsLoading) return <PageShell><Placeholder /></PageShell>;
+  // No account yet: the same teaser, asking them to finish setup.
   if (!accountId) {
     return (
       <PageShell>
-        <p style={sx('margin:10px 0 0;font-size:14px;color:var(--ink-3)')}>
-          Add a trading account and connect its key, and we’ll show you how you trade after a loss. <Link to="/dashboard/setup" style={sx('color:var(--mint);font-weight:700')}>Set up</Link>
-        </p>
+        <RevengeStyles />
+        <RevengeLocked keyState="noAccount" />
       </PageShell>
     );
   }

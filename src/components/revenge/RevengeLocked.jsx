@@ -28,7 +28,9 @@ function Lock({ size = 14 }) {
 }
 
 export default function RevengeLocked({ months, onMonths, onUnlock, keyState, accountName, exchangeName }) {
-  const noKey = keyState === 'none' || keyState === 'failed';
+  // 'noAccount': nothing set up yet — same teaser, the action is to finish setup.
+  const noAccount = keyState === 'noAccount';
+  const noKey = noAccount || keyState === 'none' || keyState === 'failed';
 
   return (
     <section className="rv-in" style={sx(`margin-top:20px;padding:30px 24px 28px;${CARD};position:relative;overflow:hidden`)}>
@@ -52,7 +54,7 @@ export default function RevengeLocked({ months, onMonths, onUnlock, keyState, ac
 
         <h2 style={sx("margin:18px 0 0;font:600 23px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>Know your revenge score</h2>
         <p style={sx('margin:8px 0 0;max-width:52ch;font-size:14px;line-height:1.6;color:var(--ink-2)')}>
-          We look at your own trades on {accountName ? <b>{accountName}</b> : 'this account'} and show you what you do after a loss.
+          We look at your own trades {noAccount ? 'on your exchange' : <>on {accountName ? <b>{accountName}</b> : 'this account'}</>} and show you what you do after a loss.
         </p>
       </div>
 
@@ -77,11 +79,14 @@ export default function RevengeLocked({ months, onMonths, onUnlock, keyState, ac
         {noKey ? (
           <>
             <p style={sx('margin:0;font-size:12.5px;color:var(--ink-3)')}>
-              {keyState === 'failed' ? 'Your key is disconnected, so we can’t see your trades.' : `Connect your ${exchangeName || 'exchange'} key first, so we can see your trades.`}
+              {noAccount
+                ? 'Add your trading account and connect its key — then we can show your score.'
+                : keyState === 'failed' ? 'Your key is disconnected, so we can’t see your trades.' : `Connect your ${exchangeName || 'exchange'} key first, so we can see your trades.`}
             </p>
-            <Link to="/dashboard/connect" style={sx('margin-top:14px;min-height:46px;padding:12px 22px;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14.5px;font-weight:800;text-decoration:none')}>
-              {keyState === 'failed' ? 'Reconnect key' : 'Connect key'}
+            <Link to={noAccount ? '/dashboard/setup' : '/dashboard/connect'} style={sx('margin-top:14px;min-height:46px;padding:12px 22px;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14.5px;font-weight:800;text-decoration:none')}>
+              {noAccount ? 'Complete setup' : keyState === 'failed' ? 'Reconnect key' : 'Connect key'}
             </Link>
+            {noAccount && <p style={sx('margin:11px 0 0;font-size:11.5px;color:var(--ink-faint)')}>About three minutes. Your score is ready the moment your key connects.</p>}
           </>
         ) : (
           <>
