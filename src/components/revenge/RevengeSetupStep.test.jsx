@@ -63,4 +63,17 @@ describe('setup: the revenge report between the key and billing', () => {
     await waitFor(() => expect(unlockRevengeReport).toHaveBeenCalledTimes(1));
     expect(await screen.findByText('Your revenge report is unlocked', {}, { timeout: 5000 })).toBeTruthy();
   });
+  it('hands the report up, and shows it at once when they come back to it', async () => {
+    const onReport = vi.fn();
+    const { unmount } = render(<MemoryRouter><RevengeSetupStep accessToken="t" tradingAccountId="a1" onContinue={vi.fn()} onReport={onReport} /></MemoryRouter>);
+    await waitFor(() => expect(onReport).toHaveBeenCalledWith({ report, months: 1 }), { timeout: 5000 });
+    unmount();
+    unlockRevengeReport.mockClear();
+    fetchRevengeReport.mockClear();
+    render(<MemoryRouter><RevengeSetupStep accessToken="t" tradingAccountId="a1" onContinue={vi.fn()} initial={{ report, months: 1 }} /></MemoryRouter>);
+    expect(screen.getByText('Your revenge report is unlocked')).toBeTruthy();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(unlockRevengeReport).not.toHaveBeenCalled();
+    expect(fetchRevengeReport).not.toHaveBeenCalled();
+  });
 });

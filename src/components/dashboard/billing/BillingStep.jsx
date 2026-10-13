@@ -6,6 +6,8 @@ import { getPricingPlans } from '../../../api/pricingApi';
 import { trackBilling } from '../../../lib/analytics';
 import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
 import { PROTECTIONS, GLYPH } from './billingContent';
+import { Chip, ScoreRing } from '../../revenge/RevengeParts';
+import { GRADE, PERIODS } from '../../revenge/revengeFormat';
 
 /**
  * Setup step 4 — the only screen in the product that asks for money.
@@ -69,8 +71,11 @@ const fmtDay = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'sh
  *
  * `onBack` — setup only: this step fills the screen, so it carries its own
  * way back to the revenge score. Plan & billing passes nothing.
+ * `revenge` — the report setup just showed. With it, the way back is the
+ * score itself: the reason for the trial, one tap from the button that
+ * starts it. Without it (skipped, too few trades), a plain back link.
  */
-export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onBack }) {
+export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onBack, revenge }) {
   const navigate = useNavigate();
   const { user, session } = useAuth();
   const [plans, setPlans] = useState([]);
@@ -389,11 +394,11 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
             * one makes the same point where it is being demonstrated.
             */}
           <div style={{ marginTop: 0, marginBottom: 22, maxWidth: 720 }}>
-            {onBack && (
-              <button type="button" onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: '0 0 14px', padding: '6px 0', border: 0, background: 'none', color: 'var(--ink-3)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                ← Back to your revenge score
+            {onBack && (revenge ? <ScoreReminder report={revenge} onBack={onBack} /> : (
+              <button type="button" onClick={onBack} className="bs-back" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, margin: '0 0 16px', padding: '7px 12px 7px 10px', border: '1px solid var(--line-strong)', borderRadius: 999, background: 'var(--surface)', color: 'var(--ink-2)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                <span aria-hidden>←</span> Back to your revenge score
               </button>
-            )}
+            ))}
             <div style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--mint)' }}>
               {stepsDone >= LAST ? `Step ${LAST + 1} of ${LAST + 1} · Last step` : `Step ${LAST + 1} of ${LAST + 1}`}
             </div>
@@ -715,5 +720,39 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
 
       </div>
     </div>
+  );
+}
+
+/* Setup's free-trial step: the score they just saw, small, as the way back.
+   The whole card is the button — a 52px ring is an easy target on a phone. */
+function ScoreReminder({ report, onBack }) {
+  const grade = report.grade ? GRADE[report.grade] : null;
+  const period = PERIODS.find((p) => p.months === report.months)?.label;
+  return (
+    <button
+      type="button"
+      onClick={onBack}
+      aria-label={`Back to your revenge score: ${report.score} out of 100`}
+      className="bs-back"
+      style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', maxWidth: 620, margin: '0 0 22px', padding: '12px 16px 12px 12px', border: '1px solid var(--line)', borderRadius: 16, background: 'var(--surface)', boxShadow: 'var(--shadow-card)', textAlign: 'left', cursor: 'pointer', color: 'var(--ink)' }}
+    >
+      <ScoreRing score={report.score} tone={grade?.tone ?? 'neutral'} size={52} />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>
+            Your revenge score{period ? ` · ${period}` : ''}
+          </span>
+          {grade && <Chip tone={grade.tone}>{grade.label}</Chip>}
+        </span>
+        {report.verdict && (
+          <span style={{ display: 'block', marginTop: 6, fontSize: 13.5, lineHeight: 1.4, fontWeight: 600, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {report.verdict}
+          </span>
+        )}
+      </span>
+      <span style={{ flex: 'none', fontSize: 12.5, fontWeight: 700, color: 'var(--mint)' }}>
+        <span aria-hidden>←</span><span className="bs-back__cta"> See my report</span>
+      </span>
+    </button>
   );
 }

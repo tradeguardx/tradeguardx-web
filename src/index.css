@@ -1804,6 +1804,11 @@
    overflowed the viewport on mobile and gave the whole page a sideways
    scroll. */
 .bs-band{margin:0 -24px;padding:13px 24px}
+.bs-back{transition:border-color .15s,transform .15s,box-shadow .15s}
+.bs-back:hover{border-color:var(--mint-line);transform:translateY(-1px)}
+.bs-back:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.bs-back:hover{transform:none}}
+@media (max-width:480px){.bs-back__cta{display:none}}
 @media (max-width:900px){
   .bs-band{margin:0 -15px;padding:12px 15px}
 }

@@ -203,6 +203,11 @@ export default function SetupPage() {
   const at = pickedStep ?? Math.max(0, firstUndone);
   const step = STEPS[at];
 
+  /* The report step's result, kept here so the free-trial step can show the
+     score and "back" reopens it without reading the exchange again. */
+  const [revenge, setRevenge] = useState(null);
+  const revengeHere = revenge && revenge.accountId === selectedAccount?.id ? revenge : null;
+
   const go = (i) => {
     setPickedStep(i);
     /* Each step starts at the top. Guarded because jsdom has no scrollTo and
@@ -266,7 +271,13 @@ export default function SetupPage() {
    * step replaces them.
    */
   if (at === 4) {
-    return <BillingStep onStarted={() => setPickedStep(4)} onBack={() => go(3)} />;
+    return (
+      <BillingStep
+        onStarted={() => setPickedStep(4)}
+        onBack={() => go(3)}
+        revenge={revengeHere?.report?.enoughData ? { ...revengeHere.report, months: revengeHere.months } : null}
+      />
+    );
   }
 
   return (
@@ -331,6 +342,8 @@ export default function SetupPage() {
           exchangeName={(venue ?? (selectedAccount.propFirmSlug ? venueFor(selectedAccount.propFirmSlug) : null))?.name}
           onContinue={afterKey}
           continueLabel={planOff || hasMandate ? 'Go to your dashboard' : undefined}
+          initial={revengeHere}
+          onReport={(r) => setRevenge({ ...r, accountId: selectedAccount.id })}
         />
       ) : (
         /* No account to read yet: never a dead end — the way on is still here. */

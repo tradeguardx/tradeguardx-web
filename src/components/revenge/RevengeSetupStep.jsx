@@ -16,16 +16,26 @@ import RevengeReportView from './RevengeReportView';
  * unlocks with the score counting up and the one finding that matters most.
  * The full report is a tap away; "Fix this" carries on to billing. Skipping
  * is always one click: this step informs, it never blocks.
+ *
+ * `initial` — the report this step already showed ({ report, months }), when
+ * they come back from the free-trial step: shown at once, no second read.
+ * `onReport` hands each finished report up, so that step can show the score.
  */
-export default function RevengeSetupStep({ accessToken, tradingAccountId, accountName, exchangeName, onContinue, continueLabel }) {
+export default function RevengeSetupStep({ accessToken, tradingAccountId, accountName, exchangeName, onContinue, continueLabel, initial, onReport }) {
   const unlock = useRevengeUnlock({ accessToken, tradingAccountId });
-  const [report, setReport] = useState(null);
-  const [months, setMonths] = useState(1);
+  const [report, setReportRaw] = useState(initial?.report ?? null);
+  const [months, setMonths] = useState(initial?.months ?? 1);
   const [full, setFull] = useState(false);
-  const started = useRef(false);
+  const started = useRef(Boolean(initial?.report));
+  const onReportRef = useRef(onReport);
+  useEffect(() => { onReportRef.current = onReport; }, [onReport]);
+  const setReport = (r, m) => {
+    setReportRaw(r);
+    onReportRef.current?.({ report: r, months: m });
+  };
 
   useEffect(() => {
-    if (!accessToken || !tradingAccountId) return undefined;
+    if (!accessToken || !tradingAccountId || started.current) return undefined;
     /* Marked started INSIDE the timeout, not before it: React's dev double
        mount cancels the first timeout, and a flag set outside it made the
        second mount think the read had begun — an animation that never asked
@@ -43,15 +53,16 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
         const r = await fetchRevengeReport({ accessToken, tradingAccountId, months: m }).catch(() => null);
         if (r && !r.locked && !r.building && !r.needsUnlock && (r.enoughData || m === 3)) {
           setMonths(m);
-          setReport(r);
+          setReport(r, m);
           return;
         }
       }
-      setReport({ trades: 0, enoughData: false });
+      setReport({ trades: 0, enoughData: false }, 3);
     }, 0);
     return () => clearTimeout(t);
   }, [accessToken, tradingAccountId, unlock]);
 
+  const ready = Boolean(report) && (unlock.phase === 'ready' || Boolean(initial?.report));
   const grade = report?.grade ? GRADE[report.grade] : null;
   const worst = report?.checks?.find((c) => c.status === 'problem') ?? report?.checks?.find((c) => c.status === 'warning') ?? null;
   const skip = (
@@ -63,7 +74,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
   return (
     <div>
       <RevengeStyles />
-      {unlock.phase !== 'ready' || !report ? (
+      {!ready ? (
         unlock.phase === 'error' ? (
           <div style={sx(`padding:24px;${CARD};text-align:center`)}>
             <div style={sx("font:600 18px/1.3 'Space Grotesk',sans-serif")}>We couldn’t read your trades just now</div>

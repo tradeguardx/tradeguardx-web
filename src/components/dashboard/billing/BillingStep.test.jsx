@@ -108,6 +108,15 @@ describe('billing step', () => {
     expect(screen.queryByRole('button', { name: /back to your revenge score/i })).toBeNull();
   });
 
+  it('in setup, shows the score they just saw as the way back', () => {
+    const onBack = vi.fn();
+    render(<BillingStep onBack={onBack} revenge={{ score: 41, grade: 'revengeProne', verdict: 'You trade again within minutes of a loss.', months: 1 }} />);
+    expect(screen.getByText('You trade again within minutes of a loss.')).toBeTruthy();
+    expect(screen.getByText('Revenge-prone')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /back to your revenge score: 41 out of 100/i }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
   it('starts on monthly and prices the button accordingly', async () => {
     render(<BillingStep />);
     expect(await screen.findByRole('radio', { name: /Monthly/ })).toHaveAttribute('aria-checked', 'true');
