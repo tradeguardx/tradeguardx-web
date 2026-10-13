@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { sx } from '../dashboard/shell/sx';
 import { CARD, LABEL, RULE_NAME, rulesFrom, toneBg, toneFg } from './revengeFormat';
@@ -37,6 +38,7 @@ export function RuleChips({ report }) {
  * `cta` — { label, onClick } or { label, to }, `note`, `trial`.
  */
 export default function RulePlan({ report, cta, enterProps = {} }) {
+  const { ref, scope } = useOppositeTheme();
   const { calm, rules } = rulesFrom(report);
   if (!rules.length) return null;
   const n = rules.length;
@@ -51,7 +53,10 @@ export default function RulePlan({ report, cta, enterProps = {} }) {
   const btnInner = <>{switches && <Power />}{label}</>;
 
   return (
-    <section {...enterProps} className={`rv-plan ${enterProps.className ?? ''}`} style={sx(`margin-top:28px;${CARD};overflow:hidden;position:relative`, enterProps.style ?? {})}>
+    /* The offer, in the page's opposite theme — a light panel on the dark
+       dashboard, a dark one on the light — so it reads as the thing being
+       offered, not one more section of the report. */
+    <section ref={ref} {...scope} {...enterProps} className={`rv-plan ${enterProps.className ?? ''}`} style={sx(`margin-top:32px;${CARD};overflow:hidden;position:relative;color:var(--ink);box-shadow:0 30px 70px -30px rgba(0,0,0,.55),0 0 0 1px var(--mint-line)`, enterProps.style ?? {})}>
       <div style={sx('position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 50% at 50% 0%,var(--mint-tint),transparent 70%)')} />
       <div style={sx('position:relative;padding:26px 24px 4px')}>
         <span style={sx(LABEL)}>Your rule plan</span>
@@ -82,6 +87,23 @@ export default function RulePlan({ report, cta, enterProps = {} }) {
       ) : <div style={sx('height:24px')} />}
     </section>
   );
+}
+
+/* Flip the nearest dashboard theme for one subtree. The tokens are scoped by
+   [data-dash-theme] (and the accent by [data-accent] beside it), so setting
+   both on the section re-themes everything inside it. Read before paint; with
+   no dashboard above (tests, a bare page) nothing changes. */
+function useOppositeTheme() {
+  const ref = useRef(null);
+  const [scope, setScope] = useState({});
+  useLayoutEffect(() => {
+    const host = ref.current?.parentElement?.closest('[data-dash-theme]');
+    if (!host) return;
+    const flipped = host.getAttribute('data-dash-theme') === 'light' ? 'dark' : 'light';
+    const accent = host.getAttribute('data-accent');
+    setScope({ 'data-dash-theme': flipped, ...(accent ? { 'data-accent': accent } : {}) });
+  }, []);
+  return { ref, scope };
 }
 
 const TONE = { problem: 'red', warning: 'amber', good: 'mint' };
