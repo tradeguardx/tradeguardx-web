@@ -54,7 +54,7 @@ describe('billing step', () => {
   it('says what the step is and what it costs', async () => {
     render(<BillingStep />);
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
-      /Set up billing and get 7 days free/,
+      /Start your 7-day free trial/,
     );
     expect(screen.getByText('Pay ₹0 today')).toBeTruthy();
     // The date and amount of the first debit, once the server has answered.
@@ -418,8 +418,9 @@ describe('billing step — the free window it promises', () => {
     await show();
     /* Both the headline and the button carry it — someone who scrolls past
        one must not be able to read the other and get a different number. */
-    expect((await screen.findAllByText(/4 days free/)).length).toBeGreaterThanOrEqual(2);
-    expect(screen.queryByText(/7 days free/)).toBeNull();
+    expect(await screen.findByText(/4-day free trial/)).toBeTruthy(); // headline
+    expect(screen.getAllByText(/4 days free/).length).toBeGreaterThanOrEqual(1); // button
+    expect(screen.queryByText(/7 days free|7-day free trial/)).toBeNull();
   });
 
   it('says "1 day", not "1 days", on the last day', async () => {
@@ -449,7 +450,7 @@ describe('billing step — the free window it promises', () => {
   it('states no day count until the server has answered', async () => {
     eligibility = new Promise(() => {});
     render(<BillingStep />);
-    expect(await screen.findByText(/your free trial/i)).toBeTruthy();
-    expect(screen.queryByText(/7 days free/)).toBeNull();
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Start your free trial/i);
+    expect(screen.queryByText(/\d+ days free|\d+-day free trial/)).toBeNull();
   });
 });

@@ -37,7 +37,7 @@ function Glyph({ d, size = 15, width = 2 }) {
   );
 }
 
-const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Set up billing'];
+const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Start free trial'];
 
 /* Fallbacks only. The pricing endpoint wins — see `options`. */
 const PLAN_FALLBACK = [
@@ -390,12 +390,13 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = 3 }) {
             </div>
             <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.4vw,28px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.03em', textWrap: 'pretty' }}>
               {charged
-                ? 'Set up billing to keep your guard on'
+                ? 'Subscribe to switch your guard on'
                 : (
+                  /* Lead with what they get, not the chore: a trial, not "billing". */
                   <>
-                    Set up billing and get{' '}
+                    Start your{' '}
                     <span style={{ color: 'var(--mint)' }}>
-                      {freeDays == null ? 'your free trial' : `${freeDays} day${freeDays === 1 ? '' : 's'} free`}
+                      {freeDays == null ? 'free trial' : `${freeDays}-day free trial`}
                     </span>
                   </>
                 )}

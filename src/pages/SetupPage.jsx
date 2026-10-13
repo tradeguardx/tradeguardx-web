@@ -61,7 +61,7 @@ const STEPS = [
   { key: 'venue', label: 'Choose exchange', h: 'Which exchange do you trade on?', p: 'This is the account the guard will watch. You can add others later.' },
   { key: 'name', label: 'Name account', h: 'Name the account', p: 'Just a label so you can tell this account from the others. The key comes next.' },
   { key: 'key', label: 'Connect key', h: 'Connect the key', p: 'This is the step that makes your rules real. Until it is done the account is listed here but nothing is watching it.' },
-  { key: 'billing', label: 'Set up billing', h: 'Set up billing', p: 'Free for 3 days and nothing is charged today. The guard only runs once this is done.' },
+  { key: 'billing', label: 'Start free trial', h: 'Start your free trial', p: 'Free for 3 days and nothing is charged today. The guard only runs once this is done.' },
 ];
 
 function Rail({ at, done }) {

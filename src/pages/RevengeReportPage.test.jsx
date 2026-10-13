@@ -97,12 +97,12 @@ describe('revenge report page', () => {
     expect(await screen.findByText('After a loss, you trade to get it back.')).toBeTruthy();
   });
 
-  it('no account yet: the same teaser, asking them to complete setup', async () => {
+  it('no account yet: the same teaser, leading into setup', async () => {
     const ctx = await import('../context/TradingAccountContext');
     const spy = vi.spyOn(ctx, 'useTradingAccounts').mockReturnValue({ selectedTradingAccountId: '', selectedAccount: null, accountsLoading: false });
     mount();
     expect(await screen.findByText('Know your revenge score')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Complete setup' }).getAttribute('href')).toBe('/dashboard/setup');
+    expect(screen.getByRole('link', { name: 'Get my revenge score' }).getAttribute('href')).toBe('/dashboard/setup');
     spy.mockRestore();
   });
 });

@@ -84,7 +84,7 @@ export default function RevengeLocked({ months, onMonths, onUnlock, keyState, ac
                 : keyState === 'failed' ? 'Your key is disconnected, so we can’t see your trades.' : `Connect your ${exchangeName || 'exchange'} key first, so we can see your trades.`}
             </p>
             <Link to={noAccount ? '/dashboard/setup' : '/dashboard/connect'} style={sx('margin-top:14px;min-height:46px;padding:12px 22px;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14.5px;font-weight:800;text-decoration:none')}>
-              {noAccount ? 'Complete setup' : keyState === 'failed' ? 'Reconnect key' : 'Connect key'}
+              {noAccount ? 'Get my revenge score' : keyState === 'failed' ? 'Reconnect key' : 'Connect key'}
             </Link>
             {noAccount && <p style={sx('margin:11px 0 0;font-size:11.5px;color:var(--ink-faint)')}>About three minutes. Your score is ready the moment your key connects.</p>}
           </>
