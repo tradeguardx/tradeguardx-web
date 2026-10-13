@@ -118,4 +118,11 @@ describe('revenge report page', () => {
     expect(screen.getByRole('link', { name: 'Get my revenge score' }).getAttribute('href')).toBe('/dashboard/setup');
     spy.mockRestore();
   });
+  it('shares the score: a button on the score card opens the share card, money hidden', async () => {
+    mount();
+    fireEvent.click(await screen.findByRole('button', { name: /Share my score/ }));
+    expect(screen.getByRole('dialog', { name: 'Share your revenge score' })).toBeTruthy();
+    expect(screen.getByRole('switch', { name: /Show ₹ amounts/ }).getAttribute('aria-checked')).toBe('false');
+    expect(screen.getByText(/My revenge score: 38\/100/)).toBeTruthy();
+  });
 });

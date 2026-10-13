@@ -14,6 +14,8 @@ import { RevengeStyles } from '../components/revenge/RevengeParts';
 import RevengeReportView from '../components/revenge/RevengeReportView';
 import RevengeBuilding from '../components/revenge/RevengeBuilding';
 import RevengeLocked from '../components/revenge/RevengeLocked';
+import RevengeShareModal from '../components/revenge/RevengeShareModal';
+import { handleFrom } from '../hooks/useShareData';
 
 /**
  * THE REVENGE REPORT — how someone trades after a loss, scored like an SEO
@@ -34,7 +36,8 @@ import RevengeLocked from '../components/revenge/RevengeLocked';
  * server (trade-service services/revengeReport); this page lays it out.
  */
 export default function RevengeReportPage() {
-  const { session } = useAuth();
+  const { session, user } = useAuth();
+  const [sharing, setSharing] = useState(false);
   const { selectedAccount, selectedTradingAccountId, accountsLoading } = useTradingAccounts();
   const { selected: guardSel, life } = useGuard();
   const accessToken = session?.access_token;
@@ -183,6 +186,7 @@ export default function RevengeReportPage() {
               periodLabel={period?.label}
               months={months}
               reveal={reveal}
+              onShare={() => setSharing(true)}
               cta={planOff
                 ? { label: 'Start my 3-day free trial →', to: '/dashboard/account/billing', note: '₹0 today · you set each limit on the Rules page', trial: true }
                 : { label: 'Set up these rules →', to: '/dashboard/rules' }}
@@ -192,6 +196,7 @@ export default function RevengeReportPage() {
       ) : (
         <Placeholder />
       )}
+      <RevengeShareModal open={sharing} onClose={() => setSharing(false)} report={report} periodLabel={period?.label} handle={handleFrom(user)} />
     </PageShell>
   );
 }

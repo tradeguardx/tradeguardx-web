@@ -12,7 +12,7 @@ const RANK = { problem: 0, warning: 1, good: 2, na: 3 };
  * `reveal`: the moment it unlocks — the score counts up and each section
  * drops in after the one before. Otherwise it simply renders.
  */
-export default function RevengeReportView({ report, periodLabel, months = 1, reveal = false, animateScore = reveal, cta }) {
+export default function RevengeReportView({ report, periodLabel, months = 1, reveal = false, animateScore = reveal, cta, onShare }) {
   const money = moneyOf(report?.currency);
   const grade = report?.grade ? GRADE[report.grade] : null;
   const p = report.profile;
@@ -35,6 +35,13 @@ export default function RevengeReportView({ report, periodLabel, months = 1, rev
             {report.enoughData ? ` · ${report.revengeTrades} revenge trade${report.revengeTrades === 1 ? '' : 's'}` : ''} · 100 means you never chase a loss.
           </div>
         </div>
+        {/* Only a scored report is worth posting: a "not enough trades" card says nothing. */}
+        {onShare && report.enoughData && (
+          <button type="button" onClick={onShare} className="rv-share-btn rv-full-sm" style={sx('flex:none;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:11px 18px;border:1px solid var(--mint-line);border-radius:12px;background:var(--mint-tint);color:var(--mint);font-size:13.5px;font-weight:800;cursor:pointer')}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13" /></svg>
+            Share my score
+          </button>
+        )}
       </section>
 
       {report.insights?.length > 0 && (
