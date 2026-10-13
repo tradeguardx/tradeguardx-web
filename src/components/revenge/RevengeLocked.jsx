@@ -13,10 +13,10 @@ import { CARD, PERIODS } from './revengeFormat';
  * answer is waiting, not what it is.
  */
 const TEASERS = [
-  { q: 'How fast do you jump back in after a loss?', a: '●● min', icon: 'M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { q: 'Which hour of the day costs you the most?', a: '●●:00 – ●●:00', icon: 'M4 19h16M7 16V9m5 7V5m5 11v-4' },
-  { q: 'Which coin bleeds you the most?', a: '●●●●USDT', icon: 'M12 3v18M17 7.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.8 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3' },
-  { q: 'What did revenge trades cost you?', a: '₹●●,●●●', icon: 'M3 17l6-6 4 4 8-8M15 7h6v6' },
+  { q: 'How fast you trade again after a loss', a: '●● min', icon: 'M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { q: 'Your worst time to trade', a: '●●:00 – ●●:00', icon: 'M4 19h16M7 16V9m5 7V5m5 11v-4' },
+  { q: 'The coin you lose most on', a: '●●●●USDT', icon: 'M12 3v18M17 7.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.8 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3' },
+  { q: 'Money lost to revenge trades', a: '₹●●,●●●', icon: 'M3 17l6-6 4 4 8-8M15 7h6v6' },
 ];
 
 function Lock({ size = 14 }) {
@@ -49,9 +49,9 @@ export default function RevengeLocked({ months, onMonths, onUnlock, keyState, ac
           </div>
         </div>
 
-        <h2 style={sx("margin:18px 0 0;font:600 23px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>What does a loss do to you?</h2>
+        <h2 style={sx("margin:18px 0 0;font:600 23px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>Know your revenge score</h2>
         <p style={sx('margin:8px 0 0;max-width:52ch;font-size:14px;line-height:1.6;color:var(--ink-2)')}>
-          Your revenge report reads your own trades on {accountName ? <b>{accountName}</b> : 'this account'} and answers the questions most traders never check — with a score, the proof, and the rule that fixes it.
+          We look at your own trades on {accountName ? <b>{accountName}</b> : 'this account'} and show you what you do after a loss.
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export default function RevengeLocked({ months, onMonths, onUnlock, keyState, ac
         {noKey ? (
           <>
             <p style={sx('margin:0;font-size:12.5px;color:var(--ink-3)')}>
-              {keyState === 'failed' ? 'This account’s key is disconnected, so we can’t read its trades.' : `Connect the ${exchangeName || 'exchange'} key for this account first — we read its trades from there.`}
+              {keyState === 'failed' ? 'Your key is disconnected, so we can’t see your trades.' : `Connect your ${exchangeName || 'exchange'} key first, so we can see your trades.`}
             </p>
             <Link to="/dashboard/connect" style={sx('margin-top:14px;min-height:46px;padding:12px 22px;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14.5px;font-weight:800;text-decoration:none')}>
               {keyState === 'failed' ? 'Reconnect key' : 'Connect key'}
@@ -104,9 +104,9 @@ export default function RevengeLocked({ months, onMonths, onUnlock, keyState, ac
               className="rv-motion"
               style={sx('margin-top:14px;display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:12px 26px;border:0;border-radius:13px;color:#02241d;font-size:15px;font-weight:800;cursor:pointer;background-size:200% 100%;animation:rvShine 2.8s linear infinite;box-shadow:var(--glow-mint)', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#7cf5dc 50%,var(--mint-solid) 60%)' })}
             >
-              <Lock size={16} /> Unlock my report
+              <Lock size={16} /> Show my revenge score
             </button>
-            <p style={sx('margin:11px 0 0;font-size:11.5px;color:var(--ink-faint)')}>Read-only · takes a few seconds · nothing on your account changes</p>
+            <p style={sx('margin:11px 0 0;font-size:11.5px;color:var(--ink-faint)')}>Takes a few seconds. We only read your trades.</p>
           </>
         )}
       </div>
