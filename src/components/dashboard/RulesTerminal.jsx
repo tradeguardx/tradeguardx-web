@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTradingAccounts } from '../../context/TradingAccountContext';
@@ -8,6 +8,7 @@ import { openSupport } from '../support/supportBus';
 import { useCooldown } from '../../hooks/useCooldown';
 import { useGuard } from '../../context/GuardContext';
 import { ruleLockNow } from '../../lib/guard';
+import { keyStateOf } from '../../lib/lifecycle';
 import { Icon, RULE_GLYPH, ICON, ruleAccent } from './shell/icons';
 import { sx } from './shell/sx';
 import { currencySymbol } from '../../lib/session';
@@ -224,7 +225,7 @@ function fieldDisplay(field, value, sym = '$') {
   return `${pre ? `${pre}` : ''}${value}${field.suffix ? ` ${field.suffix}` : ''}`;
 }
 
-function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, frozenNote, cooldownNote, expanded, onToggleExpand, enforcement, currency, viewOnly = false }) {
+function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, cooled, ruleLocked, lockNote, frozenNote, cooldownNote, expanded, onToggleExpand, enforcement, currency, viewOnly = false, viewOnlyWhy = 'plan', onViewOnlyPoke }) {
   // The account's settlement currency, not a constant: rule templates are
   // shared across venues but an amount is only meaningful in the currency the
   // account actually settles in.
@@ -346,7 +347,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
         <span data-tgx-rxstatus="1" style={sx('flex:none;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:999px', { background: tone.bg, color: tone.fg })}>{status}</span>
 
         {viewOnly ? (
-          <span role="switch" aria-checked={isOn} aria-disabled="true" title="Saved, not enforced while your plan is inactive" onClick={(e) => e.stopPropagation()} style={sx('flex:none;position:relative;display:block;width:38px;height:22px;border-radius:999px;border:1px solid var(--line);background:var(--surface-3);cursor:not-allowed;opacity:.6')}>
+          <span role="switch" aria-checked={isOn} aria-disabled="true" title={viewOnlyWhy === 'setup' ? 'Switches on once setup is finished' : 'Saved, not enforced while your plan is inactive'} onClick={(e) => { e.stopPropagation(); onViewOnlyPoke?.(); }} style={sx('flex:none;position:relative;display:block;width:38px;height:22px;border-radius:999px;border:1px solid var(--line);background:var(--surface-3);cursor:not-allowed;opacity:.6')}>
             <span style={sx('position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-faint)', { left: isOn ? '18px' : '2px' })} />
           </span>
         ) : onUnlocked ? (
@@ -424,7 +425,9 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
 
           {viewOnly ? (
             <div style={sx('padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
-              {isOn ? 'Saved and switched on — not enforced while your plan is inactive.' : 'Saved and switched off.'}
+              {viewOnlyWhy === 'setup'
+                ? <>You can switch this on and set its limits once setup is finished. <button type="button" onClick={onViewOnlyPoke} style={sx('padding:0;border:0;background:none;color:var(--mint);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer')}>What’s left?</button></>
+                : isOn ? 'Saved and switched on — not enforced while your plan is inactive.' : 'Saved and switched off.'}
             </div>
           ) : !isOn ? (
             <div style={sx('display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2);flex-wrap:wrap')}>
@@ -522,7 +525,18 @@ export default function RulesTerminal() {
   const { locked: cooldownLocked, untilMs: cooldownUntilMs, reason: cooldownReason } = useCooldown({ accessToken: session?.access_token, tradingAccountId: selectedTradingAccountId, account: selectedAccount });
   const { selected: guardSel, now: guardNow, subscribeTick, life } = useGuard();
   // No edit CTA here: the shell's band already offers Pay / Subscribe.
-  const rulesViewOnly = Boolean(life?.unprotected);
+  /* Setup not finished (no account, no key, or never started a trial): every
+     rule is shown, none can be switched — the card above them names the one
+     step left. A rule switched "on" with the guard off reads as protection
+     that is not there. */
+  const inSetup = Boolean(life?.setup);
+  const rulesViewOnly = Boolean(life?.unprotected) || inSetup;
+  const gateRef = useRef(null);
+  const [gatePulse, setGatePulse] = useState(0);
+  const pokeGate = useCallback(() => {
+    try { gateRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch { /* jsdom */ }
+    setGatePulse((n) => n + 1);
+  }, []);
   const cooled = cooldownLocked || guardSel.guard === 'locked';
   const [bundle, setBundle] = useState(null);
   const ruleLock = ruleLockNow(bundle?.ruleLock ?? null, guardNow);
@@ -651,6 +665,8 @@ export default function RulesTerminal() {
     isRetail: bundle?.isRetail, onSaved: load, cooled, ruleLocked, lockNote, frozenNote, cooldownNote, enforcement: guardSel.enforcement,
     expanded: expandedRuleId === rule.id, onToggleExpand: () => toggleExpandedRule(rule.id),
     viewOnly: rulesViewOnly,
+    viewOnlyWhy: inSetup ? 'setup' : 'plan',
+    onViewOnlyPoke: inSetup ? pokeGate : undefined,
     // Shark settles in INR. Without this the amount fields and summaries show
     // a dollar sign beside a number the engine enforces as rupees.
     currency: selectedAccount?.accountCurrency,
@@ -665,6 +681,8 @@ export default function RulesTerminal() {
           <p style={sx('margin:10px 0 0;font-size:13px;font-weight:600;color:var(--ink-2)')}>Rules are saved but not enforced while your plan is inactive.</p>
         )}
       </div>
+
+      {inSetup && <SetupGate ref={gateRef} pulse={gatePulse} lifeId={life.id} keyState={keyStateOf(guardSel?.connection)} onGo={() => navigate('/dashboard/setup')} />}
 
       <section style={sx('margin-bottom:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
         <div style={sx('display:flex;align-items:center;gap:12px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap')}>
@@ -754,3 +772,45 @@ export default function RulesTerminal() {
     </div>
   );
 }
+
+/* The one step setup still needs, above the rules it unlocks. */
+const SETUP_STEP_NAMES = ['Exchange', 'Account', 'Key', 'Revenge score', 'Free trial'];
+function setupGateCopy(lifeId, keyState) {
+  if (lifeId === 's0') return { step: 1, title: 'Add your trading account to use these rules', body: 'Pick your exchange and name the account — about a minute. Every rule below switches on with your 3-day free trial.', cta: 'Continue setup' };
+  if (lifeId === 's2') {
+    return keyState === 'failed'
+      ? { step: 3, title: 'Reconnect your key to use these rules', body: 'Your key is disconnected, so no rule can act on your trades. Reconnect it, then start your free trial.', cta: 'Reconnect key' }
+      : { step: 3, title: 'Connect your exchange key to use these rules', body: 'Rules act through your key — closing positions and locking the account when a limit is hit. Two minutes, then your free trial.', cta: 'Connect key' };
+  }
+  return { step: 5, title: 'Your rules switch on with your free trial', body: 'Your key is connected. Start your 3-day free trial — ₹0 today — then switch on the rules you want and set your limits.', cta: 'Start free trial' };
+}
+
+const SetupGate = forwardRef(function SetupGate({ lifeId, keyState, pulse, onGo }, ref) {
+  const c = setupGateCopy(lifeId, keyState);
+  return (
+    <section ref={ref} key={pulse} className={pulse ? 'rt-gate rt-gate--poke' : 'rt-gate'} style={sx('position:relative;margin-bottom:18px;padding:20px 22px;border:1px solid var(--mint-line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
+      <div aria-hidden style={sx('position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 90% at 0% 0%,var(--mint-tint),transparent 70%)')} />
+      <div style={sx('position:relative;display:flex;align-items:center;gap:18px;flex-wrap:wrap')}>
+        <div style={sx('flex:1;min-width:min(300px,100%)')}>
+          <div style={sx("font:600 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--mint)")}>Setup · step {c.step} of 5</div>
+          <h2 style={sx("margin:9px 0 0;font:600 19px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>{c.title}</h2>
+          <p style={sx('margin:6px 0 0;max-width:62ch;font-size:13px;line-height:1.55;color:var(--ink-2)')}>{c.body}</p>
+          <ol aria-label="Setup progress" style={sx('margin:14px 0 0;padding:0;list-style:none;display:flex;gap:6px;max-width:420px')}>
+            {SETUP_STEP_NAMES.map((name, i) => {
+              const done = i < c.step - 1;
+              const here = i === c.step - 1;
+              return (
+                <li key={name} title={name} aria-current={here ? 'step' : undefined} style={sx('flex:1;height:5px;border-radius:999px', { background: done ? 'var(--mint-solid)' : here ? 'var(--mint-line)' : 'var(--surface-3)' })}>
+                  <span style={sx('position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)')}>{name}{done ? ' — done' : here ? ' — next' : ''}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+        <button type="button" onClick={onGo} style={sx('flex:none;min-height:46px;padding:12px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint)')}>
+          {c.cta} →
+        </button>
+      </div>
+    </section>
+  );
+});

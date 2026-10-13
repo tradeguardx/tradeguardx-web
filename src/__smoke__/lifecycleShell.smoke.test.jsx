@@ -126,6 +126,25 @@ const cancelled = { ...base, planState: 'pc', planProtected: true, planStateEnds
 
 beforeEach(() => { localStorage.clear(); });
 
+describe('key connected, never started a trial (s3)', () => {
+  beforeEach(() => { auth.user = { ...base, planState: 'none', planProtected: false, access: 'none' }; });
+
+  it('shows every rule, none switchable, under the one step left', async () => {
+    mount('/dashboard/rules');
+    await waitFor(() => expect(screen.getByText('Your rules switch on with your free trial')).toBeTruthy());
+    expect(screen.getAllByText('Setup · step 5 of 5').length).toBeGreaterThan(1); // logo line and the card
+    expect(screen.getByRole('button', { name: 'Start free trial →' })).toBeTruthy();
+    expect(screen.getByText('Daily loss protection')).toBeTruthy();
+    expect(screen.getByText('Max trades per day')).toBeTruthy();
+    for (const sw of screen.getAllByRole('switch')) expect(sw.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('locks All trades until the trial starts', async () => {
+    mount('/dashboard/trades');
+    await waitFor(() => expect(screen.getAllByText('Starts with your free trial').length).toBeGreaterThan(0));
+  });
+});
+
 describe('payment failed (pf)', () => {
   beforeEach(() => { auth.user = failed; });
 
