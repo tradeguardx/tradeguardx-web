@@ -14,6 +14,7 @@ export function RevengeStyles() {
 @keyframes rvFadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes rvUnblur{from{filter:blur(14px);opacity:.35}to{filter:blur(0);opacity:1}}
 @keyframes rvSweep{to{transform:rotate(360deg)}}
+@keyframes rvBlink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
 @keyframes rvPulse{0%,100%{opacity:.35}50%{opacity:1}}
 @keyframes rvBar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
 @keyframes rvShine{from{background-position:-200% 0}to{background-position:200% 0}}

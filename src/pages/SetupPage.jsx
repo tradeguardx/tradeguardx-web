@@ -285,7 +285,7 @@ export default function SetupPage() {
       <header style={sx('margin-bottom:20px')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Set up your guard</h1>
         <p style={sx('margin:7px 0 0;font-size:13.5px;color:var(--ink-3)')}>
-          Four steps. Until they are done nothing is watching your account. Rules and alerts come after.
+          Five steps, about three minutes. Until they are done nothing is watching your account.
         </p>
         {venue && (
           <div style={sx('display:flex;align-items:center;gap:10px;margin-top:16px')}>

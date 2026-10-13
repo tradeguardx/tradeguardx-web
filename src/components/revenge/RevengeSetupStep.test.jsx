@@ -76,4 +76,28 @@ describe('setup: the revenge report between the key and billing', () => {
     expect(unlockRevengeReport).not.toHaveBeenCalled();
     expect(fetchRevengeReport).not.toHaveBeenCalled();
   });
+  it('shows the damage, the last time it happened, and that the guard is off', async () => {
+    const withEvidence = {
+      ...report,
+      worstDay: { date: '2026-10-03', pnl: -48.5, firstLoss: -2.1, afterFirstLoss: -40, timeline: [] },
+      checks: [
+        { ...report.checks[0], evidence: [{ at: '2026-10-03T16:30:00Z', symbol: 'PAXGUSD', text: 'Lost $2.10 on PAXGUSD, opened PAXGUSD 2 min later → −$3.40', pnl: -3.4 }] },
+        { id: 'cost', title: 'Cost of revenge', weight: 15, status: 'problem', value: 41, unit: '%', finding: '', evidence: [], fix: { rule: 'daily-loss', text: 'Daily loss limit: x' } },
+      ],
+    };
+    render(<MemoryRouter><RevengeSetupStep accessToken="t" tradingAccountId="a1" onContinue={vi.fn()} initial={{ report: withEvidence, months: 1 }} /></MemoryRouter>);
+    expect(screen.getByText('revenge trades')).toBeTruthy();
+    expect(screen.getByText('your worst day')).toBeTruthy();
+    expect(screen.getByText('41%')).toBeTruthy();
+    expect(screen.getByText('Lost $2.10 on PAXGUSD, opened PAXGUSD 2 min later → −$3.40')).toBeTruthy();
+    expect(screen.getByText(/The last time it happened/)).toBeTruthy();
+    expect(screen.getByText('Your guard is off.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Your worst day, trade by trade/ }));
+    expect(screen.getByRole('button', { name: 'Hide the full report' })).toBeTruthy();
+  });
+
+  it('no urgency line for someone already paying', () => {
+    render(<MemoryRouter><RevengeSetupStep accessToken="t" tradingAccountId="a1" onContinue={vi.fn()} continueLabel="Go to your dashboard" initial={{ report, months: 1 }} /></MemoryRouter>);
+    expect(screen.queryByText('Your guard is off.')).toBeNull();
+  });
 });
