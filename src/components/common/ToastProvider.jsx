@@ -28,9 +28,9 @@ const TONE = {
     ),
   },
   info: {
-    bar: 'bg-[var(--blue,#22d3ee)]',
-    iconBg: 'bg-[color-mix(in_srgb,var(--blue,#22d3ee)_15%,transparent)]',
-    iconColor: 'text-[var(--blue,#22d3ee)]',
+    bar: 'bg-[var(--mint-solid,#22d3ee)]',
+    iconBg: 'bg-[var(--mint-tint,rgba(34,211,238,0.15))]',
+    iconColor: 'text-[var(--mint,#22d3ee)]',
     glow: 'var(--shadow-pop, 0 14px 40px -10px rgba(34, 211, 238, 0.35))',
     icon: (
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

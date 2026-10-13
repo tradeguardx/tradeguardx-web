@@ -962,6 +962,11 @@
 [data-dash-theme="light"][data-accent="signal"]{--on-mint:#1f1300;--mint:#8a4f00;--mint-solid:#d98c00;--mint-tint:rgba(217,140,0,.13);--mint-line:rgba(217,140,0,.36);--glow-mint:0 8px 24px -8px rgba(217,140,0,.45);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(217,140,0,.16),transparent 60%)}
 [data-dash-theme="dark"][data-accent="ion"]{--on-mint:#ffffff;--mint:#9fb4ff;--mint-solid:#5b76f7;--mint-tint:rgba(91,118,247,.12);--mint-line:rgba(91,118,247,.34);--glow-mint:0 8px 24px -8px rgba(91,118,247,.55);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(91,118,247,.14),transparent 60%)}
 [data-dash-theme="light"][data-accent="ion"]{--on-mint:#ffffff;--mint:#3040c4;--mint-solid:#4457e8;--mint-tint:rgba(68,87,232,.13);--mint-line:rgba(68,87,232,.36);--glow-mint:0 8px 24px -8px rgba(68,87,232,.45);--wash:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(68,87,232,.16),transparent 60%)}
+/* Notices follow the accent too. Trial notices, setup nudges, the guard band,
+   alerts and "warning" chips used a fixed amber; now the warning tone is the
+   user's accent. Red stays red: it is reserved for real danger (payment
+   failed, key disconnected, a rule breached). */
+[data-accent]{--amber:var(--mint);--amber-solid:var(--mint-solid);--amber-tint:var(--mint-tint);--amber-line:var(--mint-line)}
 [data-chrome="flat"]{--shadow-card:none;--shadow-pop:0 0 0 1px var(--line-strong);--shadow-lift:none;--glow-mint:none;--grid:transparent;--wash:none;--line:var(--line-strong)}
 [data-chrome="print"]{--shadow-card:none;--shadow-pop:none;--shadow-lift:none;--glow-mint:none;--grid:transparent;--wash:none;--line:rgba(0,0,0,.2);--line-strong:rgba(0,0,0,.35)}
 [data-chrome="print"] .dsh-card,[data-chrome="print"] .dsh-panel,[data-chrome="print"] .dsh-inset,[data-chrome="print"] .dsh-btn,[data-chrome="print"] .dsh-input{border-radius:6px!important}
