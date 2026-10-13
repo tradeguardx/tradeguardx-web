@@ -89,10 +89,9 @@ describe('revenge report page', () => {
   it('ends with the rules their trades call for, then the trial, for a trader without a plan', async () => {
     guard.life = { unprotected: true };
     mount();
-    expect(await screen.findByText('Your rule plan')).toBeTruthy();
+    expect(await screen.findByText(/Your rule plan/)).toBeTruthy();
     expect(screen.getByText('Close after N losses')).toBeTruthy();
-    expect(screen.getByText('Fixes a problem')).toBeTruthy();
-    expect(screen.getAllByText('Re-entry speed after a loss').length).toBeGreaterThan(1); // the check, and the rule's tag
+    expect(screen.getByText('Problem', { selector: '.rv-rule span' })).toBeTruthy();
     expect(screen.getByRole('link', { name: /Start my 3-day free trial/ }).getAttribute('href')).toBe('/dashboard/account/billing');
     expect(screen.getByText(/you set each limit on the Rules page/)).toBeTruthy();
     expect(screen.getByText('of your losses, you traded again within 15 minutes')).toBeTruthy(); // their own number, on the rule's card
