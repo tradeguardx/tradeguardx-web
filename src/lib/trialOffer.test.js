@@ -3,14 +3,15 @@ import { trialDaysOnOffer, trialOfferLine, firstChargeDate } from './trialOffer'
 
 describe('trialDaysOnOffer', () => {
   it('offers the full window to someone who has not started', () => {
-    expect(trialDaysOnOffer({ needsMandate: true })).toBe(7);
+    expect(trialDaysOnOffer({ needsMandate: true })).toBe(3);
   });
 
   it('carries the remaining days of a no-card trial', () => {
     expect(trialDaysOnOffer({ isTrial: true, trialAutoRenews: false, trialDaysLeft: 3 })).toBe(3);
   });
 
-  it('never offers more than the full window', () => {
+  it('an old 7-day trialist keeps their remaining days, never more than 7', () => {
+    expect(trialDaysOnOffer({ isTrial: true, trialAutoRenews: false, trialDaysLeft: 5 })).toBe(5);
     expect(trialDaysOnOffer({ isTrial: true, trialAutoRenews: false, trialDaysLeft: 40 })).toBe(7);
   });
 

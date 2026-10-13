@@ -14,6 +14,9 @@
  */
 
 export const FULL_TRIAL_DAYS = 3; // new customers, since 13 Oct 2026 (was 7)
+/** The old no-card trial was 7 days; someone still in one keeps what is left
+ *  (mirrors payments LEGACY_TRIAL_DAYS — the server decides, this only says it). */
+export const LEGACY_TRIAL_DAYS = 7;
 
 /**
  * @param {{ needsMandate?: boolean, isTrial?: boolean, trialAutoRenews?: boolean,
@@ -33,7 +36,7 @@ export function trialDaysOnOffer(user) {
     // today costs them nothing and waiting gains them nothing.
     const left = user.trialDaysLeft;
     if (typeof left !== 'number' || left <= 0) return 0;
-    return Math.min(FULL_TRIAL_DAYS, left);
+    return Math.min(Math.max(FULL_TRIAL_DAYS, LEGACY_TRIAL_DAYS), left);
   }
 
   // Lapsed, cancelled, legacy free, paying: no free days.
