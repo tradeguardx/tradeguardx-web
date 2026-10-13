@@ -91,7 +91,8 @@ describe('revenge report page', () => {
     mount();
     expect(await screen.findByText('Your rule plan')).toBeTruthy();
     expect(screen.getByText('Close after N losses')).toBeTruthy();
-    expect(screen.getByText('Fixes: Re-entry speed after a loss')).toBeTruthy();
+    expect(screen.getByText('Fixes a problem')).toBeTruthy();
+    expect(screen.getAllByText('Re-entry speed after a loss').length).toBeGreaterThan(1); // the check, and the rule's tag
     expect(screen.getByRole('link', { name: /Start my 3-day free trial/ }).getAttribute('href')).toBe('/dashboard/account/billing');
   });
 

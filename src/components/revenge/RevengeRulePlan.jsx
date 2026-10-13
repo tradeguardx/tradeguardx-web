@@ -51,23 +51,10 @@ export default function RulePlan({ report, cta, enterProps = {} }) {
         </p>
       </div>
 
-      <ol style={sx('position:relative;margin:14px 0 0;padding:0 22px;list-style:none;display:grid;gap:10px')}>
-        {rules.map((r, i) => (
-          <li key={r.rule} style={sx('display:flex;gap:13px;padding:14px 15px;border-radius:14px;border:1px solid var(--line);background:var(--surface)')}>
-            <span style={sx("flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:9px;font:700 13px/1 'Space Grotesk',sans-serif", { background: toneBg(r.status === 'good' ? 'mint' : r.status === 'problem' ? 'red' : 'amber'), color: toneFg(r.status === 'good' ? 'mint' : r.status === 'problem' ? 'red' : 'amber') })}>
-              {i + 1}
-            </span>
-            <span style={sx('flex:1;min-width:0')}>
-              <span style={sx('display:block;font-size:14.5px;font-weight:700;color:var(--ink)')}>{RULE_NAME[r.rule] ?? r.rule}</span>
-              <span style={sx('display:block;margin-top:3px;font-size:13px;line-height:1.55;color:var(--ink-2)')}>{whatItDoes(r.text)}</span>
-              {r.because.length > 0 && (
-                <span style={sx('display:block;margin-top:6px;font-size:12px;line-height:1.45;color:var(--ink-3)')}>
-                  Fixes: {r.because.join(' · ')}
-                </span>
-              )}
-            </span>
-          </li>
-        ))}
+      {/* Side by side: 1 to 4 rules, whatever this trader's checks call for —
+          three across on a desktop, one per row on a phone. */}
+      <ol className="rv-rules" style={sx('position:relative;margin:18px 0 0;padding:0 22px;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,232px),1fr));gap:12px')}>
+        {rules.map((r, i) => <RuleCard key={r.rule} r={r} n={i + 1} />)}
       </ol>
 
       {cta && (
@@ -83,6 +70,53 @@ export default function RulePlan({ report, cta, enterProps = {} }) {
       )}
       {!cta && <div style={sx('height:22px')} />}
     </section>
+  );
+}
+
+const TONE = { problem: 'red', warning: 'amber', good: 'mint' };
+const SEVERITY = { problem: 'Fixes a problem', warning: 'Fixes a warning', good: 'Safety net' };
+// One picture per rule, so a row of cards reads at a glance.
+const RULE_ICON = {
+  'close-after-losses': 'M10 9v6M14 9v6M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+  'risk-per-trade': 'M12 3v18M5 7h14M5 7l-3 7a3 3 0 006 0zM19 7l-3 7a3 3 0 006 0zM8 21h8',
+  'daily-loss': 'M8 3v3M16 3v3M4 9h16M5 5h14v15H5zM10 14.5l4 0',
+  'max-trades-day': 'M4 9h16M4 15h16M10 3L8 21M16 3l-2 18',
+};
+
+function RuleCard({ r, n }) {
+  const tone = TONE[r.status] ?? 'mint';
+  return (
+    <li className="rv-rule rv-in" style={sx('position:relative;display:flex;flex-direction:column;min-width:0;padding:18px 18px 16px;border-radius:16px;border:1px solid var(--line);background:var(--surface);overflow:hidden', { animationDelay: `${0.1 + n * 0.08}s` })}>
+      <span aria-hidden style={sx('position:absolute;left:0;right:0;top:0;height:3px', { background: toneFg(tone) })} />
+      <span style={sx('display:flex;align-items:center;gap:10px')}>
+        <span aria-hidden style={sx('flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px', { background: toneBg(tone), color: toneFg(tone) })}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d={RULE_ICON[r.rule] ?? RULE_ICON['daily-loss']} /></svg>
+        </span>
+        <span style={sx("flex:1;min-width:0;font:600 10px/1.2 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase", { color: toneFg(tone) })}>
+          {SEVERITY[r.status] ?? SEVERITY.good}
+        </span>
+        <span aria-hidden style={sx("flex:none;font:600 22px/1 'Space Grotesk',sans-serif;color:var(--line-strong)")}>{String(n).padStart(2, '0')}</span>
+      </span>
+
+      <span style={sx("display:block;margin-top:14px;font:600 17px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.015em;color:var(--ink)")}>{RULE_NAME[r.rule] ?? r.rule}</span>
+      <span style={sx('display:block;margin-top:6px;font-size:13px;line-height:1.55;color:var(--ink-2)')}>{whatItDoes(r.text)}</span>
+
+      <span style={sx('flex:1;min-height:14px')} />
+      <span style={sx('display:block;padding-top:12px;border-top:1px dashed var(--line)')}>
+        {r.because.length > 0 ? (
+          <>
+            <span style={sx(`${LABEL};display:block;margin-bottom:8px`)}>Fixes</span>
+            <span style={sx('display:flex;flex-wrap:wrap;gap:6px')}>
+              {r.because.map((b) => (
+                <span key={b} style={sx('padding:5px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:11.5px;font-weight:600;line-height:1.2;color:var(--ink-2)')}>{b}</span>
+              ))}
+            </span>
+          </>
+        ) : (
+          <span style={sx('font-size:12px;line-height:1.45;color:var(--ink-3)')}>Holds the line on your worst day.</span>
+        )}
+      </span>
+    </li>
   );
 }
 
