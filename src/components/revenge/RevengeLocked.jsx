@@ -1,93 +1,115 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { sx } from '../dashboard/shell/sx';
-import { DEMO_REPORT, PERIODS } from './revengeFormat';
-import RevengeReportView from './RevengeReportView';
+import { CARD, PERIODS } from './revengeFormat';
 
 /**
- * Before the first unlock: the report's shape, blurred and out of reach,
- * with one card on top that says what is behind it.
+ * Before the first unlock: not a blurred picture of someone else's report,
+ * but the questions every trader wants answered about themselves — each one
+ * locked, around a score that is still a question mark.
  *
- * The blurred report is made-up (DEMO_REPORT) and never legible — it shows
- * what kind of thing is coming, not a guess at their numbers.
- *
- * ALIVE, NOT A PICTURE. The preview breathes (blur and opacity drift), a soft
- * light sweeps across it like a scanner, and the score ring keeps filling to
- * a new number — a report being worked out, waiting for them. Reduced motion:
- * a still preview.
+ * A blurred report reads as "there is something here"; a question about YOU
+ * ("which hour costs you the most?") reads as "I need to know". The answers
+ * are masked, never invented: the shapes (●● min, ₹●●,●●●) say what kind of
+ * answer is waiting, not what it is.
  */
-const DEMO_SCORES = [41, 67, 29, 54];
+const TEASERS = [
+  { q: 'How fast do you jump back in after a loss?', a: '●● min', icon: 'M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { q: 'Which hour of the day costs you the most?', a: '●●:00 – ●●:00', icon: 'M4 19h16M7 16V9m5 7V5m5 11v-4' },
+  { q: 'Which coin bleeds you the most?', a: '●●●●USDT', icon: 'M12 3v18M17 7.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.8 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3' },
+  { q: 'What did revenge trades cost you?', a: '₹●●,●●●', icon: 'M3 17l6-6 4 4 8-8M15 7h6v6' },
+];
+
+function Lock({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 11V8a5 5 0 0110 0v3" /><path d="M5 11h14v9H5z" />
+    </svg>
+  );
+}
+
 export default function RevengeLocked({ months, onMonths, onUnlock, keyState, accountName, exchangeName }) {
   const noKey = keyState === 'none' || keyState === 'failed';
-  const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    if (reduce) return undefined;
-    const t = setInterval(() => setTick((n) => n + 1), 2800);
-    return () => clearInterval(t);
-  }, [reduce]);
-  const demoScore = DEMO_SCORES[tick % DEMO_SCORES.length];
-  const demoGrade = demoScore >= 60 ? 'someTilt' : demoScore >= 40 ? 'revengeProne' : 'onTilt';
+
   return (
-    <div style={sx('position:relative;margin-top:20px')}>
-      <div inert aria-hidden="true" style={sx('position:relative;pointer-events:none;user-select:none;max-height:640px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)')}>
-        <div className="rv-motion" style={sx('filter:blur(9px);opacity:.75;animation:rvBreath 4.5s ease-in-out infinite')}>
-          <RevengeReportView report={{ ...DEMO_REPORT, score: demoScore, grade: demoGrade }} periodLabel="1 month" animateScore={!reduce} />
+    <section className="rv-in" style={sx(`margin-top:20px;padding:30px 24px 28px;${CARD};position:relative;overflow:hidden`)}>
+      <div style={sx('position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 55% at 50% 0%,var(--mint-tint),transparent 70%)')} />
+
+      <div style={sx('position:relative;display:flex;flex-direction:column;align-items:center;text-align:center')}>
+        {/* The score, still a question. */}
+        <div style={sx('position:relative;width:132px;height:132px')}>
+          <svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true">
+            <circle cx="66" cy="66" r="52" fill="none" stroke="var(--surface-3)" strokeWidth="11" />
+            <circle className="rv-motion" cx="66" cy="66" r="52" fill="none" stroke="var(--mint)" strokeWidth="11" strokeLinecap="round" strokeDasharray="82 245" style={{ transformOrigin: '66px 66px', animation: 'rvSweep 2.6s linear infinite' }} />
+          </svg>
+          <div style={sx('position:absolute;inset:0;display:grid;place-items:center')}>
+            <div>
+              <div className="rv-motion" style={sx("font:600 40px/1 'Space Grotesk',sans-serif;color:var(--ink);animation:rvPulse 2.4s ease-in-out infinite")}>?</div>
+              <div style={sx("margin-top:4px;font:500 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:var(--ink-faint)")}>OF 100</div>
+            </div>
+          </div>
         </div>
-        {/* The scanner light, sweeping across the blurred report. */}
-        <div className="rv-motion" style={sx('position:absolute;top:0;bottom:0;left:0;width:45%;animation:rvScan 3.2s cubic-bezier(.45,.05,.55,.95) infinite', { background: 'linear-gradient(100deg,transparent,var(--mint-tint) 45%,rgba(255,255,255,.07) 50%,var(--mint-tint) 55%,transparent)' })} />
+
+        <h2 style={sx("margin:18px 0 0;font:600 23px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>What does a loss do to you?</h2>
+        <p style={sx('margin:8px 0 0;max-width:52ch;font-size:14px;line-height:1.6;color:var(--ink-2)')}>
+          Your revenge report reads your own trades on {accountName ? <b>{accountName}</b> : 'this account'} and answers the questions most traders never check — with a score, the proof, and the rule that fixes it.
+        </p>
       </div>
 
-      <div style={sx('position:absolute;inset:0;display:grid;place-items:start center;padding:56px 16px 0')}>
-        <div role="dialog" aria-modal="false" aria-labelledby="rv-lock-title" className="rv-in" style={sx('width:100%;max-width:440px;padding:28px 26px;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-pop, var(--shadow-card));text-align:center')}>
-          <span style={sx('margin:0 auto;display:grid;place-items:center;width:56px;height:56px;border-radius:18px;background:var(--mint-tint);border:1px solid var(--mint-line);color:var(--mint);box-shadow:var(--glow-mint)')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M7 11V8a5 5 0 0110 0v3" /><path d="M5 11h14v9H5z" /><path d="M12 15v2" /></svg>
-          </span>
-          <h2 id="rv-lock-title" style={sx("margin:16px 0 0;font:600 21px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>Unlock your revenge report</h2>
-          <p style={sx('margin:9px 0 0;font-size:13.5px;line-height:1.6;color:var(--ink-2)')}>
-            How you trade after a loss — your score, the patterns that cost you, and the rule that fixes each one. Built from your own trades on {accountName ? <b>{accountName}</b> : 'this account'}.
-          </p>
+      {/* The questions, answers masked. */}
+      <ul style={sx('position:relative;margin:22px auto 0;padding:0;list-style:none;max-width:720px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px')}>
+        {TEASERS.map((t, i) => (
+          <li key={t.q} className="rv-in" style={sx('display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface-2);text-align:left', { animationDelay: `${0.15 + i * 0.1}s` })}>
+            <span style={sx('flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--surface);border:1px solid var(--line);color:var(--ink-2)')}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={t.icon} /></svg>
+            </span>
+            <span style={sx('flex:1;min-width:0')}>
+              <span style={sx('display:block;font-size:13px;line-height:1.4;font-weight:600;color:var(--ink)')}>{t.q}</span>
+              <span style={sx("display:inline-flex;align-items:center;gap:6px;margin-top:5px;font:600 13px/1 'JetBrains Mono',monospace;color:var(--mint);letter-spacing:.04em")}>
+                <Lock size={12} /> <span aria-label="Locked">{t.a}</span>
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
 
-          {noKey ? (
-            <>
-              <p style={sx('margin:16px 0 0;font-size:12.5px;color:var(--ink-3)')}>
-                {keyState === 'failed' ? 'This account’s key is disconnected, so we can’t read its trades.' : `Connect the ${exchangeName || 'exchange'} key for this account first — we read its trades from there.`}
-              </p>
-              <Link to="/dashboard/connect" style={sx('display:inline-block;margin-top:14px;min-height:44px;padding:12px 20px;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14px;font-weight:800;text-decoration:none')}>
-                {keyState === 'failed' ? 'Reconnect key' : 'Connect key'}
-              </Link>
-            </>
-          ) : (
-            <>
-              <div role="radiogroup" aria-label="How far back" style={sx('margin:18px auto 0;display:inline-flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)')}>
-                {PERIODS.map((x) => (
-                  <button
-                    key={x.months}
-                    type="button"
-                    role="radio"
-                    aria-checked={x.months === months}
-                    onClick={() => onMonths(x.months)}
-                    style={sx('padding:7px 12px;border:0;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer', x.months === months ? { background: 'var(--surface)', color: 'var(--ink)', boxShadow: 'var(--shadow-card)' } : { background: 'transparent', color: 'var(--ink-3)' })}
-                  >
-                    {x.label}
-                  </button>
-                ))}
-              </div>
-              <div>
+      <div style={sx('position:relative;margin-top:24px;display:flex;flex-direction:column;align-items:center;text-align:center')}>
+        {noKey ? (
+          <>
+            <p style={sx('margin:0;font-size:12.5px;color:var(--ink-3)')}>
+              {keyState === 'failed' ? 'This account’s key is disconnected, so we can’t read its trades.' : `Connect the ${exchangeName || 'exchange'} key for this account first — we read its trades from there.`}
+            </p>
+            <Link to="/dashboard/connect" style={sx('margin-top:14px;min-height:46px;padding:12px 22px;border-radius:12px;background:var(--mint-solid);color:#02241d;font-size:14.5px;font-weight:800;text-decoration:none')}>
+              {keyState === 'failed' ? 'Reconnect key' : 'Connect key'}
+            </Link>
+          </>
+        ) : (
+          <>
+            <div role="radiogroup" aria-label="How far back" style={sx('display:inline-flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)')}>
+              {PERIODS.map((x) => (
                 <button
+                  key={x.months}
                   type="button"
-                  onClick={onUnlock}
-                  className="rv-motion"
-                  style={sx('margin-top:16px;min-height:46px;padding:12px 24px;border:0;border-radius:12px;color:#02241d;font-size:14.5px;font-weight:800;cursor:pointer;background-size:200% 100%;animation:rvShine 2.8s linear infinite', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#7cf5dc 50%,var(--mint-solid) 60%)' })}
+                  role="radio"
+                  aria-checked={x.months === months}
+                  onClick={() => onMonths(x.months)}
+                  style={sx('padding:7px 12px;border:0;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer', x.months === months ? { background: 'var(--surface)', color: 'var(--ink)', boxShadow: 'var(--shadow-card)' } : { background: 'transparent', color: 'var(--ink-3)' })}
                 >
-                  Unlock my report
+                  Last {x.label}
                 </button>
-              </div>
-              <p style={sx('margin:12px 0 0;font-size:11.5px;color:var(--ink-faint)')}>Read-only. Takes a few seconds.</p>
-            </>
-          )}
-        </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={onUnlock}
+              className="rv-motion"
+              style={sx('margin-top:14px;display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:12px 26px;border:0;border-radius:13px;color:#02241d;font-size:15px;font-weight:800;cursor:pointer;background-size:200% 100%;animation:rvShine 2.8s linear infinite;box-shadow:var(--glow-mint)', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#7cf5dc 50%,var(--mint-solid) 60%)' })}
+            >
+              <Lock size={16} /> Unlock my report
+            </button>
+            <p style={sx('margin:11px 0 0;font-size:11.5px;color:var(--ink-faint)')}>Read-only · takes a few seconds · nothing on your account changes</p>
+          </>
+        )}
       </div>
-    </div>
+    </section>
   );
 }

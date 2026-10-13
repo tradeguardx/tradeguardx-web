@@ -61,8 +61,8 @@ describe('revenge report page', () => {
   it('locked: the report blurred behind "Unlock", then the build, then the reveal', async () => {
     fetchRevengeReport.mockImplementationOnce(async () => ({ locked: true, status: 'locked' }));
     mount();
-    expect(await screen.findByText('Unlock your revenge report')).toBeTruthy();
-    fireEvent.click(screen.getByRole('radio', { name: '2 months' }));
+    expect(await screen.findByText('What does a loss do to you?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('radio', { name: 'Last 2 months' }));
     fireEvent.click(screen.getByRole('button', { name: 'Unlock my report' }));
     expect(await screen.findByText('Building your revenge report')).toBeTruthy();
     await waitFor(() => expect(unlockRevengeReport).toHaveBeenCalledWith(expect.objectContaining({ months: 2 })));
@@ -73,7 +73,7 @@ describe('revenge report page', () => {
     guard.selected = { loaded: true, connection: null };
     fetchRevengeReport.mockImplementationOnce(async () => ({ locked: true, status: 'locked' }));
     mount();
-    expect(await screen.findByText('Unlock your revenge report')).toBeTruthy();
+    expect(await screen.findByText('What does a loss do to you?')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Connect key' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Unlock my report' })).toBeNull();
   });
