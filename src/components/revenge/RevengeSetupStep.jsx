@@ -104,7 +104,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
         </div>
       ) : (
         <>
-          <section className="rv-pop" style={sx(`padding:26px 24px;${CARD};text-align:center;position:relative;overflow:hidden`)}>
+          <section className="rv-pop rv-pad" style={sx(`padding:26px 24px;${CARD};text-align:center;position:relative;overflow:hidden`)}>
             <div style={sx('position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 55% at 50% 0%,var(--mint-tint),transparent 70%)')} />
             <div style={sx('position:relative;display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--mint-tint);border:1px solid var(--mint-line);color:var(--mint);font-size:12px;font-weight:800;letter-spacing:.02em')}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 11V8a5 5 0 019.6-2" /><path d="M5 11h14v9H5z" /></svg>
@@ -125,10 +125,10 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
               <RuleChips report={report} />
             </div>
             <div className="rv-in" style={sx('position:relative;margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap', { animationDelay: '1.7s' })}>
-              <button type="button" onClick={onContinue} className="rv-motion" style={sx('padding:13px 22px;border:0;border-radius:12px;color:var(--on-mint);font-size:14.5px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint);background-size:200% 100%;animation:rvShine 2.8s linear infinite', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#fff6 50%,var(--mint-solid) 60%)', backgroundColor: 'var(--mint-solid)' })}>
-                Fix this — {continueLabel ? continueLabel.toLowerCase() : 'start your 3-day free trial'} →
+              <button type="button" onClick={onContinue} className="rv-motion rv-full-sm" style={sx('padding:13px 22px;border:0;border-radius:12px;color:var(--on-mint);font-size:14.5px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint);background-size:200% 100%;animation:rvShine 2.8s linear infinite', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#fff6 50%,var(--mint-solid) 60%)', backgroundColor: 'var(--mint-solid)' })}>
+                {continueLabel ? <>Fix this — {continueLabel.toLowerCase()} →</> : <><span className="rv-hide-sm">Fix this — start your 3-day free trial →</span><span className="rv-show-sm">Start my 3-day free trial →</span></>}
               </button>
-              <button type="button" onClick={toggleFull} aria-expanded={full} style={sx('padding:12px 18px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer')}>
+              <button type="button" onClick={toggleFull} aria-expanded={full} className="rv-full-sm" style={sx('padding:12px 18px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer')}>
                 {full ? 'Hide the full report' : 'See my full report'}
               </button>
             </div>

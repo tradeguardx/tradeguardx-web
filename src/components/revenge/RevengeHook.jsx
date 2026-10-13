@@ -32,8 +32,8 @@ export function DamageStrip({ report, periodLabel, delay = 0 }) {
 /** Honest urgency: the guard is off, so the next one is not stopped. */
 export function GuardOffLine({ delay = 0 }) {
   return (
-    <div className="rv-in" style={sx('position:relative;margin-top:12px;display:flex;justify-content:center;align-items:center;gap:8px;color:var(--ink-3);font-size:12px;line-height:1.35', { animationDelay: `${delay}s` })}>
-      <span aria-hidden className="rv-motion" style={sx('flex:none;width:8px;height:8px;border-radius:50%;background:var(--red);animation:rvBlink 1.2s ease-in-out infinite')} />
+    <div className="rv-in" style={sx('position:relative;margin-top:12px;text-align:center;color:var(--ink-3);font-size:12px;line-height:1.45', { animationDelay: `${delay}s` })}>
+      <span aria-hidden className="rv-motion" style={sx('display:inline-block;vertical-align:middle;margin:-2px 7px 0 0;width:8px;height:8px;border-radius:50%;background:var(--red);animation:rvBlink 1.2s ease-in-out infinite')} />
       <span><b style={sx('color:var(--red);font-weight:700')}>Your guard is off.</b> If it happens again today, nothing stops it.</span>
     </div>
   );

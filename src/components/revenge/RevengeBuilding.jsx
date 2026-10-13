@@ -65,7 +65,7 @@ export default function RevengeBuilding({ status, accountName, exchangeName, com
                 ) : null}
               </span>
               <span style={{ flex: 1 }}>{st.label}</span>
-              {st.detail && (done || active) && <span style={sx("flex:none;font:500 11.5px/1 'JetBrains Mono',monospace;color:var(--ink-3);font-variant-numeric:tabular-nums")}>{st.detail}</span>}
+              {st.detail && (done || active) && <span className="rv-hide-sm" style={sx("flex:none;font:500 11.5px/1 'JetBrains Mono',monospace;color:var(--ink-3);font-variant-numeric:tabular-nums")}>{st.detail}</span>}
             </li>
           );
         })}

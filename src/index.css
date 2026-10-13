@@ -1820,6 +1820,7 @@
 .rv-rule:nth-child(3) .rv-toggle,.rv-rule:nth-child(3) .rv-toggle__knob{transition-delay:.16s}
 .rv-rule:nth-child(4) .rv-toggle,.rv-rule:nth-child(4) .rv-toggle__knob{transition-delay:.24s}
 .rv-plan__cta{transition:transform .15s,filter .15s}
+@media (max-width:560px){.rv-plan__cta{width:100%}.rv-rules{padding:0 14px!important}}
 .rv-plan__cta:hover{transform:translateY(-1px);filter:brightness(1.05)}
 @media (prefers-reduced-motion:reduce){.rv-toggle,.rv-toggle__knob,.rv-plan__cta{transition:none}.rv-plan__cta:hover{transform:none}}
 .rv-rule:hover{border-color:var(--line-strong);box-shadow:var(--shadow-card)}

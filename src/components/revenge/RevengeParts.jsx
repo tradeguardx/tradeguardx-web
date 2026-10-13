@@ -23,6 +23,17 @@ export function RevengeStyles() {
 .rv-unblur{animation:rvUnblur .9s cubic-bezier(.2,.7,.2,1) both}
 .rv-pop{animation:rvPop .5s cubic-bezier(.2,.7,.2,1) both}
 @media (prefers-reduced-motion: reduce){.rv-in,.rv-unblur,.rv-pop{animation:none!important}.rv-motion{animation:none!important}}
+.rv-show-sm{display:none}
+@media (max-width:560px){
+  .rv-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .rv-stat{padding:12px 13px!important}
+  .rv-stat__v{font-size:17px!important;margin-top:8px!important}
+  .rv-pad{padding:22px 16px!important}
+  .rv-full-sm{width:100%}
+  .rv-hide-sm{display:none}
+  .rv-show-sm{display:inline}
+  .rv-check-weight{display:none}
+}
 `}</style>
   );
 }
@@ -66,9 +77,9 @@ export function ScoreRing({ score, tone, animate = false, size = 132 }) {
 
 export function Stat({ label, value, sub, tone }) {
   return (
-    <div style={sx(`padding:16px 17px;${CARD};min-width:0`)}>
+    <div className="rv-stat" style={sx(`padding:16px 17px;${CARD};min-width:0`)}>
       <div style={sx(LABEL)}>{label}</div>
-      <div style={sx("margin-top:10px;font:600 21px/1.15 'Space Grotesk',sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere", { color: tone ? toneFg(tone) : 'var(--ink)' })}>{value}</div>
+      <div className="rv-stat__v" style={sx("margin-top:10px;font:600 21px/1.15 'Space Grotesk',sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere", { color: tone ? toneFg(tone) : 'var(--ink)' })}>{value}</div>
       {sub && <div style={sx('margin-top:6px;font-size:12px;line-height:1.45;color:var(--ink-3)')}>{sub}</div>}
     </div>
   );
@@ -98,7 +109,7 @@ export function CheckCard({ check, money }) {
           <span style={sx('font-size:14.5px;font-weight:700;letter-spacing:-.005em')}>{check.title}</span>
           <span style={{ flex: 1 }} />
           {value && <span style={sx("font:600 15px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums", { color: toneFg(st.tone) })}>{value}</span>}
-          <span style={sx('font-size:11.5px;color:var(--ink-faint)')}>{check.weight}% of score</span>
+          <span className="rv-check-weight" style={sx('font-size:11.5px;color:var(--ink-faint)')}>{check.weight}% of score</span>
         </div>
         <p style={sx('margin:9px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink-2)')}>{check.finding}</p>
 

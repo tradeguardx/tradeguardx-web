@@ -97,10 +97,11 @@ export default function RevengeLocked({ months, onMonths, onUnlock, keyState, ac
                   type="button"
                   role="radio"
                   aria-checked={x.months === months}
+                  aria-label={`Last ${x.label}`}
                   onClick={() => onMonths(x.months)}
                   style={sx('padding:7px 12px;border:0;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer', x.months === months ? { background: 'var(--surface)', color: 'var(--ink)', boxShadow: 'var(--shadow-card)' } : { background: 'transparent', color: 'var(--ink-3)' })}
                 >
-                  Last {x.label}
+                  <span className="rv-hide-sm">Last </span>{x.label}
                 </button>
               ))}
             </div>

@@ -67,7 +67,7 @@ export default function RevengeReportView({ report, periodLabel, months = 1, rev
       {report.trades > 0 && p && (
         <div {...enter()}>
           <Section title="Your trading profile" note="Context, not part of the score.">
-            <div style={sx(GRID)}>
+            <div className="rv-grid" style={sx(GRID)}>
               <Stat label="Win / loss" value={`${p.wins} · ${p.losses}`} sub={p.winRate == null ? 'No decided trades' : `${Math.round(p.winRate)}% win rate${p.breakeven ? ` · ${p.breakeven} breakeven` : ''}`} />
               <Stat label="Risk : reward" value={p.rr == null ? '—' : `1 : ${p.rr}`} sub={p.avgWin != null || p.avgLoss != null ? `Avg win ${money(p.avgWin)} · avg loss ${money(p.avgLoss)}` : null} tone={p.rr == null ? null : p.rr >= 1 ? 'mint' : 'amber'} />
               <Stat label="Per trade, on average" value={p.expectancy == null ? '—' : money(p.expectancy, { signed: true })} sub="What your win rate and R:R add up to" tone={p.expectancy == null ? null : p.expectancy >= 0 ? 'mint' : 'red'} />
@@ -86,7 +86,7 @@ export default function RevengeReportView({ report, periodLabel, months = 1, rev
       {report.trades > 0 && s && (
         <div {...enter()}>
           <Section title="Streaks" note="Trades in the order they closed.">
-            <div style={sx(GRID)}>
+            <div className="rv-grid" style={sx(GRID)}>
               <Stat label="Longest winning streak" value={s.longestWin ? `${s.longestWin.length} in a row` : '—'} sub={s.longestWin ? `${money(s.longestWin.pnl, { signed: true })} · ${istDay(s.longestWin.to)}` : null} tone={s.longestWin ? 'mint' : null} />
               <Stat label="Longest losing streak" value={s.longestLoss ? `${s.longestLoss.length} in a row` : '—'} sub={s.longestLoss ? `${money(s.longestLoss.pnl, { signed: true })} · ${istDay(s.longestLoss.to)}` : null} tone={s.longestLoss ? 'red' : null} />
               <Stat label="A winning streak, on average" value={s.avgWinLength == null ? '—' : `${s.avgWinLength} wins`} sub={s.avgWinPnl == null ? null : `${money(s.avgWinPnl, { signed: true })} per streak`} />
@@ -109,9 +109,9 @@ export default function RevengeReportView({ report, periodLabel, months = 1, rev
                 {report.worstDay.timeline.map((t, i) => (
                   <li key={i} style={sx('display:flex;align-items:center;gap:12px;padding:8px 0;font-size:13px', i ? { borderTop: '1px solid var(--line)' } : {})}>
                     <span style={sx("flex:none;width:44px;font:500 11.5px/1 'JetBrains Mono',monospace;color:var(--ink-faint)")}>{istTime(t.at)}</span>
-                    <span style={sx('flex:1;min-width:0;font-weight:600')}>{t.symbol} <span style={sx('font-weight:500;color:var(--ink-3)')}>{t.side ?? ''}</span></span>
+                    <span style={sx('flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap')} title={`${t.symbol} ${t.side ?? ''}`}>{t.symbol} <span style={sx('font-weight:500;color:var(--ink-3)')}>{t.side ?? ''}</span></span>
                     {t.revenge && <Chip tone="red">Revenge</Chip>}
-                    <span style={sx('flex:none;width:86px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums', { color: t.pnl < 0 ? 'var(--red)' : 'var(--mint)' })}>{money(t.pnl, { signed: true })}</span>
+                    <span style={sx('flex:none;min-width:72px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums', { color: t.pnl < 0 ? 'var(--red)' : 'var(--mint)' })}>{money(t.pnl, { signed: true })}</span>
                   </li>
                 ))}
               </ol>
