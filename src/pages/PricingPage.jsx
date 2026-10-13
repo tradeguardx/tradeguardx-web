@@ -44,7 +44,7 @@ const PLAN_THEME = {
     badgeBg: 'rgba(100,116,139,0.10)',
     badgeBorder: 'rgba(100,116,139,0.22)',
     badgeText: '#94a3b8',
-    tagline: 'Full access, free for 7 days. Nothing charged until day 8.',
+    tagline: 'Full access, free for 3 days. Nothing charged until day 4.',
     ctaBg: 'rgba(255,255,255,0.06)',
     ctaBorder: 'rgba(255,255,255,0.08)',
     ctaText: '#e2e8f0',
@@ -247,7 +247,7 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    label: 'Cancel before day 8, pay nothing',
+    label: 'Cancel before day 4, pay nothing',
   },
   {
     icon: (
@@ -270,7 +270,7 @@ const TRUST_BADGES = [
 export default function PricingPage() {
   useSEO({
     title: 'Pricing',
-    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly. 7 days free — cancel before day 8 and pay nothing. Delta Exchange, CoinDCX and Shark.',
+    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly. 3 days free — cancel before day 4 and pay nothing. Delta Exchange, CoinDCX and Shark.',
     url: 'https://tradeguardx.com/pricing',
   });
   const [plans, setPlans] = useState([]);
@@ -560,7 +560,7 @@ export default function PricingPage() {
           </h1>
 
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
-            Everything is included: the kill switch, every rule, all three exchanges, unlimited accounts and the tax centre. Start with 7 days free. You set up UPI AutoPay or a card first; cancel before day 8 and you pay nothing.
+            Everything is included: the kill switch, every rule, all three exchanges, unlimited accounts and the tax centre. Start with 3 days free. You set up UPI AutoPay or a card first; cancel before day 4 and you pay nothing.
           </p>
 
           <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -986,7 +986,7 @@ export default function PricingPage() {
               <p className="text-base mb-10 max-w-md mx-auto" style={{ color: '#475569' }}>
                 {session?.access_token && !subscriptionLoading && isPaidPlan(user?.billingPlan)
                   ? 'You are on a paid plan. Manage billing anytime from your account.'
-                  : '7 days free · ₹0 today · cancel before day 8 and pay nothing.'}
+                  : '3 days free · ₹0 today · cancel before day 4 and pay nothing.'}
               </p>
               <motion.div
                 className="inline-block"
@@ -1001,7 +1001,7 @@ export default function PricingPage() {
                     boxShadow: '0 4px 24px rgba(0,212,170,0.30)',
                   }}
                 >
-                  {session?.access_token ? 'Open dashboard' : 'Start 7 days free'}
+                  {session?.access_token ? 'Open dashboard' : 'Start 3 days free'}
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>

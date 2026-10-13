@@ -51,7 +51,7 @@ const SUB = { monthly: 'Billed every month', quarterly: 'billed every 3 months',
 const NEXT = { monthly: 'every month', quarterly: 'every 3 months', yearly: 'every year' };
 /* The offer for someone who has never started. What any given user actually
    gets comes from the server — see `trialDays` below. */
-const TRIAL_DAYS = 7;
+const TRIAL_DAYS = 3;
 
 const inr = (n) => (Number.isFinite(n) ? `₹${Math.round(n).toLocaleString('en-IN')}` : '—');
 const fmtDay = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
@@ -407,7 +407,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = 3 }) {
                 appears once the server has said how many days are free. */}
             <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: 'var(--ink-2)', textWrap: 'pretty' }}>
               {charged ? (
-                <>Your free week is already used, so <b style={{ color: 'var(--ink)' }}>{inr(payable)} is charged today</b>. Cancel any time.</>
+                <>Your free trial is already used, so <b style={{ color: 'var(--ink)' }}>{inr(payable)} is charged today</b>. Cancel any time.</>
               ) : (
                 <>
                   <b style={{ color: 'var(--mint)' }}>Pay ₹0 today</b>

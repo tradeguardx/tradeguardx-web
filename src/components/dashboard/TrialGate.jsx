@@ -113,9 +113,9 @@ export function UpgradeWall() {
         <span className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(0,212,170,0.12)', border: '1px solid rgba(0,212,170,0.3)' }}>
           <svg className="h-7 w-7" style={{ color: 'var(--accent, #00d4aa)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 3L4 14h7l-1 7 9-11h-7z" /></svg>
         </span>
-        <h2 className="mt-5 font-display text-2xl font-bold" style={{ color: 'var(--dash-text-primary)' }}>Start your 7 days free</h2>
+        <h2 className="mt-5 font-display text-2xl font-bold" style={{ color: 'var(--dash-text-primary)' }}>Start your 3 days free</h2>
         <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-          Set up payment to switch your guardrails on. You won&rsquo;t be charged for seven days, we&rsquo;ll tell you the exact date your first payment lands, and you can cancel any time before it.
+          Set up payment to switch your guardrails on. You won&rsquo;t be charged for three days, we&rsquo;ll tell you the exact date your first payment lands, and you can cancel any time before it.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
@@ -127,7 +127,7 @@ export function UpgradeWall() {
           </Link>
         </div>
         <p className="mt-4 text-xs" style={{ color: 'var(--dash-text-faint)' }}>
-          Cancel in one click from Billing. Nothing is charged until day 8.
+          Cancel in one click from Billing. Nothing is charged until day 4.
         </p>
       </div>
     );

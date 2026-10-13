@@ -18,8 +18,8 @@ const planMeta = {
 
 export default function SignupPage() {
   useSEO({
-    title: 'Sign Up — 7 Days Free',
-    description: 'Create your TradeGuardX account. 7 days free with everything unlocked: ₹0 today, set up UPI AutoPay or a card during setup, cancel before day 8 and pay nothing.',
+    title: 'Sign Up — 3 Days Free',
+    description: 'Create your TradeGuardX account. 3 days free with everything unlocked: ₹0 today, set up UPI AutoPay or a card during setup, cancel before day 4 and pay nothing.',
     url: 'https://tradeguardx.com/signup',
   });
   const [searchParams] = useSearchParams();
@@ -121,10 +121,10 @@ export default function SignupPage() {
       >
         <div className="mb-9">
           <h1 className="font-display text-[34px] font-bold tracking-[-0.02em] text-white mb-2">Create your account</h1>
-          <p className="text-slate-400 text-[16px]">Free for 7 days, everything unlocked.</p>
+          <p className="text-slate-400 text-[16px]">Free for 3 days, everything unlocked.</p>
           {/* Said here, before the account exists, so the AutoPay step in setup
               is something they were told about rather than a surprise. */}
-          <p className="text-slate-500 text-[13px] mt-1.5">₹0 today · AutoPay set-up in step 4 · cancel before day 8 and pay nothing</p>
+          <p className="text-slate-500 text-[13px] mt-1.5">₹0 today · AutoPay set-up in step 4 · cancel before day 4 and pay nothing</p>
           {plan !== 'free' && (
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold border mt-3 ${pm.cls}`}>
               {pm.label} plan
@@ -242,7 +242,7 @@ export default function SignupPage() {
         </p>
 
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8">
-          {['Trade-only API key', 'No withdrawal access', 'Cancel before day 8'].map((t) => (
+          {['Trade-only API key', 'No withdrawal access', 'Cancel before day 4'].map((t) => (
             <span key={t} className="flex items-center gap-1.5 whitespace-nowrap text-[11px] text-slate-600">
               <span className="w-1 h-1 rounded-full bg-accent/50" />
               {t}

@@ -36,7 +36,7 @@ export const faqs = [
   },
   {
     q: 'Is there a free plan?',
-    a: 'No — there is one plan, Pro, with everything included. Every new account gets 7 days free: you set up UPI AutoPay or a card first, nothing is charged today, and if you cancel before day 8 you pay nothing.',
+    a: 'No — there is one plan, Pro, with everything included. Every new account gets 3 days free: you set up UPI AutoPay or a card first, nothing is charged today, and if you cancel before day 4 you pay nothing.',
   },
 ];
 

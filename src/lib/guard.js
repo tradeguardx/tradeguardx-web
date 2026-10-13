@@ -165,7 +165,7 @@ export function gapsOf({ account, connection, rules, notifications, entitled = t
               key: 'billing',
               short: 'trial ended',
               title: 'Your free trial has ended',
-              body: 'Nothing is enforcing your rules any more. Subscribe to switch the guard back on — your free week is already used, so your first charge is today.',
+              body: 'Nothing is enforcing your rules any more. Subscribe to switch the guard back on — your free trial is already used, so your first charge is today.',
               cta: 'See plans',
               to: '/dashboard/activate',
             }
@@ -173,8 +173,8 @@ export function gapsOf({ account, connection, rules, notifications, entitled = t
             key: 'billing',
             short: 'guard not switched on',
             title: 'Billing is not set up',
-            body: 'Rules are written down but nothing enforces them until the guard is on. The first 7 days are free and nothing is charged today.',
-            cta: 'Start 7 days free',
+            body: 'Rules are written down but nothing enforces them until the guard is on. The first 3 days are free and nothing is charged today.',
+            cta: 'Start 3 days free',
             to: '/dashboard/activate',
           },
     );

@@ -190,7 +190,7 @@ describe('gapsOf — asked for billing, not blocked', () => {
   it('keeps the harder copy for someone with no access at all', () => {
     const billing = gapsOf({ ...base, entitled: false, mandate: false }).find((g) => g.key === 'billing');
     expect(billing.title).toBe('Billing is not set up');
-    expect(billing.cta).toBe('Start 7 days free');
+    expect(billing.cta).toBe('Start 3 days free');
   });
 
   /* Fail-open: an unloaded subscription must never accuse someone who has
@@ -210,16 +210,16 @@ describe('gapsOf — asked for billing, not blocked', () => {
 describe('gapsOf — the trial that has already been used', () => {
   const base = { account, connection: readOnly, rules, notifications: alerts, entitled: false, mandate: false };
 
-  it('offers the free week to someone who never started', () => {
+  it('offers the free trial to someone who never started', () => {
     const billing = gapsOf({ ...base, trialSpent: false }).find((g) => g.key === 'billing');
     expect(billing.title).toBe('Billing is not set up');
-    expect(billing.body).toMatch(/first 7 days are free/);
+    expect(billing.body).toMatch(/first 3 days are free/);
   });
 
   it('does not re-offer it to someone whose trial ended', () => {
     const billing = gapsOf({ ...base, trialSpent: true }).find((g) => g.key === 'billing');
     expect(billing.title).toBe('Your free trial has ended');
-    expect(billing.body).not.toMatch(/7 days are free|nothing is charged today/);
+    expect(billing.body).not.toMatch(/[37] days are free|nothing is charged today/);
     expect(billing.body).toMatch(/first charge is today/);
     expect(billing.cta).toBe('See plans');
   });

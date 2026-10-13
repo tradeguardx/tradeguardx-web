@@ -181,7 +181,7 @@ export default function StoryHero() {
           transition={{ delay: 0.4 }}
           className="mt-5 text-xs text-slate-600"
         >
-          7 days free · Nothing charged until day 8 · Setup in &lt; 2 minutes
+          3 days free · Nothing charged until day 4 · Setup in &lt; 2 minutes
         </motion.p>
       </div>
 

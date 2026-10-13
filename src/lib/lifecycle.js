@@ -187,7 +187,7 @@ export function lifecycleView(id, ctx = {}) {
         pill: 'Guard off',
         tone: 'amber',
         plan: 'Setup · step 4 of 4',
-        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Start your 7-day free trial to switch it on. ₹0 today.', cta: 'Start free trial', to: ONBOARDING },
+        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Start your 3-day free trial to switch it on. ₹0 today.', cta: 'Start free trial', to: ONBOARDING },
         locks: ['live', 'journal'],
         lock: {
           title: 'Starts with your free trial',

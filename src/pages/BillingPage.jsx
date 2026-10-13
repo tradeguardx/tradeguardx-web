@@ -431,15 +431,15 @@ export default function BillingPage() {
         <section style={sxw(`margin-top:20px;${CARD}`)}>
           <p style={sxw('margin:0 0 14px;font-size:13.5px;line-height:1.55;color:#c9d2e0')}>
             {settling
-              ? `Your free trial has ended and no payment method is set up. Your guard stays on${guardUntil ? ` until ${guardUntil}` : ' for a short while'}. Subscribe to keep it on — your free week is used, so the first charge is today.`
+              ? `Your free trial has ended and no payment method is set up. Your guard stays on${guardUntil ? ` until ${guardUntil}` : ' for a short while'}. Subscribe to keep it on — your free trial is used, so the first charge is today.`
               : carrying
               ? `Your free trial has ${left} day${left === 1 ? '' : 's'} left and no payment method attached, so your guard stops when it ends. Add one and you keep all ${left} — nothing is charged today.`
               : spent
-                ? `Your free trial ended${endedOn ? ` on ${endedOn}` : ''}, so nothing is enforcing your rules. Subscribe to switch the guard back on${cur ? ` — ${inr(cur.price)} ${PER[interval]}` : ''}. Your free week is already used, so the first charge is today.`
-                : 'You don’t have a plan yet. Setting one up switches your guard on — the first 7 days are free and nothing is charged today.'}
+                ? `Your free trial ended${endedOn ? ` on ${endedOn}` : ''}, so nothing is enforcing your rules. Subscribe to switch the guard back on${cur ? ` — ${inr(cur.price)} ${PER[interval]}` : ''}. Your free trial is already used, so the first charge is today.`
+                : 'You don’t have a plan yet. Setting one up switches your guard on — the first 3 days are free and nothing is charged today.'}
           </p>
           <button type="button" onClick={() => navigate('/dashboard/activate')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:#00d4aa;color:#02241d;font-size:13.5px;font-weight:800')}>
-            {settling ? 'Subscribe' : carrying ? `Set up billing · keep your ${left} days` : spent ? 'Subscribe' : 'Start 7 days free'}
+            {settling ? 'Subscribe' : carrying ? `Set up billing · keep your ${left} days` : spent ? 'Subscribe' : 'Start 3 days free'}
           </button>
         </section>
       </div>
