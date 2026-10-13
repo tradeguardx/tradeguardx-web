@@ -25,9 +25,14 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
   const started = useRef(false);
 
   useEffect(() => {
-    if (started.current || !accessToken || !tradingAccountId) return undefined;
-    started.current = true;
+    if (!accessToken || !tradingAccountId) return undefined;
+    /* Marked started INSIDE the timeout, not before it: React's dev double
+       mount cancels the first timeout, and a flag set outside it made the
+       second mount think the read had begun — an animation that never asked
+       the server for anything. */
     const t = setTimeout(async () => {
+      if (started.current) return;
+      started.current = true;
       const out = await unlock.start('auto');
       if (out !== 'ready') return;
       // The snapshot says how far it read; the tax import has it all, so walk
@@ -51,7 +56,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
   const worst = report?.checks?.find((c) => c.status === 'problem') ?? report?.checks?.find((c) => c.status === 'warning') ?? null;
   const skip = (
     <button type="button" onClick={onContinue} style={sx('padding:6px 2px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
-      Skip to {continueLabel ? continueLabel.toLowerCase() : 'billing'}
+      Skip to {continueLabel ? continueLabel.toLowerCase() : 'your free trial'}
     </button>
   );
 

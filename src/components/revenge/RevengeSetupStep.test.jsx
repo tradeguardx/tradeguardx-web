@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { StrictMode } from 'react';
 
 const report = {
   currency: 'USD', trades: 40, enoughData: true, minTrades: 10, score: 38, grade: 'onTilt',
@@ -53,7 +54,13 @@ describe('setup: the revenge report between the key and billing', () => {
 
   it('can always be skipped, even while it builds', async () => {
     const onContinue = mount();
-    fireEvent.click(screen.getByRole('button', { name: 'Skip to billing' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip to your free trial' }));
     await waitFor(() => expect(onContinue).toHaveBeenCalled());
+  });
+
+  it('starts the read under React StrictMode (dev double mount) — never an endless animation', async () => {
+    render(<StrictMode><MemoryRouter><RevengeSetupStep accessToken="t" tradingAccountId="a1" onContinue={vi.fn()} /></MemoryRouter></StrictMode>);
+    await waitFor(() => expect(unlockRevengeReport).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('Your revenge report is unlocked', {}, { timeout: 5000 })).toBeTruthy();
   });
 });

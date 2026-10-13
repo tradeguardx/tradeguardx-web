@@ -86,8 +86,10 @@ export default function RevengeReportPage() {
     if (!res || unlock.phase !== 'idle') return undefined;
     const key = `${accountId}:${months}:${res.building ? 'b' : res.needsUnlock ? 'n' : ''}`;
     if (!(res.building || res.needsUnlock) || autoStarted.current === key) return undefined;
-    autoStarted.current = key;
     const t = setTimeout(() => {
+      // Inside the timeout: see RevengeSetupStep — a dev double mount cancels the first.
+      if (autoStarted.current === key) return;
+      autoStarted.current = key;
       const run = res.building ? unlock.resume() : unlock.start(months);
       run.then((out) => { if (out === 'ready') load(months, { revealAfter: true }); });
     }, 0);
