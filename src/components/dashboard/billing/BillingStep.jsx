@@ -37,7 +37,8 @@ function Glyph({ d, size = 15, width = 2 }) {
   );
 }
 
-const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Start free trial'];
+const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Your revenge score', 'Start free trial'];
+const LAST = STEP_NAMES.length - 1;
 
 /* Fallbacks only. The pricing endpoint wins — see `options`. */
 const PLAN_FALLBACK = [
@@ -61,12 +62,12 @@ const fmtDay = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'sh
  * (s0, s2). A trial cannot start then, so the button names the step that is
  * actually next and goes there instead of to checkout.
  *
- * `stepsDone` — how many of the four setup steps are finished (default 3:
+ * `stepsDone` — how many of the five setup steps are finished (default 4:
  * everything but billing). Plan & billing passes fewer in s0/s2, so the
  * step list and the band never tick "Connect key" for a key that is not
  * connected.
  */
-export default function BillingStep({ onStarted, setupCta, stepsDone = 3 }) {
+export default function BillingStep({ onStarted, setupCta, stepsDone = LAST }) {
   const navigate = useNavigate();
   const { user, session } = useAuth();
   const [plans, setPlans] = useState([]);
@@ -352,8 +353,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = 3 }) {
       <div style={{ maxWidth: 1220, margin: '0 auto', padding: '26px 0 80px' }}>
         <ol style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: 0, padding: 0, listStyle: 'none' }}>
           {STEP_NAMES.map((name, i) => {
-            const done = i < Math.min(stepsDone, 3);
-            const current = i === Math.min(stepsDone, 3);
+            const done = i < Math.min(stepsDone, LAST);
+            const current = i === Math.min(stepsDone, LAST);
             return (
               <li key={name} className="bs-step" data-done={done ? '1' : '0'} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span
@@ -363,7 +364,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = 3 }) {
                   {done ? '✓' : i + 1}
                 </span>
                 <span className="bs-step__label" style={{ fontSize: 13, fontWeight: 600, color: current ? 'var(--ink)' : done ? 'var(--ink-2)' : 'var(--ink-3)' }}>{name}</span>
-                {i < 3 && <span aria-hidden className="bs-step__bar" style={{ width: 26, height: 1, background: 'var(--line-strong)' }} />}
+                {i < LAST && <span aria-hidden className="bs-step__bar" style={{ width: 26, height: 1, background: 'var(--line-strong)' }} />}
               </li>
             );
           })}
@@ -386,7 +387,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = 3 }) {
             */}
           <div style={{ marginTop: 0, marginBottom: 22, maxWidth: 720 }}>
             <div style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--mint)' }}>
-              {stepsDone >= 3 ? 'Step 4 of 4 · Last step' : 'Step 4 of 4'}
+              {stepsDone >= LAST ? `Step ${LAST + 1} of ${LAST + 1} · Last step` : `Step ${LAST + 1} of ${LAST + 1}`}
             </div>
             <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.4vw,28px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.03em', textWrap: 'pretty' }}>
               {charged

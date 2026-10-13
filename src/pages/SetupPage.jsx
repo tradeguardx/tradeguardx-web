@@ -61,6 +61,9 @@ const STEPS = [
   { key: 'venue', label: 'Choose exchange', h: 'Which exchange do you trade on?', p: 'This is the account the guard will watch. You can add others later.' },
   { key: 'name', label: 'Name account', h: 'Name the account', p: 'Just a label so you can tell this account from the others. The key comes next.' },
   { key: 'key', label: 'Connect key', h: 'Connect the key', p: 'This is the step that makes your rules real. Until it is done the account is listed here but nothing is watching it.' },
+  /* The reward for connecting the key: their own last month read back to
+     them. Ticked the moment the key connects — it informs, never blocks. */
+  { key: 'report', label: 'Your revenge score', h: 'Your revenge score', p: 'Key connected. Before anything else, here is how you have been trading after a loss — read from your own trades.' },
   { key: 'billing', label: 'Start free trial', h: 'Start your free trial', p: 'Free for 3 days and nothing is charged today. The guard only runs once this is done.' },
 ];
 
@@ -177,6 +180,7 @@ export default function SetupPage() {
       Boolean(slug) || account,
       account,
       account && noGap('key'),
+      account && noGap('key'), // the revenge score: there as soon as the key is
       hasMandate || planOff,
     ];
   }, [slug, hasAccount, hasMandate, planOff, fresh, createdHere, g]);
@@ -218,24 +222,14 @@ export default function SetupPage() {
   /* Someone who already has a method attached has nothing to buy, so billing
      is skipped rather than shown and dismissed. With billing last, that means
      they are done. A no-card trialist is NOT in that group. */
-  /*
-   * THE REVENGE REPORT, between the key and billing. Shown only after a key
-   * actually connects (never after "I'll connect the key later") — it is the
-   * trader's own last month read back to them, right before we ask them to
-   * protect it. Its "Fix this" / "Skip" both carry on exactly as before.
-   */
-  const [reportFor, setReportFor] = useState(null);
-  const afterReport = () => {
-    setReportFor(null);
-    afterKey();
-  };
-
+  /* After the key (or after the revenge score): someone with a payment method
+     already, or whose plan is off, has nothing to start — they are done. */
   const afterKey = () => {
     if (planOff) {
       toast.info('Account connected. Your guard is off until your plan is active.');
       return finish();
     }
-    return hasMandate ? finish() : go(3);
+    return hasMandate ? finish() : go(4);
   };
 
   const finish = async () => {
@@ -257,45 +251,22 @@ export default function SetupPage() {
 
   const venue = slug ? venueFor(slug) : null;
 
-  /* Before the "all done" redirect: connecting the key can be the last step
-     for someone who already pays, and they still get to see their report. */
-  if (reportFor) {
-    const v = venue ?? (selectedAccount?.propFirmSlug ? venueFor(selectedAccount.propFirmSlug) : null);
-    return (
-      <div style={sx('max-width:1040px;margin:0 auto;padding-bottom:56px')}>
-        <Rail at={2} done={[true, true, true, hasMandate || planOff]} />
-        <div style={sx('margin-bottom:18px;max-width:74ch')}>
-          <h2 style={sx("margin:0;font:600 23px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.026em")}>Your revenge report</h2>
-          <p style={sx('margin:7px 0 0;font-size:13.5px;line-height:1.6;color:var(--ink-3)')}>
-            Key connected. Before anything else, here is how you have been trading after a loss.
-          </p>
-        </div>
-        <RevengeSetupStep
-          accessToken={session?.access_token}
-          tradingAccountId={reportFor}
-          accountName={selectedAccount?.name}
-          exchangeName={v?.name}
-          onContinue={afterReport}
-          continueLabel={planOff || hasMandate ? 'Go to your dashboard' : undefined}
-        />
-      </div>
-    );
-  }
-
   /* Everything already done — they followed a stale link or finished in
      another tab. There is nothing to set up, so do not pretend otherwise. */
-  if (!accountsLoading && guard.loaded !== false && done.every(Boolean)) {
+  /* Not while they are looking at a step: connecting the key can finish
+     setup for someone who already pays, and they still see their score. */
+  if (pickedStep == null && !accountsLoading && guard.loaded !== false && done.every(Boolean)) {
     return <Navigate to="/dashboard/overview" replace />;
   }
 
   /*
-   * Step 4 owns its whole screen — band, stepper, headline and plan panel —
+   * Step 5 owns its whole screen — band, stepper, headline and plan panel —
    * so the page chrome below would be a second stepper above its own and a
    * second heading above its headline. The reference is explicit that this
    * step replaces them.
    */
-  if (at === 3) {
-    return <BillingStep onStarted={() => setPickedStep(3)} />;
+  if (at === 4) {
+    return <BillingStep onStarted={() => setPickedStep(4)} />;
   }
 
   return (
@@ -349,8 +320,25 @@ export default function SetupPage() {
         />
       )}
 
-      {/* No account id to read (should not happen): carry on as before rather than stall. */}
-      {at === 2 && <ConnectKeyFlow embedded onConnected={() => (selectedAccount?.id ? setReportFor(selectedAccount.id) : afterKey())} />}
+      {at === 2 && <ConnectKeyFlow embedded onConnected={() => go(3)} />}
+
+      {at === 3 && (selectedAccount?.id ? (
+        <RevengeSetupStep
+          key={selectedAccount.id}
+          accessToken={accessToken}
+          tradingAccountId={selectedAccount.id}
+          accountName={selectedAccount.name}
+          exchangeName={(venue ?? (selectedAccount.propFirmSlug ? venueFor(selectedAccount.propFirmSlug) : null))?.name}
+          onContinue={afterKey}
+          continueLabel={planOff || hasMandate ? 'Go to your dashboard' : undefined}
+        />
+      ) : (
+        /* No account to read yet: never a dead end — the way on is still here. */
+        <div style={sx('display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13.5px;color:var(--ink-3)')}>
+          <span>Your score appears here once an account’s key is connected.</span>
+          <button type="button" onClick={afterKey} style={sx('padding:10px 16px;border:1px solid var(--ink);border-radius:10px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700;cursor:pointer')}>Continue</button>
+        </div>
+      ))}
 
       {at > 0 && (
         <footer style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:30px;padding-top:18px;border-top:1px solid var(--line)')}>
@@ -373,7 +361,8 @@ export default function SetupPage() {
               I&apos;ll connect the key later
             </button>
           )}
-          {at < STEPS.length - 1 ? (
+          {/* The score step carries its own "Fix this" and "Skip". */}
+          {at === 3 ? null : at < STEPS.length - 1 ? (
             <button type="button" onClick={() => go(at + 1)} style={sx('padding:10px 16px;border:1px solid var(--ink);border-radius:10px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700;cursor:pointer')}>
               Next
             </button>

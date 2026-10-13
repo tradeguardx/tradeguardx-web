@@ -155,9 +155,9 @@ export function lifecycleView(id, ctx = {}) {
     case 's2':
       return {
         ...base,
-        pill: id === 's0' ? 'Set up · 0 of 4' : 'Not protected',
+        pill: id === 's0' ? 'Set up · 0 of 5' : 'Not protected',
         tone: id === 's0' ? 'neutral' : 'red',
-        plan: id === 's0' ? 'Setup · step 1 of 4' : 'Setup · step 3 of 4',
+        plan: id === 's0' ? 'Setup · step 1 of 5' : 'Setup · step 3 of 5',
         band: id === 's0'
           ? { tone: 'neutral', title: 'Finish setup to switch your guard on.', body: 'About three minutes. Until then nothing is watching your trades.', cta: 'Continue setup', to: ONBOARDING }
           : ctx.keyState === 'failed'
@@ -186,7 +186,7 @@ export function lifecycleView(id, ctx = {}) {
         ...base,
         pill: 'Guard off',
         tone: 'amber',
-        plan: 'Setup · step 4 of 4',
+        plan: 'Setup · step 5 of 5',
         band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Start your 3-day free trial to switch it on. ₹0 today.', cta: 'Start free trial', to: ONBOARDING },
         locks: ['live', 'journal'],
         lock: {

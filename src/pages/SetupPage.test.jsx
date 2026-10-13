@@ -30,6 +30,14 @@ vi.mock('../components/dashboard/billing/BillingStep', () => ({
   default: () => <span>billing step</span>,
 }));
 vi.mock('../components/dashboard/VenueMark', () => ({ default: () => <span /> }));
+vi.mock('../components/revenge/RevengeSetupStep', () => ({
+  default: ({ onContinue, continueLabel }) => (
+    <div>
+      <span>revenge score step</span>
+      <button type="button" onClick={onContinue}>{continueLabel || 'fix this — start free trial'}</button>
+    </div>
+  ),
+}));
 
 const auth = { session: { access_token: 't' }, user: { access: 'none', isTrial: false } };
 vi.mock('../context/AuthContext', () => ({ useAuth: () => auth }));
@@ -40,7 +48,8 @@ const accountsCtx = {
   accounts: [],
   selectedAccount: null,
   refreshTradingAccounts: vi.fn(),
-  setSelectedTradingAccountId: vi.fn(),
+  // Selecting the account just created is what lets step 4 read it.
+  setSelectedTradingAccountId: vi.fn((id) => { accountsCtx.selectedAccount = { id, name: 'Delta main' }; }),
 };
 vi.mock('../context/TradingAccountContext', () => ({ useTradingAccounts: () => accountsCtx }));
 const toastInfo = vi.fn();
@@ -64,13 +73,17 @@ describe('setup, as a page', () => {
     expect(screen.queryByText(/connect-flow/)).toBeNull();
   });
 
-  it('goes venue → name → key → billing, in that order', async () => {
+  it('goes venue → name → key → revenge score → free trial, in that order', async () => {
     mount();
     fireEvent.click(await screen.findByText('Delta'));
     expect(await screen.findByText('create account')).toBeTruthy();
     fireEvent.click(screen.getByText('create account'));
     expect(await screen.findByText(/connect-flow embedded=true/)).toBeTruthy();
     fireEvent.click(screen.getByText('connect'));
+    /* Step 4: the reward for connecting the key. */
+    expect(await screen.findByText('revenge score step')).toBeTruthy();
+    expect(screen.getByText('Your revenge score', { selector: 'h2' })).toBeTruthy();
+    fireEvent.click(screen.getByText('fix this — start free trial'));
     /* Billing sits after the key: the balance is read from the key, so this is
        the first point the ask can name their own daily limit. */
     expect(await screen.findByText('billing step')).toBeTruthy();
@@ -84,9 +97,19 @@ describe('setup, as a page', () => {
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
+    fireEvent.click(await screen.findByText('fix this — start free trial'));
     await screen.findByText('billing step');
     expect(screen.queryByText(/Alerts/)).toBeNull();
     expect(screen.queryByText(/^Rules$/)).toBeNull();
+  });
+
+  it('"connect the key later" skips the score — there is nothing to read without a key', async () => {
+    mount();
+    fireEvent.click(await screen.findByText('Delta'));
+    fireEvent.click(await screen.findByText('create account'));
+    fireEvent.click(await screen.findByText('I\u2019ll connect the key later'.replace('\u2019', "'")));
+    expect(await screen.findByText('billing step')).toBeTruthy();
+    expect(screen.queryByText('revenge score step')).toBeNull();
   });
 
   it('uses the real screens, embedded — not simplified copies', async () => {
@@ -106,7 +129,8 @@ describe('setup, as a page', () => {
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
-    await screen.findByText('Set up your guard');
+    // Done after the score: nothing to start, so the button says where it goes.
+    fireEvent.click(await screen.findByText('Go to your dashboard'));
     expect(screen.queryByText('billing step')).toBeNull();
   });
 
@@ -125,7 +149,8 @@ describe('setup, as a page', () => {
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
-    await screen.findByText('Set up your guard');
+    // Done after the score: nothing to start, so the button says where it goes.
+    fireEvent.click(await screen.findByText('Go to your dashboard'));
     expect(screen.queryByText('billing step')).toBeNull();
     expect(toastInfo).toHaveBeenCalledWith('Account connected. Your guard is off until your plan is active.');
   });
@@ -136,6 +161,7 @@ describe('setup, as a page', () => {
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
+    fireEvent.click(await screen.findByText('fix this — start free trial'));
     expect(await screen.findByText('billing step')).toBeTruthy();
   });
 
@@ -147,7 +173,8 @@ describe('setup, as a page', () => {
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
-    await screen.findByText('Set up your guard');
+    // Done after the score: nothing to start, so the button says where it goes.
+    fireEvent.click(await screen.findByText('Go to your dashboard'));
     expect(screen.queryByText('billing step')).toBeNull();
   });
 

@@ -385,7 +385,7 @@ export default function BillingPage() {
       <BillingStep
         setupCta={state === 'setupEarly' ? { label: 'Continue setup', to: '/dashboard/setup' } : undefined}
         // s0: nothing set up yet · s2: exchange and account done, key not
-        stepsDone={life?.id === 's0' ? 0 : life?.id === 's2' ? 2 : 3}
+        stepsDone={life?.id === 's0' ? 0 : life?.id === 's2' ? 2 : 4}
       />
     );
   }
