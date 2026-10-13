@@ -98,6 +98,16 @@ describe('billing step', () => {
   /* Monthly by default. This is the first money conversation with someone who
      signed up today, and a year preselected reads as the choice being made
      for them; the saving is on screen for anyone who wants it. */
+  it('in setup, goes back to the revenge score; on Plan & billing, has no back link', () => {
+    const onBack = vi.fn();
+    const { unmount } = render(<BillingStep onBack={onBack} />);
+    fireEvent.click(screen.getByRole('button', { name: /back to your revenge score/i }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+    unmount();
+    render(<BillingStep />);
+    expect(screen.queryByRole('button', { name: /back to your revenge score/i })).toBeNull();
+  });
+
   it('starts on monthly and prices the button accordingly', async () => {
     render(<BillingStep />);
     expect(await screen.findByRole('radio', { name: /Monthly/ })).toHaveAttribute('aria-checked', 'true');

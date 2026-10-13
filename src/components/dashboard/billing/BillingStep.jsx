@@ -66,8 +66,11 @@ const fmtDay = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'sh
  * everything but billing). Plan & billing passes fewer in s0/s2, so the
  * step list and the band never tick "Connect key" for a key that is not
  * connected.
+ *
+ * `onBack` — setup only: this step fills the screen, so it carries its own
+ * way back to the revenge score. Plan & billing passes nothing.
  */
-export default function BillingStep({ onStarted, setupCta, stepsDone = LAST }) {
+export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onBack }) {
   const navigate = useNavigate();
   const { user, session } = useAuth();
   const [plans, setPlans] = useState([]);
@@ -386,6 +389,11 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST }) {
             * one makes the same point where it is being demonstrated.
             */}
           <div style={{ marginTop: 0, marginBottom: 22, maxWidth: 720 }}>
+            {onBack && (
+              <button type="button" onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: '0 0 14px', padding: '6px 0', border: 0, background: 'none', color: 'var(--ink-3)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                ← Back to your revenge score
+              </button>
+            )}
             <div style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--mint)' }}>
               {stepsDone >= LAST ? `Step ${LAST + 1} of ${LAST + 1} · Last step` : `Step ${LAST + 1} of ${LAST + 1}`}
             </div>

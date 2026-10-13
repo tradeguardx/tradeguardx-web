@@ -266,7 +266,7 @@ export default function SetupPage() {
    * step replaces them.
    */
   if (at === 4) {
-    return <BillingStep onStarted={() => setPickedStep(4)} />;
+    return <BillingStep onStarted={() => setPickedStep(4)} onBack={() => go(3)} />;
   }
 
   return (
