@@ -217,7 +217,7 @@ export default function OverviewPage() {
           accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.plan,
           to: '/dashboard/activate', cta: 'See plans',
         }
-      : { title: 'Set up billing', body: 'Free for 3 days, nothing charged today. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Start 7 days free' };
+      : { title: 'Set up billing', body: 'Free for 3 days, nothing charged today. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Start 3 days free' };
 
   const steps = [
     { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'rgba(31,111,208,0.12)', d: ICON.bank, to: '/dashboard/setup', cta: 'Add an account' },

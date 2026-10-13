@@ -457,7 +457,7 @@ export default function ShareCardModal({
 
             {referral && (
               <div style={{ fontSize: 11.5, lineHeight: 1.5, color: 'var(--ink-faint)' }}>
-                Every card carries your code <b style={{ color: 'var(--ink-2)' }}>{referral}</b>. Friends who join with it get 14 days free, and you earn a voucher.
+                Every card carries your code <b style={{ color: 'var(--ink-2)' }}>{referral}</b>. Friends who join with it get 10% off, and you earn a voucher.
               </div>
             )}
           </div>

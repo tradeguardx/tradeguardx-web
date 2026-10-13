@@ -13,7 +13,7 @@
  * the only direction this is allowed to be wrong in.
  */
 
-export const FULL_TRIAL_DAYS = 7;
+export const FULL_TRIAL_DAYS = 3; // new customers, since 13 Oct 2026 (was 7)
 
 /**
  * @param {{ needsMandate?: boolean, isTrial?: boolean, trialAutoRenews?: boolean,

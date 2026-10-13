@@ -6,7 +6,7 @@
  *
  *   VITE_FOUNDING_MEMBER_ACTIVE=true       (any truthy string)
  *   VITE_FOUNDING_MEMBER_LIMIT=100         (display only, e.g. "100")
- *   VITE_FOUNDING_MEMBER_TRIAL_DAYS=7      (display only, default 7)
+ *   VITE_FOUNDING_MEMBER_TRIAL_DAYS=3      (display only, default 3)
  *   VITE_FOUNDING_MEMBER_PLAN=Pro          (display label, default "Pro")
  *
  * These vars control ONLY the marketing UI. The actual grant is the free trial:
@@ -29,7 +29,7 @@ export function getFoundingMemberConfig() {
   // grant is TRIAL_DAYS — so the promo advertised roughly 4x what a signup
   // received. Stated in DAYS now, in the same unit the backend grants, because
   // a unit mismatch is what let the two drift apart unnoticed.
-  const trialDays = Number(import.meta.env.VITE_FOUNDING_MEMBER_TRIAL_DAYS) || 7;
+  const trialDays = Number(import.meta.env.VITE_FOUNDING_MEMBER_TRIAL_DAYS) || 3;
   const plan = (import.meta.env.VITE_FOUNDING_MEMBER_PLAN || 'Pro').trim();
   return { limit, trialDays, plan };
 }
