@@ -84,14 +84,30 @@ export function rulesFrom(report) {
   const byRule = new Map();
   for (const c of checks) {
     if (!c.fix?.rule || (c.status !== 'problem' && c.status !== 'warning')) continue;
-    const r = byRule.get(c.fix.rule) ?? { rule: c.fix.rule, text: c.fix.text, status: c.status, because: [] };
+    const r = byRule.get(c.fix.rule) ?? { rule: c.fix.rule, text: c.fix.text, status: c.status, because: [], proof: proofOf(c) };
     r.because.push(c.title);
     byRule.set(c.fix.rule, r);
   }
   if (byRule.size) return { calm: false, rules: [...byRule.values()] };
   const rules = BASELINE.map((rule) => {
     const c = checks.find((x) => x.fix?.rule === rule);
-    return c ? { rule, text: c.fix.text, status: 'good', because: [] } : null;
+    return c ? { rule, text: c.fix.text, status: 'good', because: [], proof: null } : null;
   }).filter(Boolean);
   return { calm: true, rules };
+}
+
+/* The trader's own number behind a rule, from the worst check it answers —
+   the server's measured value, worded the way its finding words it. */
+const PROOF = {
+  reentry: (v) => [`${Math.round(v)}%`, 'of your losses, you traded again within 15 minutes'],
+  sizeUp: (v) => [`${v}×`, 'your usual size, right after a loss'],
+  sameCoin: (v) => [`${Math.round(v)}%`, 'of your losses, you went straight back into the same coin'],
+  streaks: (v) => [`${Math.round(v)}%`, 'of the time, you kept trading after 2 losses in a row'],
+  tiltDays: (v) => [String(v), v === 1 ? 'day where trading after a loss made it worse' : 'days where trading after a loss made them worse'],
+  cost: (v) => [`${Math.round(v)}%`, 'of everything you lost came from revenge trades'],
+};
+export function proofOf(check) {
+  if (check?.value == null || !PROOF[check.id]) return null;
+  const [big, caption] = PROOF[check.id](check.value);
+  return { big, caption };
 }

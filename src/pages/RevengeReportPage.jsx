@@ -184,7 +184,7 @@ export default function RevengeReportPage() {
               months={months}
               reveal={reveal}
               cta={planOff
-                ? { label: 'Start my 3-day free trial →', to: '/dashboard/account/billing', note: 'Free for 3 days · nothing is charged today' }
+                ? { label: 'Start my 3-day free trial →', to: '/dashboard/account/billing', note: '₹0 today · you set each limit on the Rules page', trial: true }
                 : { label: 'Set up these rules →', to: '/dashboard/rules' }}
             />
           </div>

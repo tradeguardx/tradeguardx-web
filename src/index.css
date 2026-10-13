@@ -1805,6 +1805,18 @@
    scroll. */
 .bs-band{margin:0 -24px;padding:13px 24px}
 .rv-rule{transition:border-color .18s,box-shadow .18s}
+/* Rule-plan switches: off, until the trial button is hovered — then on. */
+.rv-toggle{flex:none;position:relative;width:38px;height:22px;border-radius:999px;background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--line-strong);transition:background .3s,box-shadow .3s}
+.rv-toggle__knob{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--ink-faint);transition:transform .35s cubic-bezier(.3,1.4,.5,1),background .3s}
+.rv-plan:has(.rv-plan__cta:hover,.rv-plan__cta:focus-visible) .rv-toggle{background:var(--mint-solid);box-shadow:0 0 12px var(--mint-line)}
+.rv-plan:has(.rv-plan__cta:hover,.rv-plan__cta:focus-visible) .rv-toggle__knob{transform:translateX(16px);background:#fff}
+.rv-plan:has(.rv-plan__cta:hover,.rv-plan__cta:focus-visible) .rv-rule{border-color:var(--mint-line)}
+.rv-rule:nth-child(2) .rv-toggle,.rv-rule:nth-child(2) .rv-toggle__knob{transition-delay:.08s}
+.rv-rule:nth-child(3) .rv-toggle,.rv-rule:nth-child(3) .rv-toggle__knob{transition-delay:.16s}
+.rv-rule:nth-child(4) .rv-toggle,.rv-rule:nth-child(4) .rv-toggle__knob{transition-delay:.24s}
+.rv-plan__cta{transition:transform .15s,filter .15s}
+.rv-plan__cta:hover{transform:translateY(-1px);filter:brightness(1.05)}
+@media (prefers-reduced-motion:reduce){.rv-toggle,.rv-toggle__knob,.rv-plan__cta{transition:none}.rv-plan__cta:hover{transform:none}}
 .rv-rule:hover{border-color:var(--line-strong);box-shadow:var(--shadow-card)}
 @media (max-width:520px){.rv-rules{padding:0 14px !important}}
 .bs-back{transition:border-color .15s,transform .15s,box-shadow .15s}

@@ -137,7 +137,8 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
                 cta={{
                   label: continueLabel || 'Start my 3-day free trial →',
                   onClick: onContinue,
-                  note: continueLabel ? null : 'Free for 3 days · nothing is charged today',
+                  note: continueLabel ? null : '₹0 today · you set each limit on the Rules page',
+                  trial: !continueLabel,
                 }}
               />
             </div>

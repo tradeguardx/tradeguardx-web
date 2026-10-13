@@ -94,6 +94,9 @@ describe('revenge report page', () => {
     expect(screen.getByText('Fixes a problem')).toBeTruthy();
     expect(screen.getAllByText('Re-entry speed after a loss').length).toBeGreaterThan(1); // the check, and the rule's tag
     expect(screen.getByRole('link', { name: /Start my 3-day free trial/ }).getAttribute('href')).toBe('/dashboard/account/billing');
+    expect(screen.getByText(/you set each limit on the Rules page/)).toBeTruthy();
+    expect(screen.getByText('of your losses, you traded again within 15 minutes')).toBeTruthy(); // their own number, on the rule's card
+    expect(screen.getByRole('img', { name: 'Not running — your guard is off' })).toBeTruthy();
   });
 
   it('a paying trader is sent to set the rules up, not to a trial', async () => {
