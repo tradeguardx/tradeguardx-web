@@ -39,11 +39,12 @@ export default function RevengeLocked({ months, onMonths, onUnlock, keyState, ac
         <div style={sx('position:relative;width:132px;height:132px')}>
           <svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true">
             <circle cx="66" cy="66" r="52" fill="none" stroke="var(--surface-3)" strokeWidth="11" />
-            <circle className="rv-motion" cx="66" cy="66" r="52" fill="none" stroke="var(--mint)" strokeWidth="11" strokeLinecap="round" strokeDasharray="82 245" style={{ transformOrigin: '66px 66px', animation: 'rvSweep 2.6s linear infinite' }} />
+            {/* A full ring that breathes — a question waiting, not a spinner loading. */}
+            <circle className="rv-motion" cx="66" cy="66" r="52" fill="none" stroke="var(--mint)" strokeWidth="11" style={{ animation: 'rvPulse 2.4s ease-in-out infinite' }} />
           </svg>
           <div style={sx('position:absolute;inset:0;display:grid;place-items:center')}>
             <div>
-              <div className="rv-motion" style={sx("font:600 40px/1 'Space Grotesk',sans-serif;color:var(--ink);animation:rvPulse 2.4s ease-in-out infinite")}>?</div>
+              <div style={sx("font:700 48px/1 'Space Grotesk',sans-serif;color:var(--mint)")}>?</div>
               <div style={sx("margin-top:4px;font:500 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:var(--ink-faint)")}>OF 100</div>
             </div>
           </div>

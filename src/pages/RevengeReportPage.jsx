@@ -126,7 +126,8 @@ export default function RevengeReportPage() {
 
   return (
     <PageShell
-      sub={<>How you trade after a loss on <b style={sx('color:var(--ink-2)')}>{selectedAccount?.name ?? 'this account'}</b>, from your closed trades. Times are IST.</>}
+      /* Locked: the card speaks; a subtitle above it would say the same twice. */
+      sub={res?.locked ? null : <>How you trade after a loss on <b style={sx('color:var(--ink-2)')}>{selectedAccount?.name ?? 'this account'}</b>, from your closed trades. Times are IST.</>}
       right={report && !building ? (
         <div role="tablist" aria-label="Period" style={sx('display:flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)')}>
           {PERIODS.map((x) => (
