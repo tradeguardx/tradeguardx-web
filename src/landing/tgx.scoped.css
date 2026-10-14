@@ -744,9 +744,9 @@
   }
   .tgx-home .hero-new__text{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tgx-home .hero-new__short{ display: none; }
-  .tgx-home .hero-later{ margin: 16px 0 0; font-size: 14px; color: var(--text-3, #7d8aa0); }
-  .tgx-home .hero-later a{ color: #ff9a87; font-weight: 700; text-decoration: none; }
-  .tgx-home .hero-later a:hover{ text-decoration: underline; text-underline-offset: 3px; }
+  .tgx-home .btn-2line{ flex-direction: column; gap: 3px; line-height: 1.15; padding-top: 11px; padding-bottom: 11px; }
+  .tgx-home .btn-2line__main{ display: inline-flex; align-items: center; gap: 8px; }
+  .tgx-home .btn-2line__sub{ font-size: 12px; font-weight: 600; opacity: .72; }
   @media (prefers-reduced-motion: reduce){ .tgx-home .hero-new, .tgx-home .hero-new svg{ transition: none; } .tgx-home .hero-new:hover{ transform: none; } }
 
   /* hero visual - live dashboard card */
@@ -2334,11 +2334,10 @@
        the headline and "Create free account", pushing the only way to act
        ~900px down. The demo now follows the trust ticks as proof. */
     .tgx-home .hero-grid .hero-ctas{ order: 3; }
-    .tgx-home .hero-grid .hero-new{ order: 0; align-self: flex-start; font-size: 13px; }
+    .tgx-home .hero-grid .hero-new{ order: 0; align-self: center; font-size: 13px; }
     .tgx-home .hero-new__long{ display: none; }
     .tgx-home .hero-new__short{ display: inline; }
-    .tgx-home .hero-grid .hero-trust{ order: 4; margin-bottom: 0; }
-    .tgx-home .hero-grid .hero-later{ order: 4; margin: 14px 0 32px; }
+    .tgx-home .hero-grid .hero-trust{ order: 4; margin-bottom: 32px; }
     .tgx-home .hero-visual{ order: 5; margin-bottom: 30px; }
     .tgx-home .pain-grid, .tgx-home .steps, .tgx-home .rules-grid{ grid-template-columns: 1fr; }
     .tgx-home .trust-grid{ grid-template-columns: repeat(3, 1fr); gap: 28px 20px; text-align: center; }
