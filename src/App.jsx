@@ -25,6 +25,7 @@ import DashboardLayout from './components/dashboard/DashboardLayout';
 import ActivateGuardPage from './pages/ActivateGuardPage';
 import SetupPage from './pages/SetupPage';
 import RevengeReportPage from './pages/RevengeReportPage';
+import RevengeLandingPage from './pages/RevengeLandingPage';
 import InfluencerLayout from './components/influencer/InfluencerLayout';
 import InfluencerOverview from './pages/influencer/InfluencerOverview';
 import InfluencerCommissions from './pages/influencer/InfluencerCommissions';
@@ -115,6 +116,8 @@ function App() {
                   <Route path="exchanges/:venue/:guide" element={<ExchangeGuidePage />} />
                   <Route path="crypto-kill-switch" element={<CryptoKillSwitchPage />} />
                   <Route path="crypto-tax-india" element={<CryptoTaxIndiaPage />} />
+                  {/* The free revenge report, for someone not signed in. */}
+                  <Route path="revenge-report" element={<RevengeLandingPage />} />
                   <Route path="roadmap" element={<RoadmapPage />} />
                   {/* Catch-all 404 inside Layout so the page keeps nav + footer.
                       Replaces the previous redirect-to-home that produced soft-404s. */}
