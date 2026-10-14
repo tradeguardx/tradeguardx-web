@@ -196,7 +196,7 @@ export default function RevengeReportPage() {
       ) : (
         <Placeholder />
       )}
-      <RevengeShareModal open={sharing} onClose={() => setSharing(false)} report={report} periodLabel={period?.label} handle={handleFrom(user)} />
+      <RevengeShareModal open={sharing} onClose={() => setSharing(false)} report={report} handle={handleFrom(user)} />
     </PageShell>
   );
 }

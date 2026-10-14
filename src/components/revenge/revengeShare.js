@@ -56,4 +56,42 @@ export function shareCaption(report, link) {
    computed property by default (~480 KB of inline CSS for this card), and
    current Chrome then draws the SVG it builds with no styles at all — plain
    black serif text. The card is all inline styles, so these are all it uses. */
-export const EXPORT_STYLE_PROPS = ['display', 'position', 'inset', 'top', 'left', 'right', 'bottom', 'width', 'height', 'min-width', 'max-width', 'box-sizing', 'overflow', 'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'flex', 'flex-direction', 'flex-wrap', 'flex-grow', 'flex-shrink', 'flex-basis', 'align-items', 'justify-content', 'gap', 'row-gap', 'column-gap', 'grid-template-columns', 'place-items', 'background', 'background-color', 'background-image', 'color', 'font', 'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-transform', 'text-align', 'font-variant-numeric', 'border', 'border-top', 'border-radius', 'border-color', 'border-width', 'border-style', 'white-space', 'vertical-align', 'fill', 'stroke', 'stroke-width', 'opacity', 'transform', 'text-anchor'];
+export const EXPORT_STYLE_PROPS = ['border-left', 'border-right', 'border-bottom', 'box-shadow', 'min-height', 'align-self', 'text-overflow', 'overflow-wrap', 'word-break', 'grid-template-rows', 'justify-items', 'z-index', 'display', 'position', 'inset', 'top', 'left', 'right', 'bottom', 'width', 'height', 'min-width', 'max-width', 'box-sizing', 'overflow', 'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'flex', 'flex-direction', 'flex-wrap', 'flex-grow', 'flex-shrink', 'flex-basis', 'align-items', 'justify-content', 'gap', 'row-gap', 'column-gap', 'grid-template-columns', 'place-items', 'background', 'background-color', 'background-image', 'color', 'font', 'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-transform', 'text-align', 'font-variant-numeric', 'border', 'border-top', 'border-radius', 'border-color', 'border-width', 'border-style', 'white-space', 'vertical-align', 'fill', 'stroke', 'stroke-width', 'opacity', 'transform', 'text-anchor'];
+
+/* ── For the two share designs ─────────────────────────────────────────── */
+
+/** A name people repeat — about the habit, never an insult. */
+export const CHARACTER = {
+  calm: { name: 'The Monk', tone: 'mint' },
+  someTilt: { name: 'The Wobbler', tone: 'amber' },
+  revengeProne: { name: 'The Chaser', tone: 'amber' },
+  onTilt: { name: 'The Berserker', tone: 'red' },
+};
+
+/** Their verdict, in first person, by grade. */
+export const HEADLINE = {
+  calm: 'Losses don’t move me.',
+  someTilt: 'A loss sometimes pulls me back in.',
+  revengeProne: 'Losses pull me back in.',
+  onTilt: 'After a loss, I chase it.',
+};
+
+export const checkOf = (report, id) => report?.checks?.find((c) => c.id === id && c.value != null) ?? null;
+
+/** 33% → "1 in 3"; null when there is nothing to say. */
+export function oneIn(pct) {
+  if (pct == null || pct <= 0) return null;
+  const n = Math.round(100 / pct);
+  return n <= 1 ? 'Every' : `1 in ${n}`;
+}
+
+/** −57660 → "−₹57.7k" (a share card has no room for every digit). */
+export function moneyShort(n, currency) {
+  if (n == null || !Number.isFinite(n)) return null;
+  const sym = String(currency).toUpperCase() === 'INR' ? '₹' : '$';
+  const a = Math.abs(n);
+  const body = a >= 1e7 ? `${(a / 1e7).toFixed(1)}Cr` : a >= 1e5 && sym === '₹' ? `${(a / 1e5).toFixed(1)}L` : a >= 1000 ? `${(a / 1000).toFixed(1)}k` : String(Math.round(a));
+  return `${n < 0 ? '−' : '+'}${sym}${body.replace('.0', '')}`;
+}
+
+export const MASKED = '−₹•••';

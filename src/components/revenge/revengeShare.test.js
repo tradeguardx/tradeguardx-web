@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shareCaption, shareStats } from './revengeShare';
+import { moneyShort, oneIn, shareCaption, shareStats } from './revengeShare';
 
 const report = {
   score: 43, grade: 'revengeProne', currency: 'INR',
@@ -30,5 +30,14 @@ describe('revenge share card', () => {
     expect(shareCaption(report, 'tradeguardx.com')).toBe(
       "My revenge score: 43/100 — revenge-prone. 33% of my losses, I was back in within 15 min. What's yours? tradeguardx.com",
     );
+  });
+
+  it('says "1 in 3" and short money the way a post needs it', () => {
+    expect(oneIn(33)).toBe('1 in 3');
+    expect(oneIn(100)).toBe('Every');
+    expect(oneIn(0)).toBeNull();
+    expect(moneyShort(-57660, 'INR')).toBe('−₹57.7k');
+    expect(moneyShort(-250000, 'INR')).toBe('−₹2.5L');
+    expect(moneyShort(1200, 'USD')).toBe('+$1.2k');
   });
 });

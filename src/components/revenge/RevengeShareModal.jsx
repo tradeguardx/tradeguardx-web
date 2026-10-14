@@ -18,7 +18,8 @@ const FILE = 'tradeguardx-revenge-score.png';
  * Money and name are OFF by default: the score and the percentages make the
  * point, and a public post should not publish an account's size by accident.
  */
-export default function RevengeShareModal({ open, onClose, report, periodLabel, handle = null, referral = null }) {
+export default function RevengeShareModal({ open, onClose, report, handle = null, referral = null }) {
+  const [variant, setVariant] = useState('chaser');
   const [amounts, setAmounts] = useState(false);
   const [showName, setShowName] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -103,7 +104,9 @@ export default function RevengeShareModal({ open, onClose, report, periodLabel, 
   // Into the dashboard root, so the theme tokens reach the panel (it opens on
   // a click, so the root is always mounted by then).
   const host = document.querySelector('[data-tgx]') ?? document.body;
-  const card = { report, periodLabel, amounts, handle: showName ? handle : null };
+  const end = report.period?.to ? new Date(report.period.to) : new Date();
+  const monthLabel = end.toLocaleDateString('en-IN', { month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).toUpperCase();
+  const card = { variant, report, monthLabel, amounts, handle: showName ? handle : null };
 
   return createPortal(
     <div data-tgx-modal="1" role="dialog" aria-modal="true" aria-label="Share your revenge score" onClick={onClose} style={sx('position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(3,5,10,.72);backdrop-filter:blur(4px)')}>
@@ -123,6 +126,12 @@ export default function RevengeShareModal({ open, onClose, report, periodLabel, 
             <div>
               <h2 style={sx("margin:0;font:600 20px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.02em")}>Share your revenge score</h2>
               <p style={sx('margin:5px 0 0;font-size:13px;line-height:1.5;color:var(--ink-3)')}>Every trader has one. Most never look. Post yours and ask them theirs.</p>
+            </div>
+
+            <div role="radiogroup" aria-label="Design" style={sx('display:flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)')}>
+              {[['chaser', 'The character'], ['meter', 'Tilt meter']].map(([k, label]) => (
+                <button key={k} type="button" role="radio" aria-checked={variant === k} onClick={() => { setVariant(k); setDone(null); }} style={sx('flex:1;padding:8px 10px;border:0;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer', variant === k ? { background: 'var(--surface)', color: 'var(--ink)', boxShadow: 'var(--shadow-card)' } : { background: 'transparent', color: 'var(--ink-3)' })}>{label}</button>
+              ))}
             </div>
 
             <div style={sx('display:grid;gap:8px')}>
