@@ -34,12 +34,15 @@ function TalkToFounderLink({ mobile = false, onClick }) {
       className={
         mobile
           ? 'flex items-center gap-2.5 rounded-xl px-4 py-3 font-medium text-slate-300 transition-all hover:bg-white/[0.04] hover:text-white'
-          : 'inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200'
+          : 'inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap'
       }
       style={mobile ? undefined : { color: '#5ec2ee' }}
+      aria-label="Talk to founder on Telegram"
+      title="Talk to founder"
     >
       <TelegramGlyph className={mobile ? 'h-[18px] w-[18px]' : 'h-4 w-4'} />
-      Talk to founder
+      {/* Icon only between 1024 and 1280px, where the full row does not fit. */}
+      <span className={mobile ? undefined : 'hidden xl:inline whitespace-nowrap'}>Talk to founder</span>
     </a>
   );
 }
@@ -57,6 +60,8 @@ export default function Navbar() {
 
   const navLinks = [
     { label: 'How it Works', to: { pathname: '/', hash: 'scenarios' } },
+    // The free revenge report: the no-commitment way in, so it gets a badge.
+    { label: 'Revenge report', to: '/revenge-report', badge: 'Free' },
     // Which venues we support is the second question every visitor has, and it
     // used to be answerable only from inside the docs sidebar.
     { label: 'Exchanges', to: '/exchanges' },
@@ -87,25 +92,26 @@ export default function Navbar() {
           <span className="text-lg font-display font-bold text-white">TradeGuardX</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden lg:flex items-center gap-0.5 xl:gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.label}
               to={link.to}
-              className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all duration-200 text-sm font-medium"
+              className="inline-flex items-center gap-1.5 px-3 xl:px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all duration-200 text-sm font-medium whitespace-nowrap"
             >
               {link.label}
+              {link.badge && <NavBadge>{link.badge}</NavBadge>}
             </Link>
           ))}
           <span className="mx-1 h-4 w-px bg-white/10" aria-hidden />
           <TalkToFounderLink />
         </div>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3">
           {user ? (
             <Link
               to="/dashboard"
-              className="px-5 py-2.5 rounded-xl bg-accent text-surface-950 font-semibold text-sm hover:bg-accent-hover transition-all duration-200 shadow-sm shadow-accent/20"
+              className="whitespace-nowrap px-5 py-2.5 rounded-xl bg-accent text-surface-950 font-semibold text-sm hover:bg-accent-hover transition-all duration-200 shadow-sm shadow-accent/20"
             >
               Dashboard
             </Link>
@@ -113,13 +119,13 @@ export default function Navbar() {
             <>
               <Link
                 to="/login"
-                className="px-4 py-2.5 text-slate-400 hover:text-white transition-colors text-sm font-medium"
+                className="whitespace-nowrap px-4 py-2.5 text-slate-400 hover:text-white transition-colors text-sm font-medium"
               >
                 Sign in
               </Link>
               <Link
                 to="/signup"
-                className="px-5 py-2.5 rounded-xl bg-accent text-surface-950 font-semibold text-sm hover:bg-accent-hover transition-all duration-200 shadow-sm shadow-accent/20"
+                className="whitespace-nowrap px-5 py-2.5 rounded-xl bg-accent text-surface-950 font-semibold text-sm hover:bg-accent-hover transition-all duration-200 shadow-sm shadow-accent/20"
               >
                 Get Started
               </Link>
@@ -129,7 +135,7 @@ export default function Navbar() {
 
         <button
           type="button"
-          className="md:hidden p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all"
+          className="lg:hidden p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all"
           onClick={() => setOpen(!open)}
           aria-label="Toggle menu"
         >
@@ -151,16 +157,17 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-white/[0.06] bg-surface-950/95 backdrop-blur-2xl px-6 py-5 space-y-1"
+            className="lg:hidden border-t border-white/[0.06] bg-surface-950/95 backdrop-blur-2xl px-6 py-5 space-y-1"
           >
             {navLinks.map((link) => (
               <Link
                 key={link.label}
                 to={link.to}
-                className="block px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-white/[0.04] transition-all font-medium"
+                className="flex items-center gap-2 px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-white/[0.04] transition-all font-medium"
                 onClick={() => setOpen(false)}
               >
                 {link.label}
+                {link.badge && <NavBadge>{link.badge}</NavBadge>}
               </Link>
             ))}
             <TalkToFounderLink mobile onClick={() => setOpen(false)} />
@@ -192,5 +199,13 @@ export default function Navbar() {
         )}
       </AnimatePresence>
     </motion.header>
+  );
+}
+
+function NavBadge({ children }) {
+  return (
+    <span className="rounded-full px-1.5 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-wider" style={{ background: 'rgba(255,138,122,0.16)', color: '#ff9a87' }}>
+      {children}
+    </span>
   );
 }
