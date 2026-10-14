@@ -33,12 +33,12 @@ const EXAMPLE = {
 };
 
 const ANSWERS = [
-  ['How fast you trade again after a loss', 'Every loss, and how many minutes until your next trade. Most traders are shocked by the first bar.'],
-  ['Whether you size up to win it back', 'Your size right after a loss, against your own usual size on calm trades.'],
-  ['The coin you keep going back to', 'The losses you answered by jumping straight back into the same coin.'],
-  ['Your worst hour and your worst day', 'When you lose the most, and the day trading after a loss made everything worse.'],
-  ['What revenge trades cost you', 'The money lost on trades taken in the heat of a loss, against everything else.'],
-  ['The rules that would stop it', 'A short plan picked from your own trades — the limits worth setting while you are calm.'],
+  { q: 'How fast you trade again after a loss', a: 'Every loss, and how many minutes until your next trade.', eg: '9 of 45 losses → back in <5 min', tone: '#ff8a7a', art: 'gaps' },
+  { q: 'Whether you size up to win it back', a: 'Your size right after a loss, against your own usual size on calm trades.', eg: '2.4× your usual size after a loss', tone: '#f8b26a', art: 'size' },
+  { q: 'The coin you keep going back to', a: 'The losses you answered by jumping straight back into the same coin.', eg: 'SOLUSDT · 6 times in 30 min', tone: '#f8b26a', art: 'coin' },
+  { q: 'Your worst hour and your worst day', a: 'When you lose the most, and the day trading after a loss made it all worse.', eg: '23:00–00:00 · costliest hour', tone: '#ff8a7a', art: 'hours' },
+  { q: 'What revenge trades cost you', a: 'Money lost on trades taken in the heat of a loss, against everything else.', eg: '19% of all you lost', tone: '#ff8a7a', art: 'split' },
+  { q: 'The rules that would stop it', a: 'A short plan picked from your own trades — the limits to set while you are calm.', eg: 'Close after 2 losses · daily limit', tone: '#3ae8c0', art: 'rules' },
 ];
 
 const FAQ = [
@@ -220,29 +220,50 @@ export default function RevengeLandingPage() {
         </div>
 
         {/* ── What it answers ─────────────────────────────────────────── */}
-        <h2 className="mt-20 font-display text-[28px] font-bold md:text-[34px]">Six questions it answers, from your own trades</h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {ANSWERS.map(([q, a], i) => (
-            <div key={q} className="rounded-2xl p-5" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)' }}>
-              <span className="font-mono text-[11px] tracking-wider" style={{ color: '#ff9a87' }}>{String(i + 1).padStart(2, '0')}</span>
-              <div className="mt-2 font-display text-[17px] font-bold">{q}</div>
-              <p className="mt-2 text-[14px] leading-relaxed" style={{ color: '#a9b4c6' }}>{a}</p>
+        <div className="mt-24 max-w-2xl">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: '#ff9a87' }}>Inside the report</p>
+          <h2 className="mt-3 font-display text-[30px] font-bold leading-tight md:text-[40px]">Six questions it answers, from your own trades</h2>
+          <p className="mt-3 text-[16px] leading-relaxed" style={{ color: '#a9b4c6' }}>Not a lecture on discipline. Your numbers, the trades behind them, and what to change.</p>
+        </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {ANSWERS.map((x, i) => (
+            <div key={x.q} className="rv-land-card group relative flex flex-col overflow-hidden rounded-[20px] p-5 transition-all duration-300 hover:-translate-y-1" style={{ border: '1px solid rgba(255,255,255,0.08)', background: `radial-gradient(ellipse 90% 60% at 100% 0%, ${x.tone}14, transparent 70%), rgba(255,255,255,0.025)` }}>
+              <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: `linear-gradient(90deg, transparent, ${x.tone}, transparent)` }} />
+              <div className="flex items-start justify-between gap-3">
+                <span className="font-mono text-[11px] tracking-wider" style={{ color: x.tone }}>{String(i + 1).padStart(2, '0')}</span>
+                <AnswerArt kind={x.art} tone={x.tone} />
+              </div>
+              <div className="mt-3 font-display text-[18px] font-bold leading-snug">{x.q}</div>
+              <p className="mb-4 mt-2 text-[14px] leading-relaxed" style={{ color: '#a9b4c6' }}>{x.a}</p>
+              <div className="mt-auto inline-flex items-center gap-2 self-start whitespace-nowrap rounded-lg px-3 py-1.5 font-mono text-[11px]" style={{ background: `${x.tone}14`, border: `1px solid ${x.tone}40`, color: x.tone }}>
+                <span className="opacity-70">e.g.</span> {x.eg}
+              </div>
             </div>
           ))}
         </div>
 
         {/* ── FAQ ─────────────────────────────────────────────────────── */}
-        <h2 className="mt-20 font-display text-[28px] font-bold md:text-[34px]">Questions</h2>
-        <div className="mt-5 grid gap-3">
-          {FAQ.map(([q, a]) => (
-            <details key={q} className="group rounded-2xl p-5" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-semibold">
-                {q}
-                <span className="text-[20px] transition-transform group-open:rotate-45" style={{ color: '#7d8aa0' }}>+</span>
-              </summary>
-              <p className="mt-3 text-[15px] leading-relaxed" style={{ color: '#a9b4c6' }}>{a}</p>
-            </details>
-          ))}
+        <div className="mt-24 grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: '#3ae8c0' }}>Before you connect</p>
+            <h2 className="mt-3 font-display text-[30px] font-bold leading-tight md:text-[40px]">Questions traders ask</h2>
+            <p className="mt-3 max-w-sm text-[16px] leading-relaxed" style={{ color: '#a9b4c6' }}>Straight answers about your key, your money and what the report reads.</p>
+            <Link to="/support" className="mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-semibold" style={{ border: '1px solid rgba(255,255,255,0.12)', color: '#eef3fa' }}>
+              Still unsure? Talk to us →
+            </Link>
+          </div>
+          <div className="grid gap-3">
+            {FAQ.map(([q, a], i) => (
+              <details key={q} className="rv-faq group rounded-2xl transition-colors" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                <summary className="flex cursor-pointer list-none items-center gap-4 p-5 text-[16px] font-semibold">
+                  <span className="grid h-8 w-8 flex-none place-items-center rounded-lg font-mono text-[12px] transition-colors group-open:text-[#02241d]" style={{ border: '1px solid rgba(0,212,170,0.3)', color: '#3ae8c0' }}>{String(i + 1).padStart(2, '0')}</span>
+                  <span className="flex-1">{q}</span>
+                  <span className="grid h-7 w-7 flex-none place-items-center rounded-full text-[18px] transition-transform duration-300 group-open:rotate-45" style={{ background: 'rgba(255,255,255,0.06)', color: '#a9b4c6' }}>+</span>
+                </summary>
+                <p className="px-5 pb-5 pl-[68px] text-[15px] leading-relaxed" style={{ color: '#a9b4c6' }}>{a}</p>
+              </details>
+            ))}
+          </div>
         </div>
 
         <div className="mt-16 rounded-[22px] p-8 text-center" style={{ border: '1px solid rgba(0,212,170,0.25)', background: 'radial-gradient(ellipse 70% 100% at 50% 0%, rgba(0,212,170,0.1), transparent 70%)' }}>
@@ -257,6 +278,67 @@ export default function RevengeLandingPage() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* A small picture of each answer — drawn, not a stock icon. */
+function AnswerArt({ kind, tone }) {
+  const dim = 'rgba(255,255,255,0.14)';
+  const box = { width: 92, height: 46 };
+  if (kind === 'gaps') {
+    const bars = [[9, tone], [6, tone], [5, dim], [8, dim], [17, '#3ae8c0']];
+    return (
+      <div className="flex items-end gap-1" style={box} aria-hidden>
+        {bars.map(([v, c], i) => <span key={i} className="flex-1 rounded-sm" style={{ height: `${(v / 17) * 100}%`, background: c }} />)}
+      </div>
+    );
+  }
+  if (kind === 'size') {
+    return (
+      <div className="flex items-end justify-end gap-2" style={box} aria-hidden>
+        <span className="w-5 rounded-sm" style={{ height: '36%', background: dim }} />
+        <span className="w-5 rounded-sm" style={{ height: '100%', background: tone }} />
+        <span className="self-start font-mono text-[11px] font-bold" style={{ color: tone }}>2.4×</span>
+      </div>
+    );
+  }
+  if (kind === 'coin') {
+    return (
+      <svg {...box} viewBox="0 0 92 46" aria-hidden>
+        <path d="M30 23a16 16 0 1 1 32 0" fill="none" stroke={tone} strokeWidth="2" strokeDasharray="3 3" />
+        <path d="M58 17l4 6 5-5" fill="none" stroke={tone} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="30" cy="31" r="10" fill={`${tone}22`} stroke={tone} strokeWidth="1.6" />
+        <text x="30" y="35" textAnchor="middle" fill={tone} style={{ font: "700 10px 'Space Grotesk', sans-serif" }}>S</text>
+      </svg>
+    );
+  }
+  if (kind === 'hours') {
+    const h = [1, 2, 1, 3, 2, 1, 2, 4, 3, 6, 9, 5];
+    return (
+      <div className="grid grid-cols-6 gap-1" style={box} aria-hidden>
+        {h.map((v, i) => <span key={i} className="rounded-sm" style={{ background: v >= 6 ? tone : `rgba(255,138,122,${0.08 + v * 0.06})` }} />)}
+      </div>
+    );
+  }
+  if (kind === 'split') {
+    return (
+      <div className="flex flex-col justify-center gap-1.5" style={box} aria-hidden>
+        <div className="flex h-3 overflow-hidden rounded-full" style={{ background: dim }}><span style={{ width: '19%', background: tone }} /></div>
+        <div className="flex justify-between font-mono text-[9.5px]" style={{ color: '#7d8aa0' }}><span style={{ color: tone }}>revenge</span><span>rest</span></div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col justify-center gap-1.5" style={box} aria-hidden>
+      {[true, true, false].map((on, i) => (
+        <span key={i} className="flex items-center justify-end gap-2">
+          <span className="h-1.5 rounded-full" style={{ width: 36 - i * 8, background: dim }} />
+          <span className="relative h-3.5 w-6 rounded-full" style={{ background: on ? tone : dim }}>
+            <span className="absolute top-0.5 h-2.5 w-2.5 rounded-full bg-white" style={{ left: on ? 12 : 2 }} />
+          </span>
+        </span>
+      ))}
     </div>
   );
 }

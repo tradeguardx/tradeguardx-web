@@ -1838,3 +1838,10 @@
 @media (max-width:900px){
   .bs-band{margin:0 -15px;padding:12px 15px}
 }
+
+/* /revenge-report: an open FAQ item lights its number; cards lift on hover. */
+.rv-faq[open]{border-color:rgba(0,212,170,.3)!important;background:rgba(0,212,170,.04)!important}
+.rv-faq[open] summary > span:first-child{background:#00d4aa}
+.rv-faq summary::-webkit-details-marker{display:none}
+.rv-land-card:hover{border-color:rgba(255,255,255,.16)!important;box-shadow:0 24px 50px -30px rgba(0,0,0,.8)}
+@media (prefers-reduced-motion:reduce){.rv-land-card{transition:none}.rv-land-card:hover{transform:none}}
