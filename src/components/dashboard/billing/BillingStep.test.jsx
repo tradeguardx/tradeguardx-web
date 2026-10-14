@@ -122,7 +122,8 @@ describe('billing step', () => {
   it('starts on monthly and prices the button accordingly', async () => {
     render(<BillingStep />);
     expect(await screen.findByRole('radio', { name: /Monthly/ })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('button', { name: /Start 7 days free · Monthly/ })).toBeTruthy();
+    // Waits for the eligibility answer: the label starts on the default trial and settles once it lands.
+    expect(await screen.findByRole('button', { name: /Start 7 days free · Monthly/ })).toBeTruthy();
   });
 
   it('follows the selected plan through the button and the timeline', async () => {
