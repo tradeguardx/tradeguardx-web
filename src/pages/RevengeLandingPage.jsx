@@ -149,7 +149,7 @@ export default function RevengeLandingPage() {
               See every trade you opened right after a loss, what it cost, and your revenge score out of 100 — read from your own exchange. Takes about 3 minutes.
             </p>
 
-            <p className="mt-8 text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: '#7d8aa0' }}>Pick your exchange</p>
+            <p className="mt-8 text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: '#7d8aa0' }}><span className="sm:hidden">Works with</span><span className="hidden sm:inline">Pick your exchange</span></p>
             <div className="mt-3 flex flex-wrap gap-2.5" role="radiogroup" aria-label="Your exchange">
               {EXCHANGES.map((e) => {
                 const on = e.slug === pick.slug;
@@ -160,7 +160,8 @@ export default function RevengeLandingPage() {
                     role="radio"
                     aria-checked={on}
                     onClick={() => setPick(e)}
-                    className="flex items-center gap-2.5 rounded-full py-2 pl-2 pr-4 transition-colors"
+                    /* On a phone, Delta only: one clean row instead of three wrapping pills. */
+                    className={`${e.slug === 'delta_india' ? 'flex' : 'hidden sm:flex'} items-center gap-2.5 rounded-full py-2 pl-2 pr-4 transition-colors`}
                     style={{ border: `1.5px solid ${on ? '#00d4aa' : 'rgba(255,255,255,0.1)'}`, background: on ? 'rgba(0,212,170,0.08)' : 'rgba(255,255,255,0.03)' }}
                   >
                     <VenueMark slug={e.slug} name={e.name} size={30} radius={15} />
