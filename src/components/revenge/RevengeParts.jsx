@@ -33,6 +33,8 @@ export function RevengeStyles() {
   .rv-hide-sm{display:none}
   .rv-show-sm{display:inline}
   .rv-check-weight{display:none}
+  .rv-score-head{flex-direction:column;text-align:center;gap:16px!important;padding:22px 16px!important}
+  .rv-score-head__meta{justify-content:center}
 }
 `}</style>
   );

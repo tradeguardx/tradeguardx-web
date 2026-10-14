@@ -22,10 +22,10 @@ export default function RevengeReportView({ report, periodLabel, months = 1, rev
 
   return (
     <div>
-      <section className={reveal ? 'rv-pop' : undefined} style={sx(`margin-top:20px;padding:22px 24px;${CARD};display:flex;align-items:center;gap:24px;flex-wrap:wrap`)}>
+      <section className={`rv-score-head${reveal ? ' rv-pop' : ''}`} style={sx(`margin-top:20px;padding:22px 24px;${CARD};display:flex;align-items:center;gap:24px;flex-wrap:wrap`)}>
         <ScoreRing score={report.score} tone={grade?.tone ?? 'neutral'} animate={animateScore} />
         <div style={sx('flex:1;min-width:min(260px,100%)')}>
-          <div style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap')}>
+          <div className="rv-score-head__meta" style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap')}>
             <span style={sx(LABEL)}>Revenge score{periodLabel ? ` · ${periodLabel}` : ''}</span>
             {grade && <Chip tone={grade.tone}>{grade.label}</Chip>}
           </div>
