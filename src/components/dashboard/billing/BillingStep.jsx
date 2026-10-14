@@ -7,6 +7,7 @@ import { trackBilling } from '../../../lib/analytics';
 import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
 import { PROTECTIONS, GLYPH } from './billingContent';
 import NoticeCard from '../shell/NoticeCard';
+import StepsBar from '../shell/StepsBar';
 import { Chip, ScoreRing } from '../../revenge/RevengeParts';
 import { GRADE, PERIODS } from '../../revenge/revengeFormat';
 
@@ -357,7 +358,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
       )}
 
       <div style={{ maxWidth: 1220, margin: '0 auto', padding: '26px 0 80px' }}>
-        <ol style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: 0, padding: 0, listStyle: 'none' }}>
+        <StepsBar names={STEP_NAMES} at={Math.min(stepsDone, LAST)} done={STEP_NAMES.map((_, i) => i < Math.min(stepsDone, LAST))} style={{ margin: 0 }} />
+        <ol className="steps-lg" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: 0, padding: 0, listStyle: 'none' }}>
           {STEP_NAMES.map((name, i) => {
             const done = i < Math.min(stepsDone, LAST);
             const current = i === Math.min(stepsDone, LAST);
@@ -397,7 +399,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 <span aria-hidden>←</span> Back to your revenge score
               </button>
             ))}
-            <div style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--mint)' }}>
+            <div className="steps-lg" style={{ font: "600 10.5px/1 'JetBrains Mono',monospace", letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--mint)' }}>
               {stepsDone >= LAST ? `Step ${LAST + 1} of ${LAST + 1} · Last step` : `Step ${LAST + 1} of ${LAST + 1}`}
             </div>
             <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.4vw,28px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.03em', textWrap: 'pretty' }}>

@@ -1799,9 +1799,10 @@
    wrapped to three lines above a headline that had not started yet. The done
    steps keep their tick — that is the part doing the reassuring — and lose
    the words. */
+.steps-sm{display:none}
 @media (max-width:560px){
-  .bs-step[data-done="1"] .bs-step__label{display:none}
-  .bs-step__bar{width:14px!important;margin:0 7px!important}
+  .steps-lg{display:none!important}
+  .steps-sm{display:block}
 }
 
 /* The status band is full-bleed: it has to cancel the page padding, and that

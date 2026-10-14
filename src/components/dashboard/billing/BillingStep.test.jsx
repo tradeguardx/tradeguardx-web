@@ -73,8 +73,10 @@ describe('billing step', () => {
     expect(await screen.findByText(/Connect your key first/)).toBeInTheDocument();
     expect(screen.queryByText(/Your key is connected/)).toBeNull();
     // exchange and account ticked; "Connect key" is the current step, numbered
-    const current = document.querySelector('[aria-current="step"]');
+    const current = document.querySelector('.steps-lg [aria-current="step"]');
     expect(current?.textContent).toBe('3');
+    // and the phone bar says the same step
+    expect(document.querySelector('.steps-sm [aria-current="step"]')?.textContent).toMatch(/Connect key/);
   });
 
   it('says what the bank screen will show before it shows it (no refund promise)', async () => {

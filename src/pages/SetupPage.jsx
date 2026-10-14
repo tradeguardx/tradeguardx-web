@@ -10,6 +10,7 @@ import BillingStep from '../components/dashboard/billing/BillingStep';
 import RevengeSetupStep from '../components/revenge/RevengeSetupStep';
 import VenuePicker from '../components/dashboard/VenuePicker';
 import VenueMark from '../components/dashboard/VenueMark';
+import StepsBar from '../components/dashboard/shell/StepsBar';
 import { venueFor } from '../lib/venues';
 import { sx } from '../components/dashboard/shell/sx';
 import { useToast } from '../components/common/ToastProvider';
@@ -69,7 +70,9 @@ const STEPS = [
 
 function Rail({ at, done }) {
   return (
-    <ol className="wiz-rail" style={sx('display:flex;align-items:center;gap:0;margin:0 0 26px;padding:0;list-style:none;flex-wrap:wrap;row-gap:10px')}>
+    <>
+    <StepsBar names={STEPS.map((s) => s.label)} at={at} done={done} />
+    <ol className="wiz-rail steps-lg" style={sx('display:flex;align-items:center;gap:0;margin:0 0 26px;padding:0;list-style:none;flex-wrap:wrap;row-gap:10px')}>
       {STEPS.map((s, i) => {
         const isDone = done[i];
         const here = at === i;
@@ -98,6 +101,7 @@ function Rail({ at, done }) {
         );
       })}
     </ol>
+    </>
   );
 }
 
