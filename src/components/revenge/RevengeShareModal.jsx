@@ -15,13 +15,13 @@ const FILE = 'tradeguardx-revenge-score.png';
  * html-to-image, the native share sheet on a phone, a prefilled intent plus a
  * saved PNG on a desktop), around a different card.
  *
- * Money and name are OFF by default: the score and the percentages make the
- * point, and a public post should not publish an account's size by accident.
+ * The trader's name is always on the card — it is their score, posted as
+ * them. Money is OFF by default: a public post should not publish an
+ * account's size by accident.
  */
 export default function RevengeShareModal({ open, onClose, report, handle = null, referral = null }) {
   const [variant, setVariant] = useState('chaser');
   const [amounts, setAmounts] = useState(false);
-  const [showName, setShowName] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
   const exportRef = useRef(null);
@@ -106,7 +106,7 @@ export default function RevengeShareModal({ open, onClose, report, handle = null
   const host = document.querySelector('[data-tgx]') ?? document.body;
   const end = report.period?.to ? new Date(report.period.to) : new Date();
   const monthLabel = end.toLocaleDateString('en-IN', { month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).toUpperCase();
-  const card = { variant, report, monthLabel, amounts, handle: showName ? handle : null };
+  const card = { variant, report, monthLabel, amounts, handle };
 
   return createPortal(
     <div data-tgx-modal="1" role="dialog" aria-modal="true" aria-label="Share your revenge score" onClick={onClose} style={sx('position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(3,5,10,.72);backdrop-filter:blur(4px)')}>
@@ -136,7 +136,6 @@ export default function RevengeShareModal({ open, onClose, report, handle = null
 
             <div style={sx('display:grid;gap:8px')}>
               <Toggle on={amounts} onChange={setAmounts} label="Show ₹ amounts" sub="Off: only percentages and counts" />
-              {handle && <Toggle on={showName} onChange={setShowName} label="Show my name" sub={handle} />}
             </div>
 
             <div>

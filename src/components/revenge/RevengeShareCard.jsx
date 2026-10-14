@@ -43,7 +43,7 @@ const RevengeShareCard = forwardRef(function RevengeShareCard({ variant = 'chase
         </div>
         <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
           {variant === 'chaser' && <span style={{ padding: '6px 11px', borderRadius: 999, background: C.brand, color: '#02241d', fontSize: 11, fontWeight: 800 }}>Check yours →</span>}
-          {handle && <span style={{ fontSize: 10.5, color: C.ink3 }}>{handle}</span>}
+          {handle && <span style={{ fontSize: 12, fontWeight: 700, color: C.ink2, maxWidth: 150, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{handle}</span>}
         </div>
       </div>
     </div>
