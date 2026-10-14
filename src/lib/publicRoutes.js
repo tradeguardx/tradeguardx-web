@@ -66,7 +66,7 @@ export const PUBLIC_ROUTES = [
   // are NOT moved into /exchanges/, whatever the tidier structure would be.
   { path: '/crypto-kill-switch', priority: '0.9', changefreq: 'monthly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/the-crypto-killswitch-for-indian-traders.png' },
   { path: '/crypto-tax-india', priority: '0.8', changefreq: 'monthly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/og-tax.png' },
-  { path: '/revenge-report', priority: '0.8', changefreq: 'monthly', og: null },
+  { path: '/revenge-report', priority: '0.9', changefreq: 'monthly', og: 'revenge-report.png' },
 
   // Help centre — the seven shared articles. Nothing venue-specific lives here
   // any more; that all moved under /exchanges/<venue>/.

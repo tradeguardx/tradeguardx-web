@@ -42,12 +42,60 @@ const ANSWERS = [
 ];
 
 const FAQ = [
+  ['What is revenge trading?', 'Revenge trading is opening a new trade right after a loss to win the money back, instead of because your plan says so. The trade is usually bigger, faster and less thought-through than normal — and it tends to turn one loss into several.'],
+  ['How do I know if I am revenge trading?', 'Look at what you do in the minutes after a loss. If you often open a new position within 15 minutes, trade a bigger size than usual, or jump straight back into the coin that just lost you money, those are revenge trades. The report counts each of these from your own history.'],
+  ['How do I stop revenge trading?', 'Decide your limits while you are calm and make them hard to break: a daily loss limit, a maximum risk per trade, and a rule to stop for the day after two losses in a row. Willpower fails in the moment, so the limit has to hold without you — that is what a kill switch does.'],
+  ['Is revenge trading the same as overtrading?', 'They overlap but are not the same. Overtrading is taking too many trades in general; revenge trading is the specific burst of trades that follows a loss. Most traders who overtrade do it on the days they are chasing a loss.'],
   ['Is the revenge report free?', 'Yes. Connect your exchange and the report is yours, with no payment and no card. The guard that enforces rules for you is a separate, paid feature with a free trial.'],
-  ['Can TradeGuardX trade or withdraw with my key?', 'The report only reads your past trades. Withdrawals are never possible: exchange keys for TradeGuardX are created without withdrawal permission, and we ask you to keep it that way.'],
-  ['How far back does it look?', 'The last month by default, and up to three months. If a month is too quiet to judge, it looks further back on its own.'],
-  ['What counts as a revenge trade?', 'A trade opened within 15 minutes of a loss that also sizes up, goes straight back into the same coin, or comes after two losses in a row.'],
-  ['Which exchanges work?', 'Delta Exchange, CoinDCX futures and Shark Exchange today.'],
+  ['Can TradeGuardX trade or withdraw with my key?', 'The report only reads your past trades. TradeGuardX never needs withdrawal permission — create your key without it and your funds cannot be moved with it.'],
+  ['How far back does the report look?', 'The last month by default, and up to three months. If a month is too quiet to judge, it looks further back on its own.'],
+  ['What counts as a revenge trade in the report?', 'A trade opened within 15 minutes of a loss that also sizes up, goes straight back into the same coin, or comes after two losses in a row.'],
+  ['Which exchanges does it work with?', 'Delta Exchange (India and global), CoinDCX futures and Shark Exchange.'],
 ];
+
+const PAGE_URL = 'https://tradeguardx.com/revenge-report';
+/* Structured data: what the page is, where it sits, the free tool it offers
+   and the questions it answers. The FAQ entries are the visible ones, word
+   for word — Google ignores (or penalises) FAQ markup the page does not show. */
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebPage',
+      '@id': `${PAGE_URL}#page`,
+      url: PAGE_URL,
+      name: 'Revenge Trading Calculator — Free Revenge Trading Report',
+      description: 'What revenge trading is, how to spot it, how to stop it — and a free report of what it cost you, from your own crypto futures trades.',
+      inLanguage: 'en-IN',
+      isPartOf: { '@id': 'https://tradeguardx.com/#website' },
+      breadcrumb: { '@id': `${PAGE_URL}#breadcrumb` },
+      about: { '@type': 'Thing', name: 'Revenge trading' },
+      primaryImageOfPage: 'https://tradeguardx.com/og/revenge-report.png',
+    },
+    {
+      '@type': 'BreadcrumbList',
+      '@id': `${PAGE_URL}#breadcrumb`,
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://tradeguardx.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Revenge trading report', item: PAGE_URL },
+      ],
+    },
+    {
+      '@type': 'WebApplication',
+      name: 'TradeGuardX Revenge Report',
+      url: PAGE_URL,
+      applicationCategory: 'FinanceApplication',
+      operatingSystem: 'Web',
+      description: 'Reads your closed crypto futures trades on Delta Exchange, CoinDCX or Shark and shows every trade opened right after a loss, what revenge trading cost you, and a revenge score out of 100.',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
+      provider: { '@id': 'https://tradeguardx.com/#organization' },
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: FAQ.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+    },
+  ],
+};
 
 export default function RevengeLandingPage() {
   const { session, loginWithGoogle } = useAuth();
@@ -58,12 +106,16 @@ export default function RevengeLandingPage() {
   const ex = EXAMPLE[pick.cur];
 
   useSEO({
-    title: 'Revenge Trading Report — What Revenge Trades Cost You',
+    // ≤60 characters, the keyword first, the brand last.
+    title: 'Revenge Trading Calculator: Free Report | TradeGuardX',
+    rawTitle: true,
+    // ≤155 characters.
     description:
-      'Free revenge trading report for crypto futures traders on Delta Exchange, CoinDCX and Shark. See every trade you opened right after a loss, what it cost, and your revenge score out of 100.',
-    url: 'https://tradeguardx.com/revenge-report',
+      'What is revenge trading costing you? Free report for Delta Exchange, CoinDCX & Shark: every trade after a loss, what it cost, and how to stop it.',
+    url: PAGE_URL,
     image: ogImageFor('/revenge-report'),
-    imageAlt: 'What does revenge trading actually cost you? — TradeGuardX',
+    imageAlt: 'What does revenge trading actually cost you? A free revenge trading report — TradeGuardX',
+    jsonLd: JSON_LD,
   });
 
   const google = async () => {
@@ -157,7 +209,7 @@ export default function RevengeLandingPage() {
 
         {/* ── Get yours ───────────────────────────────────────────────── */}
         <div className="mt-16 flex items-center gap-4">
-          <h2 className="font-display text-[22px] font-bold">Get yours</h2>
+          <h2 className="font-display text-[22px] font-bold">Get your free revenge trading report</h2>
           <span className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
         </div>
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_1fr]">
@@ -241,6 +293,69 @@ export default function RevengeLandingPage() {
             </div>
           ))}
         </div>
+
+        {/* ── Revenge trading, explained ────────────────────────────────── */}
+        <article className="mt-24 grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: '#ff9a87' }}>Revenge trading, explained</p>
+            <h2 className="mt-3 font-display text-[30px] font-bold leading-tight md:text-[40px]">What is revenge trading?</h2>
+          </div>
+          <div className="grid gap-8 text-[16px] leading-relaxed" style={{ color: '#c9d2df' }}>
+            <p>
+              <strong className="text-white">Revenge trading is opening a new trade right after a loss to win the money back</strong>, instead of because your plan says so. It is not a strategy; it is a reaction. The next trade comes faster, bigger and with less thought than usual — and in crypto futures, with leverage, one angry trade can undo a week of careful ones.
+            </p>
+
+            <div>
+              <h3 className="font-display text-[22px] font-bold text-white">Signs you are revenge trading</h3>
+              <ul className="mt-3 grid gap-2.5">
+                {[
+                  ['Back in within minutes.', 'You open a new position soon after a loss closes, often before you have looked at why it lost.'],
+                  ['Bigger size.', 'The trade after a loss is larger than your usual one, to make the money back in one go.'],
+                  ['The same coin again.', 'You jump straight back into the coin that just hurt you, as if it owes you.'],
+                  ['Losses in a row, and you keep going.', 'Two losses and you keep trading instead of stopping for the day.'],
+                  ['The worst days are the long days.', 'Your biggest losing days are the ones where you kept trading after the first loss.'],
+                ].map(([b, t]) => (
+                  <li key={b} className="flex gap-3"><span className="mt-2.5 h-1.5 w-1.5 flex-none rounded-full" style={{ background: '#ff8a7a' }} /><span><strong className="text-white">{b}</strong> {t}</span></li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-display text-[22px] font-bold text-white">Why traders revenge trade</h3>
+              <p className="mt-3">
+                A loss hurts more than an equal win feels good, and the fastest way to make that feeling stop is to be back in the market. Anger, the urge to be right, and the round number you were up earlier all pull the same way. Knowing this does not help in the moment — that is why the fix has to be set up before the moment arrives.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-display text-[22px] font-bold text-white">How to stop revenge trading</h3>
+              <ol className="mt-3 grid gap-3">
+                {[
+                  ['Measure it first.', 'Find out how often you trade after a loss, how fast, at what size, and what it has cost you. That is what this free report is for.'],
+                  ['Set a daily loss limit.', 'Pick the amount you can lose in a day and still trade calmly tomorrow. When it is hit, you are done.'],
+                  ['Cap risk per trade.', 'A fixed maximum size means a loss cannot make the next trade bigger.'],
+                  ['Stop after two losses in a row.', 'The trade after the second loss is the one most likely to be revenge.'],
+                  ['Make the limits enforce themselves.', <>Rules you can override in the moment are suggestions. A <Link to="/crypto-kill-switch" className="font-semibold underline underline-offset-4" style={{ color: '#3ae8c0' }}>crypto kill switch</Link> closes positions and locks the account when a limit is hit, so the rule holds when you would not.</>],
+                ].map(([b, t], i) => (
+                  <li key={b} className="flex gap-3.5">
+                    <span className="grid h-7 w-7 flex-none place-items-center rounded-lg font-mono text-[12px] font-bold" style={{ background: 'rgba(0,212,170,0.1)', color: '#3ae8c0' }}>{i + 1}</span>
+                    <span><strong className="text-white">{b}</strong> {t}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div>
+              <h3 className="font-display text-[22px] font-bold text-white">Revenge trading in crypto futures</h3>
+              <p className="mt-3">
+                Crypto futures make revenge trading more expensive than anywhere else: the market never closes, leverage turns a bigger size into a much bigger loss, and the next trade is one tap away at 2 a.m. The report is built for that — it reads perpetual futures on{' '}
+                <Link to="/exchanges/delta" className="font-semibold underline underline-offset-4" style={{ color: '#3ae8c0' }}>Delta Exchange</Link>,{' '}
+                <Link to="/exchanges/coindcx" className="font-semibold underline underline-offset-4" style={{ color: '#3ae8c0' }}>CoinDCX</Link> and{' '}
+                <Link to="/exchanges/shark" className="font-semibold underline underline-offset-4" style={{ color: '#3ae8c0' }}>Shark Exchange</Link>, in their own currency.
+              </p>
+            </div>
+          </div>
+        </article>
 
         {/* ── FAQ ─────────────────────────────────────────────────────── */}
         <div className="mt-24 grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">

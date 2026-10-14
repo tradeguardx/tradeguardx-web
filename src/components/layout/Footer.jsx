@@ -24,6 +24,7 @@ const links = {
     // server-side via the exchange API key; the browser extension is the
     // prop-firm path, which isn't part of this launch.
     { label: 'What is a crypto kill switch?', to: '/crypto-kill-switch' },
+    { label: 'Revenge trading report', to: '/revenge-report' },
     { label: 'Guides', to: '/help' },
     { label: 'Crypto tax India', to: '/crypto-tax-india' },
     { label: 'Security', to: '/security' },
