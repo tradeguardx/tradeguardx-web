@@ -727,6 +727,27 @@
     color: var(--accent); font-size: 11px; font-weight: 700; line-height: 1;
   }
   .tgx-home .hero-trust .spots{ color: var(--accent); font-family: var(--mono); }
+  /* The revenge report's way in: a pill above the headline, a line under the ticks. */
+  .tgx-home .hero-new{
+    display: inline-flex; align-items: center; gap: 10px; max-width: 100%;
+    margin: 0 0 22px; padding: 6px 14px 6px 6px; border-radius: 999px;
+    border: 1px solid rgba(255,138,122,.35); background: rgba(255,138,122,.07);
+    color: var(--text-1, #eef3fa); font-size: 14px; font-weight: 600; text-decoration: none;
+    transition: border-color .2s, background .2s, transform .2s;
+  }
+  .tgx-home .hero-new:hover{ border-color: rgba(255,138,122,.6); background: rgba(255,138,122,.12); transform: translateY(-1px); }
+  .tgx-home .hero-new svg{ flex: none; color: #ff9a87; transition: transform .2s; }
+  .tgx-home .hero-new:hover svg{ transform: translateX(2px); }
+  .tgx-home .hero-new__tag{
+    flex: none; padding: 4px 9px; border-radius: 999px; background: #ff8a7a; color: #2a0b06;
+    font-family: var(--mono); font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  }
+  .tgx-home .hero-new__text{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tgx-home .hero-new__short{ display: none; }
+  .tgx-home .hero-later{ margin: 16px 0 0; font-size: 14px; color: var(--text-3, #7d8aa0); }
+  .tgx-home .hero-later a{ color: #ff9a87; font-weight: 700; text-decoration: none; }
+  .tgx-home .hero-later a:hover{ text-decoration: underline; text-underline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce){ .tgx-home .hero-new, .tgx-home .hero-new svg{ transition: none; } .tgx-home .hero-new:hover{ transform: none; } }
 
   /* hero visual - live dashboard card */
   .tgx-home .hero-visual{
@@ -2313,7 +2334,11 @@
        the headline and "Create free account", pushing the only way to act
        ~900px down. The demo now follows the trust ticks as proof. */
     .tgx-home .hero-grid .hero-ctas{ order: 3; }
-    .tgx-home .hero-grid .hero-trust{ order: 4; margin-bottom: 32px; }
+    .tgx-home .hero-grid .hero-new{ order: 0; align-self: flex-start; font-size: 13px; }
+    .tgx-home .hero-new__long{ display: none; }
+    .tgx-home .hero-new__short{ display: inline; }
+    .tgx-home .hero-grid .hero-trust{ order: 4; margin-bottom: 0; }
+    .tgx-home .hero-grid .hero-later{ order: 4; margin: 14px 0 32px; }
     .tgx-home .hero-visual{ order: 5; margin-bottom: 30px; }
     .tgx-home .pain-grid, .tgx-home .steps, .tgx-home .rules-grid{ grid-template-columns: 1fr; }
     .tgx-home .trust-grid{ grid-template-columns: repeat(3, 1fr); gap: 28px 20px; text-align: center; }
