@@ -744,22 +744,9 @@
   }
   .tgx-home .hero-new__text{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tgx-home .hero-new__short{ display: none; }
-  /* Primary CTA with its bonus: the action, then a small inset chip, and a
-     slow light sweep so the eye lands on it. */
-  .tgx-home .btn-2line{ position: relative; overflow: hidden; flex-direction: column; gap: 6px; line-height: 1.15; padding-top: 11px; padding-bottom: 11px; }
-  .tgx-home .btn-2line__main{ display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
-  .tgx-home .btn-2line__sub{
-    display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 7px; border-radius: 999px;
-    background: rgba(2, 36, 29, .16); box-shadow: inset 0 0 0 1px rgba(2, 36, 29, .14);
-    font-family: var(--mono); font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
-  }
-  .tgx-home .btn-2line::after{
-    content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%; pointer-events: none;
-    background: linear-gradient(100deg, transparent, rgba(255,255,255,.38), transparent);
-    transform: skewX(-18deg); animation: tgxBtnSweep 4.5s ease-in-out 1.2s infinite;
-  }
-  @keyframes tgxBtnSweep{ 0%{ left: -40%; } 28%, 100%{ left: 130%; } }
-  @media (prefers-reduced-motion: reduce){ .tgx-home .btn-2line::after{ animation: none; display: none; } }
+  .tgx-home .btn-2line{ flex-direction: column; gap: 3px; line-height: 1.15; padding-top: 11px; padding-bottom: 11px; }
+  .tgx-home .btn-2line__main{ display: inline-flex; align-items: center; gap: 8px; }
+  .tgx-home .btn-2line__sub{ font-size: 12px; font-weight: 600; opacity: .72; }
   @media (prefers-reduced-motion: reduce){ .tgx-home .hero-new, .tgx-home .hero-new svg{ transition: none; } .tgx-home .hero-new:hover{ transform: none; } }
 
   /* hero visual - live dashboard card */
