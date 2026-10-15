@@ -348,7 +348,7 @@ export function lifecycleView(id, ctx = {}) {
           to: BILLING,
         },
         plainEnglish:
-          `Your payment failed, so we are not watching or closing anything right now. ${pay} and your saved rules start enforcing again straight away. Your manual kill switch still works.`,
+          `Your payment failed, so we are not watching or closing anything right now. ${pay} and your saved rules and kill switch work again straight away.`,
         toast: 'Payment failed. Your guard is off until it goes through.',
       };
     }
@@ -397,7 +397,7 @@ export function lifecycleView(id, ctx = {}) {
         },
         lock: { title: 'Needs an active plan', body: `Your rules and entries are saved, not deleted. ${pay} and this switches back on.`, cta: pay, to: BILLING },
         plainEnglish:
-          `Your plan has ended, so we are not watching or closing anything. ${price ? `Pay the overdue ${price}` : 'Pay the overdue amount'} and your saved rules start enforcing again straight away. Your manual kill switch still works.`,
+          `Your plan has ended, so we are not watching or closing anything. ${price ? `Pay the overdue ${price}` : 'Pay the overdue amount'} and your saved rules and kill switch work again straight away.`,
       };
     }
     case 'lf':
@@ -441,7 +441,9 @@ function ended(base, endedFrom) {
     lock: { title: 'Needs an active plan', body: ENDED_LOCK_BODY, cta: 'Subscribe', to: BILLING },
     // The manual kill switch is the user's own instruction, and the engine
     // honours it with no plan. So it stays usable, and says why.
-    ks: { enabled: true, tip: 'Works without a plan: your rules are off, your kill switch is not' },
+    // With no plan the engine does not read the account at all, so the kill
+    // switch has nothing to act on. It comes back with the plan.
+    ks: { enabled: false, tip: 'Switches back on when your plan is active again' },
     badges: { plan: '!' },
     rulesBadge: 'SAVED',
     facts: ENDED_FACTS,
@@ -451,7 +453,7 @@ function ended(base, endedFrom) {
     /** "Guard switched off: …", the first Activity row. */
     offReason: failed ? 'payment failed' : endedFrom === 'unpaid' ? 'all retries failed' : endedFrom === 'trial' ? 'trial ended' : 'plan ended',
     plainEnglish:
-      'Your plan has ended, so we are not watching or closing anything. Subscribe and your saved rules start enforcing again straight away. Your manual kill switch still works.',
+      'Your plan has ended, so we are not watching or closing anything. Subscribe and your saved rules and kill switch work again straight away.',
   };
 }
 

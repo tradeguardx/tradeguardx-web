@@ -160,7 +160,7 @@ describe('payment failed (pf)', () => {
     await waitFor(() => expect(screen.getByText('guard off · payment failed')).toBeTruthy());
     expect(screen.getByText('Off')).toBeTruthy();
     expect(screen.getByText('Not enforced: payment failed')).toBeTruthy();
-    expect(screen.getByText(/Your manual kill switch still works/)).toBeTruthy();
+    expect(screen.getByText(/saved rules and kill switch work again straight away/)).toBeTruthy();
     expect(screen.queryByText(/before the guard closes the day/)).toBeNull();
   });
 
@@ -177,12 +177,12 @@ describe('payment failed (pf)', () => {
     expect(screen.queryByText('Off until your payment goes through')).toBeNull();
   });
 
-  it('keeps the kill switch usable and says why', async () => {
+  it('switches the kill switch off until the payment goes through, and says why', async () => {
     mount('/dashboard/overview');
     await waitFor(() => expect(screen.getAllByText('Not protected · payment failed').length).toBeGreaterThan(0));
     const ks = screen.getByRole('button', { name: 'Kill switch' });
-    expect(ks.getAttribute('aria-disabled')).toBeNull();
-    expect(ks.getAttribute('title')).toBe('Works without a plan: your rules are off, your kill switch is not');
+    expect(ks.getAttribute('aria-disabled')).toBe('true');
+    expect(ks.getAttribute('title')).toBe('Switches back on when your plan is active again');
   });
 
   it('marks the sidebar: LOCKED pages, "!" on Plan & billing, rules SAVED', async () => {

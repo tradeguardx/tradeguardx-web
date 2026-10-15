@@ -73,10 +73,10 @@ describe('the view of every state', () => {
     expect(JSON.stringify(v)).not.toMatch(/\bFree plan\b|\bon Free\b/);
   });
 
-  it('keeps the kill switch working with no plan, and only setup disables it', () => {
-    for (const id of UNPROTECTED_STATES) expect(lifecycleView(id).ks.enabled).toBe(true);
+  it('switches the kill switch off with no plan — the engine does not read the account — and in setup', () => {
+    for (const id of UNPROTECTED_STATES) expect(lifecycleView(id).ks.enabled).toBe(false);
     for (const id of ['s0', 's2', 's3']) expect(lifecycleView(id).ks.enabled).toBe(false);
-    expect(lifecycleView('pf').ks.tip).toBe('Works without a plan: your rules are off, your kill switch is not');
+    expect(lifecycleView('pf').ks.tip).toBe('Switches back on when your plan is active again');
   });
 
   it('locks Live guard and Journal while unprotected, and nothing else', () => {
