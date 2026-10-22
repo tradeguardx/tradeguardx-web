@@ -26,19 +26,19 @@ export function founderTelegramUrl(prefill) {
 export const FOUNDER_TELEGRAM_HANDLE = HANDLE;
 
 /**
- * Founder's WhatsApp — the same 1:1 "talk to a human" channel, for people who
- * live in WhatsApp rather than Telegram. Set VITE_FOUNDER_WHATSAPP at build time
- * to the number in international form, digits only (e.g. 919876543210). The
- * number is never shown on the page; the button opens the chat directly.
- * Unset → callers fall back to Telegram.
+ * Founder's WhatsApp — the "talk to a human" channel during setup.
+ *
+ * THE NUMBER IS NOT IN THE SITE. In production the button links to our own
+ * /whatsapp, which Vercel redirects to the chat (vercel.json → wa.me); the
+ * query (the pre-typed message) passes through. So the number appears in no
+ * page, no bundle and no hover. On localhost there is no Vercel, so a dev build
+ * links straight to WhatsApp — that branch is removed from production builds.
  */
-const WA_DIGITS = String(import.meta.env.VITE_FOUNDER_WHATSAPP ?? '').replace(/\D/g, '');
-
-export const FOUNDER_WHATSAPP_CONFIGURED = WA_DIGITS.length >= 10;
+export const FOUNDER_WHATSAPP_CONFIGURED = true;
 
 /** Opens WhatsApp (app on a phone, WhatsApp Web on a computer) with the message typed in. */
 export function founderWhatsAppUrl(prefill) {
-  if (!FOUNDER_WHATSAPP_CONFIGURED) return null;
-  const base = `https://wa.me/${WA_DIGITS}`;
-  return prefill ? `${base}?text=${encodeURIComponent(prefill)}` : base;
+  const q = prefill ? `?text=${encodeURIComponent(prefill)}` : '';
+  if (import.meta.env.DEV) return `https://wa.me/918770144119${q}`;
+  return `/whatsapp${q}`;
 }

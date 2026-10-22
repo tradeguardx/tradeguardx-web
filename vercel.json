@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/whatsapp",
+      "destination": "https://wa.me/918770144119",
+      "permanent": false
+    },
+    {
       "source": "/exchanges/bybit",
       "destination": "/exchanges",
       "permanent": true
