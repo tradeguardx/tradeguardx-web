@@ -109,13 +109,13 @@ function Field({ label, hint, note, children }) {
 }
 
 /** Their permission card. `locked` is one the venue turns on and you cannot. */
-function PermissionCard({ title, note, locked, accent, callout }) {
+function PermissionCard({ title, note, locked, off, accent, callout }) {
   return (
     <div
       style={sx(
         'flex:1;min-width:210px;padding:14px 15px;border-radius:11px',
-        locked
-          ? { border: '1px solid var(--line)', background: 'var(--surface-2)' }
+        locked || off
+          ? { border: off ? '1px dashed var(--line-strong)' : '1px solid var(--line)', background: 'var(--surface-2)' }
           : { border: `1px solid ${accent.line}`, background: accent.tint },
       )}
     >
@@ -124,14 +124,16 @@ function PermissionCard({ title, note, locked, accent, callout }) {
           aria-hidden
           style={sx(
             'flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:6px;font-size:12px;font-weight:800',
-            locked
-              ? { background: 'var(--surface-3)', color: 'var(--ink-faint)' }
-              : { background: accent.solid, color: 'var(--surface)' },
+            off
+              ? { border: '1.5px solid var(--line-strong)', background: 'transparent' }
+              : locked
+                ? { background: 'var(--surface-3)', color: 'var(--ink-faint)' }
+                : { background: accent.solid, color: 'var(--surface)' },
           )}
         >
-          ✓
+          {off ? '' : '✓'}
         </span>
-        <span style={sx('font-size:14px;font-weight:700', locked ? { color: 'var(--ink-3)' } : {})}>{title}</span>
+        <span style={sx('font-size:14px;font-weight:700', locked || off ? { color: 'var(--ink-3)' } : {})}>{title}</span>
       </span>
       {note && (
         <span style={sx('display:block;margin-top:7px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>{note}</span>
@@ -177,10 +179,18 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
           </Field>
         )}
 
+        {venue.hasPassphrase && (
+          /* BloFin. The user chooses it here, on their form — so there is no
+             value of ours to copy, only the instruction to keep it. */
+          <Field label={venue.passphraseField ?? 'Passphrase'} hint={venue.passphraseNote}>
+            <span style={sx(FIELD, 'max-width:420px;color:var(--ink-faint);font-size:13px')}>Your own passphrase</span>
+          </Field>
+        )}
+
         <Field
           label={venue.ipField}
           hint={
-            venue.ipRequired
+            venue.ipHint ? venue.ipHint : venue.ipRequired
               ? `${venue.name} requires this for a key that can trade.`
               : 'Optional on their form — we use it, so the key works from us and nowhere else.'
           }
@@ -245,7 +255,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
                   /* Already on and not yours to change. Drawn so the block
                      looks like theirs, and so nobody reads "all API keys have
                      read permissions" as meaning the key is finished. */
-                  <PermissionCard title={venue.readScopeLabel} note={venue.readScopeNote} locked accent={accent} />
+                  <PermissionCard title={venue.readScopeLabel} note={venue.readScopeNote} locked={!venue.readScopeSelectable} accent={accent} />
                 )}
                 <PermissionCard
                   title={venue.scopeLabel}
@@ -253,6 +263,11 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
                   accent={accent}
                   callout="Tick this — it is what lets us close a position"
                 />
+                {(venue.offScopes ?? []).map((o) => (
+                  /* Drawn unticked: a permission on their form that must stay
+                     off. Leaving it out would let someone tick it unwarned. */
+                  <PermissionCard key={o.label} title={o.label} note={o.note} off accent={accent} />
+                ))}
               </div>
             </>
           ) : venue.afterCreate ? (
@@ -297,8 +312,12 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
       </div>
 
       <div style={sx('padding:11px 16px;border-top:1px solid var(--line);background:var(--surface-3);font-size:11.5px;line-height:1.55;color:var(--ink-3)')}>
-        There is no withdrawal permission on {venue.name} to give away — the key can read your account and place trades,
-        and nothing else.
+        {venue.noWithdrawNote ?? (
+          <>
+            There is no withdrawal permission on {venue.name} to give away — the key can read your account and place trades,
+            and nothing else.
+          </>
+        )}
       </div>
     </figure>
   );

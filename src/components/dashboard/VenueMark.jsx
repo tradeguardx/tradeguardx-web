@@ -20,6 +20,7 @@ const VENUES = {
   bitget: { logo: '/brokers/bitget.svg', accent: '#00F0FF', short: 'BG' },
   bybit: { logo: null, accent: '#F7A600', short: 'BY' },
   shark: { logo: null, accent: '#4DB8E8', short: 'SK' },
+  blofin: { logo: null, accent: '#FF8C1A', short: 'BF' },
 };
 
 function familyOf(slug) {
@@ -29,6 +30,7 @@ function familyOf(slug) {
   if (s.startsWith('bybit')) return 'bybit';
   if (s.startsWith('bitget')) return 'bitget';
   if (s.startsWith('shark')) return 'shark';
+  if (s.startsWith('blofin')) return 'blofin';
   return null;
 }
 

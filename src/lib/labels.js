@@ -13,11 +13,12 @@ const BROKER_LABELS = {
   delta_global: 'Delta Exchange (Global)',
   coindcx: 'CoinDCX Futures',
   shark: 'Shark Exchange',
+  blofin: 'BloFin',
 };
 
 const EQUITY_MODE_LABELS = { funded: 'Funded', live: 'Live', demo: 'Demo' };
 
-const SOURCE_LABELS = { delta: 'Delta Exchange', coindcx: 'CoinDCX', shark: 'Shark', extension: 'Extension', manual: 'Manual' };
+const SOURCE_LABELS = { delta: 'Delta Exchange', coindcx: 'CoinDCX', shark: 'Shark', blofin: 'BloFin', extension: 'Extension', manual: 'Manual' };
 
 /** Fallback: snake/kebab → Title Case, so an unmapped value still reads like English. */
 function titleize(value) {

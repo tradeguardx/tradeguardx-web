@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
+import { hasTaxCentre, venueFor } from '../lib/venues';
 import { fetchTaxSummary } from '../api/tradesApi';
 import TaxTransactions from '../components/tax/TaxTransactions';
 
@@ -212,6 +213,13 @@ export default function TaxPage() {
   const { accounts = [], selectedAccount } = useTradingAccounts();
   const accessToken = session?.access_token;
   const tradingAccountId = selectedAccount?.id;
+  /*
+   * A venue the tax centre does not cover (BloFin). Decided here, before any
+   * request, rather than left to the API: zero and absent look the same on
+   * screen, and only one of them is safe to file against.
+   */
+  const venueNoTax = Boolean(selectedAccount?.propFirmSlug) && !hasTaxCentre(selectedAccount.propFirmSlug);
+  const venueNoTaxName = venueNoTax ? venueFor(selectedAccount.propFirmSlug)?.name ?? 'This exchange' : null;
 
   const thisFy = currentFyStartYear();
   const [fy, setFy] = useState(thisFy);
@@ -241,6 +249,11 @@ export default function TaxPage() {
   const load = useCallback(
     async (signal) => {
       if (!accessToken || !tradingAccountId) return;
+      if (venueNoTax) {
+        setData(null);
+        setError('');
+        return;
+      }
       setLoading(true);
       setError('');
       try {
@@ -253,7 +266,7 @@ export default function TaxPage() {
         setLoading(false);
       }
     },
-    [accessToken, tradingAccountId, fy],
+    [accessToken, tradingAccountId, fy, venueNoTax],
   );
 
   useEffect(() => {
@@ -273,11 +286,13 @@ export default function TaxPage() {
    * nothing else.
    */
   const gated =
+    venueNoTax ||
     data?.calculationStatus === 'INVALID_PENDING_RECONCILIATION' ||
     data?.calculationStatus === 'VENUE_NOT_SUPPORTED' ||
     data?.calculationStatus === 'NO_ACTIVITY';
-  const gateTitle =
-    data?.calculationStatus === 'VENUE_NOT_SUPPORTED'
+  const gateTitle = venueNoTax
+    ? `${venueNoTaxName} is not covered by the tax centre`
+    : data?.calculationStatus === 'VENUE_NOT_SUPPORTED'
       ? 'No tax report for this account yet'
       : data?.calculationStatus === 'NO_ACTIVITY'
         ? data?.neverSynced
@@ -293,7 +308,7 @@ export default function TaxPage() {
    * amber as decoration — which is the one thing that must not happen on the
    * statuses that ARE warnings.
    */
-  const gateIsNeutral = data?.calculationStatus === 'NO_ACTIVITY' && !data?.neverSynced;
+  const gateIsNeutral = venueNoTax || (data?.calculationStatus === 'NO_ACTIVITY' && !data?.neverSynced);
   // The unit the API says these figures are in. Never defaulted to INR — that
   // assumption is exactly what produced the misstatement.
   const currency = data?.currency ?? 'UNKNOWN';
@@ -493,7 +508,9 @@ export default function TaxPage() {
               {gateTitle}
             </p>
             <p className="mt-1 text-sm leading-relaxed" style={{ color: SECONDARY }}>
-              {data.calculationStatusMessage}
+              {venueNoTax
+                ? `The tax centre covers Indian exchanges only, so there is no tax report for this account. Your rules, the kill switch and the revenge report work on ${venueNoTaxName} as normal.`
+                : data?.calculationStatusMessage}
             </p>
           </div>
         </div>

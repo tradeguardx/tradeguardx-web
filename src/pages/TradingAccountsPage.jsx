@@ -556,6 +556,8 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
   const [apiKey, setApiKey] = useState('');
   const noAutofill = useNoAutofill();
   const [apiSecret, setApiSecret] = useState('');
+  // BloFin only: the key's passphrase.
+  const [passphrase, setPassphrase] = useState('');
   const isMobile = useIsMobile();
   const [guideOpen, setGuideOpen] = useState(false);
   // Set once the account is created. Non-null switches the panel from the form
@@ -587,6 +589,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
     // Clear Delta inputs when switching brokers so secrets never leak across selections.
     setApiKey('');
     setApiSecret('');
+    setPassphrase('');
   }, [selected]);
 
   const sizeValue =
@@ -604,7 +607,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
   // key here as well meant stage 2 had nothing left to do, and the two
   // instruction lists disagreed about how many steps the venue has.
   const deltaCredsProvided =
-    skipKey || !isDelta || (apiKey.trim() !== '' && apiSecret.trim() !== '');
+    skipKey || !isDelta || (apiKey.trim() !== '' && apiSecret.trim() !== '' && (!v.hasPassphrase || passphrase.trim() !== ''));
 
   const canCreate =
     !!selected &&
@@ -654,6 +657,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
           exchange: exchangeSlug,
           apiKey: apiKey.trim(),
           apiSecret: apiSecret.trim(),
+          passphrase: v.hasPassphrase ? passphrase.trim() : undefined,
         });
         setConnectOutcome({ ok: true, summary });
       } catch (credErr) {
@@ -678,6 +682,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
         exchange: exchangeSlug,
         apiKey: apiKey.trim(),
         apiSecret: apiSecret.trim(),
+        passphrase: v.hasPassphrase ? passphrase.trim() : undefined,
       });
       setConnectOutcome({ ok: true, summary });
     } catch (credErr) {
@@ -1163,6 +1168,26 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                     }}
                   />
                 </label>
+                {v.hasPassphrase && (
+                  <label className="block sm:col-span-2">
+                    <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
+                      Passphrase <span style={{ color: 'var(--dash-text-muted)' }}>(the one you set when creating the key)</span>
+                    </span>
+                    <SecretInput
+                      name="tgx-passphrase"
+                      value={passphrase}
+                      onChange={(e) => setPassphrase(e.target.value)}
+                      placeholder="Paste passphrase"
+                      wrapperClassName="mt-1"
+                      className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
+                      style={{
+                        borderColor: 'var(--dash-border)',
+                        backgroundColor: 'var(--dash-bg-input)',
+                        color: 'var(--dash-text-primary)',
+                      }}
+                    />
+                  </label>
+                )}
               </div>
               {(!apiKey.trim() || !apiSecret.trim()) && (
                 <p className="text-[11px] mt-2" style={{ color: 'var(--amber)' }}>

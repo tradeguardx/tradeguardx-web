@@ -48,6 +48,8 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   const [apiKey, setApiKey] = useState('');
   const noAutofill = useNoAutofill();
   const [apiSecret, setApiSecret] = useState('');
+  // BloFin only: the key's passphrase.
+  const [passphrase, setPassphrase] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [ipCopied, setIpCopied] = useState(false);
@@ -105,7 +107,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   if (!exchangeSlug) return null; // Only render for exchange accounts
 
   const isConnected = connection?.status === 'active';
-  const canSubmit = apiKey.trim().length > 0 && apiSecret.trim().length > 0 && !submitting;
+  const canSubmit = apiKey.trim().length > 0 && apiSecret.trim().length > 0 && (!venueFor(exchangeSlug)?.hasPassphrase || passphrase.trim().length > 0) && !submitting;
 
   // Doubles as the retry handler on the result screen — there's no separate
   // "create account" step here like the first-connect flow, so retrying is
@@ -120,6 +122,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
         exchange: exchangeSlug,
         apiKey: apiKey.trim(),
         apiSecret: apiSecret.trim(),
+        passphrase: v.hasPassphrase ? passphrase.trim() : undefined,
       });
       setConnection(result);
       setConnectOutcome({ ok: true, summary: result });
@@ -147,6 +150,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   const finishConnect = () => {
     setApiKey('');
     setApiSecret('');
+    setPassphrase('');
     setShowForm(false);
     setConnectOutcome(null);
     /*
@@ -514,6 +518,26 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                 }}
               />
             </label>
+            {v.hasPassphrase && (
+              <label className="block sm:col-span-2">
+                <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
+                  Passphrase <span style={{ color: 'var(--dash-text-muted)' }}>(the one you set when creating the key)</span>
+                </span>
+                <SecretInput
+                  name="tgx-passphrase"
+                  value={passphrase}
+                  onChange={(e) => setPassphrase(e.target.value)}
+                  placeholder="Paste passphrase"
+                  wrapperClassName="mt-1"
+                  className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
+                  style={{
+                    borderColor: 'var(--dash-border)',
+                    backgroundColor: 'var(--dash-bg-input)',
+                    color: 'var(--dash-text-primary)',
+                  }}
+                />
+              </label>
+            )}
           </div>
           <div className="flex flex-wrap gap-2 pt-1">
             <button

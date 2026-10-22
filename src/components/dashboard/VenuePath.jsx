@@ -34,7 +34,7 @@ export default function VenuePath({ venue }) {
   // Delta is the one venue with a working app flow, and its desktop users get
   // a direct link, so the taps are the phone path. The other two have no app
   // create-key screen at all, so theirs is the only path there is.
-  const where = venue.desktopOnly ? `On ${venue.name}` : `In the ${venue.name} app`;
+  const where = venue.desktopOnly || !venue.mobilePath ? `On ${venue.name}` : `In the ${venue.name} app`;
 
   return (
     <div style={sx('margin-top:13px')}>

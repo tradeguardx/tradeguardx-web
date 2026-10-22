@@ -291,8 +291,8 @@ const VENUES = {
     // Indian, so the tax centre applies to every account and there is nothing
     // to gate. Shark is the one where it is EXACT rather than converted — it
     // settles in INR, so the figure reconciles to the rupee with Shark's own
-    // statement. The hasTaxCentre() machinery arrives with the first global
-    // venue that has to switch it off.
+    // statement. hasTaxCentre() below exists for BloFin, the first global
+    // venue, which switches it off.
     /** Out of beta, 27 Sep 2026. A real key has been through it end to end and
      *  the daily-loss rule has fired on a live Shark account. */
     beta: false,
@@ -321,7 +321,64 @@ const VENUES = {
       { title: 'Enter Verification Code', body: 'Shark texts a 6-digit code to your registered number. It expires, and there is a resend link if it does.' },
       { title: 'Tick Trade Futures, then Save & Complete', body: 'Shark issues every key as Read only. Without Trade Futures we can watch the account but never close a position — the kill switch would do nothing. Copy the key and secret on this screen first; the secret is never shown again.' },
     ],
-  }
+  },
+  /*
+   * BloFin — the first global venue, USDT-margined perpetuals only.
+   *
+   * NOT YET CHECKED against a live screenshot of BloFin's form: the field
+   * names below are the ones in BloFin's API docs and help pages, kept
+   * generic where we are not sure of the exact label. No appGuide images, so
+   * the connect flow renders the written steps and the replica only.
+   *
+   * Two things are different from every venue before it:
+   *   - The key has a PASSPHRASE the user chooses on BloFin's form, and every
+   *     request is signed with it, so the connect form asks for it as a third
+   *     field (hasPassphrase). It is stored inside the encrypted secret.
+   *   - BloFin offers a Transfer permission. It must stay off; the key needs
+   *     Read and Trade and nothing that can move money.
+   *
+   * The IP bind is optional on their side, but an unbound BloFin key expires
+   * after 90 days — and a key that silently dies is a guard that silently
+   * stops. So we treat it as required in our copy.
+   */
+  blofin: {
+    family: 'blofin',
+    name: 'BloFin',
+    longName: 'BloFin',
+    keysUrl: () => 'https://blofin.com/account/apis',
+    keyNameField: 'API name',
+    keyNameHint: 'Any name you will recognise later.',
+    ipField: 'IP address (bind IP)',
+    ipRequired: false,
+    ipHint: 'Optional on BloFin, but bind it: an unbound key expires after 90 days, and then the guard cannot act.',
+    readScopeLabel: 'Read',
+    readScopeNote: 'Tick it — we need to see positions and orders.',
+    readScopeSelectable: true,
+    scopeLabel: 'Trade',
+    scopeNote: 'Lets us close a position when a rule fires.',
+    /** Permissions that must stay unticked, drawn so nobody ticks them. */
+    offScopes: [{ label: 'Transfer', note: 'Leave this off. We never move money, and the key does not need it.' }],
+    noWithdrawNote: 'Read and Trade only. Leave Transfer off — the key can read your account and place or close trades, and nothing that moves money.',
+    /** BloFin keys carry a passphrase the user sets; the connect form asks for it. */
+    hasPassphrase: true,
+    passphraseField: 'Passphrase',
+    passphraseNote: 'You choose this on BloFin. Write it down — you paste it here too, and BloFin will not show it again.',
+    desktopOnly: false,
+    mobilePath: null,
+    navPath: ['Account', 'API Management', 'Create API key'],
+    suggestsKeyName: true,
+    createSteps: [
+      { title: 'Account → API Management', body: 'Log in to BloFin, open your account menu and choose API Management.' },
+      { title: 'Create API key and give it a name', body: 'Any name you will recognise later. We suggest the name shown below.' },
+      { title: 'Set a passphrase', body: 'You choose it. Keep it somewhere safe — you paste it into TradeGuardX as well, and BloFin will not show it again.' },
+      { title: 'Permissions: Read and Trade only', body: 'Tick Read and Trade. Never tick Transfer — we do not need it, and a key without it cannot move your money.' },
+      { title: 'Bind our IP', body: 'Paste our IP into the IP field. BloFin expires a key with no IP after 90 days, and from then on the guard cannot act.' },
+      { title: 'Copy the API key and secret', body: 'Then paste the key, the secret and your passphrase here.' },
+    ],
+    /** Tax centre is for Indian venues; BloFin is not part of it. */
+    taxCentre: false,
+    beta: true,
+  },
 };
 
 /** exchange slug → venue copy; null for non-exchange (prop-firm) accounts. */
@@ -330,7 +387,22 @@ export function venueFor(exchangeSlug) {
   if (exchangeSlug.startsWith('delta')) return VENUES.delta;
   if (exchangeSlug.startsWith('coindcx')) return VENUES.coindcx;
   if (exchangeSlug.startsWith('shark')) return VENUES.shark;
+  if (exchangeSlug.startsWith('blofin')) return VENUES.blofin;
   return null;
+}
+
+/**
+ * Whether the Tax centre covers this account. Only a venue that says
+ * `taxCentre: false` is excluded; non-exchange accounts keep it (legacy).
+ */
+export function hasTaxCentre(exchangeSlug) {
+  const v = venueFor(exchangeSlug);
+  return v ? v.taxCentre !== false : true;
+}
+
+/** True when the venue's key carries a passphrase the connect form must ask for. */
+export function needsPassphrase(exchangeSlug) {
+  return Boolean(venueFor(exchangeSlug)?.hasPassphrase);
 }
 
 /** True while a venue has not been proven end to end with a real key. */

@@ -14,6 +14,7 @@ export function exchangeFromBrokerSlug(slug) {
   if (slug === 'delta_global') return 'delta_global';
   if (slug === 'coindcx') return 'coindcx';
   if (slug === 'shark') return 'shark';
+  if (slug === 'blofin') return 'blofin';
   return null;
 }
 
@@ -27,6 +28,7 @@ export async function connectExchangeCredentials({
   exchange,
   apiKey,
   apiSecret,
+  passphrase,
   signal,
 } = {}) {
   if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
@@ -35,7 +37,8 @@ export async function connectExchangeCredentials({
   }
   const payload = await apiPost(
     `/trading-accounts/${encodeURIComponent(accountId)}/exchange-credentials`,
-    { exchange, apiKey, apiSecret },
+    // BloFin keys carry a passphrase; other venues never send the field.
+    { exchange, apiKey, apiSecret, ...(passphrase ? { passphrase } : {}) },
     {
       signal,
       headers: { Authorization: `Bearer ${accessToken}` },
