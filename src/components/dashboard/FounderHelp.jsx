@@ -24,7 +24,7 @@ export default function FounderHelp({ step }) {
       <span style={sx('flex:1;min-width:min(230px,100%)')}>
         <span style={sx('display:block;font-size:13.5px;font-weight:700;color:var(--ink)')}>Stuck, or want to understand the product?</span>
         <span style={sx('display:block;margin-top:2px;font-size:12.5px;line-height:1.45;color:var(--ink-3)')}>
-          WhatsApp us — for setup issues, how TradeGuardX works, or anything you want to know before your trial.
+          {wa ? 'WhatsApp us' : 'Message us'} — for setup issues, how TradeGuardX works, or anything you want to know before your trial.
         </span>
       </span>
       <a
