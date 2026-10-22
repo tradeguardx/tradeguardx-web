@@ -11,6 +11,7 @@ import RevengeSetupStep from '../components/revenge/RevengeSetupStep';
 import VenuePicker from '../components/dashboard/VenuePicker';
 import VenueMark from '../components/dashboard/VenueMark';
 import StepsBar from '../components/dashboard/shell/StepsBar';
+import FounderHelp from '../components/dashboard/FounderHelp';
 import { venueFor } from '../lib/venues';
 import { sx } from '../components/dashboard/shell/sx';
 import { useToast } from '../components/common/ToastProvider';
@@ -276,11 +277,14 @@ export default function SetupPage() {
    */
   if (at === 4) {
     return (
-      <BillingStep
-        onStarted={() => setPickedStep(4)}
-        onBack={() => go(3)}
-        revenge={revengeHere?.report?.enoughData ? { ...revengeHere.report, months: revengeHere.months } : null}
-      />
+      <>
+        <BillingStep
+          onStarted={() => setPickedStep(4)}
+          onBack={() => go(3)}
+          revenge={revengeHere?.report?.enoughData ? { ...revengeHere.report, months: revengeHere.months } : null}
+        />
+        <div style={sx('max-width:1220px;margin:-48px auto 40px')}><FounderHelp step="Start free trial" /></div>
+      </>
     );
   }
 
@@ -390,6 +394,8 @@ export default function SetupPage() {
           )}
         </footer>
       )}
+
+      <FounderHelp step={step?.label} />
     </div>
   );
 }
