@@ -1,3 +1,5 @@
+import { FOUNDER_WHATSAPP } from '../config/contact';
+
 /**
  * Founder's DIRECT Telegram — the "talk to a human" channel, distinct from the
  * notification bot (TELEGRAM_BOT_USERNAME). This is a personal 1:1 chat.
@@ -26,19 +28,13 @@ export function founderTelegramUrl(prefill) {
 export const FOUNDER_TELEGRAM_HANDLE = HANDLE;
 
 /**
- * Founder's WhatsApp — the "talk to a human" channel during setup.
- *
- * THE NUMBER IS NOT IN THE SITE. In production the button links to our own
- * /whatsapp, which Vercel redirects to the chat (vercel.json → wa.me); the
- * query (the pre-typed message) passes through. So the number appears in no
- * page, no bundle and no hover. On localhost there is no Vercel, so a dev build
- * links straight to WhatsApp — that branch is removed from production builds.
+ * Founder's WhatsApp — the "talk to a human" channel during setup. The number
+ * lives in config/contact.js; the button opens the chat directly.
  */
-export const FOUNDER_WHATSAPP_CONFIGURED = true;
+export const FOUNDER_WHATSAPP_CONFIGURED = FOUNDER_WHATSAPP.length >= 10;
 
 /** Opens WhatsApp (app on a phone, WhatsApp Web on a computer) with the message typed in. */
 export function founderWhatsAppUrl(prefill) {
   const q = prefill ? `?text=${encodeURIComponent(prefill)}` : '';
-  if (import.meta.env.DEV) return `https://wa.me/918770144119${q}`;
-  return `/whatsapp${q}`;
+  return `https://wa.me/${FOUNDER_WHATSAPP}${q}`;
 }
