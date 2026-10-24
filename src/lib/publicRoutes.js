@@ -48,8 +48,6 @@ export const SITE = 'https://tradeguardx.com';
 export const PUBLIC_ROUTES = [
   // Core
   { path: '/', priority: '1.0', changefreq: 'weekly', og: null },
-  // The Indian homepage — what "/" was before it went global.
-  { path: '/india', priority: '0.9', changefreq: 'weekly', og: null },
   { path: '/pricing', priority: '0.9', changefreq: 'weekly', og: null },
   { path: '/signup', priority: '0.8', changefreq: 'monthly', og: null },
 

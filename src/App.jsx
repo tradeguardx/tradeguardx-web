@@ -76,8 +76,6 @@ function App() {
               <Routes>
                 <Route path="/" element={<Layout />}>
                   <Route index element={<CryptoHomePage />} />
-                  {/* The Indian homepage: rupees, IST, the tax centre, Indian venues. */}
-                  <Route path="india" element={<CryptoHomePage variant="india" />} />
                   <Route path="home-classic" element={<HomePage noindex />} />
                   {/* Review harness for the share reel. Excluded from the
                       sitemap and prerender — see publicRoutes.js. */}
