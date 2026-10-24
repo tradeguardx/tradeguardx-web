@@ -5,7 +5,8 @@ import { dayKey, getUserZone, isValidZone, zoneOffsetMinutes } from './userZone'
  *
  * The risk engine resets daily limits at the account's own `timezone` +
  * `dailyResetTimeLocal` (trading_accounts). For a retail exchange account
- * that is the user's local midnight — but a timezone change in Preferences
+ * that is early morning in the user's zone (resetBoundaryFor) — but a
+ * timezone change in Preferences
  * only reaches the account at its NEXT reset (the engine never moves the
  * boundary mid-day, so a change can't end a day or a lock early). Until then
  * the account still runs on its old zone, and that is the time we must show:
@@ -46,16 +47,40 @@ export function nextResetAt(account, now = Date.now()) {
   return null;
 }
 
+/**
+ * The reset a retail account is moved to for a user in `zone` — a mirror of
+ * the server's rule, so the screen and the engine agree.
+ *
+ * WHY EARLY MORNING, NOT MIDNIGHT. A midnight reset hands a trader a fresh
+ * daily loss allowance in the middle of the night session — exactly when
+ * the revenge trade happens. Resetting at 05:00 means a lock hit at 23:00
+ * holds until morning: a real break, with sleep in it.
+ *
+ * WHY INDIA IS 05:30. 05:30 IST is 00:00 UTC, the boundary every Indian
+ * account has always reset on. Keeping it means no Indian user's day moves
+ * an inch; it is deliberate, not a rounding of 05:00.
+ */
+export function resetBoundaryFor(zone) {
+  const tz = isValidZone(zone) ? zone : 'UTC';
+  return { tz, time: tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta' ? '05:30' : '05:00' };
+}
+
 /** Prop-firm accounts keep their firm's cutoff; everything else follows the user. */
 export const followsUserZone = (account) => (account?.equityMode ?? 'live') !== 'funded';
 
 /**
- * True while a retail account is still on a different clock from the user's
- * zone — i.e. a timezone change is waiting for the next reset.
+ * True while a retail account still resets at a different moment from the
+ * one the user's zone calls for — i.e. a timezone change is waiting for the
+ * next reset.
+ *
+ * Compared by INSTANT, not by zone name: an Indian account still stored as
+ * UTC 00:00 resets at exactly the same moment as Asia/Kolkata 05:30, so
+ * nothing is pending and saying otherwise would be noise.
  */
 export function zoneSwitchPending(account, userZone = getUserZone(), now = Date.now()) {
   if (!account || !followsUserZone(account)) return false;
-  const { tz, time } = accountDayBoundary(account);
-  if (time !== '00:00') return true;
-  return zoneOffsetMinutes(tz, new Date(now)) !== zoneOffsetMinutes(userZone, new Date(now));
+  const target = resetBoundaryFor(userZone);
+  const want = nextResetAt({ timezone: target.tz, dailyResetTimeLocal: target.time }, now);
+  const have = nextResetAt(account, now);
+  return want != null && have != null && want !== have;
 }

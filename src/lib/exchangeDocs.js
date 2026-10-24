@@ -97,7 +97,7 @@ export const HELP_ARTICLES = [
       {
         heading: 'How long each one runs',
         list: [
-          { bold: 'Daily loss / profit target / max trades:', text: 'until your next daily reset, at midnight your time.' },
+          { bold: 'Daily loss / profit target / max trades:', text: 'until your next daily reset, early morning your time (05:00; 05:30 in India).' },
           { bold: 'Loss streak, soft tier:', text: 'a fixed window from when it fired — 3 hours by default.' },
           { bold: 'Loss streak, hard tier:', text: 'a longer fixed window — 12 hours by default. When it lifts, your session resets.' },
           { bold: 'Manual lockout:', text: 'exactly the 3, 6 or 12 hours you picked.' },

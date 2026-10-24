@@ -28,10 +28,10 @@ function renderForm(props) {
 }
 
 describe('AddAccountForm daily reset', () => {
-  it('shows midnight in the user zone for an exchange account, with an inline change', () => {
+  it('shows the early-morning reset in the user zone for an exchange account, with an inline change', () => {
     const { container } = renderForm({ presetSlug: 'exness' });
     const row = container.querySelector('[data-account-reset]');
-    expect(row.textContent).toMatch(/Midnight, Dubai time \(GMT\+4\)/);
+    expect(row.textContent).toMatch(/05:00, Dubai time \(GMT\+4\)/);
     fireEvent.click(screen.getByRole('button', { name: 'Change' }));
     expect(screen.getByRole('heading', { name: 'Timezone' })).toBeInTheDocument();
   });

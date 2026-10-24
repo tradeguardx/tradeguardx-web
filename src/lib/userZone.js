@@ -9,7 +9,7 @@
  *
  * WHICH ZONE WINS, and why in this order:
  *   1. The profile's timezone. It is also the zone the engine resets the
- *      daily limits on (midnight, the user's time), so showing anything else
+ *      daily limits on (early morning, the user's time), so showing anything else
  *      would make "today" on screen disagree with "today" for the rules.
  *   2. The browser's zone. Before the profile answers — and for a profile
  *      that has none yet — the device clock is the best guess, and it is the

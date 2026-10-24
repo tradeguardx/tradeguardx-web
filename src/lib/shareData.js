@@ -63,9 +63,10 @@ export function isGuardClose(breach) {
 }
 
 /*
- * Day and month keys are on the USER's calendar (lib/userZone) — the same
- * midnight their daily limits reset on. These were IST for everyone, which
- * filed a Dubai trader's 23:00 trade under tomorrow's card.
+ * Day and month keys are on the USER's calendar (lib/userZone): a share card
+ * says "my Tuesday", which is a calendar day, not the 05:00 engine reset
+ * window. These were IST for everyone, which filed a Dubai trader's 23:00
+ * trade under tomorrow's card.
  */
 export { dayKey, monthKey } from './userZone';
 

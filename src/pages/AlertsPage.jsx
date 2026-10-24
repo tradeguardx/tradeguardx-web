@@ -221,7 +221,7 @@ export function AlertsSettings({ embedded = false }) {
           <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:9px')}>What a critical alert looks like</div>
           <div style={sx('padding:13px 15px;border:1px solid var(--red-line);border-radius:10px;background:var(--surface)')}>
             <div style={sx('font-size:12.5px;font-weight:700;color:var(--red)')}>Risk alert · critical</div>
-            <p style={sx('margin:6px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>Daily loss limit hit on Delta · Main at 14:07. Orders cancelled, 2 positions closed, account verified flat. Locked until midnight your time.</p>
+            <p style={sx('margin:6px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>Daily loss limit hit on Delta · Main at 14:07. Orders cancelled, 2 positions closed, account verified flat. Locked until your next daily reset (05:00 your time).</p>
           </div>
         </div>
       </section>

@@ -49,7 +49,7 @@ export async function armLockout({ accessToken, tradingAccountId, hours, signal 
 
 /**
  * Change the profile's timezone — the zone the dashboard shows times in and
- * the daily limits reset on (midnight, the user's time).
+ * the daily limits reset on (early morning, the user's time — lib/dailyReset).
  *
  * Resolves to `{ timezone, appliesFrom: 'next_daily_reset' }`: a change never
  * moves today's reset, it takes over from the next one. Rejects with an

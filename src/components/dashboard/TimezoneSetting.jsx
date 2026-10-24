@@ -3,11 +3,13 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../common/ToastProvider';
 import { retryAfterOf, updateUserTimezone } from '../../api/userApi';
 import { allZones, browserZone, getProfileZone, zoneLabel, zoneOffsetLabel, zonePlace } from '../../lib/userZone';
+import { resetBoundaryFor } from '../../lib/dailyReset';
 import { sx } from './shell/sx';
 
 /**
  * Timezone — the one profile setting that changes what is ENFORCED, not just
- * what is shown: the daily limits reset at midnight in this zone.
+ * what is shown: the daily limits reset early morning in this zone (05:00;
+ * 05:30 in India — see lib/dailyReset resetBoundaryFor).
  *
  * WHY IT SAYS "FROM YOUR NEXT DAILY RESET". The server never moves today's
  * boundary; a change takes over at the next reset. Without that sentence a
@@ -104,7 +106,7 @@ export default function TimezoneSetting() {
     <section style={sx(CARD)} aria-labelledby="tz-heading">
       <div style={sx('padding:16px 19px;border-bottom:1px solid var(--line)')}>
         <h3 id="tz-heading" style={sx(H3)}>Timezone</h3>
-        <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:78ch')}>Every time on the dashboard shows in this zone, and your daily limits reset at midnight in it.</p>
+        <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:78ch')}>Every time on the dashboard shows in this zone, and your daily limits reset at {resetBoundaryFor(saved).time} in it, early morning your time.</p>
       </div>
       <div style={sx('padding:18px 19px;display:grid;gap:12px')}>
         <div>

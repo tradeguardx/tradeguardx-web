@@ -48,6 +48,8 @@ describe('timezone preference', () => {
     expect(screen.getByText('India')).toBeTruthy();
     expect(screen.getByText(/Asia\/Kolkata · GMT\+5:30 · IST/)).toBeTruthy();
     expect(screen.getByText(/Applies to your daily limits from your next daily reset/)).toBeTruthy();
+    // India keeps 05:30 — the old UTC midnight.
+    expect(screen.getByText(/your daily limits reset at 05:30 in it, early morning your time/)).toBeTruthy();
   });
 
   it('saves with PUT, then shows times in the new zone', async () => {

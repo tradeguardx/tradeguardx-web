@@ -30,6 +30,7 @@ import { extraFieldsReady, secretFieldFor, splitsPastedPair, venueFor } from '..
 import { useNoAutofill } from '../lib/noAutofill';
 import { getUserZone, zoneOffsetLabel, zonePlace } from '../lib/userZone';
 import TimezoneSetting from '../components/dashboard/TimezoneSetting';
+import { resetBoundaryFor } from '../lib/dailyReset';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel, equityModeLabel } from '../lib/labels';
 
@@ -834,7 +835,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)', color: 'var(--dash-text-primary)' }}
                 >
                   <span>
-                    Midnight, {zonePlace(zone)} time
+                    {resetBoundaryFor(zone).time}, {zonePlace(zone)} time
                     <span style={{ color: 'var(--dash-text-muted)' }}>{zonePlace(zone) !== 'UTC' ? ` (${zoneOffsetLabel(zone)})` : ''}</span>
                   </span>
                   <button
