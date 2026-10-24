@@ -1,5 +1,5 @@
 import { sx } from '../dashboard/shell/sx';
-import { istDay, moneyOf } from './revengeFormat';
+import { dateKeyDay, moneyOf } from './revengeFormat';
 
 /**
  * Setup's unlocked card, kept short: their worst numbers in one row, and
@@ -13,7 +13,7 @@ export function DamageStrip({ report, periodLabel, delay = 0 }) {
   const cost = report.checks?.find((c) => c.id === 'cost' && c.value != null && c.value > 0);
   const tiles = [
     report.revengeTrades > 0 && { big: String(report.revengeTrades), small: `revenge trade${report.revengeTrades === 1 ? '' : 's'}`, sub: periodLabel ? `in the last ${periodLabel}` : null },
-    report.worstDay?.pnl < 0 && { big: money(report.worstDay.pnl, { signed: true }), small: 'your worst day', sub: istDay(`${report.worstDay.date}T06:30:00Z`) },
+    report.worstDay?.pnl < 0 && { big: money(report.worstDay.pnl, { signed: true }), small: 'your worst day', sub: dateKeyDay(report.worstDay.date) },
     cost && { big: `${Math.round(cost.value)}%`, small: 'of your losses', sub: 'came from revenge trades' },
   ].filter(Boolean);
   if (!tiles.length) return null;

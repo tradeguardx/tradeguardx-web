@@ -5,7 +5,7 @@ import { STRIP_LOCKED } from '../lib/shareCards';
 import { savedFrom, tradePaths } from '../lib/counterfactual';
 import { achievements, buildShareCards, materialFloor, pickTrade } from '../lib/shareBuild';
 import { buildStories } from '../lib/reelBuild';
-import { closedTrades, dailyLossLimit, dailyTargetAmount, guardClosures, istDayKey, ruleChips, ruleLabels, ruleShort, rulesOnCount } from '../lib/shareData';
+import { closedTrades, dailyLossLimit, dailyTargetAmount, guardClosures, dayKey, ruleChips, ruleLabels, ruleShort, rulesOnCount } from '../lib/shareData';
 
 /**
  * Everything the share system needs for one account, from real data.
@@ -132,7 +132,7 @@ export function useShareData({ accessToken, tradingAccountId, currency = 'USD', 
     // would spend four calls to answer one question.
     const perDay = new Map();
     for (const t of list) {
-      const k = istDayKey(t.closedAt);
+      const k = dayKey(t.closedAt);
       if (k && !perDay.has(k)) perDay.set(k, t);
     }
     const picks = [...perDay.entries()].slice(0, MAX_PRICINGS);
@@ -142,7 +142,7 @@ export function useShareData({ accessToken, tradingAccountId, currency = 'USD', 
       ? closedTrades(raw.trades).find((t) => (t.tradeUid ?? t.id) === activeUid)
       : null;
     if (active && !picks.some(([, t]) => (t.tradeUid ?? t.id) === activeUid)) {
-      picks.unshift([istDayKey(active.closedAt), active]);
+      picks.unshift([dayKey(active.closedAt), active]);
     }
 
     const todo = picks.filter(([, t]) => !priced.has(t.tradeUid ?? t.id));
@@ -211,7 +211,7 @@ export function useShareData({ accessToken, tradingAccountId, currency = 'USD', 
       tradeUid,
       counter,
       ghosts,
-      savedToday: ghosts[istDayKey(new Date())] ?? null,
+      savedToday: ghosts[dayKey(new Date())] ?? null,
       dailyLoss: dailyLossLimit(rules),
       dailyTarget: dailyTargetAmount(rules),
       // Every enabled rule, not the four the chip row has space for — the

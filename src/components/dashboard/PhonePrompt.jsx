@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../common/ToastProvider';
 import { fetchNotificationSettings, updateNotificationSettings } from '../../api/notificationsApi';
+import PhoneInput from '../common/LazyPhoneInput';
 
 /**
  * First-time mobile-number prompt.
@@ -21,23 +22,14 @@ import { fetchNotificationSettings, updateNotificationSettings } from '../../api
  * be previewed and styled in isolation; PhonePrompt is the data/gating shell.
  */
 
-/** Just the digits, capped at a 10-digit Indian mobile. */
-function digitsOf(raw) {
-  return raw.replace(/[^\d]/g, '').slice(0, 10);
-}
-/** Group as "98765 43210" for readability while typing. */
-function formatIn(raw) {
-  const d = digitsOf(raw);
-  return d.length > 5 ? `${d.slice(0, 5)} ${d.slice(5)}` : d;
-}
-function isComplete(raw) {
-  return digitsOf(raw).length === 10;
-}
-
 /* ───────────────────────── presentational dialog ───────────────────────── */
 
-export function PhonePromptDialog({ phone, onPhoneChange, optIn, onOptInChange, error, saving, onSave, onDismiss }) {
-  const complete = isComplete(phone);
+/**
+ * `phone` is E.164 and `phoneValid` whether it is a real number in its
+ * country — PhoneInput works both out, so this dialog no longer assumes India.
+ */
+export function PhonePromptDialog({ phone, phoneValid, onPhoneChange, optIn, onOptInChange, error, saving, onSave, onDismiss }) {
+  const complete = Boolean(phoneValid);
   const reduce = useReducedMotion();
 
   // A phone "buzz": a quick shake burst, then a pause, on a loop. Held still for
@@ -68,7 +60,9 @@ export function PhonePromptDialog({ phone, onPhoneChange, optIn, onOptInChange, 
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 24, scale: 0.98 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-[400px] overflow-hidden rounded-2xl border shadow-2xl"
+        // Scrolls rather than clips: the country list opens in flow and can
+        // push a short phone's card past the bottom of the screen.
+        className="relative max-h-[calc(100dvh-2rem)] w-full max-w-[400px] overflow-y-auto overflow-x-hidden rounded-2xl border shadow-2xl"
         style={{
           backgroundColor: 'var(--surface)',
           borderColor: 'var(--line)',
@@ -140,32 +134,17 @@ export function PhonePromptDialog({ phone, onPhoneChange, optIn, onOptInChange, 
             We&rsquo;ll message you the instant a rule breaks — even when you&rsquo;re away from the screen. No screen-watching required.
           </p>
 
-          {/* phone input with a locked +91 prefix so they type only 10 digits */}
-          <div
-            className="mt-5 flex items-stretch overflow-hidden rounded-xl border transition-colors focus-within:border-[var(--mint-solid)]"
-            style={{
-              backgroundColor: 'var(--surface-2)',
-              borderColor: error ? 'var(--red-solid)' : 'var(--line-input)',
-            }}
-          >
-            <span
-              className="flex select-none items-center gap-1.5 border-r px-3.5 text-[15px] font-semibold"
-              style={{ borderColor: 'var(--line)', color: 'var(--ink-2)' }}
-            >
-              <span aria-hidden>🇮🇳</span> +91
-            </span>
-            <input
+          {/* country picker (defaults to where they are) + national number */}
+          <div className="mt-5">
+            <PhoneInput
               id="phone-prompt-input"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel-national"
+              variant="prompt"
+              label="Mobile number"
+              value={phone}
+              onChange={onPhoneChange}
+              invalid={Boolean(error)}
               autoFocus
-              placeholder="98765 43210"
-              value={formatIn(phone)}
-              onChange={(e) => onPhoneChange(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && complete) onSave(); }}
-              className="w-full bg-transparent px-3.5 py-3 text-[16px] tracking-wide outline-none"
-              style={{ color: 'var(--ink)' }}
+              onEnter={() => { if (complete && !saving) onSave(); }}
             />
           </div>
           {error && <p className="mt-1.5 text-[13px] text-[var(--red)]">{error}</p>}
@@ -246,7 +225,8 @@ export default function PhonePrompt() {
   const userId = user?.id ?? null;
 
   const [open, setOpen] = useState(false);
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(''); // E.164 (partial while typing)
+  const [phoneValid, setPhoneValid] = useState(false);
   const [optIn, setOptIn] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -256,6 +236,10 @@ export default function PhonePrompt() {
   useEffect(() => {
     if (!token || !userId || decidedRef.current) return undefined;
     const controller = new AbortController();
+
+    // Fetch the phone field's lazy chunk alongside the check, so the dialog
+    // doesn't open on an empty slot while libphonenumber downloads.
+    import('../common/PhoneInput').catch(() => {});
 
     /*
      * Retried, because "we already asked" and "we could not find out" used to
@@ -312,14 +296,16 @@ export default function PhonePrompt() {
     void markPrompted();
   };
 
-  const onPhoneChange = (raw) => {
-    setPhone(digitsOf(raw));
+  const onPhoneChange = (e164, { valid }) => {
+    setPhone(e164);
+    setPhoneValid(valid);
     if (error) setError('');
   };
 
   const save = async () => {
-    if (!isComplete(phone)) {
-      setError('Enter your 10-digit mobile number.');
+    // Save is disabled until valid; this guards Enter and any future caller.
+    if (!phoneValid) {
+      setError('Enter a valid mobile number for the selected country.');
       return;
     }
     setSaving(true);
@@ -327,7 +313,7 @@ export default function PhonePrompt() {
     try {
       await updateNotificationSettings({
         accessToken: token,
-        phone: `+91${digitsOf(phone)}`,
+        phone, // already E.164 — the server re-validates it
         mobileNotificationsEnabled: optIn,
         markPhonePrompted: true,
       });
@@ -344,6 +330,7 @@ export default function PhonePrompt() {
       {open && (
         <PhonePromptDialog
           phone={phone}
+          phoneValid={phoneValid}
           onPhoneChange={onPhoneChange}
           optIn={optIn}
           onOptInChange={setOptIn}

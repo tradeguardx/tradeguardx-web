@@ -5,8 +5,21 @@ import { initUserProfile } from '../api/userApi';
 import { getCurrentSubscription } from '../api/subscriptionApi';
 import { identifySentryUser, clearSentryUser } from '../sentry.js';
 import { setAnalyticsUser, trackLogin, trackSignup, firstTouch } from '../lib/analytics';
+import { browserZone, getUserZone, setUserZone, subscribeUserZone } from '../lib/userZone';
 
 const AuthContext = createContext(null);
+
+/**
+ * The profile's timezone out of a response, wherever this endpoint puts it.
+ * `undefined` means "this response does not say" (leave the zone alone);
+ * `null` means "the profile has none" (fall back to the device).
+ */
+function profileZoneOf(payload) {
+  for (const o of [payload, payload?.data, payload?.profile, payload?.data?.profile]) {
+    if (o && typeof o === 'object' && 'timezone' in o) return o.timezone ?? null;
+  }
+  return undefined;
+}
 
 function planKeyFromName(name) {
   if (!name || typeof name !== 'string') return 'free';
@@ -21,6 +34,13 @@ export function AuthProvider({ children }) {
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [subscriptionError, setSubscriptionError] = useState(null);
   const initializedProfilesRef = useRef(new Set());
+  /*
+   * The display zone, mirrored from lib/userZone into state so a change
+   * (profile load, a save in Preferences) re-renders everything under the
+   * provider. Plain helpers read lib/userZone directly.
+   */
+  const [timezone, setTimezoneState] = useState(getUserZone);
+  useEffect(() => subscribeUserZone(setTimezoneState), []);
   // Set by signup() so the SIGNED_IN that follows isn't also counted as a login.
   const suppressLoginEventRef = useRef(false);
 
@@ -202,7 +222,7 @@ export function AuthProvider({ children }) {
     if (initializedProfilesRef.current.has(userId)) return;
 
     try {
-      await initUserProfile({
+      const res = await initUserProfile({
         accessToken,
         fullName:
           fallbackName ||
@@ -213,7 +233,13 @@ export function AuthProvider({ children }) {
         // The channel that won this user, from their first-ever visit. Stored on
         // the profile the first time it's created; ignored on later calls.
         attribution: firstTouch(),
+        // Fills the profile's timezone when it has none — a new signup, or
+        // anyone who joined before timezones existed. Ignored otherwise, so
+        // a zone picked in Preferences is never overwritten by a laptop.
+        timezone: browserZone(),
       });
+      const tz = profileZoneOf(res);
+      if (tz !== undefined) setUserZone(tz);
       initializedProfilesRef.current.add(userId);
     } catch {
       // Non-blocking; user can still use auth flow.
@@ -232,6 +258,10 @@ export function AuthProvider({ children }) {
     try {
       const data = await getCurrentSubscription({ accessToken: token });
       setSubscription(data);
+      // The /me payload carries the profile's timezone too. A mirror must
+      // not write the mirrored user's zone into the operator's storage.
+      const tz = profileZoneOf(data);
+      if (tz !== undefined) setUserZone(tz, { persist: !isMirroring() });
       setUser(mergePlanIntoUser(targetSession.user, data));
     } catch (e) {
       setSubscriptionError(e?.message || 'Could not load subscription');
@@ -337,6 +367,7 @@ export function AuthProvider({ children }) {
         setAnalyticsUser(null);
         setSubscription(null);
         setSubscriptionError(null);
+        setUserZone(null);
         initializedProfilesRef.current = new Set();
       }
     });
@@ -479,8 +510,14 @@ export function AuthProvider({ children }) {
     setSession(null);
     setSubscription(null);
     setSubscriptionError(null);
+    // The next person on this browser starts from the device clock, not
+    // from the last user's chosen zone.
+    setUserZone(null);
     initializedProfilesRef.current = new Set();
   }, []);
+
+  /** After a successful PUT /profile/timezone — see PreferencesPage. */
+  const setTimezone = useCallback((tz) => setUserZone(tz), []);
 
   return (
     <AuthContext.Provider
@@ -497,6 +534,10 @@ export function AuthProvider({ children }) {
         subscriptionLoading,
         subscriptionError,
         refetchSubscription,
+        /* The zone every date and time is shown in (lib/userZone): the
+           profile's, else the device's. */
+        timezone,
+        setTimezone,
         login,
         signup,
         logout,

@@ -10,6 +10,7 @@ import { triggerHistoryBackfill } from '../api/syncApi';
 import { useRevengeUnlock } from '../hooks/useRevengeUnlock';
 import { sx } from '../components/dashboard/shell/sx';
 import { CARD, PERIODS } from '../components/revenge/revengeFormat';
+import { zoneLabel } from '../lib/userZone';
 import { RevengeStyles } from '../components/revenge/RevengeParts';
 import RevengeReportView from '../components/revenge/RevengeReportView';
 import RevengeBuilding from '../components/revenge/RevengeBuilding';
@@ -132,7 +133,7 @@ export default function RevengeReportPage() {
   return (
     <PageShell
       /* Locked: the card speaks; a subtitle above it would say the same twice. */
-      sub={res?.locked ? null : <>How you trade after a loss on <b style={sx('color:var(--ink-2)')}>{selectedAccount?.name ?? 'this account'}</b>, from your closed trades. Times are IST.</>}
+      sub={res?.locked ? null : <>How you trade after a loss on <b style={sx('color:var(--ink-2)')}>{selectedAccount?.name ?? 'this account'}</b>, from your closed trades. Times are {zoneLabel() || 'your local time'}.</>}
       right={report && !building ? (
         <div role="tablist" aria-label="Period" style={sx('display:flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)')}>
           {PERIODS.map((x) => (

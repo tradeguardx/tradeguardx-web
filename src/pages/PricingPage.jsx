@@ -179,7 +179,7 @@ const INCLUDED = [
     items: [
       ['Trade journal', 'Every trade recorded on its own, with performance analytics and a P&L calendar.'],
       ['Behaviour ledger', 'Revenge trades, overtrading and broken rules, and what they cost you.'],
-      ['Economic calendar', 'High-impact events like CPI, FOMC and payrolls, in IST, so you know when the market is about to jump.'],
+      ['Economic calendar', 'High-impact events like CPI, FOMC and payrolls, in your own timezone, so you know when the market is about to jump.'],
     ],
   },
   {

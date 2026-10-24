@@ -22,6 +22,8 @@
  * account's own condition (§5, scenario Q).
  */
 
+import { getUserZone } from './userZone';
+
 /** The engine is enforcing in these. Mirrors lifecycleState.ts PROTECTED. */
 export const PROTECTED_STATES = ['t1', 't6', 'tc', 'tx', 'p', 'pc', 'ac', 'nr'];
 
@@ -87,7 +89,7 @@ function day(iso) {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: getUserZone() });
 }
 
 const ENDED_FACTS = [

@@ -1,5 +1,6 @@
 import { fetchKlines, intervalFor, resolveBinancePair } from './binanceKlines';
-import { istDayKey, pnlOf } from './shareData';
+import { pnlOf } from './shareData';
+import { dayEnd } from './userZone';
 
 /**
  * What the trade would have done if it had been left open.
@@ -9,7 +10,7 @@ import { istDayKey, pnlOf } from './shareData';
  * nothing else happened in the account. The answer lives in the price history.
  *
  * The rule: price the CLOSED SIZE forward from the exit, to the end of that
- * trading day in IST. Not forward forever — "if you'd held" has to mean
+ * trading day in the user's zone. Not forward forever — "if you'd held" has to mean
  * something bounded, and the day the trade happened is the bound the user
  * recognises, because it is the window their daily rules are written against.
  *
@@ -21,13 +22,15 @@ import { istDayKey, pnlOf } from './shareData';
 
 const DAY_MS = 86_400_000;
 
-/** End of the IST day a timestamp falls in, as epoch ms. */
-export function istDayEnd(ms) {
-  const key = istDayKey(new Date(ms));
-  if (!key) return null;
-  // IST is UTC+5:30 with no DST, so the day ends at 18:29:59.999Z.
-  const end = Date.parse(`${key}T18:29:59.999Z`);
-  return Number.isFinite(end) ? end : null;
+/**
+ * End of the user's day a timestamp falls in, as epoch ms.
+ *
+ * This was a fixed 18:29:59.999Z — IST's midnight — which is the wrong
+ * "end of day" anywhere else, and wrong by an hour twice a year in any zone
+ * with DST. dayEnd reads the zone's real offset at that midnight.
+ */
+export function userDayEnd(ms, tz) {
+  return dayEnd(ms, tz);
 }
 
 /** Signed P&L of holding `qty` from `entry` to `price`. */
@@ -62,10 +65,10 @@ export async function tradePaths(trade, { signal, points = 14 } = {}) {
   if (closeMs <= openMs) return null;
 
   const long = isLongSide(trade.side);
-  const dayEnd = istDayEnd(closeMs);
-  // A trade that closed in the last minutes of the IST day has no "afterwards"
+  const end = userDayEnd(closeMs);
+  // A trade that closed in the last minutes of the day has no "afterwards"
   // worth pricing. Give it an hour either way rather than a two-candle path.
-  const until = Math.min(Math.max(dayEnd ?? closeMs, closeMs + 3_600_000), closeMs + DAY_MS);
+  const until = Math.min(Math.max(end ?? closeMs, closeMs + 3_600_000), closeMs + DAY_MS);
 
   let candles;
   try {

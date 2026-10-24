@@ -7,6 +7,7 @@ import { useToast } from '../components/common/ToastProvider';
 import { fetchCalendar, scheduleCalendarLock } from '../api/calendarApi';
 import { calendarSample } from '../fixtures/calendarSample';
 import { useUpcomingCalendar } from '../hooks/useUpcomingCalendar';
+import { getUserZone } from '../lib/userZone';
 import { sx } from '../components/dashboard/shell/sx';
 import {
   rangeFor, timezoneLabel, msUntil, isPast, countdown, inLabel, timeCell,
@@ -152,7 +153,9 @@ export default function EconomicCalendarPage() {
   const upcoming = useUpcomingCalendar();
 
   const range = useMemo(() => rangeSpec(rangeKey), [rangeKey]);
-  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // The user's zone (profile, else device) — the same clock every other
+  // dashboard time is in, so an event and a lock line up on screen.
+  const browserTz = getUserZone();
   const tz = data?.timezone || browserTz;
   const fetchKey = `${range.from}:${range.to}:${selectedTradingAccountId ?? ''}:${demo ? 'demo' : 'live'}`;
 

@@ -9,6 +9,7 @@ import { fetchBreaches } from '../api/breachesApi';
 import { isUnenforced } from '../lib/lifecycle';
 import { useTradeAnnotationsBulk } from '../hooks/useTradeAnnotations';
 import { fmtMoney } from '../lib/session';
+import { getUserZone } from '../lib/userZone';
 import { inference } from '../lib/sample';
 import { sx } from '../components/dashboard/shell/sx';
 
@@ -52,7 +53,7 @@ function isMeaningful(t) {
 }
 function fmtWhen(iso) {
   if (!iso) return '—';
-  try { return new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }); } catch { return '—'; }
+  try { return new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: getUserZone() }); } catch { return '—'; }
 }
 function fmtHold(open, close) {
   if (!open) return '—';

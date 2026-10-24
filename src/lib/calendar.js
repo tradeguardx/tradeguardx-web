@@ -6,6 +6,8 @@
  * never trusted).
  */
 
+import { getUserZone } from './userZone';
+
 const DAY_MS = 86400000;
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -41,9 +43,9 @@ export function rangeFor(mode, offset, now = new Date()) {
   return { from: isoDate(start), to: isoDate(end), label };
 }
 
-/** "IST · UTC+5:30" for the browser (or a given) timezone. */
+/** "IST · UTC+5:30" for the user's (or a given) timezone. */
 export function timezoneLabel(tz, now = new Date()) {
-  const zone = tz || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const zone = tz || getUserZone();
   let abbr = '';
   try {
     abbr = new Intl.DateTimeFormat('en-IN', { timeZone: zone, timeZoneName: 'short' }).formatToParts(now).find((p) => p.type === 'timeZoneName')?.value || '';

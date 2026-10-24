@@ -11,6 +11,7 @@ import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel } from '../lib/labels';
 import VenueMark, { VenueBetaBadge } from '../components/dashboard/VenueMark';
 import { sx } from '../components/dashboard/shell/sx';
+import { getUserZone } from '../lib/userZone';
 
 /**
  * Accounts — transcribed from the reference (lines 1703–1768) plus the
@@ -208,7 +209,7 @@ export default function AccountsPage() {
           const t = new Date(kl.until);
           if (Number.isNaN(t.getTime())) return '';
           try {
-            return t.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+            return t.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: getUserZone() });
           } catch { return ''; }
         })();
         const keyHeldWhy = kl?.reason === 'position_open'

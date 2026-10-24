@@ -1,4 +1,16 @@
+/* global process -- Node test runner: the device zone is process.env.TZ */
 import '@testing-library/jest-dom/vitest';
+
+/*
+ * Pin the device clock to India for every test.
+ *
+ * Dates on screen follow the user's zone (lib/userZone), which falls back to
+ * the device's. Fixtures are written as UTC instants with India-shaped
+ * expectations ("15 Oct"), so on a CI box in New York or a laptop in
+ * Auckland the same test would read a different day. Tests that are ABOUT
+ * zones pass one explicitly or call setUserZone.
+ */
+process.env.TZ = 'Asia/Kolkata';
 
 /**
  * jsdom ships no IntersectionObserver, and framer-motion's `whileInView` calls

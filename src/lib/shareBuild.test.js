@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { achievements, buildDayCard, buildMonthCard, buildShareCards, buildTradeCard, buildWeekCard, chartGeometry, isMaterial, materialFloor, pickTrade, stripItems, tierFor, weekCalendar } from './shareBuild';
 import { venueMark } from './shareCards';
-import { dailyLossLimit, dayBuckets, guardClosures, isGuardClose, istDayKey, ruleChips, ruleLabels, ruleShort, weekdayShort } from './shareData';
+import { dailyLossLimit, dayBuckets, guardClosures, isGuardClose, dayKey, ruleChips, ruleLabels, ruleShort, weekdayShort } from './shareData';
 
 /**
  * The share system's one job is to make a claim about a user's own trading
@@ -33,12 +33,14 @@ const BREACH = (over = {}) => ({
 });
 
 describe('day bucketing', () => {
-  it('buckets on the IST day, not UTC', () => {
+  it('buckets on the user\'s day, not UTC', () => {
     // 19:30 UTC is 01:00 IST the NEXT day. An Indian trader's late session
     // belongs to the day they were sitting at the desk, which is the day
     // their daily loss limit was counting against.
-    expect(istDayKey('2026-09-30T19:30:00Z')).toBe('2026-10-01');
-    expect(istDayKey('2026-09-30T18:00:00Z')).toBe('2026-09-30');
+    expect(dayKey('2026-09-30T19:30:00Z', 'Asia/Kolkata')).toBe('2026-10-01');
+    expect(dayKey('2026-09-30T18:00:00Z', 'Asia/Kolkata')).toBe('2026-09-30');
+    // The same instant is still the 30th in Dubai (23:30 GST).
+    expect(dayKey('2026-09-30T19:30:00Z', 'Asia/Dubai')).toBe('2026-09-30');
   });
 
   it('sums each day and keeps them in order', () => {

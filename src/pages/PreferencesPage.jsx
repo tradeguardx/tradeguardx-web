@@ -5,6 +5,7 @@ import { usePrefs } from '../context/PrefsContext';
 import { useToast } from '../components/common/ToastProvider';
 import { sx } from '../components/dashboard/shell/sx';
 import { initialsOf } from '../components/dashboard/shell/format';
+import TimezoneSetting from '../components/dashboard/TimezoneSetting';
 
 /**
  * Preferences — transcribed from the reference (lines 2238–2357). Prefs
@@ -71,6 +72,10 @@ export default function PreferencesPage() {
         </div>
         <div style={sx('padding:0 19px 18px;font-size:12px;line-height:1.55;color:var(--ink-3);max-width:74ch')}>Your email is the login and the fallback alert channel, so it changes from Security with a password check rather than here.</div>
       </section>
+
+      {/* Server-side, unlike everything under Display: it follows the account
+          to every device, and it sets when the daily limits reset. */}
+      <TimezoneSetting />
 
       <section style={sx(CARD)}>
         <div style={sx('padding:16px 19px;border-bottom:1px solid var(--line)')}>

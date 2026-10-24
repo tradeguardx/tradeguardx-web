@@ -4,6 +4,8 @@
  * this only formats it.
  */
 
+import { formatDateKey, getUserZone, zoneLabel, zoneOffsetMinutes } from '../../lib/userZone';
+
 export const PERIODS = [
   { months: 1, label: '1 month' },
   { months: 2, label: '2 months' },
@@ -52,9 +54,29 @@ export function moneyOf(currency) {
   };
 }
 
-export const ist = (iso, opts) => (iso ? new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', ...opts }) : '');
-export const istDay = (iso) => ist(iso, { day: 'numeric', month: 'short' });
-export const istTime = (iso) => ist(iso, { hour: '2-digit', minute: '2-digit', hour12: false });
+/*
+ * Instants — a loss, a re-entry, a biggest win — render in the user's zone
+ * (lib/userZone), not hard-coded IST. Two things are NOT instants and must
+ * not go through these: a server day key like worstDay.date, which is a
+ * date with no time (use dateKeyDay), and the "worst time" window, which
+ * trade-service buckets in the report's own zone (use worstTimeLabel).
+ */
+export const zoned = (iso, opts) => (iso ? new Date(iso).toLocaleString('en-GB', { ...opts, timeZone: getUserZone() }) : '');
+export const userDay = (iso) => zoned(iso, { day: 'numeric', month: 'short' });
+export const userTime = (iso) => zoned(iso, { hour: '2-digit', minute: '2-digit', hour12: false });
+export const dateKeyDay = (key) => formatDateKey(key);
+
+/*
+ * The "worst time" window is bucketed on the server, in the zone the report
+ * was computed in (`report.timezone`: the profile's zone, Asia/Kolkata while
+ * unknown; an older report has no field and was always IST). Name that zone
+ * only when it is not the clock the viewer reads everything else in.
+ */
+export function worstTimeLabel(label, reportZone = 'Asia/Kolkata') {
+  if (!label) return label;
+  const zone = reportZone || 'Asia/Kolkata';
+  return zoneOffsetMinutes(getUserZone()) === zoneOffsetMinutes(zone) ? label : `${label} ${zoneLabel(zone)}`;
+}
 
 export function ago(iso, now = Date.now()) {
   if (!iso) return null;

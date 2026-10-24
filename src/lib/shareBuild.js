@@ -5,14 +5,15 @@ import {
   fmtDay,
   fmtDayShort,
   guardClosures,
-  istDayKey,
-  istMonthKey,
+  dayKey,
+  monthKey,
   lastTradingDays,
   moneyFns,
   pnlOf,
   ruleShort,
   weekdayShort,
 } from './shareData';
+import { formatDateKey } from './userZone';
 
 /**
  * The four cards, built from one account's real trades.
@@ -387,9 +388,9 @@ export function buildTradeCard({ trades, breaches, currency = 'USD', tradeUid, c
   };
 }
 
-/** Today, in IST. */
+/** Today, on the user's calendar. */
 export function buildDayCard({ trades, breaches, currency = 'USD', now = Date.now(), savedToday = null , venue = null }) {
-  const key = istDayKey(new Date(now));
+  const key = dayKey(new Date(now));
   const bucket = dayBuckets(trades).find((d) => d.day === key);
   if (!bucket || bucket.count === 0) return EMPTY;
 
@@ -459,7 +460,7 @@ export function buildWeekCard({ trades, breaches, currency = 'USD', ghosts = {},
   const green = total >= 0;
   // What the week actually did. The saving goes under it, not over it.
   const [hero, dec] = heroParts(plain(Math.abs(total)));
-  const span = `${fmtDayShort(`${bucket[0].day}T12:00:00Z`)} – ${fmtDayShort(`${bucket[bucket.length - 1].day}T12:00:00Z`)}`;
+  const span = `${formatDateKey(bucket[0].day)} – ${formatDateKey(bucket[bucket.length - 1].day)}`;
 
   return {
     tab: 'This week',
@@ -503,9 +504,9 @@ export function buildWeekCard({ trades, breaches, currency = 'USD', ghosts = {},
   };
 }
 
-/** The current IST month. */
+/** The current month, on the user's calendar. */
 export function buildMonthCard({ trades, breaches, currency = 'USD', now = Date.now(), ghosts = {} , venue = null }) {
-  const key = istMonthKey(new Date(now));
+  const key = monthKey(new Date(now));
   const bucket = dayBuckets(trades).filter((d) => d.day.startsWith(key));
   if (bucket.length < 3) return EMPTY;
 
@@ -517,7 +518,7 @@ export function buildMonthCard({ trades, breaches, currency = 'USD', now = Date.
   const saved = noGuard < total ? total - noGuard : null;
   const green = total >= 0;
   const [hero, dec] = heroParts(plain(Math.abs(total)));
-  const label = new Date(`${key}-15T12:00:00Z`).toLocaleDateString('en-IN', { month: 'long', timeZone: 'Asia/Kolkata' });
+  const label = formatDateKey(`${key}-15`, { month: 'long' });
 
   return {
     tab: label,

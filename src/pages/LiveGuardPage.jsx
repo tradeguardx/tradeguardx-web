@@ -14,6 +14,7 @@ import { setRuleLockDays } from '../api/tradingAccountsApi';
 import { RULE_GLYPH, ruleAccent } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
 import { formatRemaining, zoneLabel } from '../components/dashboard/shell/format';
+import { getUserZone } from '../lib/userZone';
 import { ruleLockNow } from '../lib/guard';
 
 /**
@@ -33,30 +34,24 @@ const DAY_ON = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grote
 const DAY_OFF = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
 
 /**
- * Release times render in the VIEWER's clock, not the account's reset zone.
+ * Release times render in the USER's clock, not the account's reset zone.
  *
  * `trading_accounts.timezone` is the boundary the engine resets on — an
  * internal detail that is UTC on Delta. clockAt formatted in that zone and
  * then appended the literal string "IST", so a UTC account printed
  * "00:00 IST": a time that is neither UTC nor IST. The hardcoded suffix
- * hid it, because the label always looked right.
+ * hid it, because the label always looked right. The zone now comes from
+ * lib/userZone — the profile's timezone, else the device's.
  */
-function viewerZone() {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
-  } catch {
-    return 'Asia/Kolkata';
-  }
-}
 function clockAt(t) {
   if (!t) return '—';
-  const tz = viewerZone();
+  const tz = getUserZone();
   const time = new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz });
   return `${time}${zoneLabel(tz) ? ` ${zoneLabel(tz)}` : ''}`;
 }
 function dayAt(t) {
   if (!t) return '';
-  const tz = viewerZone();
+  const tz = getUserZone();
   const d = new Date(t).toLocaleDateString('en-GB', { timeZone: tz });
   const n = new Date().toLocaleDateString('en-GB', { timeZone: tz });
   return d === n ? 'today' : 'tomorrow';

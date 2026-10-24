@@ -1,4 +1,5 @@
 import { currencySymbol, fmtMoney } from './session';
+import { dayKey, getUserZone } from './userZone';
 
 /**
  * Real trades → the four share cards and the four reel stories.
@@ -61,19 +62,12 @@ export function isGuardClose(breach) {
   return GUARD_CLOSE_TYPES.has(String(t));
 }
 
-const IST = 'Asia/Kolkata';
-
-/** 'YYYY-MM-DD' in IST — the day boundary every other screen uses. */
-export function istDayKey(iso) {
-  const d = iso instanceof Date ? iso : new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  // en-CA gives ISO ordering, which is what makes these sortable as strings.
-  return d.toLocaleDateString('en-CA', { timeZone: IST });
-}
-
-export function istMonthKey(iso) {
-  return istDayKey(iso).slice(0, 7);
-}
+/*
+ * Day and month keys are on the USER's calendar (lib/userZone) — the same
+ * midnight their daily limits reset on. These were IST for everyone, which
+ * filed a Dubai trader's 23:00 trade under tomorrow's card.
+ */
+export { dayKey, monthKey } from './userZone';
 
 /** The realised P&L of a closed trade, whichever field the venue filled in. */
 export function pnlOf(t) {
@@ -124,11 +118,11 @@ export function guardClosures(trades, breaches, windowMs = GUARD_WINDOW_MS) {
   return out;
 }
 
-/** Per-IST-day realised P&L, oldest first. */
+/** Per-day (user's zone) realised P&L, oldest first. */
 export function dayBuckets(trades) {
   const m = new Map();
   for (const t of closedTrades(trades)) {
-    const k = istDayKey(t.closedAt);
+    const k = dayKey(t.closedAt);
     if (!k) continue;
     const cur = m.get(k) ?? { day: k, pnl: 0, count: 0, trades: [] };
     cur.pnl += pnlOf(t);
@@ -349,19 +343,19 @@ export function moneyFns(currency = 'USD') {
 
 export function fmtDay(iso) {
   try {
-    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: IST });
+    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: getUserZone() });
   } catch { return ''; }
 }
 
 export function fmtDayShort(iso) {
   try {
-    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: IST });
+    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: getUserZone() });
   } catch { return ''; }
 }
 
 export function weekdayShort(dayKey) {
-  // dayKey is 'YYYY-MM-DD' in IST; parse as UTC noon so the label cannot slip
+  // dayKey is 'YYYY-MM-DD' in the user's zone; parse as UTC noon so the label cannot slip
   // a day either way on the local clock.
   const d = new Date(`${dayKey}T12:00:00Z`);
-  return d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  return d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }).toUpperCase();
 }

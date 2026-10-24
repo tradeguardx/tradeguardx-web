@@ -17,12 +17,14 @@
  * ──────────────────────────────────────────────────────────────────────────
  */
 
+import { getUserZone } from '../../../lib/userZone';
+
 /** "14 Oct" — short, unambiguous, and the same shape everywhere. */
 export function fmtDay(iso) {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: getUserZone() });
 }
 
 /**

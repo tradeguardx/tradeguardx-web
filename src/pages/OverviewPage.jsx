@@ -15,6 +15,7 @@ import { sx } from '../components/dashboard/shell/sx';
 import { heroOf, pillOf } from '../components/dashboard/shell/lifecycleShell';
 import { isUnenforced, unenforcedLabel } from '../lib/lifecycle';
 import { formatRemaining } from '../components/dashboard/shell/format';
+import { getUserZone } from '../lib/userZone';
 
 /**
  * Overview — transcribed from the reference (lines 539–685). Inline styles
@@ -44,7 +45,7 @@ function fmtDay(iso) {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: getUserZone() });
 }
 
 function SetupCard({ steps, doneCount, navigate }) {
@@ -570,8 +571,8 @@ export default function OverviewPage() {
                   {ev.t == null
                     ? ev.kind
                     : `${ev.kind === 'system'
-                      ? new Date(ev.t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })
-                      : new Date(ev.t).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })} · ${ev.kind}`}
+                      ? new Date(ev.t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: getUserZone() })
+                      : new Date(ev.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: getUserZone() })} · ${ev.kind}`}
                 </span>
               </span>
               {ev.amt && <span style={sx("flex:none;font:600 12.5px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;padding-top:3px", { color: ev.fg })}>{ev.amt}</span>}

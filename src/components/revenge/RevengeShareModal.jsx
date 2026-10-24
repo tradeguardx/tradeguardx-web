@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { toPng } from 'html-to-image';
 import { shareIntent, shareLink, shareTargets } from '../../lib/shareCards';
 import { sx } from '../dashboard/shell/sx';
+import { getUserZone } from '../../lib/userZone';
 import RevengeShareCard from './RevengeShareCard';
 import { EXPORT_STYLE_PROPS, shareCaption } from './revengeShare';
 
@@ -105,7 +106,7 @@ export default function RevengeShareModal({ open, onClose, report, handle = null
   // a click, so the root is always mounted by then).
   const host = document.querySelector('[data-tgx]') ?? document.body;
   const end = report.period?.to ? new Date(report.period.to) : new Date();
-  const monthLabel = end.toLocaleDateString('en-IN', { month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).toUpperCase();
+  const monthLabel = end.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: getUserZone() }).toUpperCase();
   const card = { variant, report, monthLabel, amounts, handle };
 
   return createPortal(

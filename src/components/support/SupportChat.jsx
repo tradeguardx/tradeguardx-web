@@ -8,6 +8,7 @@ import { fetchNotificationSettings } from '../../api/notificationsApi';
 import { CHAT_THEMES, useChatTheme } from './chatThemes';
 import { renderReply } from './supportMarkdown';
 import { OPEN_SUPPORT_EVENT } from './supportBus';
+import PhoneInput from '../common/LazyPhoneInput';
 
 /**
  * Floating support assistant, mounted once in DashboardLayout.
@@ -63,7 +64,12 @@ function useSessionFlag(key, initial) {
  */
 function ContactSupportView({ session, selectedAccount, transcript, onBack, onSent, prefill = '', theme }) {
   const [message, setMessage] = useState(prefill);
+  // E.164 from PhoneInput (possibly partial while typing) and what it said
+  // about the typed text — `phoneEmpty` tells "left blank" from "half-typed".
   const [phone, setPhone] = useState('');
+  const [phoneValid, setPhoneValid] = useState(false);
+  const [phoneEmpty, setPhoneEmpty] = useState(true);
+  const typedRef = useRef(false); // they touched the field — never overwrite it
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '';
@@ -83,7 +89,15 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
     fetchNotificationSettings({ accessToken: token, signal: ac.signal })
       .then((s) => {
         // Never clobber something already typed — this resolves after a paint.
-        if (s?.phone) setPhone((cur) => cur || s.phone);
+        // A ref, not `phone`: a half-typed number can still be '' as E.164.
+        if (s?.phone && !typedRef.current) {
+          setPhone(s.phone);
+          // Stored numbers are validated E.164 when saved; this shape check
+          // only guards pre-validation rows (and keeps libphonenumber out of
+          // the main bundle — PhoneInput loads it on demand).
+          setPhoneValid(/^\+\d{8,15}$/.test(s.phone));
+          setPhoneEmpty(false);
+        }
       })
       .catch(() => {
         // No number on file is the normal case for a new account, not an error.
@@ -94,11 +108,15 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
   async function submit(e) {
     e.preventDefault();
     if (!message.trim() || sending) return;
-    /* Seven digits is the shortest real number anywhere. The check is this
-       loose on purpose: the point is to catch a half-typed number, not to
-       validate dialling plans and refuse somebody's actual phone. */
-    if ((phone.match(/\d/g) ?? []).length < 7) {
+    /* The number is checked against the dialling plan of the country picked
+       next to it (PhoneInput), so a real number anywhere passes and a
+       half-typed one doesn't. Blank still gets the "or email us" route. */
+    if (phoneEmpty) {
       setError('Add a phone number we can reach you on — it is the fastest way to close this. If you would rather not, email support@tradeguardx.com instead.');
+      return;
+    }
+    if (!phoneValid) {
+      setError('That phone number looks incomplete for the selected country. Check the country code and number.');
       return;
     }
     setSending(true);
@@ -109,7 +127,7 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
         accountId: selectedAccount?.id || '',
         message: message.trim(),
         name,
-        phone: phone.trim(),
+        phone, // E.164
         accountName: selectedAccount?.name || selectedAccount?.propFirmSlug || '',
         transcript,
       });
@@ -145,18 +163,20 @@ function ContactSupportView({ session, selectedAccount, transcript, onBack, onSe
         <label htmlFor="tgx-support-phone" className="text-[12px] font-semibold" style={{ color: 'var(--dash-text-primary)' }}>
           Phone number
         </label>
-        <input
-          id="tgx-support-phone"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="+91 98765 43210"
-          maxLength={24}
-          className="mt-1.5 w-full rounded-xl border px-3.5 py-2.5 text-[13px] outline-none focus:border-[color:var(--accent,#00d4aa)]"
-          style={{ backgroundColor: 'var(--dash-bg-input)', borderColor: 'var(--dash-border)', color: 'var(--dash-text-primary)' }}
-        />
+        <div className="mt-1.5">
+          <PhoneInput
+            id="tgx-support-phone"
+            variant="support"
+            label="Phone number"
+            value={phone}
+            onChange={(e164, { valid, empty }) => {
+              typedRef.current = true;
+              setPhone(e164);
+              setPhoneValid(valid);
+              setPhoneEmpty(empty);
+            }}
+          />
+        </div>
         <p className="mt-1 text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
           So we can call or WhatsApp you if that is quicker than typing.
         </p>

@@ -6,6 +6,7 @@ import { useGuard } from '../../../context/GuardContext';
 import { useShare } from '../../../context/ShareContext';
 import { acknowledgeBreaches } from '../../../api/breachesApi';
 import { sx } from './sx';
+import { getUserZone, zoneLabel } from '../../../lib/userZone';
 import { isUnenforced, ruleNameOf } from '../../../lib/lifecycle';
 
 /**
@@ -27,7 +28,13 @@ import { isUnenforced, ruleNameOf } from '../../../lib/lifecycle';
 const AUTO_MS = 9_000;
 
 function timeOf(iso) {
-  try { return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }) + ' IST'; } catch { return ''; }
+  // The user's zone and ITS label — a hard-coded " IST" told a Dubai trader
+  // their account was flattened an hour and a half before it was.
+  try {
+    const tz = getUserZone();
+    const label = zoneLabel(tz);
+    return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: tz }) + (label ? ` ${label}` : '');
+  } catch { return ''; }
 }
 
 export default function BreachToast() {

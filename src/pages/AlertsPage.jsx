@@ -6,6 +6,7 @@ import {
   fetchNotificationSettings, updateNotificationSettings, createTelegramBindingLink, disconnectTelegram,
 } from '../api/notificationsApi';
 import { sx } from '../components/dashboard/shell/sx';
+import PhoneInput from '../components/common/LazyPhoneInput';
 
 /**
  * Alerts — transcribed from the reference (lines 1769–1983). Same settings
@@ -46,7 +47,9 @@ export function AlertsSettings({ embedded = false }) {
   const accessToken = session?.access_token;
   const [s, setS] = useState(null);
   const [emailVal, setEmailVal] = useState('');
+  // E.164 as PhoneInput reports it, plus whether it's a real number there.
   const [mobileVal, setMobileVal] = useState('');
+  const [mobileValid, setMobileValid] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async (signal) => {
@@ -56,7 +59,9 @@ export function AlertsSettings({ embedded = false }) {
       if (r) {
         setS(r);
         setEmailVal(r.notificationEmail ?? '');
-        setMobileVal((r.phone ?? '').replace(/^\+91/, ''));
+        // Stored E.164 goes in whole; PhoneInput splits it into country +
+        // national number (it used to strip a hard-coded "+91" here).
+        setMobileVal(r.phone ?? '');
       }
     } catch { /* keep */ }
   }, [accessToken]);
@@ -94,8 +99,9 @@ export function AlertsSettings({ embedded = false }) {
   const mbOn = Boolean(s?.mobileNotificationsEnabled);
   const mobileSaved = Boolean(s?.phone);
   const emailDirty = emailVal.trim() !== (s?.notificationEmail ?? '');
-  const mobileDigits = mobileVal.replace(/\D/g, '');
-  const mobileDirty = mobileDigits.length >= 10 && `+91${mobileDigits}` !== (s?.phone ?? '');
+  // Savable only when it's a valid number AND differs from what's stored —
+  // compared as E.164, so a re-formatted copy of the saved number isn't "dirty".
+  const mobileDirty = mobileValid && mobileVal !== (s?.phone ?? '');
   const sev = s?.notificationMinSeverity ?? 'warning';
 
   return (
@@ -179,10 +185,17 @@ export function AlertsSettings({ embedded = false }) {
           </div>
           <div style={sx('margin:13px 0 0 48px')}>
             <div style={sx(MONO, { marginBottom: 8 })}>Mobile number</div>
-            <div style={sx('display:flex;gap:9px;flex-wrap:wrap')}>
-              <span style={sx("flex:none;display:flex;align-items:center;padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-3);font:500 13px/1 'JetBrains Mono',monospace;color:var(--ink-2)")}>+91</span>
-              <input value={mobileVal} onChange={(e) => setMobileVal(e.target.value)} placeholder="98765 43210" inputMode="numeric" style={sx('flex:1;min-width:180px;padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font-size:13px;font-variant-numeric:tabular-nums')} />
-              <button type="button" disabled={!mobileDirty || busy} onClick={() => save({ phone: `+91${mobileDigits}` })} style={sx('flex:none;padding:11px 16px;border:0;border-radius:10px;font-size:12.5px;font-weight:700', { background: mobileDirty ? 'var(--ink)' : 'var(--surface-3)', color: mobileDirty ? 'var(--surface)' : 'var(--ink-3)' })}>Save</button>
+            <div style={sx('display:flex;gap:9px;flex-wrap:wrap;align-items:flex-start')}>
+              <div style={sx('flex:1 1 220px;min-width:0')}>
+                <PhoneInput
+                  variant="settings"
+                  label="Mobile number"
+                  value={mobileVal}
+                  onChange={(e164, { valid }) => { setMobileVal(e164); setMobileValid(valid); }}
+                  onEnter={() => { if (mobileDirty && !busy) save({ phone: mobileVal }); }}
+                />
+              </div>
+              <button type="button" disabled={!mobileDirty || busy} onClick={() => save({ phone: mobileVal })} style={sx('flex:none;padding:11px 16px;border:0;border-radius:10px;font-size:12.5px;font-weight:700', { background: mobileDirty ? 'var(--ink)' : 'var(--surface-3)', color: mobileDirty ? 'var(--surface)' : 'var(--ink-3)' })}>Save</button>
             </div>
           </div>
         </div>
@@ -208,7 +221,7 @@ export function AlertsSettings({ embedded = false }) {
           <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:9px')}>What a critical alert looks like</div>
           <div style={sx('padding:13px 15px;border:1px solid var(--red-line);border-radius:10px;background:var(--surface)')}>
             <div style={sx('font-size:12.5px;font-weight:700;color:var(--red)')}>Risk alert · critical</div>
-            <p style={sx('margin:6px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>Daily loss limit hit on Delta · Main at 14:07. Orders cancelled, 2 positions closed, account verified flat. Locked until 00:00 IST.</p>
+            <p style={sx('margin:6px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>Daily loss limit hit on Delta · Main at 14:07. Orders cancelled, 2 positions closed, account verified flat. Locked until midnight your time.</p>
           </div>
         </div>
       </section>

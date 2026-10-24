@@ -24,6 +24,7 @@ import {
 } from '../hooks/useTradeAnnotations';
 import { shortId, sourceLabel } from '../lib/labels';
 import { fmtMoney } from '../lib/session';
+import { getUserZone } from '../lib/userZone';
 import { sx } from '../components/dashboard/shell/sx';
 
 // ─── utils ──────────────────────────────────────────────────────────────────
@@ -525,7 +526,7 @@ function EventTimeline({ events, currency }) {
   if (!events.length) return (
     <div style={sx('padding:30px 21px;font-size:13px;color:var(--ink-3)')}>No events recorded on this trade yet.</div>
   );
-  const clock = (v) => (v ? new Date(v).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }) : '—');
+  const clock = (v) => (v ? new Date(v).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: getUserZone() }) : '—');
   const dotOf = (type) => (type === 'RULE_BLOCK' || type === 'SL_UPDATE' ? 'var(--red)' : type === 'OPEN' || type === 'FILL' ? 'var(--mint)' : type === 'CLOSE' ? 'var(--ink-faint)' : type === 'PARTIAL_CLOSE' || type === 'SIZE_UPDATE' ? 'var(--amber)' : 'var(--line-strong)');
 
   return events.map((e, i) => {
@@ -1311,8 +1312,8 @@ export default function TradeDetailPage() {
   const lastSl = [...events].reverse().find((e) => e.slAfter)?.slAfter ?? null;
   const stopMoved = firstSl != null && lastSl != null && Number(firstSl) !== Number(lastSl);
   const pnlFg = !isClosed || !Number.isFinite(pnl) ? 'var(--ink-3)' : pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink)';
-  const when = trade.openedAt ? new Date(trade.openedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }) : '—';
-  const clock = (v) => (v ? new Date(v).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }) : null);
+  const when = trade.openedAt ? new Date(trade.openedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: getUserZone() }) : '—';
+  const clock = (v) => (v ? new Date(v).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: getUserZone() }) : null);
   const windowText = [clock(trade.openedAt), clock(trade.closedAt)].filter(Boolean).join('–') || (isClosed ? '' : 'open');
   const cell = (label, value, fg) => (
     <div key={label} style={sx('padding:14px 18px')}>

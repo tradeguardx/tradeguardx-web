@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { istDayEnd, isLongSide, pnlAt, savedFrom, tradePaths } from './counterfactual';
+import { userDayEnd, isLongSide, pnlAt, savedFrom, tradePaths } from './counterfactual';
 
 /**
  * The counterfactual is the only number on a share card that does not come
@@ -174,8 +174,13 @@ describe('what it returns', () => {
 });
 
 describe('the day boundary', () => {
-  it('ends the day at 18:29:59.999Z, which is IST midnight', () => {
-    expect(new Date(istDayEnd(Date.parse('2026-09-30T06:00:00Z'))).toISOString()).toBe('2026-09-30T18:29:59.999Z');
+  it('ends the day at 18:29:59.999Z for an India profile, which is IST midnight', () => {
+    expect(new Date(userDayEnd(Date.parse('2026-09-30T06:00:00Z'), 'Asia/Kolkata')).toISOString()).toBe('2026-09-30T18:29:59.999Z');
+  });
+
+  it('ends the day at the user\'s own midnight, not IST\'s', () => {
+    // Dubai is GMT+4: the day of 06:00Z ends at 19:59:59.999Z.
+    expect(new Date(userDayEnd(Date.parse('2026-09-30T06:00:00Z'), 'Asia/Dubai')).toISOString()).toBe('2026-09-30T19:59:59.999Z');
   });
 
   it('knows a short from a long', () => {

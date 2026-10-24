@@ -11,6 +11,7 @@ import NoticeCard from '../shell/NoticeCard';
 import StepsBar from '../shell/StepsBar';
 import { Chip, ScoreRing } from '../../revenge/RevengeParts';
 import { GRADE, PERIODS } from '../../revenge/revengeFormat';
+import { getUserZone } from '../../../lib/userZone';
 
 /**
  * Setup step 4 — the only screen in the product that asks for money.
@@ -64,7 +65,7 @@ const NEXT = { monthly: 'every month', quarterly: 'every 3 months', yearly: 'eve
    gets comes from the server — see `trialDays` below. */
 const TRIAL_DAYS = 3;
 
-const fmtDay = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+const fmtDay = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: getUserZone() });
 
 /**
  * `setupCta` — Plan & billing renders this step before a key is verified
@@ -266,7 +267,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   };
 
   /*
-   * Dates from the real trial length, in IST. "Today" is when the guard comes
+   * Dates from the real trial length, in the user's own zone (lib/userZone). "Today" is when the guard comes
    * on; the charge is TRIAL_DAYS later.
    *
    * THE REMINDER ROW IS DELIBERATELY ABSENT. trialEmail.ts selects on

@@ -30,6 +30,7 @@ import { billingPageOf } from '../lib/billingPage';
 import { openSupport } from '../components/support/supportBus';
 import BillingStep from '../components/dashboard/billing/BillingStep';
 import DashboardSkeleton from '../components/dashboard/shell/DashboardSkeleton';
+import { getUserZone } from '../lib/userZone';
 
 /**
  * Plan & billing, after the user has a subscription.
@@ -71,7 +72,7 @@ const KICKER = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em
    the bank app is a failed renewal and a guard that switches off. The bank
    writes the notice, so no promise of when. */
 const fmtDate = (d) =>
-  d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : null;
+  d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: getUserZone() }) : null;
 const fill = (tpl, vals) => tpl.replace(/\{(\w+)\}/g, (_, k) => vals[k] ?? '');
 
 export default function BillingPage() {

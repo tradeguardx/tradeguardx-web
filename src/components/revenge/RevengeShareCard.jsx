@@ -1,4 +1,5 @@
 import { forwardRef } from 'react';
+import { getUserZone } from '../../lib/userZone';
 import { C, CHARACTER, GRADE, HEADLINE, MASKED, checkOf, moneyShort, oneIn } from './revengeShare';
 
 /**
@@ -236,6 +237,7 @@ function Meter({ report, amounts }) {
   );
 }
 
-const IST = { timeZone: 'Asia/Kolkata' };
-const time = (iso) => new Date(iso).toLocaleTimeString('en-IN', { ...IST, hour: '2-digit', minute: '2-digit', hour12: false });
-const day = (iso) => new Date(iso).toLocaleDateString('en-IN', { ...IST, weekday: 'short', day: 'numeric', month: 'short' });
+// The poster's own clock: the card is shared from their account, so "14:07"
+// should be the 14:07 they remember. Weekday/day/month order unchanged.
+const time = (iso) => new Date(iso).toLocaleTimeString('en-GB', { timeZone: getUserZone(), hour: '2-digit', minute: '2-digit', hour12: false });
+const day = (iso) => new Date(iso).toLocaleDateString('en-GB', { timeZone: getUserZone(), weekday: 'short', day: 'numeric', month: 'short' });

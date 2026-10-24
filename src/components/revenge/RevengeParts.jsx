@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { sx } from '../dashboard/shell/sx';
-import { CARD, LABEL, RULE_NAME, STATUS, istDay, istTime, toneBg, toneFg } from './revengeFormat';
+import { CARD, LABEL, RULE_NAME, STATUS, userDay, userTime, toneBg, toneFg } from './revengeFormat';
 
 /**
  * The revenge report's keyframes, once per screen. Scoped `rv-` names so
@@ -124,7 +124,7 @@ export function CheckCard({ check, money }) {
               <ul style={sx('margin:9px 0 0;padding:0;list-style:none;display:grid;gap:6px')}>
                 {check.evidence.map((e, i) => (
                   <li key={i} style={sx('display:flex;gap:10px;align-items:baseline;padding:8px 11px;border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.45')}>
-                    <span style={sx("flex:none;font:500 11px/1.4 'JetBrains Mono',monospace;color:var(--ink-faint)")}>{e.at.length === 10 ? e.at.slice(5) : `${istDay(e.at)} ${istTime(e.at)}`}</span>
+                    <span style={sx("flex:none;font:500 11px/1.4 'JetBrains Mono',monospace;color:var(--ink-faint)")}>{e.at.length === 10 ? e.at.slice(5) : `${userDay(e.at)} ${userTime(e.at)}`}</span>
                     <span style={sx('flex:1;min-width:0;color:var(--ink-2)')}>{e.text}</span>
                     {e.pnl != null && <span style={sx('flex:none;font-weight:700;font-variant-numeric:tabular-nums', { color: e.pnl < 0 ? 'var(--red)' : 'var(--mint)' })}>{money(e.pnl, { signed: true })}</span>}
                   </li>

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { fetchCalendar } from '../api/calendarApi';
 import { isoDate } from '../lib/calendar';
+import { getUserZone } from '../lib/userZone';
 
 /**
  * The global upcoming dataset — today through the API's maximum window —
@@ -34,7 +35,7 @@ export function useUpcomingCalendar() {
   const { session } = useAuth();
   const { selectedTradingAccountId } = useTradingAccounts();
   const accessToken = session?.access_token;
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const tz = getUserZone();
   const [data, setData] = useState(() => cache.data);
   const [error, setError] = useState(null);
 

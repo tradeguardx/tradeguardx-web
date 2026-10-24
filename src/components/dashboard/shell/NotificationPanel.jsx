@@ -5,6 +5,7 @@ import { useTradingAccounts } from '../../../context/TradingAccountContext';
 import { useGuard } from '../../../context/GuardContext';
 import { fetchBreaches, acknowledgeBreaches } from '../../../api/breachesApi';
 import { sx } from './sx';
+import { dayKey, getUserZone } from '../../../lib/userZone';
 
 /**
  * The bell. A toast is a moment; this is the record — every rule fire and
@@ -19,8 +20,10 @@ const POLL_MS = 60_000;
 function when(iso) {
   try {
     const d = new Date(iso);
-    const sameDay = d.toDateString() === new Date().toDateString();
-    return d.toLocaleString('en-IN', { ...(sameDay ? {} : { day: 'numeric', month: 'short' }), hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' });
+    // "Same day" on the user's calendar, not the device's: the two differ
+    // whenever the profile zone is not where the laptop is.
+    const sameDay = dayKey(d) === dayKey(new Date());
+    return d.toLocaleString('en-GB', { ...(sameDay ? {} : { day: 'numeric', month: 'short' }), hour: '2-digit', minute: '2-digit', hour12: false, timeZone: getUserZone() });
   } catch { return ''; }
 }
 function ruleName(b) {

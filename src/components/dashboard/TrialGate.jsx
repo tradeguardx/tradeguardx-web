@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import { sx } from './shell/sx';
 import { useAuth } from '../../context/AuthContext';
+import { getUserZone } from '../../lib/userZone';
 
 /** "14 Oct" — short, unambiguous, and the same shape everywhere. */
 function fmtDay(iso) {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: getUserZone() });
 }
 
 /**
