@@ -1,6 +1,7 @@
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useGuard } from '../../../context/GuardContext';
 import { useTradingAccounts } from '../../../context/TradingAccountContext';
+import { accountHasTaxCentre } from '../../../lib/venues';
 import { useDashboardTheme } from '../../../context/DashboardThemeContext';
 import { useAuth } from '../../../context/AuthContext';
 import { ICON } from './icons';
@@ -46,7 +47,11 @@ function NavItem({ id, to, label, badge, badgeFg, locked, end, onNavigate }) {
 
 export default function Sidebar({ onNavigate }) {
   const guard = useGuard();
-  const { accounts } = useTradingAccounts();
+  const { accounts, selectedAccount } = useTradingAccounts();
+  /* The tax centre covers Indian exchanges only (Delta, CoinDCX, Shark). On
+     an Exness or BloFin account there is nothing behind the link, so it is
+     not offered — the page itself still explains why if reached by URL. */
+  const taxOn = accountHasTaxCentre(selectedAccount);
   const { isDark, toggleTheme } = useDashboardTheme();
   const { user } = useAuth();
   const g = guard.selected;
@@ -74,7 +79,7 @@ export default function Sidebar({ onNavigate }) {
     { id: 'journal', to: '/dashboard/journal', label: 'Journal' },
     { id: 'revenge', to: '/dashboard/revenge', label: 'Revenge report' },
     { id: 'trades', to: '/dashboard/trades', label: 'All trades' },
-    { id: 'tax', to: '/dashboard/tax', label: 'Tax centre' },
+    ...(taxOn ? [{ id: 'tax', to: '/dashboard/tax', label: 'Tax centre' }] : []),
   ];
   const market = [
     { id: 'calendar', to: '/dashboard/calendar', label: 'Economic calendar', badge: upcomingHigh ? String(upcomingHigh) : '' },

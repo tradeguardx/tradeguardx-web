@@ -498,6 +498,15 @@ export function hasTaxCentre(exchangeSlug) {
   return v ? v.taxCentre !== false : true;
 }
 
+/**
+ * Whether this ACCOUNT gets the tax centre: the nav link, the Overview FY
+ * tile and the tax calls. An account on a venue without one (Exness, BloFin)
+ * gets none of them; an account with no venue keeps it (legacy).
+ */
+export function accountHasTaxCentre(account) {
+  return !account?.propFirmSlug || hasTaxCentre(account.propFirmSlug);
+}
+
 /** True when the venue's key carries a passphrase the connect form must ask for. */
 export function needsPassphrase(exchangeSlug) {
   return Boolean(venueFor(exchangeSlug)?.hasPassphrase);

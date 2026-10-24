@@ -8,6 +8,7 @@ import { useLiveAccount } from '../hooks/useLiveAccount';
 import ShareCardsStrip from '../components/share/ShareCardsStrip';
 import { sessionOf, fmtMoney } from '../lib/session';
 import { fetchJournalStats, fetchTaxSummary, fetchJournalTrades } from '../api/tradesApi';
+import { accountHasTaxCentre } from '../lib/venues';
 import { fetchBreaches } from '../api/breachesApi';
 import { brokerLabel } from '../lib/labels';
 import { ICON } from '../components/dashboard/shell/icons';
@@ -106,13 +107,16 @@ export default function OverviewPage() {
 
   const [stats, setStats] = useState(null);
   const [tax, setTax] = useState(null);
+  /* No tax centre for this venue (Exness, BloFin): no tax call, no FY tile. */
+  const taxOn = accountHasTaxCentre(selectedAccount);
   const [activity, setActivity] = useState(null);
   useEffect(() => {
     if (!accessToken || !selectedTradingAccountId) return undefined;
     const ctrl = new AbortController();
     const opt = { accessToken, tradingAccountId: selectedTradingAccountId, signal: ctrl.signal };
     fetchJournalStats({ ...opt, days: 90 }).then((r) => !ctrl.signal.aborted && setStats(r)).catch(() => {});
-    fetchTaxSummary(opt).then((r) => !ctrl.signal.aborted && setTax(r)).catch(() => {});
+    if (taxOn) fetchTaxSummary(opt).then((r) => !ctrl.signal.aborted && setTax(r)).catch(() => {});
+    else setTax(null);
     Promise.all([
       fetchBreaches({ accessToken, tradingAccountId: selectedTradingAccountId, limit: 5, signal: ctrl.signal }).catch(() => []),
       fetchJournalTrades({ ...opt, limit: 5 }).catch(() => []),
@@ -141,7 +145,7 @@ export default function OverviewPage() {
     });
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, selectedTradingAccountId]);
+  }, [accessToken, selectedTradingAccountId, taxOn]);
 
   const noAccount = !accountsLoading && !selectedAccount;
 
@@ -329,7 +333,9 @@ export default function OverviewPage() {
       : { k: 'Loss budget', v: '—', note: 'No daily loss rule is on yet.', fg: 'var(--ink-3)', to: '/dashboard/rules' },
     // TODO(api): journal stats do not price rule breaks; the count is shown in the note.
     { k: 'Discipline cost · 90d', v: '—', note: ruleBreaks != null && ruleBreaks > 0 ? `${ruleBreaks} rule breaks in 90 days. Pricing them needs a few more sessions.` : 'Needs a few sessions before we can price your habits.', fg: 'var(--ink-3)', to: '/dashboard/journal' },
-    fyNet == null
+    !taxOn
+      ? { k: 'Revenge report', v: 'Free', note: 'What your trades right after a loss have cost you.', fg: 'var(--ink)', to: '/dashboard/revenge' }
+      : fyNet == null
       ? { k: fyLabel, v: '—', note: 'Your ledger starts with your first closed trade.', fg: 'var(--ink-3)', to: '/dashboard/tax' }
       : { k: fyLabel, v: fmtMoney(fyNet, 'INR'), note: 'Economic P&L, ledger-derived. Not a tax figure.', fg: 'var(--ink)', to: '/dashboard/tax' },
   ];
