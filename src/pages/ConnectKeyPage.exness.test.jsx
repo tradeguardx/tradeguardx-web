@@ -27,7 +27,8 @@ Element.prototype.scrollIntoView = vi.fn();
 
 const { ConnectKeyFlow } = await import('./ConnectKeyPage');
 
-const PEM = '-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIGq2bT8yX0pS3x0hQnP1u4v5w6x7y8z9A0B1C2D3E4F5\n-----END PRIVATE KEY-----';
+// One line, as Key Management shows the Secret Key.
+const PEM = '9f1c2e3d4b5a69788796a5b4c3d2e1f00112233445566778899aabbccddeeff0';
 
 function renderFlow() {
   render(<MemoryRouter><ConnectKeyFlow /></MemoryRouter>);
@@ -45,12 +46,12 @@ describe('connect an Exness key', () => {
     expect(screen.getByText(/MT4 and MT5 accounts are not supported/)).toBeInTheDocument();
   });
 
-  it('asks for key, private key and account ID; host is optional; all are sent', async () => {
+  it('asks for API Key, Secret Key and account ID; host is optional; all are sent', async () => {
     renderFlow();
-    fireEvent.click(screen.getByText('Paste the key, private key and account ID here'));
+    fireEvent.click(screen.getByText('Paste the API Key, Secret Key and account ID here'));
 
-    const secret = screen.getByLabelText('Private key');
-    expect(secret.tagName).toBe('TEXTAREA');
+    const secret = screen.getByLabelText('Secret Key');
+    expect(secret.tagName).toBe('INPUT');
     expect(secret).toHaveAttribute('spellcheck', 'false');
     expect(secret.getAttribute('autocomplete')).toMatch(/^off/);
 
@@ -84,10 +85,10 @@ describe('connect an Exness key', () => {
 
   it('does not split a pasted PEM into key and secret', () => {
     renderFlow();
-    fireEvent.click(screen.getByText('Paste the key, private key and account ID here'));
+    fireEvent.click(screen.getByText('Paste the API Key, Secret Key and account ID here'));
     const key = screen.getByLabelText('API key');
     fireEvent.change(key, { target: { value: `exnsk-abcdefghijklmnopqrstuvwxyz ${PEM}` } });
-    expect(screen.getByLabelText('Private key').value).toBe('');
+    expect(screen.getByLabelText('Secret Key').value).toBe('');
   });
 
   it('draws the Exness form with the Info key left off and our IP', () => {

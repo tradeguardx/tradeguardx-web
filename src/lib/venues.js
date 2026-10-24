@@ -430,10 +430,11 @@ const VENUES = {
     pickerNote: 'Exness platform only — not MT4/MT5',
     /** Shown on the connect forms, before anyone makes a key. */
     platformNote: 'Exness platform accounts only (Exness Terminal / web terminal). MT4 and MT5 accounts are not supported — their keys cannot see those trades.',
-    /* The secret box: a multi-line private key, not a one-line secret. */
-    secretLabel: 'Private key',
-    secretPlaceholder: '-----BEGIN PRIVATE KEY-----\npaste the whole key, every line\n-----END PRIVATE KEY-----',
-    secretMultiline: true,
+    /* Exness's own name for it on the Key Management screen (checked 24 Oct 2026):
+       "API Key" and "Secret Key", each with a copy button. One line, masked. */
+    secretLabel: 'Secret Key',
+    secretPlaceholder: 'Paste the Secret Key',
+    secretMultiline: false,
     pasteSplit: false,
     /**
      * Inputs beyond key and secret. `name` is the field sent to the API, and
@@ -443,7 +444,7 @@ const VENUES = {
       {
         name: 'accountId',
         label: 'Account ID',
-        hint: 'The number of the Exness account the key is for.',
+        hint: 'The number of the Exness account you made the key for (Personal Area → My accounts).',
         placeholder: 'e.g. 12345678',
         required: true,
         inputMode: 'numeric',
@@ -453,7 +454,7 @@ const VENUES = {
       {
         name: 'host',
         label: 'API host',
-        hint: 'Shown in Key Management next to the key', // UNVERIFIED wording/location
+        hint: 'Leave empty unless Exness shows you a different host.',
         placeholder: 'https://api.exness.com',
         required: false,
         inputMode: 'url',
@@ -461,8 +462,8 @@ const VENUES = {
     ],
     formStepBody: 'Pick your Exness platform account, choose a trading key (not an Info key), add our IP, and create the key.',
     pasteStep: {
-      title: 'Paste the key, private key and account ID here',
-      body: 'Copy all three from Key Management. The API host is optional — paste it if Exness shows one next to the key.',
+      title: 'Paste the API Key, Secret Key and account ID here',
+      body: 'Use the copy buttons next to API Key and Secret Key in Key Management, then add the account number the key is for.',
     },
     desktopOnly: false,
     mobilePath: null,
@@ -472,8 +473,8 @@ const VENUES = {
       { title: 'Personal Area → Key Management', body: 'Log in at my.exness.com and open Key Management. Only accounts on the Exness platform can have a key — MT4 and MT5 accounts cannot.' },
       { title: 'Create a trading key for your account', body: 'Pick the Exness platform account you trade on. Choose a trading key, not an Info key — an Info key can only read, so the kill switch could not close anything.' },
       { title: 'Allow our IP', body: 'Add our IP to the key’s allowed IPs. Exness refuses calls from any address that is not on the list.' },
-      { title: 'Copy the four values', body: 'The API key, the private key (every line of it), the account ID, and the API host shown next to the key. The private key is shown once — copy it before you close the screen.' },
-      { title: 'Paste them here', body: 'Paste all four into TradeGuardX. We check the key can trade the moment you connect it.' },
+      { title: 'Copy the API Key and Secret Key', body: 'Use the copy button next to each one. Copy the Secret Key before you leave the screen — Exness may not show it again.' },
+      { title: 'Paste them here with your account number', body: 'Paste both into TradeGuardX and add the number of the account the key is for. We check the key can trade the moment you connect it.' },
     ],
     /** Tax centre is for Indian venues; Exness is not part of it. */
     taxCentre: false,

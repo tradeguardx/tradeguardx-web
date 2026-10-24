@@ -71,9 +71,9 @@ describe('Exness venue', () => {
 });
 
 describe('the key form a venue describes', () => {
-  it('Exness: a multi-line private key, and no key+secret paste splitting', () => {
-    expect(secretFieldFor(exness)).toMatchObject({ label: 'Private key', multiline: true });
-    expect(secretFieldFor(exness).placeholder).toMatch(/BEGIN PRIVATE KEY/);
+  it('Exness: a one-line Secret Key (Exness’s own label), and no key+secret paste splitting', () => {
+    expect(secretFieldFor(exness)).toMatchObject({ label: 'Secret Key', multiline: false });
+    expect(secretFieldFor(exness).placeholder).toBe('Paste the Secret Key');
     expect(splitsPastedPair(exness)).toBe(false);
   });
 
@@ -92,7 +92,7 @@ describe('the key form a venue describes', () => {
     const [acct, host] = fields;
     expect(acct).toMatchObject({ label: 'Account ID', required: true, inputMode: 'numeric' });
     expect(host).toMatchObject({ label: 'API host', required: false, placeholder: 'https://api.exness.com' });
-    expect(host.hint).toBe('Shown in Key Management next to the key');
+    expect(host.hint).toBe('Leave empty unless Exness shows you a different host.');
   });
 
   it('is ready only with a numeric account ID; the host may stay empty', () => {
