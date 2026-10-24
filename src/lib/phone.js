@@ -89,19 +89,46 @@ export function countryOptions() {
  * Name prefix matches rank above matches in the middle of a name, so "in"
  * puts India above Argentina.
  */
+/**
+ * What people type instead of the official name. Nobody searches "United
+ * Arab Emirates" — they type "uae" or "dubai" — and a search that finds
+ * nothing reads as "your country is not supported".
+ */
+const ALIASES = {
+  AE: ['uae', 'emirates', 'dubai', 'abu dhabi', 'sharjah'],
+  US: ['usa', 'america', 'united states of america'],
+  GB: ['uk', 'england', 'britain', 'great britain', 'scotland', 'wales'],
+  SA: ['ksa', 'saudi'],
+  KR: ['korea', 'south korea'],
+  KP: ['north korea'],
+  RU: ['russia'],
+  NL: ['holland'],
+  CZ: ['czech republic'],
+  TR: ['turkey', 'türkiye'],
+  HK: ['hongkong'],
+  VN: ['viet nam'],
+  IR: ['persia'],
+  CI: ['ivory coast'],
+};
+
 export function searchCountries(query, options = countryOptions()) {
   const q = (query ?? '').trim().toLowerCase();
   if (!q) return options;
   const digits = q.replace(/^\+/, '');
   if (/^\d+$/.test(digits)) return options.filter((o) => o.dial.slice(1).startsWith(digits));
+  // Exact first ("uk" is the UK, not the start of Ukraine), then prefix, then
+  // anywhere in the name.
+  const exact = [];
   const starts = [];
   const contains = [];
   for (const o of options) {
     const name = o.name.toLowerCase();
-    if (o.code.toLowerCase() === q || name.startsWith(q)) starts.push(o);
-    else if (name.includes(q)) contains.push(o);
+    const aliases = ALIASES[o.code] ?? [];
+    if (o.code.toLowerCase() === q || name === q || aliases.includes(q)) exact.push(o);
+    else if (name.startsWith(q) || aliases.some((a) => a.startsWith(q))) starts.push(o);
+    else if (name.includes(q) || aliases.some((a) => a.includes(q))) contains.push(o);
   }
-  return [...starts, ...contains];
+  return [...exact, ...starts, ...contains];
 }
 
 /** Parse anything to a phone object, or null. Never throws. */

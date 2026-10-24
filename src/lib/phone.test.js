@@ -89,3 +89,18 @@ describe('phone helpers', () => {
     expect(examplePlaceholder('US')).toMatch(/^\(\d{3}\) \d{3}-\d{4}$/);
   });
 });
+
+describe('searchCountries — the names people actually type', () => {
+  it('finds the UAE as uae, dubai, emirates, AE or 971', async () => {
+    const { searchCountries } = await import('./phone');
+    for (const q of ['uae', 'UAE', 'dubai', 'emirates', 'ae', '971', '+971']) {
+      expect(searchCountries(q)[0]?.code).toBe('AE');
+    }
+  });
+
+  it('finds the US as usa and the UK as uk', async () => {
+    const { searchCountries } = await import('./phone');
+    expect(searchCountries('usa')[0]?.code).toBe('US');
+    expect(searchCountries('uk')[0]?.code).toBe('GB');
+  });
+});
