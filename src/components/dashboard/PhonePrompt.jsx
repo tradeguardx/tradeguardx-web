@@ -28,8 +28,17 @@ import PhoneInput from '../common/LazyPhoneInput';
  * `phone` is E.164 and `phoneValid` whether it is a real number in its
  * country — PhoneInput works both out, so this dialog no longer assumes India.
  */
+/** "UAE"-style display name for the error line; null when unknown. */
+function countryName(code) {
+  if (!code) return null;
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function PhonePromptDialog({ phone, phoneValid, onPhoneChange, optIn, onOptInChange, error, saving, onSave, onDismiss }) {
-  const complete = Boolean(phoneValid);
   const reduce = useReducedMotion();
 
   // A phone "buzz": a quick shake burst, then a pause, on a loop. Held still for
@@ -144,7 +153,7 @@ export function PhonePromptDialog({ phone, phoneValid, onPhoneChange, optIn, onO
               onChange={onPhoneChange}
               invalid={Boolean(error)}
               autoFocus
-              onEnter={() => { if (complete && !saving) onSave(); }}
+              onEnter={() => { if (!saving) onSave(); }}
             />
           </div>
           {error && <p className="mt-1.5 text-[13px] text-[var(--red)]">{error}</p>}
@@ -193,8 +202,11 @@ export function PhonePromptDialog({ phone, phoneValid, onPhoneChange, optIn, onO
             <button
               type="button"
               onClick={onSave}
-              disabled={saving || !complete}
-              className="flex-1 rounded-xl bg-[var(--mint-solid)] px-5 py-3 text-sm font-bold text-[var(--on-mint)] transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+              /* Always pressable. A greyed-out button over an empty field read
+                 as broken — nobody could tell what it was waiting for. Pressing
+                 it now says exactly what is missing, under the field. */
+              disabled={saving}
+              className="flex-1 rounded-xl bg-[var(--mint-solid)] px-5 py-3 text-sm font-bold text-[var(--on-mint)] transition-all hover:scale-[1.01] disabled:cursor-wait disabled:opacity-60 disabled:hover:scale-100"
             >
               {saving ? 'Saving…' : 'Save & get alerts'}
             </button>
@@ -227,6 +239,8 @@ export default function PhonePrompt() {
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState(''); // E.164 (partial while typing)
   const [phoneValid, setPhoneValid] = useState(false);
+  const [phoneEmpty, setPhoneEmpty] = useState(true);
+  const [phoneCountry, setPhoneCountry] = useState(null);
   const [optIn, setOptIn] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -296,16 +310,22 @@ export default function PhonePrompt() {
     void markPrompted();
   };
 
-  const onPhoneChange = (e164, { valid }) => {
+  const onPhoneChange = (e164, { valid, empty, country }) => {
     setPhone(e164);
     setPhoneValid(valid);
+    setPhoneEmpty(Boolean(empty));
+    setPhoneCountry(country ?? null);
     if (error) setError('');
   };
 
   const save = async () => {
-    // Save is disabled until valid; this guards Enter and any future caller.
+    // The button is always pressable, so this is where "not yet" is said.
+    if (phoneEmpty) {
+      setError('Enter your mobile number first.');
+      return;
+    }
     if (!phoneValid) {
-      setError('Enter a valid mobile number for the selected country.');
+      setError(`That doesn’t look like a complete ${countryName(phoneCountry) ?? ''} mobile number — check the digits.`.replace('  ', ' '));
       return;
     }
     setSaving(true);

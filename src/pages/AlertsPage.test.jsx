@@ -41,26 +41,28 @@ describe('Alerts mobile number', () => {
     render(<AlertsSettings />);
     await waitFor(() => expect(screen.getByLabelText('Mobile number')).toHaveValue('050 123 4567'));
     expect(screen.getByRole('button', { name: /country code/i })).toHaveTextContent('+971');
-    // Mobile row's Save — the only one rendered (email channel is off)
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    // Mobile row's Save — the only one rendered (email channel is off).
+    // Always pressable; with nothing changed it says so instead of saving.
+    const save = screen.getByRole('button', { name: 'Save' });
+    expect(save).toBeEnabled();
+    fireEvent.click(save);
+    expect(await screen.findByText('This number is already saved.')).toBeInTheDocument();
+    expect(api.updateNotificationSettings).not.toHaveBeenCalled();
   });
 
-  it('enables Save only for a valid, changed number and saves E.164', async () => {
+  it('saves only a valid, changed number as E.164, and says why otherwise', async () => {
     api.fetchNotificationSettings.mockResolvedValue({ ...SETTINGS, phone: '+919876543210' });
     api.updateNotificationSettings.mockResolvedValue({ ...SETTINGS, phone: '+447400123456' });
     render(<AlertsSettings />);
     const field = await screen.findByDisplayValue('98765 43210');
     const save = screen.getByRole('button', { name: 'Save' });
 
-    // the same number typed again, re-formatted: not a change
-    fireEvent.change(field, { target: { value: '9876543210' } });
-    expect(save).toBeDisabled();
-
     fireEvent.change(field, { target: { value: '98765' } });
-    expect(save).toBeDisabled();
+    fireEvent.click(save);
+    expect(await screen.findByText(/isn’t a complete mobile number/)).toBeInTheDocument();
+    expect(api.updateNotificationSettings).not.toHaveBeenCalled();
 
     fireEvent.change(field, { target: { value: '+44 7400 123456' } });
-    expect(save).toBeEnabled();
     fireEvent.click(save);
     await waitFor(() => expect(api.updateNotificationSettings).toHaveBeenCalledWith(
       expect.objectContaining({ phone: '+447400123456' }),

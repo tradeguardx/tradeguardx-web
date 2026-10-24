@@ -50,6 +50,12 @@ export function AlertsSettings({ embedded = false }) {
   // E.164 as PhoneInput reports it, plus whether it's a real number there.
   const [mobileVal, setMobileVal] = useState('');
   const [mobileValid, setMobileValid] = useState(false);
+  const [mobileEmpty, setMobileEmpty] = useState(true);
+  const [mobileNote, setMobileNote] = useState(null); // { tone, text } under the field
+  // A note answers the last press of Save; a different number clears it.
+  // Keyed on the value, not on every onChange: the field also reports on
+  // blur, which would wipe the note the instant Save takes focus.
+  useEffect(() => { setMobileNote(null); }, [mobileVal]);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async (signal) => {
@@ -102,6 +108,18 @@ export function AlertsSettings({ embedded = false }) {
   // Savable only when it's a valid number AND differs from what's stored —
   // compared as E.164, so a re-formatted copy of the saved number isn't "dirty".
   const mobileDirty = mobileValid && mobileVal !== (s?.phone ?? '');
+  /* Save is always pressable — a greyed button gave no reason. Pressing it
+     says what is missing, or that there is nothing new to save. */
+  const saveMobile = () => {
+    if (busy) return;
+    // Unchanged first: the stored number loads without the field re-checking
+    // it, so its validity is only known once someone types.
+    if (mobileVal && mobileVal === (s?.phone ?? '')) return setMobileNote({ tone: 'ok', text: 'This number is already saved.' });
+    if (mobileEmpty || !mobileVal) return setMobileNote({ tone: 'warn', text: 'Enter your mobile number first.' });
+    if (!mobileValid) return setMobileNote({ tone: 'warn', text: 'That isn’t a complete mobile number for the selected country — check the digits.' });
+    setMobileNote(null);
+    save({ phone: mobileVal });
+  };
   const sev = s?.notificationMinSeverity ?? 'warning';
 
   return (
@@ -191,12 +209,15 @@ export function AlertsSettings({ embedded = false }) {
                   variant="settings"
                   label="Mobile number"
                   value={mobileVal}
-                  onChange={(e164, { valid }) => { setMobileVal(e164); setMobileValid(valid); }}
-                  onEnter={() => { if (mobileDirty && !busy) save({ phone: mobileVal }); }}
+                  onChange={(e164, { valid, empty }) => { setMobileVal(e164); setMobileValid(valid); setMobileEmpty(Boolean(empty)); }}
+                  onEnter={saveMobile}
                 />
               </div>
-              <button type="button" disabled={!mobileDirty || busy} onClick={() => save({ phone: mobileVal })} style={sx('flex:none;padding:11px 16px;border:0;border-radius:10px;font-size:12.5px;font-weight:700', { background: mobileDirty ? 'var(--ink)' : 'var(--surface-3)', color: mobileDirty ? 'var(--surface)' : 'var(--ink-3)' })}>Save</button>
+              <button type="button" disabled={busy} onClick={saveMobile} style={sx('flex:none;padding:11px 16px;border:1px solid var(--ink);border-radius:10px;background:var(--ink);color:var(--surface);font-size:12.5px;font-weight:700')}>Save</button>
             </div>
+            {mobileNote && (
+              <p role={mobileNote.tone === 'warn' ? 'alert' : 'status'} style={sx('margin:7px 0 0;font-size:12px;line-height:1.5', { color: mobileNote.tone === 'warn' ? 'var(--red)' : 'var(--ink-3)' })}>{mobileNote.text}</p>
+            )}
           </div>
         </div>
       </section>
