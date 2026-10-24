@@ -86,31 +86,27 @@ describe('the key form a venue describes', () => {
     }
   });
 
-  it('Exness asks for Account ID (required, digits, # allowed) and API host (required)', () => {
+  it('Exness asks only for Account ID (required, digits, # allowed) — no host: the server discovers it', () => {
     const fields = extraFieldsFor('exness');
-    expect(fields.map((f) => f.name)).toEqual(['accountId', 'host']);
-    const [acct, host] = fields;
-    expect(acct).toMatchObject({ label: 'Account ID', required: true, inputMode: 'numeric' });
-    expect(host).toMatchObject({ label: 'API host', required: true, placeholder: 'https://ap-xxxxxxxx.exness.com' });
-    expect(host.hint).toMatch(/API Management/);
+    expect(fields.map((f) => f.name)).toEqual(['accountId']);
+    expect(fields[0]).toMatchObject({ label: 'Account ID', required: true, inputMode: 'numeric', stripPrefix: '#' });
   });
 
-  it('is ready only with a numeric account ID (a leading # as Exness shows it is fine) and a host', () => {
+  it('is ready only with a numeric account ID (a leading # as Exness shows it is fine)', () => {
     expect(extraFieldsReady(exness, {})).toBe(false);
     expect(extraFieldsReady(exness, { accountId: '  ' })).toBe(false);
+    expect(extraFieldsReady(exness, { accountId: '#' })).toBe(false);
     expect(extraFieldsReady(exness, { accountId: '12ab' })).toBe(false);
-    expect(extraFieldsReady(exness, { accountId: ' 12345678 ' })).toBe(false);
-    expect(extraFieldsReady(exness, { accountId: '#21000088861', host: 'https://ap-4decef67.exness.com' })).toBe(true);
-    expect(extraFieldsReady(exness, { accountId: '12345678', host: 'https://ap-4decef67.exness.com' })).toBe(true);
+    expect(extraFieldsReady(exness, { accountId: ' 12345678 ' })).toBe(true);
+    expect(extraFieldsReady(exness, { accountId: '#21000088861' })).toBe(true);
     // Venues with no extras are always ready.
     expect(extraFieldsReady(venueFor('blofin'), {})).toBe(true);
   });
 
   it('sends only declared, non-empty, trimmed extras', () => {
-    expect(extraFieldsPayload('exness', { accountId: ' 123 ', host: '' })).toEqual({ accountId: '123' });
+    expect(extraFieldsPayload('exness', { accountId: ' 123 ' })).toEqual({ accountId: '123' });
     expect(extraFieldsPayload('exness', { accountId: '#21000088861' })).toEqual({ accountId: '21000088861' });
-    expect(extraFieldsPayload('exness', { accountId: '123', host: ' https://api.exness.com ', other: 'x' }))
-      .toEqual({ accountId: '123', host: 'https://api.exness.com' });
+    expect(extraFieldsPayload('exness', { accountId: '123', host: 'https://ap.exness.com', other: 'x' })).toEqual({ accountId: '123' });
     expect(extraFieldsPayload('shark', { accountId: '123', host: 'h' })).toEqual({});
   });
 });

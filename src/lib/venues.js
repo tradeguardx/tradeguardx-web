@@ -453,22 +453,11 @@ const VENUES = {
         stripPrefix: '#',
         invalidHint: 'The account number only, e.g. #21000088861.',
       },
-      {
-        name: 'host',
-        label: 'API host',
-        /* Required: api.exness.com answers "404 page not found" for every API
-           path (checked 24 Oct 2026). Each client is served from its own host,
-           shown by the DNS / host widget in API Management. */
-        hint: 'The API host shown in Exness API Management (looks like https://ap-xxxxxxxx.exness.com).',
-        placeholder: 'https://ap-xxxxxxxx.exness.com',
-        required: true,
-        inputMode: 'url',
-      },
     ],
     formStepBody: 'Pick your Exness platform account, choose a trading key (not an Info key), add our IP, and create the key.',
     pasteStep: {
       title: 'Paste the API Key, Secret Key and account ID here',
-      body: 'Use the copy buttons next to API Key and Secret Key, then add the linked account number (as shown, e.g. #21000088861) and the API host from API Management.',
+      body: 'Use the copy buttons next to API Key and Secret Key, then add the linked account number as Exness shows it (e.g. #21000088861). We find the right Exness server for the account ourselves.',
     },
     desktopOnly: false,
     mobilePath: null,

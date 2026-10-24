@@ -39,7 +39,7 @@ describe('connectExchangeCredentials — Exness', () => {
     apiPost.mockResolvedValue({ success: true, data: { connection: { status: 'active' } } });
   });
 
-  it('sends the private key as apiSecret, plus accountId and host', async () => {
+  it('sends the secret as apiSecret plus accountId; the host is never sent (the server discovers it)', async () => {
     await connectExchangeCredentials({
       ...base,
       exchange: 'exness',
@@ -55,7 +55,6 @@ describe('connectExchangeCredentials — Exness', () => {
       apiKey: 'exnsk-1',
       apiSecret: pem,
       accountId: '12345678',
-      host: 'https://ap-4decef67.exness.com',
     });
   });
 

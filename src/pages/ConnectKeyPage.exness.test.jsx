@@ -46,7 +46,7 @@ describe('connect an Exness key', () => {
     expect(screen.getByText(/MT4 and MT5 accounts are not supported/)).toBeInTheDocument();
   });
 
-  it('asks for API Key, Secret Key, account ID and host; all are sent', async () => {
+  it('asks for API Key, Secret Key and account ID; all are sent', async () => {
     renderFlow();
     fireEvent.click(screen.getByText('Paste the API Key, Secret Key and account ID here'));
 
@@ -69,9 +69,8 @@ describe('connect an Exness key', () => {
 
     // As Exness shows it in "Linked account(s)": with a leading #.
     fireEvent.change(acct, { target: { value: '#12345678' } });
-    // The host is required too: api.exness.com serves no API paths.
-    expect(btn).toBeDisabled();
-    fireEvent.change(screen.getByLabelText(/^API host/), { target: { value: 'https://ap-4decef67.exness.com' } });
+    // No host to type: the server finds the account's Exness host itself.
+    expect(screen.queryByLabelText(/^API host/)).toBeNull();
     expect(btn).toBeEnabled();
     fireEvent.click(btn);
 
@@ -82,7 +81,7 @@ describe('connect an Exness key', () => {
       apiKey: 'exnsk-abc',
       apiSecret: PEM,
       // Raw as typed; extraFieldsPayload strips the # when the request is built.
-      venueFields: { accountId: '#12345678', host: 'https://ap-4decef67.exness.com' },
+      venueFields: { accountId: '#12345678' },
     });
   });
 
