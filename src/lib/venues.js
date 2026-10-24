@@ -411,7 +411,8 @@ const VENUES = {
     family: 'exness',
     name: 'Exness',
     longName: 'Exness (native platform)',
-    // Personal Area → Settings → API management, the "New API key" panel.
+    // Homepage → side nav → API management → New API key (checked 25 Oct 2026).
+    // The link lands on API management directly.
     keysUrl: () => 'https://my.exness.com/pa/settings/api-management',
     keyNameField: 'Name',
     keyNameHint: 'English letters and digits only, up to 16.',
@@ -457,7 +458,7 @@ const VENUES = {
     formStepBody: 'Make Exness\u2019s New API key panel look like the picture below, top to bottom, then press Create API key.',
     /** Step 1, in Exness's own words. */
     openStepTitle: 'Open API management on Exness',
-    openStepBody: 'Log in at my.exness.com — the link opens Settings → API management. Keep this tab open; you come back to paste.',
+    openStepBody: 'The button opens API management directly. Or from the Exness homepage: side menu → API management → New API key. Keep this tab open; you come back to paste.',
     openButton: 'Open Exness API management',
     pasteStep: {
       title: 'Paste the API Key, Secret Key and account ID here',
@@ -465,10 +466,10 @@ const VENUES = {
     },
     desktopOnly: false,
     mobilePath: null,
-    navPath: ['Personal Area', 'Settings', 'API management', 'New API key'],
+    navPath: ['Homepage', 'Side menu', 'API management', 'New API key'],
     suggestsKeyName: true,
     createSteps: [
-      { title: 'Open API management', body: 'Log in at my.exness.com → Settings → API management, and start a new API key. Only accounts on the Exness platform can have a key — MT4 and MT5 accounts show greyed out.' },
+      { title: 'Open API management', body: 'Log in at my.exness.com, open API management from the side menu, and press New API key. Only accounts on the Exness platform can have a key — MT4 and MT5 accounts show greyed out.' },
       { title: 'Name it, then Trading → Full access', body: 'Give it a name (letters and digits). Tick Trading, choose Full access — not Read-only, which can never close a position — and pick the account you trade on. Leave Partnership and Transfers off.' },
       { title: 'Expiry: Never. Allowed IPs: ours', body: 'Set Expiry date to Never — a key that expires switches your protection off. Put our IP in Allowed IPs; Exness refuses calls from any other address.' },
       { title: 'Generate key for me → Create API key', body: 'Keep "Generate key for me" selected and press Create API key.' },
