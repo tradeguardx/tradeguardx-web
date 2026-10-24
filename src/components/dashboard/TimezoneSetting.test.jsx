@@ -90,10 +90,21 @@ describe('timezone preference', () => {
     expect(screen.queryByRole('option', { name: /Dubai/ })).toBeNull();
   });
 
+  it('ranks real matches first: usa is the US (New York first), uk is the UK, not Israel or Ukraine', () => {
+    render(<TimezoneSetting />);
+    const search = screen.getByLabelText('Change to');
+    fireEvent.change(search, { target: { value: 'usa' } });
+    expect(screen.getAllByRole('option')[0].textContent).toMatch(/United States — New York/);
+    expect(screen.getAllByRole('option').some((o) => /Israel/.test(o.textContent))).toBe(false);
+    expect(screen.getByText(/United States has \d+ timezones — pick the city nearest you/)).toBeTruthy();
+    fireEvent.change(search, { target: { value: 'uk' } });
+    expect(screen.getAllByRole('option')[0].textContent).toMatch(/United Kingdom — London/);
+  });
+
   it('finds a zone by its country: Nepal, Bangladesh, Thailand', () => {
     render(<TimezoneSetting />);
     const search = screen.getByLabelText('Change to');
-    for (const [q, row] of [['nepal', /Nepal — Kath?mandu/], ['bangladesh', /Bangladesh — Dhaka/], ['thailand', /Thailand — Bangkok/]]) {
+    for (const [q, row] of [['nepal', /Nepal — Kath?mandu/], ['bangladesh', /Bangladesh — Dhaka/], ['thailand', /Thailand — Bangkok/], ['uae', /United Arab Emirates — Dubai/], ['sri lanka', /Sri Lanka — Colombo/], ['pakistan', /Pakistan — Karachi/]]) {
       fireEvent.change(search, { target: { value: q } });
       expect(screen.getAllByRole('option').some((o) => row.test(o.textContent))).toBe(true);
     }

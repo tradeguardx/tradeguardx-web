@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../common/ToastProvider';
 import { retryAfterOf, updateUserTimezone } from '../../api/userApi';
-import { allZones, browserZone, getProfileZone, zoneCountryName, zoneLabel, zoneOffsetLabel, zonePlace } from '../../lib/userZone';
+import { allZones, browserZone, getProfileZone, zoneCountryCode, zoneCountryName, zoneLabel, zoneOffsetLabel, zonePlace } from '../../lib/userZone';
+import COUNTRY_ALIASES from '../../lib/countryAliases';
 import { resetBoundaryFor } from '../../lib/dailyReset';
 import { sx } from './shell/sx';
 
@@ -47,6 +48,27 @@ function retryDate(iso, tz) {
   }
 }
 
+/**
+ * The zones most people in a multi-zone country mean, listed first within it
+ * — otherwise the US opens on Adak, Alaska and Australia on Adelaide.
+ */
+const MAIN_ZONES = [
+  'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/Phoenix', 'America/Anchorage', 'Pacific/Honolulu',
+  'Australia/Sydney', 'Australia/Melbourne', 'Australia/Brisbane', 'Australia/Perth', 'Australia/Adelaide',
+  'America/Toronto', 'America/Vancouver', 'Asia/Jakarta', 'Europe/Moscow', 'America/Sao_Paulo', 'America/Mexico_City',
+  'Asia/Shanghai', 'Europe/Madrid', 'Europe/Lisbon', 'America/Argentina/Buenos_Aires', 'America/Buenos_Aires', 'Asia/Almaty', 'Pacific/Auckland',
+];
+const mainRank = (tz) => { const i = MAIN_ZONES.indexOf(tz); return i < 0 ? 999 : i; };
+
+/** By country, main zones first within one, then by city. */
+function byCountry(list) {
+  return [...list].sort((a, b) => {
+    const ca = zoneCountryName(a) ?? zoneRowLabel(a);
+    const cb = zoneCountryName(b) ?? zoneRowLabel(b);
+    return ca.localeCompare(cb) || mainRank(a) - mainRank(b) || zoneRowLabel(a).localeCompare(zoneRowLabel(b));
+  });
+}
+
 /** "Nepal — Kathmandu", "United States — New York"; the raw name when there is no country. */
 function zoneRowLabel(tz) {
   const country = zoneCountryName(tz);
@@ -75,16 +97,43 @@ export default function TimezoneSetting() {
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    // Listed by country, as the rows read ("Nepal — Kathmandu"), not by the
-    // IANA name — "Asia/Dhaka" sorting among Asia/* helps nobody find Bangladesh.
-    const byLabel = (list) => [...list].sort((a, b) => zoneRowLabel(a).localeCompare(zoneRowLabel(b)));
-    if (!q) return byLabel(zones);
-    return byLabel(zones.filter((tz) => {
-      // Country too: people search "nepal" or "thailand", not Asia/Kathmandu.
-      const hay = `${tz} ${zoneCountryName(tz) ?? ''} ${zonePlace(tz)} ${zoneLabel(tz)} ${zoneOffsetLabel(tz)}`.toLowerCase().replace(/_/g, ' ');
-      return hay.includes(q);
-    }));
+    if (!q) return byCountry(zones);
+    /*
+     * Ranked, because a plain "contains" put Israel first for "usa"
+     * (Jer-usa-lem). A country or short-name hit wins; then a city or zone
+     * word that starts with it; a match buried inside a word is only used
+     * when there is nothing better.
+     */
+    const exact = [];
+    const strong = [];
+    const weak = [];
+    for (const tz of zones) {
+      const country = (zoneCountryName(tz) ?? '').toLowerCase();
+      const code = (zoneCountryCode(tz) ?? '').toLowerCase();
+      const aliases = COUNTRY_ALIASES[zoneCountryCode(tz)] ?? [];
+      const words = `${tz} ${zonePlace(tz)}`.toLowerCase().replace(/[_/]/g, ' ').split(/\s+/);
+      const labels = [zoneLabel(tz), zoneOffsetLabel(tz)].map((x) => x.toLowerCase());
+      // Exact: "uk" is the United Kingdom, not the start of Ukraine; "gmt+4"
+      // is GMT+4, ahead of Kabul's GMT+4:30.
+      if (country === q || code === q || aliases.includes(q) || labels.includes(q)) exact.push(tz);
+      else if (
+        country.startsWith(q) || aliases.some((al) => al.startsWith(q))
+        || words.some((w) => w.startsWith(q)) || labels.some((l) => l.startsWith(q))
+        || zonePlace(tz).toLowerCase().startsWith(q)
+      ) strong.push(tz);
+      else if (`${tz} ${country} ${aliases.join(' ')} ${zonePlace(tz)}`.toLowerCase().replace(/_/g, ' ').includes(q)) weak.push(tz);
+    }
+    if (exact.length || strong.length) return [...byCountry(exact), ...byCountry(strong)];
+    return byCountry(weak);
   }, [zones, query]);
+
+  /* Several zones, one country ("usa", "australia"): say so, so nobody picks
+     the first row (Adak, Alaska) by default. */
+  const oneCountry = useMemo(() => {
+    if (shown.length < 2) return null;
+    const c = zoneCountryName(shown[0]);
+    return c && shown.every((tz) => zoneCountryName(tz) === c) ? c : null;
+  }, [shown]);
 
   const save = async (tz) => {
     if (!tz || busy || !session?.access_token) return;
@@ -141,12 +190,17 @@ export default function TimezoneSetting() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search a city or zone — Dubai, London, GMT+4"
+            placeholder="Search a country or city — Nepal, Thailand, Dubai"
             autoComplete="off"
             style={sx('width:100%;padding:11px 13px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font-size:13px')}
           />
           <div role="listbox" aria-label="Timezones" style={sx('margin-top:8px;max-height:232px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)')}>
             {shown.length === 0 && <div style={sx('padding:12px 13px;font-size:12.5px;color:var(--ink-3)')}>No timezone matches “{query}”.</div>}
+            {oneCountry && (
+              <div style={sx('padding:9px 13px;border-bottom:1px solid var(--line);font-size:12px;line-height:1.5;color:var(--ink-3)')}>
+                {oneCountry} has {shown.length} timezones — pick the city nearest you.
+              </div>
+            )}
             {shown.map((tz) => {
               const on = tz === pick;
               return (

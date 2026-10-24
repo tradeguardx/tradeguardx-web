@@ -23,6 +23,7 @@ import {
 // shape of a number where the visitor is, not an Indian one everywhere.
 import mobileExamples from 'libphonenumber-js/mobile/examples';
 import { guessCountrySync } from './geo';
+import ALIASES from './countryAliases';
 
 /** India was the only market until now, so it stays the last-resort default. */
 export const FALLBACK_COUNTRY = 'IN';
@@ -90,27 +91,6 @@ export function countryOptions() {
  * Name prefix matches rank above matches in the middle of a name, so "in"
  * puts India above Argentina.
  */
-/**
- * What people type instead of the official name. Nobody searches "United
- * Arab Emirates" — they type "uae" or "dubai" — and a search that finds
- * nothing reads as "your country is not supported".
- */
-const ALIASES = {
-  AE: ['uae', 'emirates', 'dubai', 'abu dhabi', 'sharjah'],
-  US: ['usa', 'america', 'united states of america'],
-  GB: ['uk', 'england', 'britain', 'great britain', 'scotland', 'wales'],
-  SA: ['ksa', 'saudi'],
-  KR: ['korea', 'south korea'],
-  KP: ['north korea'],
-  RU: ['russia'],
-  NL: ['holland'],
-  CZ: ['czech republic'],
-  TR: ['turkey', 'türkiye'],
-  HK: ['hongkong'],
-  VN: ['viet nam'],
-  IR: ['persia'],
-  CI: ['ivory coast'],
-};
 
 /**
  * "aue" for "uae", "usa" typed "uas": a three- or four-letter short name with

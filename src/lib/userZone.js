@@ -175,9 +175,16 @@ export function zoneLabel(tz = getUserZone(), at = new Date()) {
   return intlAbbr('en-US', tz, at) || intlAbbr('en-GB', tz, at) || zoneOffsetLabel(tz, at);
 }
 
-const PLACE_NAMES = { 'Asia/Kolkata': 'India', 'Asia/Calcutta': 'India', UTC: 'UTC' };
+const PLACE_NAMES = {
+  'Asia/Kolkata': 'India', 'Asia/Calcutta': 'India', UTC: 'UTC',
+  // Legacy names some browsers still list, shown as the place is called now.
+  'Asia/Katmandu': 'Kathmandu', 'Asia/Saigon': 'Ho Chi Minh City', 'Asia/Rangoon': 'Yangon',
+  'Europe/Kiev': 'Kyiv', 'Asia/Dacca': 'Dhaka', 'Asia/Thimbu': 'Thimphu', 'Africa/Asmera': 'Asmara',
+};
 
-/** "Dubai", "New York", "India" — the place half of "Dubai time (GMT+4)". */
+/** ISO country code of a zone ("NP" for Asia/Kathmandu), or null. */
+export const zoneCountryCode = (tz) => ZONE_COUNTRIES[tz] ?? null;
+
 let regionNames;
 /** "Nepal" for Asia/Kathmandu; null for zones with no country (UTC, Etc/…). */
 export function zoneCountryName(tz) {
@@ -191,6 +198,7 @@ export function zoneCountryName(tz) {
   }
 }
 
+/** "Dubai", "New York", "India" — the place half of "Dubai time (GMT+4)". */
 export function zonePlace(tz = getUserZone()) {
   if (PLACE_NAMES[tz]) return PLACE_NAMES[tz];
   const last = String(tz).split('/').pop() || String(tz);
