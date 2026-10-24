@@ -425,18 +425,6 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                 </>
               )}
 
-              {st.kind === 'form' && v.formChecklist?.length > 0 && (
-                /* The panel's own order, numbered — the drawing below carries
-                   the same numbers, so list and picture line up item by item. */
-                <ol data-form-checklist="1" style={sx('margin:11px 0 13px;padding:0;list-style:none;display:grid;gap:7px;max-width:74ch')}>
-                  {v.formChecklist.map((item, i) => (
-                    <li key={item} style={sx('display:flex;align-items:baseline;gap:10px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>
-                      <span aria-hidden style={sx("flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface-2);font:700 11px/1 'Space Grotesk',sans-serif;color:var(--ink)")}>{i + 1}</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ol>
-              )}
               {st.kind === 'form' && (
                 <VenueFormReplica venue={v} onCopy={copy} copiedValue={copied} />
               )}

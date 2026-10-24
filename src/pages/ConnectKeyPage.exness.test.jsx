@@ -102,18 +102,13 @@ describe('connect an Exness key', () => {
     expect(screen.getByText('13.205.214.83')).toBeInTheDocument();
   });
 
-  it('step 1 names API management; step 2 is a numbered list in the panel\u2019s order', () => {
+  it('step 1 names API management; step 2 is the drawing alone', () => {
     renderFlow();
     expect(screen.getByText('Open API management on Exness')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Open Exness API management/ })).toHaveAttribute('href', 'https://my.exness.com/pa/settings/api-management');
     fireEvent.click(screen.getByText('Fill it in and create the key'));
-    const items = [...document.querySelectorAll('[data-form-checklist] li')].map((li) => li.textContent);
-    expect(items).toHaveLength(7);
-    expect(items[0]).toMatch(/^1Name/);
-    expect(items[1]).toMatch(/Trading → choose Full access/);
-    expect(items[3]).toMatch(/Expiry date: Never/);
-    expect(items[4]).toMatch(/13\.205\.214\.83/);
-    expect(items[6]).toMatch(/Create API key/);
+    // No separate list — the drawing is the instruction.
+    expect(document.querySelector('[data-form-checklist]')).toBeNull();
   });
 
   it('keeps the other venues on two one-line fields with no extras', () => {

@@ -454,17 +454,7 @@ const VENUES = {
         invalidHint: 'The account number only, e.g. #21000088861.',
       },
     ],
-    formStepBody: 'Seven things on Exness\u2019s New API key panel, top to bottom — the numbers match the picture below.',
-    /** Step 2 as a numbered list, in the panel's own order; the drawing carries the same numbers. */
-    formChecklist: [
-      'Name: tradeguardx (letters and digits only)',
-      'Scopes: tick Trading → choose Full access',
-      'Account: pick the account you trade on — note its number',
-      'Expiry date: Never',
-      `Allowed IPs: ${DELTA_EGRESS_IP}`,
-      'Public key: keep “Generate key for me”',
-      'Press Create API key',
-    ],
+    formStepBody: 'Make Exness\u2019s New API key panel look like the picture below, top to bottom, then press Create API key.',
     /** Step 1, in Exness's own words. */
     openStepTitle: 'Open API management on Exness',
     openStepBody: 'Log in at my.exness.com — the link opens Settings → API management. Keep this tab open; you come back to paste.',
