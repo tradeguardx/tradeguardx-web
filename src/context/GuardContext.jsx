@@ -18,6 +18,7 @@ import {
 } from '../lib/guard';
 import { keyStateOf, lifecycleIdOf, lifecycleView } from '../lib/lifecycle';
 import { getPricingPlans } from '../api/pricingApi';
+import { formatMoney } from '../lib/priceBands';
 
 /**
  * Guard state for every account the user has, kept fresh, read everywhere.
@@ -287,8 +288,10 @@ export function GuardProvider({ children }) {
   }, []);
   const interval = subscription?.subscription?.billingInterval ?? 'monthly';
   const price = useMemo(() => {
-    const row = (plans ?? []).find((p) => String(p.slug || '').toLowerCase() === 'pro')?.intervals?.find((x) => x.interval === interval);
-    return typeof row?.price === 'number' ? `₹${Math.round(row.price).toLocaleString('en-IN')}` : null;
+    const pro = (plans ?? []).find((p) => String(p.slug || '').toLowerCase() === 'pro');
+    const row = pro?.intervals?.find((x) => x.interval === interval);
+    // Rupees in India, US dollars elsewhere (pricingApi prices by band).
+    return typeof row?.price === 'number' ? formatMoney(row.price, pro.currency ?? 'INR') : null;
   }, [plans, interval]);
   const life = useMemo(
     () => lifecycleView(lifeId, {

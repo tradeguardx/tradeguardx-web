@@ -157,6 +157,19 @@ export function detectCountry() {
   return countryPromise;
 }
 
+/**
+ * A FRESH signed country for checkout: { token, country }. Never cached — a
+ * token lasts 2 hours and checkout refuses an expired one. `token` is null
+ * where /api/geo does not exist (vite dev); the dev API then accepts the
+ * unsigned `country` instead, and production refuses it.
+ */
+export async function checkoutGeo() {
+  const res = await getJson('/api/geo', 4000);
+  const token = typeof res?.token === 'string' ? res.token : null;
+  const c = typeof res?.country === 'string' && /^[A-Z]{2}$/.test(res.country) ? res.country : null;
+  return { token, country: c ?? guessCountrySync() };
+}
+
 /** Cached or fallback INR rates, synchronously. */
 export function ratesSync() {
   const cached = readJson(RATES_KEY);

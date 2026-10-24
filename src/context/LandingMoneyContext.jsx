@@ -1,12 +1,44 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { currencyFor, detectCountry, guessCountrySync, loadRates, makeMoney, ratesSync } from '../lib/geo';
+import { detectCountry, guessCountrySync, loadRates, makeMoney, ratesSync } from '../lib/geo';
+import { BAND_PRICES, bandForCountry, formatMoney } from '../lib/priceBands';
 
 /**
  * The landing page's money: who is looking, and our rupee figures in their
  * currency. Only the homepage provides it — every other page (and anything that
  * renders a landing component outside the provider) gets plain rupees.
  */
-const INR_MONEY = { country: 'IN', region: 'in', ...makeMoney('INR') };
+const INR_PLAN = { monthly: 1299, quarterly: 3299, yearly: 8999 };
+const MONTHS = { monthly: 1, quarterly: 3, yearly: 12 };
+
+/**
+ * What a band pays, for the pricing cards: the price, the per-month figure and
+ * the saving against monthly. India is the rupee plan; A and B are the USD
+ * bands (lib/priceBands). Display only — checkout prices by signed country.
+ */
+function bandPricing(band) {
+  const t = band === 'in' ? { currency: 'INR', ...INR_PLAN } : BAND_PRICES[band];
+  const line = (interval) => {
+    const price = t[interval];
+    const n = MONTHS[interval];
+    const perMonth = t.currency === 'INR' ? Math.round(price / n) : Math.round((price / n) * 100) / 100;
+    return { price, perMonth, savingsPct: Math.max(0, Math.round((1 - price / (t.monthly * n)) * 100)) };
+  };
+  return { currency: t.currency, monthly: line('monthly'), quarterly: line('quarterly'), yearly: line('yearly') };
+}
+
+function moneyFor(band, rates) {
+  const pricing = bandPricing(band);
+  return {
+    band,
+    // Example amounts follow the money they pay in: rupees, or US dollars.
+    ...makeMoney(pricing.currency, rates),
+    pricing,
+    /** "$29" / "₹1,299" — a band price is exact, never "≈". */
+    plan: (interval, field = 'price') => formatMoney(pricing[interval]?.[field], pricing.currency),
+  };
+}
+
+const INR_MONEY = { country: 'IN', region: 'in', ...moneyFor('in') };
 const LandingMoneyContext = createContext(INR_MONEY);
 
 // The prerenderer is headless Chrome (navigator.webdriver). Whatever timezone
@@ -33,11 +65,11 @@ export function LandingMoneyProvider({ forceIndia = false, children }) {
   }, [forceIndia]);
 
   const value = useMemo(() => {
-    const currency = forceIndia ? 'INR' : currencyFor(country);
+    const band = forceIndia ? 'in' : bandForCountry(country);
     return {
       country,
-      region: forceIndia || country === 'IN' ? 'in' : 'global',
-      ...makeMoney(currency, rates),
+      region: band === 'in' ? 'in' : 'global',
+      ...moneyFor(band, rates),
     };
   }, [forceIndia, country, rates]);
 

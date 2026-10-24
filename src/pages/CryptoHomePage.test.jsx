@@ -32,18 +32,32 @@ function renderPage(variant) {
   return render(<MemoryRouter><CryptoHomePage variant={variant} /></MemoryRouter>);
 }
 
-const monthly = (c) => c.querySelector('[data-inr="1299"]').textContent;
+const monthly = (c) => c.querySelector('[data-plan="monthly"]').textContent;
+const yearly = (c) => c.querySelector('[data-plan="yearly"]:not([data-field])').textContent;
+const yearlyPerMonth = (c) => c.querySelector('[data-plan="yearly"][data-field="perMonth"]').textContent;
+const yearlySave = (c) => c.querySelector('[data-save="yearly"]').textContent;
 
 describe('homepage variants', () => {
   beforeEach(() => { country = 'US'; });
 
-  it('"/" from the US: global copy, approximate dollar prices', async () => {
+  it('"/" from the US: global copy, Band A dollar prices, exact', async () => {
     const { container } = renderPage();
-    await waitFor(() => expect(monthly(container)).toBe('≈ $14'));
+    await waitFor(() => expect(monthly(container)).toBe('$29'));
+    expect(yearly(container)).toBe('$249');
+    expect(yearlyPerMonth(container)).toBe('$20.75');
+    expect(yearlySave(container)).toBe('28');
     expect(container.querySelector('.tgx-home').dataset.region).toBe('global');
     expect(document.title).toBe("Crypto Trading Kill Switch You Can't Bypass — TradeGuardX");
     // Example amounts become round local figures.
     expect(container.querySelector('[data-inr="25000"]').textContent).toBe('$275');
+  });
+
+  it('"/" from Thailand: Band B dollar prices', async () => {
+    country = 'TH';
+    const { container } = renderPage();
+    await waitFor(() => expect(monthly(container)).toBe('$15'));
+    expect(yearly(container)).toBe('$129');
+    expect(container.querySelector('[data-plan="quarterly"]:not([data-field])').textContent).toBe('$39');
   });
 
   it('"/" from India: rupees and the Indian copy', async () => {
@@ -51,6 +65,8 @@ describe('homepage variants', () => {
     const { container } = renderPage();
     await waitFor(() => expect(container.querySelector('.tgx-home').dataset.region).toBe('in'));
     expect(monthly(container)).toBe('₹1,299');
+    expect(yearlyPerMonth(container)).toBe('₹750');
+    expect(yearlySave(container)).toBe('42');
     // Rupees, but still the global page: "India's first" is /india's line.
     expect(container.querySelector('.tgx-home').dataset.variant).toBe('global');
   });

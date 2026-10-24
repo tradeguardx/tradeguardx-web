@@ -43,12 +43,12 @@ export function trialDaysOnOffer(user) {
   return 0;
 }
 
-/** "₹0 today · ₹1,299 on 14 Oct · cancel any time before" */
-export function trialOfferLine(days, priceLabel, startsOn) {
+/** "₹0 today · ₹1,299 on 14 Oct · cancel any time before" ("$0 today" abroad: pass `zero`). */
+export function trialOfferLine(days, priceLabel, startsOn, zero = '₹0') {
   if (days <= 0) return null;
   const when = startsOn ? ` on ${startsOn}` : ` in ${days} day${days === 1 ? '' : 's'}`;
   const amount = priceLabel ? `${priceLabel}` : 'your first payment';
-  return `₹0 today · ${amount}${when} · cancel any time before`;
+  return `${zero} today · ${amount}${when} · cancel any time before`;
 }
 
 /** The date the first debit lands, given today and the free days. */

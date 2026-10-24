@@ -13,7 +13,8 @@ import { trackCheckoutStarted } from '../lib/analytics';
 import { checkoutCouponCode } from '../lib/checkoutCoupon';
 import { getStoredReferralCode } from '../lib/referralCode';
 import { getLinkPromoCode } from '../lib/promoLink';
-import { getActivePromo, discountedPrice, formatInr } from '../lib/activePromo';
+import { getActivePromo, discountedPrice } from '../lib/activePromo';
+import { bandSync, currencyForBand, formatMoney } from '../lib/priceBands';
 import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
 
 /**
@@ -143,6 +144,8 @@ function normalizePlan(raw, index) {
     name,
     monthlyPrice,
     intervals,
+    // INR in India, USD elsewhere — set by pricingApi for the visitor's band.
+    currency: raw.currency || 'INR',
     refundDays: Number(raw.features?.refundDays) || 7,
     cta: raw.features?.cta || (key === 'free' ? 'Get Started Free' : `Start ${name} Plan`),
     ctaLink,
@@ -239,7 +242,7 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
     ),
-    label: '₹0 today',
+    label: (money) => `${money(0)} today`,
   },
   {
     icon: (
@@ -274,6 +277,10 @@ export default function PricingPage() {
     url: 'https://tradeguardx.com/pricing',
   });
   const [plans, setPlans] = useState([]);
+  /* Rupees in India, US dollars elsewhere (lib/priceBands). Until the plans
+     load, the best guess from this device, so a ₹/$ flip never shows. */
+  const currency = plans[0]?.currency ?? currencyForBand(bandSync());
+  const money = (n) => formatMoney(n, currency);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [checkoutKey, setCheckoutKey] = useState(null);
@@ -288,10 +295,13 @@ export default function PricingPage() {
    * An influencer `?ref=` code takes precedence at checkout, so this block is
    * hidden when one is present rather than promising a discount that loses.
    */
-  const activePromo = useMemo(
+  const launchPromo = useMemo(
     () => (getStoredReferralCode() || getLinkPromoCode() ? null : getActivePromo()),
     [],
   );
+  /* Launch promos are rupee coupons, restricted in Dodo to the INR products —
+     never shown against a dollar price they would not apply to. */
+  const activePromo = currency === 'INR' ? launchPromo : null;
   const { session, user, subscription, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -487,9 +497,9 @@ export default function PricingPage() {
        */
       const freeDays = trialDaysOnOffer(user);
       const line = priceFor(plan, iv);
-      const amount = typeof line?.price === 'number' ? `₹${line.price.toLocaleString('en-IN')}` : null;
+      const amount = typeof line?.price === 'number' ? money(line.price) : null;
       const startsOn = firstChargeDate(freeDays)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).replace(' ', '\u00a0') ?? null;
-      const offer = trialOfferLine(freeDays, amount, startsOn);
+      const offer = trialOfferLine(freeDays, amount, startsOn, money(0));
 
       return (
         <>
@@ -508,9 +518,9 @@ export default function PricingPage() {
     // Signed out: everyone new gets the full trial, so say it the same way
     // the signed-in branch does — the price and date before the click.
     const line = priceFor(plan, iv);
-    const amount = typeof line?.price === 'number' && line.price > 0 ? `₹${line.price.toLocaleString('en-IN')}` : null;
+    const amount = typeof line?.price === 'number' && line.price > 0 ? money(line.price) : null;
     const startsOn = firstChargeDate(FULL_TRIAL_DAYS)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).replace(' ', '\u00a0') ?? null;
-    const offer = amount ? trialOfferLine(FULL_TRIAL_DAYS, amount, startsOn) : null;
+    const offer = amount ? trialOfferLine(FULL_TRIAL_DAYS, amount, startsOn, money(0)) : null;
     return (
       <>
         <Link to={signupLink(plan, iv)} className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>
@@ -566,12 +576,12 @@ export default function PricingPage() {
           <div className="flex items-center justify-center gap-2 flex-wrap">
             {TRUST_BADGES.map((b) => (
               <span
-                key={b.label}
+                key={typeof b.label === 'function' ? 'zero-today' : b.label}
                 className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium"
                 style={{ borderColor: 'rgba(255,255,255,0.07)', color: '#64748b', backgroundColor: 'rgba(255,255,255,0.025)' }}
               >
                 <span style={{ color: 'rgba(0,212,170,0.65)' }}>{b.icon}</span>
-                {b.label}
+                {typeof b.label === 'function' ? b.label(money) : b.label}
               </span>
             ))}
           </div>
@@ -652,14 +662,14 @@ export default function PricingPage() {
                           ) : null}
                         </div>
                         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1.5">
-                          <span className="font-display text-[44px] leading-none font-black text-white tracking-tight">{formatInr(promoPrice ?? line.price)}</span>
+                          <span className="font-display text-[44px] leading-none font-black text-white tracking-tight">{money(promoPrice ?? line.price)}</span>
                           <span className="text-sm font-medium" style={{ color: '#64748b' }}>{promoPrice != null && activePromo.cycles === 1 ? 'first month' : PER[iv]}</span>
-                          {promoPrice != null && <span className="text-base font-semibold line-through" style={{ color: '#64748b' }}>{formatInr(line.price)}</span>}
+                          {promoPrice != null && <span className="text-base font-semibold line-through" style={{ color: '#64748b' }}>{money(line.price)}</span>}
                         </div>
                         <p className="text-[12.5px] leading-relaxed min-h-[20px]" style={{ color: '#94a3b8' }}>
                           {iv === 'monthly'
-                            ? (promoPrice != null && activePromo.cycles === 1 ? `Then ${formatInr(line.price)}/mo. ${activePromo.code} applied at checkout.` : 'Most flexible. Cancel any month.')
-                            : `That's ₹${line.perMonth.toLocaleString('en-IN')}/mo, ${line.savingsPct}% less than monthly.`}
+                            ? (promoPrice != null && activePromo.cycles === 1 ? `Then ${money(line.price)}/mo. ${activePromo.code} applied at checkout.` : 'Most flexible. Cancel any month.')
+                            : `That's ${money(line.perMonth)}/mo, ${line.savingsPct}% less than monthly.`}
                         </p>
                         <p className="text-[11px] font-medium mt-1" style={{ color: '#475569' }}>Billed {iv} · incl. 18% GST</p>
                         <div className="mt-auto pt-7">{renderCta({ ...plan, primary: isBest }, iv)}</div>
@@ -770,7 +780,7 @@ export default function PricingPage() {
                                   exit={{ opacity: 0, y: 6 }}
                                   className="font-display text-5xl font-black text-white tracking-tight"
                                 >
-                                  {formatInr(promoPrice)}
+                                  {money(promoPrice)}
                                 </motion.span>
                               </AnimatePresence>
                               {activePromo.cycles === 1 && (
@@ -779,13 +789,13 @@ export default function PricingPage() {
                                 </span>
                               )}
                               <span className="text-lg font-semibold line-through" style={{ color: '#64748b' }}>
-                                {formatInr(price)}
+                                {money(price)}
                               </span>
                             </div>
 
                             {activePromo.cycles === 1 && (
                               <p className="text-[12px] leading-relaxed mb-1" style={{ color: '#94a3b8' }}>
-                                Then {formatInr(price)}/mo from month two. Cancel before it renews
+                                Then {money(price)}/mo from month two. Cancel before it renews
                                 and you pay nothing more.
                               </p>
                             )}
@@ -827,7 +837,7 @@ export default function PricingPage() {
                                   exit={{ opacity: 0, y: 6 }}
                                   className="font-display text-5xl font-black text-white tracking-tight"
                                 >
-                                  {price === 0 ? '₹0' : `₹${price.toLocaleString('en-IN')}`}
+                                  {money(price)}
                                 </motion.span>
                               </AnimatePresence>
                               {price > 0 && <span className="text-sm font-medium" style={{ color: '#64748b' }}>{perLabel}</span>}
@@ -837,7 +847,7 @@ export default function PricingPage() {
                             </div>
                             {price > 0 && line.interval !== 'monthly' && (
                               <p className="text-[12px] leading-relaxed mb-1" style={{ color: '#94a3b8' }}>
-                                That&rsquo;s ₹{line.perMonth.toLocaleString('en-IN')}/mo — against ₹{plan.monthlyPrice.toLocaleString('en-IN')} billed monthly.
+                                That&rsquo;s {money(line.perMonth)}/mo — against {money(plan.monthlyPrice)} billed monthly.
                               </p>
                             )}
                             <p className="text-[11px] mb-6 font-medium" style={{ color: '#475569' }}>
@@ -986,7 +996,7 @@ export default function PricingPage() {
               <p className="text-base mb-10 max-w-md mx-auto" style={{ color: '#475569' }}>
                 {session?.access_token && !subscriptionLoading && isPaidPlan(user?.billingPlan)
                   ? 'You are on a paid plan. Manage billing anytime from your account.'
-                  : '3 days free · ₹0 today · cancel before day 4 and pay nothing.'}
+                  : `3 days free · ${money(0)} today · cancel before day 4 and pay nothing.`}
               </p>
               <motion.div
                 className="inline-block"

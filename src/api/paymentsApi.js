@@ -1,5 +1,6 @@
 import { apiGet, apiPost } from './httpClient';
 import { resolvePaymentsApiBaseUrl } from './config';
+import { checkoutGeo } from '../lib/geo';
 
 /*
  * Services wrap responses as { success, data }. Callers want the data.
@@ -9,6 +10,16 @@ import { resolvePaymentsApiBaseUrl } from './config';
  * so one of them was always going to be wrong. Unwrapping here means there is
  * one answer and no call site has to know the envelope exists.
  */
+/**
+ * Where the buyer is, for the server to price by: the token /api/geo signed,
+ * plus the bare country, which only the dev API listens to (local runs have
+ * no /api/geo). See payments-service src/services/checkoutBand.ts.
+ */
+async function geoFields() {
+  const { token, country } = await checkoutGeo();
+  return { ...(token ? { geo: token } : {}), ...(country ? { country } : {}) };
+}
+
 function unwrap(payload) {
   if (payload?.success && payload.data !== undefined) return payload.data;
   return payload;
@@ -88,7 +99,7 @@ export async function createCheckoutSession({ accessToken, planSlug, couponCode,
    * returned to tradeguardx.com after paying.
    */
   const returnOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
-  const body = { planSlug, interval, ...(couponCode ? { couponCode } : {}), ...(returnOrigin ? { returnOrigin } : {}) };
+  const body = { planSlug, interval, ...(couponCode ? { couponCode } : {}), ...(returnOrigin ? { returnOrigin } : {}), ...(await geoFields()) };
   return unwrap(await apiPost(
     '/checkout/session',
     body,
@@ -119,7 +130,7 @@ export async function validateCoupon({ accessToken, code, planSlug = 'pro', inte
   const baseUrl = options.baseUrl ?? resolvePaymentsApiBaseUrl();
   return unwrap(await apiPost(
     '/coupon/validate',
-    { code, planSlug, interval },
+    { code, planSlug, interval, ...(await geoFields()) },
     { ...options, baseUrl, headers: { Authorization: `Bearer ${accessToken}`, ...(options.headers ?? {}) } },
   ));
 }

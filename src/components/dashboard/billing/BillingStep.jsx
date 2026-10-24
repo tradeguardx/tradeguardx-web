@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { createCheckoutSession, validateCoupon, fetchTrialEligibility } from '../../../api/paymentsApi';
 import { getPricingPlans } from '../../../api/pricingApi';
+import { bandSync, formatMoney, planForBand } from '../../../lib/priceBands';
 import { trackBilling } from '../../../lib/analytics';
 import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
 import { PROTECTIONS, GLYPH } from './billingContent';
@@ -44,12 +45,17 @@ function Glyph({ d, size = 15, width = 2 }) {
 const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Your revenge score', 'Start free trial'];
 const LAST = STEP_NAMES.length - 1;
 
-/* Fallbacks only. The pricing endpoint wins — see `options`. */
-const PLAN_FALLBACK = [
-  { id: 'monthly', name: 'Monthly', price: 1299, perMonth: 1299, per: 'per month', sub: 'Billed every month', save: 0, next: 'every month' },
-  { id: 'quarterly', name: 'Quarterly', price: 3299, perMonth: 1100, per: 'per quarter', sub: '₹1,100/mo · billed every 3 months', save: 15, next: 'every 3 months' },
-  { id: 'yearly', name: 'Yearly', price: 8999, perMonth: 750, per: 'per year', sub: '₹750/mo · billed once a year', save: 42, next: 'every year' },
-];
+/* Fallback only, when the pricing endpoint fails: the rupee plan, re-priced
+   for the visitor's band like the real one (lib/priceBands). */
+const PLAN_FALLBACK = {
+  slug: 'pro',
+  priceMonthly: 1299,
+  intervals: [
+    { interval: 'monthly', price: 1299, perMonth: 1299, savingsPct: 0 },
+    { interval: 'quarterly', price: 3299, perMonth: 1100, savingsPct: 15 },
+    { interval: 'yearly', price: 8999, perMonth: 750, savingsPct: 42 },
+  ],
+};
 
 const PER = { monthly: 'per month', quarterly: 'per quarter', yearly: 'per year' };
 const SUB = { monthly: 'Billed every month', quarterly: 'billed every 3 months', yearly: 'billed once a year' };
@@ -58,7 +64,6 @@ const NEXT = { monthly: 'every month', quarterly: 'every 3 months', yearly: 'eve
    gets comes from the server — see `trialDays` below. */
 const TRIAL_DAYS = 3;
 
-const inr = (n) => (Number.isFinite(n) ? `₹${Math.round(n).toLocaleString('en-IN')}` : '—');
 const fmtDay = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
 
 /**
@@ -129,10 +134,21 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   }, [session?.access_token]);
   useEffect(() => { trackBilling('billing_step_viewed'); }, []);
 
-  /* Real prices win over the table in this file; the layout does not change. */
+  /* Rupees in India, US dollars elsewhere: the plan says which (pricingApi
+     re-prices it for the visitor's band); checkout charges the same band. */
+  const proPlan = useMemo(() => {
+    const live = plans.find((p) => String(p.slug || '').toLowerCase() === 'pro');
+    return live?.intervals?.length ? live : planForBand(PLAN_FALLBACK, bandSync());
+  }, [plans]);
+  const currency = proPlan.currency ?? 'INR';
+  const isInr = currency === 'INR';
+  const money = (n) => formatMoney(n, currency);
+
+  /* Real prices win over the fallback; the layout does not change. */
   const options = useMemo(() => {
-    const rows = plans.find((p) => String(p.slug || '').toLowerCase() === 'pro')?.intervals ?? [];
-    const live = ['monthly', 'quarterly', 'yearly']
+    const rows = proPlan.intervals ?? [];
+    const fmt = (n) => formatMoney(n, proPlan.currency ?? 'INR');
+    return ['monthly', 'quarterly', 'yearly']
       .map((id) => {
         const r = rows.find((x) => x.interval === id);
         if (!r || typeof r.price !== 'number') return null;
@@ -147,14 +163,13 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
              rendered at all. */
           perMonth: r.perMonth ?? r.price,
           per: PER[id],
-          sub: id === 'monthly' ? SUB.monthly : `${inr(r.perMonth)}/mo · ${SUB[id]}`,
+          sub: id === 'monthly' ? SUB.monthly : `${fmt(r.perMonth)}/mo · ${SUB[id]}`,
           save: Math.round(r.savingsPct || 0),
           next: NEXT[id],
         };
       })
       .filter(Boolean);
-    return live.length ? live : PLAN_FALLBACK;
-  }, [plans]);
+  }, [proPlan]);
 
   const cur = options.find((o) => o.id === plan) ?? options[0];
 
@@ -274,7 +289,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
            money is the worst thing this screen could say. */
         {
           when: `Today · ${fmtDay(today)}`,
-          what: `Your free trial has ended, so your first charge of ${inr(payable)} is today. Your guard switches on straight away.`,
+          what: `Your free trial has ended, so your first charge of ${money(payable)} is today. Your guard switches on straight away.`,
           dot: 'var(--mint-solid)',
           glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)',
           line: true,
@@ -282,15 +297,15 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
         { when: `Then ${cur.next}`, what: 'Renews automatically until you cancel.', dot: 'var(--ink-faint)', glow: 'none', line: false },
       ]
     : [
-    { when: `Today · ${fmtDay(today)}`, what: 'Your guard switches on. All five protections start working. ₹0 charged.', dot: 'var(--mint-solid)', glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)', line: true },
+    { when: `Today · ${fmtDay(today)}`, what: `Your guard switches on. All five protections start working. ${money(0)} charged.`, dot: 'var(--mint-solid)', glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)', line: true },
     {
       when: fmtDay(chargeOn),
       /* The discounted figure, when one has been checked — the timeline is
          where someone looks to find out what they will actually be charged,
          and a full price here beside a "15% off" above it is the screen
          contradicting itself. */
-      what: `First charge of ${inr(payable)}${
-        discount && discount.cycles === 1 ? `, then ${inr(cur.price)} ${cur.next}` : `, then ${cur.next}`
+      what: `First charge of ${money(payable)}${
+        discount && discount.cycles === 1 ? `, then ${money(cur.price)} ${cur.next}` : `, then ${cur.next}`
       } until you cancel.`,
       dot: 'var(--ink-faint)',
       glow: 'none',
@@ -422,13 +437,13 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 appears once the server has said how many days are free. */}
             <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: 'var(--ink-2)', textWrap: 'pretty' }}>
               {charged ? (
-                <>Your free trial is already used, so <b style={{ color: 'var(--ink)' }}>{inr(payable)} is charged today</b>. Cancel any time.</>
+                <>Your free trial is already used, so <b style={{ color: 'var(--ink)' }}>{money(payable)} is charged today</b>. Cancel any time.</>
               ) : (
                 <>
-                  <b style={{ color: 'var(--mint)' }}>Pay ₹0 today</b>
+                  <b style={{ color: 'var(--mint)' }}>Pay {money(0)} today</b>
                   {freeDays == null
                     ? ' · cancel any time.'
-                    : ` · ${inr(payable)} on ${fmtDay(chargeOn)} · cancel any time before.`}
+                    : ` · ${money(payable)} on ${fmtDay(chargeOn)} · cancel any time before.`}
                 </>
               )}
             </p>
@@ -555,7 +570,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                             )}
                           </span>
                           <span style={{ display: 'block', marginTop: 3, fontSize: 12, color: 'var(--ink-faint)' }}>
-                            {o.id === 'monthly' ? o.sub : `${inr(Math.round(perMonthOf(o)))}/mo · ${SUB[o.id]}`}
+                            {o.id === 'monthly' ? o.sub : `${money(Math.round(perMonthOf(o)))}/mo · ${SUB[o.id]}`}
                           </span>
                         </span>
                         <span style={{ flex: 'none', textAlign: 'right' }}>
@@ -564,11 +579,11 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                               shows exactly that. */}
                           {verified?.[o.id]?.valid ? (
                             <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>
-                              <span style={{ marginRight: 7, fontSize: 13, fontWeight: 600, color: 'var(--ink-faint)', textDecoration: 'line-through' }}>{inr(o.price)}</span>
-                              <span style={{ color: 'var(--mint)' }}>{inr(priceOf(o))}</span>
+                              <span style={{ marginRight: 7, fontSize: 13, fontWeight: 600, color: 'var(--ink-faint)', textDecoration: 'line-through' }}>{money(o.price)}</span>
+                              <span style={{ color: 'var(--mint)' }}>{money(priceOf(o))}</span>
                             </span>
                           ) : (
-                            <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>{inr(o.price)}</span>
+                            <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>{money(o.price)}</span>
                           )}
                           <span style={{ display: 'block', marginTop: 4, fontSize: 11, color: 'var(--ink-faint)' }}>{o.per}</span>
                         </span>
@@ -665,7 +680,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>Due today</span>
                   {/* Not a constant: someone whose free week is used is charged
                       in full today, and this line said ₹0 to them too. */}
-                  <span style={{ font: "700 30px/1 'Space Grotesk',sans-serif", letterSpacing: '-.03em', color: charged ? 'var(--ink)' : 'var(--mint)' }}>{charged ? inr(payable) : '₹0'}</span>
+                  <span style={{ font: "700 30px/1 'Space Grotesk',sans-serif", letterSpacing: '-.03em', color: charged ? 'var(--ink)' : 'var(--mint)' }}>{charged ? money(payable) : money(0)}</span>
                 </div>
 
                 <button
@@ -707,10 +722,19 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                    * no "a day before": the bank decides the notice.
                    */
                   <p data-autopay-note="1" style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.55, color: 'var(--ink-2)', textAlign: 'left' }}>
-                    Your bank or UPI app will ask you to approve AutoPay for {inr(payable)} {cur.per}. UPI may also show a ₹1 check and a limit of
-                    {' '}&ldquo;up to ₹15,000&rdquo; &mdash; that&rsquo;s UPI&rsquo;s standard ceiling, not what we charge.
-                    {!charged && freeDays != null ? ` First charge ${fmtDay(chargeOn)}.` : ''} Your bank tells you before every debit.
-                    {' '}Cancel any time in Plan &amp; billing or your UPI app.
+                    {isInr ? (
+                      <>
+                        Your bank or UPI app will ask you to approve AutoPay for {money(payable)} {cur.per}. UPI may also show a ₹1 check and a limit of
+                        {' '}&ldquo;up to ₹15,000&rdquo; &mdash; that&rsquo;s UPI&rsquo;s standard ceiling, not what we charge.
+                        {!charged && freeDays != null ? ` First charge ${fmtDay(chargeOn)}.` : ''} Your bank tells you before every debit.
+                        {' '}Cancel any time in Plan &amp; billing or your UPI app.
+                      </>
+                    ) : (
+                      <>
+                        Charged in US dollars: {money(payable)} {cur.per}.
+                        {!charged && freeDays != null ? ` First charge ${fmtDay(chargeOn)}.` : ''} Cancel any time in Plan &amp; billing.
+                      </>
+                    )}
                   </p>
                 )}
               </div>

@@ -5,6 +5,7 @@ import { getActivePromo, splitRemaining } from '../../lib/activePromo';
 import { getFoundingMemberConfig } from '../../lib/foundingMember';
 import { discountedPrice, formatInr, normalizePlanName } from '../../lib/activePromo';
 import { getPricingPlans } from '../../api/pricingApi';
+import { bandSync, detectBand } from '../../lib/priceBands';
 
 const SESSION_KEY = 'tgx_promo_dismissed_for';
 
@@ -245,8 +246,10 @@ function useFeaturedPlan(planName) {
              plans.find((x) => norm(x?.slug) === 'pro'));
 
         const monthly = Number(match?.priceMonthly ?? match?.monthlyPrice);
+        /* Launch promos are rupee coupons (restricted to the INR products in
+           Dodo): no featured plan, so no banner, for a visitor priced in USD. */
         setPlan(
-          match && Number.isFinite(monthly) && monthly > 0
+          match && (match.currency ?? 'INR') === 'INR' && Number.isFinite(monthly) && monthly > 0
             ? { name: match.name || planName || 'Pro', monthly }
             : null,
         );
@@ -384,7 +387,15 @@ export default function ActivePromo() {
   // checkout no longer gives.
   const codeExpired =
     (mode === 'code' || mode === 'launch') && codePromo.expiresAt - now <= 0;
-  const visible = Boolean(mode) && !dismissed && !codeExpired;
+  /* Promo codes are rupee coupons, limited in Dodo to the INR products. A
+     visitor priced in US dollars could not use one, so they never see it. */
+  const [band, setBand] = useState(bandSync);
+  useEffect(() => {
+    let alive = true;
+    detectBand().then((b) => { if (alive) setBand(b); });
+    return () => { alive = false; };
+  }, []);
+  const visible = Boolean(mode) && !dismissed && !codeExpired && band === 'in';
 
   // Publish height as CSS var so the fixed Navbar can offset its `top`,
   // and pad the body so page content doesn't slide under the strip.

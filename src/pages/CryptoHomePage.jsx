@@ -250,16 +250,20 @@ function CryptoHomeBody({ variant }) {
     };
   }, []);
 
-  // Rupee figures in the raw HTML carry data-inr; rewrite them in the
-  // visitor's currency. Prices ("data-kind=price") convert at the real rate
-  // with "≈"; the story's example amounts convert to round local figures.
+  // The raw HTML is written in rupees; rewrite it for the visitor's band.
+  //   data-plan="yearly" [data-field="perMonth"] → that band's exact price
+  //   data-save="yearly"                          → its saving vs monthly (%)
+  //   data-inr="25000"                            → a story figure, as a round
+  //                                                 amount in the money they pay
   useEffect(() => {
     const roots = [aRef.current, a2Ref.current, a3Ref.current, bRef.current, bTailRef.current].filter(Boolean);
-    roots.forEach((r) => r.querySelectorAll('[data-inr]').forEach((el) => {
+    const all = (sel) => roots.flatMap((r) => Array.from(r.querySelectorAll(sel)));
+    all('[data-plan]').forEach((el) => { el.textContent = money.plan(el.dataset.plan, el.dataset.field || 'price'); });
+    all('[data-save]').forEach((el) => { el.textContent = String(money.pricing[el.dataset.save]?.savingsPct ?? ''); });
+    all('[data-inr]').forEach((el) => {
       const inr = Number(el.dataset.inr);
-      if (!Number.isFinite(inr)) return;
-      el.textContent = el.dataset.kind === 'price' ? money.price(inr) : money.example(inr);
-    }));
+      if (Number.isFinite(inr)) el.textContent = money.example(inr);
+    });
   }, [money]);
 
   return (

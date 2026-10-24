@@ -783,7 +783,7 @@ function setupGateCopy(lifeId, keyState) {
       ? { step: 3, title: 'Reconnect your key to use these rules', body: 'Your key is disconnected, so no rule can act on your trades. Reconnect it, then start your free trial.', cta: 'Reconnect key' }
       : { step: 3, title: 'Connect your exchange key to use these rules', body: 'Rules act through your key — closing positions and locking the account when a limit is hit. Two minutes, then your free trial.', cta: 'Connect key' };
   }
-  return { step: 5, title: 'Your rules switch on with your free trial', body: 'Your key is connected. Start your 3-day free trial — ₹0 today — then switch on the rules you want and set your limits.', cta: 'Start free trial' };
+  return { step: 5, title: 'Your rules switch on with your free trial', body: 'Your key is connected. Start your 3-day free trial — nothing is charged today — then switch on the rules you want and set your limits.', cta: 'Start free trial' };
 }
 
 const SetupGate = forwardRef(function SetupGate({ lifeId, keyState, pulse, onGo }, ref) {

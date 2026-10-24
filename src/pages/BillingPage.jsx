@@ -16,6 +16,7 @@ import {
   fetchPendingPlanChange,
 } from '../api/paymentsApi';
 import { getPricingPlans } from '../api/pricingApi';
+import { formatMoney } from '../lib/priceBands';
 import { journalPeriodBadgeLabel, maxTradingAccountsForPlan } from '../lib/planLimits';
 import { billingStateOf, daysUntil, gstInside, savingVsMonthly } from '../lib/billingState';
 import { trackBilling } from '../lib/analytics';
@@ -65,12 +66,10 @@ const CARD = 'padding:20px;border-radius:20px;background:var(--surface);box-shad
 const H3 = "margin:0;font:600 16px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.015em";
 const KICKER = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;color:var(--ink-faint)";
 
-const inr = (n) => (Number.isFinite(n) ? `₹${Math.round(n).toLocaleString('en-IN')}` : '—');
 /* Said wherever a plan change is: a bigger debit arriving on an AutoPay
    they approved as "monthly" reads like fraud, and a mandate cancelled in
    the bank app is a failed renewal and a guard that switches off. The bank
    writes the notice, so no promise of when. */
-const BANK_NOTICE = (price) => `Your bank will notify you before the ${inr(price)} debit — that's this change, not a new charge.`;
 const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : null;
 const fill = (tpl, vals) => tpl.replace(/\{(\w+)\}/g, (_, k) => vals[k] ?? '');
@@ -87,6 +86,11 @@ export default function BillingPage() {
      it, and "Pro · —" flashing into "₹1,299" is the flicker we just removed
      from the shell. */
   const [plans, setPlans] = useState(null);
+  /* Rupees in India, US dollars elsewhere — pricingApi prices plans for the
+     visitor's band (lib/priceBands). */
+  const currency = (plans ?? []).find((p) => String(p.slug || '').toLowerCase() === 'pro')?.currency ?? 'INR';
+  const inr = (n) => formatMoney(n, currency);
+  const BANK_NOTICE = (price) => `Your bank will notify you before the ${inr(price)} debit — that's this change, not a new charge.`;
   const [busy, setBusy] = useState('');
   /* The period they pressed Switch on, waiting for a yes. A change of what
      their AutoPay charges is said before it happens, not after. */
@@ -864,7 +868,7 @@ export default function BillingPage() {
               </button>
             </div>
           )}
-          {cur && !['comp', 'unknown'].includes(state) && (
+          {cur && currency === 'INR' && !['comp', 'unknown'].includes(state) && (
             <p style={sxw('margin:10px 0 0;font-size:11.5px;color:var(--ink-faint)')}>
               {`A ${cur.name.toLowerCase()} invoice of ${inr(cur.price)} includes ₹${gstInside(cur.price).toFixed(2)} GST.`}
             </p>
