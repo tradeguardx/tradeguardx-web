@@ -16,7 +16,6 @@ import { venueFor } from '../lib/venues';
 import { sx } from '../components/dashboard/shell/sx';
 import { useToast } from '../components/common/ToastProvider';
 import { UNPROTECTED_STATES } from '../lib/lifecycle';
-import { getUserZone, zoneOffsetLabel, zonePlace } from '../lib/userZone';
 
 /**
  * Setup, as a page.
@@ -110,8 +109,7 @@ function Rail({ at, done, labels }) {
 export default function SetupPage() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const { session, user, timezone } = useAuth();
-  const zone = timezone || getUserZone();
+  const { session, user } = useAuth();
   const guard = useGuard();
   const { accounts, accountsLoading, selectedAccount, refreshTradingAccounts, setSelectedTradingAccountId } = useTradingAccounts();
 
@@ -323,18 +321,6 @@ export default function SetupPage() {
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Set up your guard</h1>
         <p style={sx('margin:7px 0 0;font-size:13.5px;color:var(--ink-3)')}>
           Five steps, about three minutes. Until they are done nothing is watching your account.
-        </p>
-        {/*
-         * The zone was guessed from this device at sign-up, and it decides
-         * when the daily limits reset. One quiet line so a trader on a
-         * borrowed laptop or a VPN-ed browser sees it before their rules go
-         * live — not a form field, because for almost everyone it is right.
-         */}
-        <p style={sx('margin:6px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-faint)')}>
-          Times and your daily reset use {zonePlace(zone)} time
-          {zonePlace(zone) !== 'UTC' ? ` (${zoneOffsetLabel(zone)})` : ''}
-          {' · '}
-          <Link to="/dashboard/preferences" style={sx('color:var(--ink-3);text-decoration:underline;text-underline-offset:2px')}>Change</Link>
         </p>
         {venue && (
           <div style={sx('display:flex;align-items:center;gap:10px;margin-top:16px')}>

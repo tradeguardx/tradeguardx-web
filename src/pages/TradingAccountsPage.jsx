@@ -28,6 +28,8 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { DELTA_EGRESS_IP } from '../api/config';
 import { extraFieldsReady, secretFieldFor, splitsPastedPair, venueFor } from '../lib/venues';
 import { useNoAutofill } from '../lib/noAutofill';
+import { getUserZone, zoneOffsetLabel, zonePlace } from '../lib/userZone';
+import TimezoneSetting from '../components/dashboard/TimezoneSetting';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel, equityModeLabel } from '../lib/labels';
 
@@ -553,6 +555,11 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
   const [timezone, setTimezone] = useState('');
   const [resetTime, setResetTime] = useState('');
   const [creating, setCreating] = useState(false);
+  /* The user's zone decides when this account's day ends (retail venues).
+     Read from context so a change made in the inline picker shows at once. */
+  const { timezone: userTimezone } = useAuth();
+  const zone = userTimezone || getUserZone();
+  const [zoneOpen, setZoneOpen] = useState(false);
   // Delta-only: optional API key/secret entered inline during account creation.
   const [apiKey, setApiKey] = useState('');
   const noAutofill = useNoAutofill();
@@ -810,6 +817,46 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                 Just a label for you — it is what the account switcher shows.
               </span>
             </label>
+
+            {/*
+             * WHEN THIS ACCOUNT'S DAY ENDS — said here, where the account is
+             * made. The zone was guessed from this device at sign-up and it
+             * decides when daily limits reset, so a trader on a borrowed
+             * laptop or a VPN sees it before the account exists, and can
+             * correct it without leaving setup. Prop-firm accounts set their
+             * firm's cutoff in the fields further down instead.
+             */}
+            {!isFunded && (
+              <div className="mt-4" data-account-reset="1">
+                <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>Daily reset</span>
+                <div
+                  className="mt-1 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-sm"
+                  style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-input)', color: 'var(--dash-text-primary)' }}
+                >
+                  <span>
+                    Midnight, {zonePlace(zone)} time
+                    <span style={{ color: 'var(--dash-text-muted)' }}>{zonePlace(zone) !== 'UTC' ? ` (${zoneOffsetLabel(zone)})` : ''}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setZoneOpen((o) => !o)}
+                    aria-expanded={zoneOpen}
+                    className="text-xs font-semibold"
+                    style={{ color: 'var(--mint)' }}
+                  >
+                    {zoneOpen ? 'Done' : 'Change'}
+                  </button>
+                </div>
+                <span className="mt-1 block text-[11px]" style={{ color: 'var(--dash-text-muted)' }}>
+                  Your daily loss and trade limits start fresh at this time. Every time on the dashboard shows in this zone too.
+                </span>
+                {zoneOpen && (
+                  <div className="mt-3">
+                    <TimezoneSetting />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {isFunded && (
