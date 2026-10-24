@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../common/ToastProvider';
 import { retryAfterOf, updateUserTimezone } from '../../api/userApi';
-import { allZones, browserZone, getProfileZone, zoneLabel, zoneOffsetLabel, zonePlace } from '../../lib/userZone';
+import { allZones, browserZone, getProfileZone, zoneCountryName, zoneLabel, zoneOffsetLabel, zonePlace } from '../../lib/userZone';
 import { resetBoundaryFor } from '../../lib/dailyReset';
 import { sx } from './shell/sx';
 
@@ -47,6 +47,13 @@ function retryDate(iso, tz) {
   }
 }
 
+/** "Nepal — Kathmandu", "United States — New York"; the raw name when there is no country. */
+function zoneRowLabel(tz) {
+  const country = zoneCountryName(tz);
+  const city = zonePlace(tz);
+  return country ? (country === city ? country : `${country} — ${city}`) : tz.replace(/_/g, ' ');
+}
+
 export default function TimezoneSetting() {
   const { session, timezone, setTimezone, mirroring } = useAuth();
   const toast = useToast();
@@ -68,11 +75,15 @@ export default function TimezoneSetting() {
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return zones;
-    return zones.filter((tz) => {
-      const hay = `${tz} ${zonePlace(tz)} ${zoneLabel(tz)} ${zoneOffsetLabel(tz)}`.toLowerCase().replace(/_/g, ' ');
+    // Listed by country, as the rows read ("Nepal — Kathmandu"), not by the
+    // IANA name — "Asia/Dhaka" sorting among Asia/* helps nobody find Bangladesh.
+    const byLabel = (list) => [...list].sort((a, b) => zoneRowLabel(a).localeCompare(zoneRowLabel(b)));
+    if (!q) return byLabel(zones);
+    return byLabel(zones.filter((tz) => {
+      // Country too: people search "nepal" or "thailand", not Asia/Kathmandu.
+      const hay = `${tz} ${zoneCountryName(tz) ?? ''} ${zonePlace(tz)} ${zoneLabel(tz)} ${zoneOffsetLabel(tz)}`.toLowerCase().replace(/_/g, ' ');
       return hay.includes(q);
-    });
+    }));
   }, [zones, query]);
 
   const save = async (tz) => {
@@ -147,7 +158,7 @@ export default function TimezoneSetting() {
                   onClick={() => { setPick(tz); setNote(null); }}
                   style={sx('display:flex;width:100%;align-items:baseline;gap:10px;padding:9px 13px;border:0;border-bottom:1px solid var(--line);text-align:left', { background: on ? 'var(--mint-tint)' : 'transparent' })}
                 >
-                  <span style={sx('flex:1;min-width:0;font-size:13px;overflow-wrap:anywhere', { color: on ? 'var(--mint)' : 'var(--ink)', fontWeight: on ? 600 : 500 })}>{tz.replace(/_/g, ' ')}</span>
+                  <span style={sx('flex:1;min-width:0;font-size:13px;overflow-wrap:anywhere', { color: on ? 'var(--mint)' : 'var(--ink)', fontWeight: on ? 600 : 500 })}>{zoneRowLabel(tz)}</span>
                   <span style={sx("flex:none;font:500 11px/1.3 'JetBrains Mono',monospace;color:var(--ink-3)")}>{zoneOffsetLabel(tz)}</span>
                 </button>
               );

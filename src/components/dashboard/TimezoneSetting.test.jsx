@@ -38,14 +38,15 @@ afterEach(() => setUserZone(null));
 
 const pickDubai = () => {
   fireEvent.change(screen.getByLabelText('Change to'), { target: { value: 'dubai' } });
-  fireEvent.click(screen.getByRole('option', { name: /Asia\/Dubai/ }));
+  fireEvent.click(screen.getByRole('option', { name: /United Arab Emirates — Dubai/ }));
   fireEvent.click(screen.getByRole('button', { name: 'Save Dubai' }));
 };
 
 describe('timezone preference', () => {
   it('shows the current zone with its offset and the next-reset rule', () => {
     render(<TimezoneSetting />);
-    expect(screen.getByText('India')).toBeTruthy();
+    // The current zone (the list below has its own "India" row too).
+    expect(screen.getAllByText('India').length).toBeGreaterThan(0);
     expect(screen.getByText(/Asia\/Kolkata · GMT\+5:30 · IST/)).toBeTruthy();
     expect(screen.getByText(/Applies to your daily limits from your next daily reset/)).toBeTruthy();
     // India keeps 05:30 — the old UTC midnight.
@@ -82,10 +83,19 @@ describe('timezone preference', () => {
     expect(screen.getByRole('button', { name: /Use this device’s timezone \(India, GMT\+5:30\)/ })).toBeTruthy();
   });
 
-  it('filters the list as you type', () => {
+  it('filters the list as you type, by city', () => {
     render(<TimezoneSetting />);
     fireEvent.change(screen.getByLabelText('Change to'), { target: { value: 'new york' } });
-    expect(screen.getByRole('option', { name: /America\/New York/ })).toBeTruthy();
-    expect(screen.queryByRole('option', { name: /Asia\/Dubai/ })).toBeNull();
+    expect(screen.getByRole('option', { name: /United States — New York/ })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: /Dubai/ })).toBeNull();
+  });
+
+  it('finds a zone by its country: Nepal, Bangladesh, Thailand', () => {
+    render(<TimezoneSetting />);
+    const search = screen.getByLabelText('Change to');
+    for (const [q, row] of [['nepal', /Nepal — Kath?mandu/], ['bangladesh', /Bangladesh — Dhaka/], ['thailand', /Thailand — Bangkok/]]) {
+      fireEvent.change(search, { target: { value: q } });
+      expect(screen.getAllByRole('option').some((o) => row.test(o.textContent))).toBe(true);
+    }
   });
 });

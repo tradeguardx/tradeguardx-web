@@ -143,3 +143,15 @@ describe('the picker list', () => {
     expect([...z].sort()).toEqual(z);
   });
 });
+
+describe('zoneCountryName', () => {
+  it('names the country of a zone, including legacy browser names', async () => {
+    const { zoneCountryName } = await import('./userZone');
+    expect(zoneCountryName('Asia/Kathmandu')).toBe('Nepal');
+    expect(zoneCountryName('Asia/Katmandu')).toBe('Nepal');
+    expect(zoneCountryName('Asia/Dhaka')).toBe('Bangladesh');
+    expect(zoneCountryName('Asia/Bangkok')).toBe('Thailand');
+    expect(zoneCountryName('Asia/Dubai')).toBe('United Arab Emirates');
+    expect(zoneCountryName('UTC')).toBeNull();
+  });
+});

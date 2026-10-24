@@ -1,3 +1,4 @@
+import ZONE_COUNTRIES from './zoneCountries';
 /**
  * The ONE zone every dashboard date and time is shown in.
  *
@@ -177,6 +178,19 @@ export function zoneLabel(tz = getUserZone(), at = new Date()) {
 const PLACE_NAMES = { 'Asia/Kolkata': 'India', 'Asia/Calcutta': 'India', UTC: 'UTC' };
 
 /** "Dubai", "New York", "India" — the place half of "Dubai time (GMT+4)". */
+let regionNames;
+/** "Nepal" for Asia/Kathmandu; null for zones with no country (UTC, Etc/…). */
+export function zoneCountryName(tz) {
+  const code = ZONE_COUNTRIES[tz];
+  if (!code) return null;
+  try {
+    regionNames ??= new Intl.DisplayNames(['en'], { type: 'region' });
+    return regionNames.of(code) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function zonePlace(tz = getUserZone()) {
   if (PLACE_NAMES[tz]) return PLACE_NAMES[tz];
   const last = String(tz).split('/').pop() || String(tz);
