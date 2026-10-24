@@ -93,11 +93,12 @@ describe('connect an Exness key', () => {
     expect(screen.getByLabelText('Secret Key').value).toBe('');
   });
 
-  it('draws the Exness form with the Info key left off and our IP', () => {
+  it('draws Exness\u2019s own New API key panel: Trading → Full access → account, Never, our IP', () => {
     renderFlow();
     fireEvent.click(screen.getByText('Fill it in and create the key'));
-    expect(screen.getByText('Info key')).toBeInTheDocument();
-    expect(screen.getByText('Trading key')).toBeInTheDocument();
+    for (const text of ['Scopes', 'Trading', 'Full access', 'Read-only', 'Partnership', 'Transfers', 'Security', 'Expiry date', 'Never', 'Generate key for me', 'Create API key']) {
+      expect(screen.getAllByText(text).length).toBeGreaterThan(0);
+    }
     expect(screen.getByText('13.205.214.83')).toBeInTheDocument();
   });
 

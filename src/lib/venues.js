@@ -386,13 +386,14 @@ const VENUES = {
    * the copy says so plainly rather than letting someone connect a key that
    * will never find their positions.
    *
-   * UNVERIFIED: nothing below has been checked against a live screenshot of
-   * Exness's Key Management screen. The words come from the Exness Trader API
-   * docs (exness-api.com) and the shared spec: the menu path, the "Info" key
-   * type name, the "trading key" wording, the allowed-IP field label and the
-   * statement that the key cannot withdraw are all to be confirmed with a real
-   * account. No appGuide images, so the connect flow renders the written steps
-   * and the replica only — same as BloFin.
+   * CHECKED against live screenshots of Exness's "New API key" panel
+   * (24 Oct 2026, my.exness.com/pa/settings/api-management): Name; Scopes →
+   * Trading → Full access → Account (the account picker sits inside Full
+   * access); Read-only radio; Partnership and Transfers checkboxes; Security →
+   * Expiry date, Allowed IPs, Public key (Generate key for me); "Create API
+   * key". The created key shows "API Key" and "Secret Key" with copy buttons
+   * and "Linked account(s) #…". VenueFormReplica draws this layout
+   * (ExnessForm) rather than the shared one.
    *
    * What is different from every venue before it:
    *   - The secret is a PRIVATE KEY (Ed25519, PEM, several lines), so the
@@ -403,29 +404,28 @@ const VENUES = {
    *     a per-account host, so the connect form asks for two more values
    *     (extraFields): the account ID (required) and the API host (optional;
    *     the backend defaults it and only accepts *.exness.com hosts).
-   *   - Exness has a read-only "Info" key type. It must not be used; the
-   *     backend probes for it and rejects it as KEY_READ_ONLY.
+   *   - Trading has a Read-only option. It must not be used; the backend
+   *     probes for it and rejects it as KEY_READ_ONLY.
    */
   exness: {
     family: 'exness',
     name: 'Exness',
     longName: 'Exness (native platform)',
-    // Personal Area; Key Management is reached from there (see navPath).
-    keysUrl: () => 'https://my.exness.com/',
-    keyNameField: 'Key name',
-    keyNameHint: 'Any name you will recognise later.',
+    // Personal Area → Settings → API management, the "New API key" panel.
+    keysUrl: () => 'https://my.exness.com/pa/settings/api-management',
+    keyNameField: 'Name',
+    keyNameHint: 'English letters and digits only, up to 16.',
     /** Exness scopes each key to one trading account; drawn as their picker. */
-    accountField: 'Trading account',
-    accountDefault: 'Your Exness native-platform account',
-    accountNote: 'Pick the account you trade on the Exness platform. MT4 and MT5 accounts are not supported.',
+    accountField: 'Account',
+    accountDefault: 'Standard #… (the account you trade)',
+    accountNote: 'Pick the account you trade on. Greyed-out accounts (MT4/MT5) cannot have a key. Note its number — you paste it here next.',
     ipField: 'Allowed IPs',
     ipRequired: true,
     ipHint: 'Add our IP to the key. Calls from any other address are refused, so without it we cannot act.',
-    scopeLabel: 'Trading key',
-    scopeNote: 'A key that can place and close trades on this account.',
-    /** Drawn unticked: the read-only key type, which we turn away at connect. */
-    offScopes: [{ label: 'Info key', note: 'Read-only. Do not pick it — it can watch but never close a position, and we reject it.' }],
-    noWithdrawNote: 'A trading key reads the account and opens or closes trades on it. It cannot withdraw or move money.',
+    scopeLabel: 'Trading → Full access',
+    scopeNote: 'Place orders and manage positions on this account.',
+    submitLabel: 'Create API key',
+    noWithdrawNote: 'Leave Transfers off. A Trading key reads the account and opens or closes trades on it — it cannot withdraw or move money.',
     /** Under the name in the venue picker, where someone decides if this venue is theirs. */
     pickerNote: 'Exness platform only — not MT4/MT5',
     /** Shown on the connect forms, before anyone makes a key. */
@@ -454,21 +454,21 @@ const VENUES = {
         invalidHint: 'The account number only, e.g. #21000088861.',
       },
     ],
-    formStepBody: 'Pick your Exness platform account, choose a trading key (not an Info key), add our IP, and create the key.',
+    formStepBody: 'Name it, tick Trading → Full access and pick your account, set Expiry to Never, add our IP, keep "Generate key for me", and press Create API key.',
     pasteStep: {
       title: 'Paste the API Key, Secret Key and account ID here',
       body: 'Use the copy buttons next to API Key and Secret Key, then add the linked account number as Exness shows it (e.g. #21000088861). We find the right Exness server for the account ourselves.',
     },
     desktopOnly: false,
     mobilePath: null,
-    navPath: ['Personal Area', 'Key Management', 'Create key'], // UNVERIFIED labels
+    navPath: ['Personal Area', 'Settings', 'API management', 'New API key'],
     suggestsKeyName: true,
     createSteps: [
-      { title: 'Personal Area → Key Management', body: 'Log in at my.exness.com and open Key Management. Only accounts on the Exness platform can have a key — MT4 and MT5 accounts cannot.' },
-      { title: 'Create a trading key for your account', body: 'Pick the Exness platform account you trade on. Choose a trading key, not an Info key — an Info key can only read, so the kill switch could not close anything.' },
-      { title: 'Allow our IP', body: 'Add our IP to the key’s allowed IPs. Exness refuses calls from any address that is not on the list.' },
-      { title: 'Copy the API Key and Secret Key', body: 'Use the copy button next to each one. Copy the Secret Key before you leave the screen — Exness may not show it again.' },
-      { title: 'Paste them here with your account number', body: 'Paste both into TradeGuardX and add the number of the account the key is for. We check the key can trade the moment you connect it.' },
+      { title: 'Open API management', body: 'Log in at my.exness.com → Settings → API management, and start a new API key. Only accounts on the Exness platform can have a key — MT4 and MT5 accounts show greyed out.' },
+      { title: 'Name it, then Trading → Full access', body: 'Give it a name (letters and digits). Tick Trading, choose Full access — not Read-only, which can never close a position — and pick the account you trade on. Leave Partnership and Transfers off.' },
+      { title: 'Expiry: Never. Allowed IPs: ours', body: 'Set Expiry date to Never — a key that expires switches your protection off. Put our IP in Allowed IPs; Exness refuses calls from any other address.' },
+      { title: 'Generate key for me → Create API key', body: 'Keep "Generate key for me" selected and press Create API key.' },
+      { title: 'Copy API Key, Secret Key and the account number', body: 'Use the copy buttons next to API Key and Secret Key — copy the Secret Key before you close the panel — and note the linked account (e.g. #21000088861). Paste all three here.' },
     ],
     /** Tax centre is for Indian venues; Exness is not part of it. */
     taxCentre: false,

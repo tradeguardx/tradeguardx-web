@@ -31,10 +31,9 @@ describe('Exness venue', () => {
     expect(exchangeFromBrokerSlug('exness')).toBe('exness');
   });
 
-  it('links to the Exness Personal Area, and names Key Management on the way', () => {
-    expect(exness.keysUrl()).toBe('https://my.exness.com/');
-    expect(exness.navPath).toContain('Key Management');
-    expect(exness.navPath.length).toBeLessThanOrEqual(3);
+  it('links straight to API management', () => {
+    expect(exness.keysUrl()).toBe('https://my.exness.com/pa/settings/api-management');
+    expect(exness.navPath).toContain('API management');
   });
 
   it('says plainly that MT4 and MT5 are not supported', () => {
@@ -43,18 +42,20 @@ describe('Exness venue', () => {
     expect(exness.createSteps[0].body).toMatch(/MT4 and MT5/);
   });
 
-  it('wants a trading key, never an Info key', () => {
-    expect(exness.scopeLabel).toBe('Trading key');
-    expect(exness.offScopes.map((o) => o.label)).toEqual(['Info key']);
+  it('wants Trading → Full access, never Read-only, and a key that never expires', () => {
+    expect(exness.scopeLabel).toBe('Trading → Full access');
     const steps = exness.createSteps.map((s) => `${s.title} ${s.body}`).join(' | ');
-    expect(steps).toMatch(/not an Info key/);
+    expect(steps).toMatch(/Full access — not Read-only/);
+    expect(steps).toMatch(/Expiry date to Never/);
+    expect(steps).toMatch(/Generate key for me/);
+    expect(exness.submitLabel).toBe('Create API key');
   });
 
   it('allow-lists our IP, which Exness requires', () => {
     expect(exness.ipField).toBe('Allowed IPs');
     expect(exness.ipRequired).toBe(true);
     expect(ENGINE_EGRESS_IP).toBe('13.205.214.83');
-    expect(exness.createSteps.some((s) => /allow our ip/i.test(s.title))).toBe(true);
+    expect(exness.createSteps.some((s) => /Allowed IPs: ours/.test(s.title))).toBe(true);
   });
 
   it('has no screenshots and no app path, so the link and written steps carry it', () => {

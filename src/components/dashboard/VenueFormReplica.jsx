@@ -147,6 +147,149 @@ function PermissionCard({ title, note, locked, off, accent, callout }) {
   );
 }
 
+const CHECK_ON = (accent) => ({ background: accent.solid, color: 'var(--surface)', border: `1.5px solid ${accent.solid}` });
+const CHECK_OFF = { border: '1.5px solid var(--line-strong)', background: 'transparent' };
+
+/** Their square checkbox, drawn. */
+function Tick({ on, accent }) {
+  return (
+    <span
+      aria-hidden
+      style={sx('flex:none;display:grid;place-items:center;width:18px;height:18px;border-radius:5px;font-size:11px;font-weight:800', on ? CHECK_ON(accent) : CHECK_OFF)}
+    >
+      {on ? '✓' : ''}
+    </span>
+  );
+}
+
+/** Their round radio, drawn. */
+function Radio({ on, accent }) {
+  return (
+    <span
+      aria-hidden
+      style={sx('flex:none;display:grid;place-items:center;width:18px;height:18px;border-radius:50%', on ? { border: `1.5px solid ${accent.solid}` } : CHECK_OFF)}
+    >
+      {on && <span style={sx('width:9px;height:9px;border-radius:50%', { background: accent.solid })} />}
+    </span>
+  );
+}
+
+/** A drawn dropdown showing the value to pick. */
+function Dropdown({ value, muted }) {
+  return (
+    <span style={sx(FIELD, 'max-width:420px;justify-content:space-between;gap:10px')}>
+      <span style={sx('font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis', muted ? { color: 'var(--ink-3)' } : {})}>{value}</span>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="2" aria-hidden>
+        <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
+function SectionRule({ children }) {
+  return (
+    <span style={sx('display:flex;align-items:center;gap:12px;margin:4px 0 14px;font-size:12px;color:var(--ink-faint)')}>
+      <span style={sx('flex:1;height:1px;background:var(--line)')} />
+      {children}
+      <span style={sx('flex:1;height:1px;background:var(--line)')} />
+    </span>
+  );
+}
+
+/**
+ * EXNESS'S "NEW API KEY" PANEL, as it is laid out (read off live screenshots,
+ * 24 Oct 2026, my.exness.com/pa/settings/api-management):
+ *
+ *   Name
+ *   ── Scopes ──
+ *   [✓] Trading
+ *        (•) Full access — "can be used with single account only"
+ *             Account ▾   ← the account picker lives INSIDE Full access
+ *        ( ) Read-only
+ *   [ ] Partnership
+ *   [ ] Transfers
+ *   ── Security ──
+ *   Expiry date ▾ (Never)
+ *   Allowed IPs
+ *   Public key: (•) Generate key for me / ( ) I'll use my own public key
+ *   [Create API key]
+ *
+ * It does not fit the generic layout — the account is a child of the scope,
+ * the IP sits in a Security block after the scopes, and there are radios and
+ * a key-type choice nobody else has — so it gets its own drawing rather than
+ * flags that would bend the shared one out of shape.
+ */
+function ExnessForm({ venue, onCopy, copiedValue, accent }) {
+  return (
+    <>
+      <Field label="Name" hint="English letters and digits only, up to 16.">
+        <FilledBox value={SUGGESTED_KEY_NAME} onCopy={onCopy} copied={copiedValue === SUGGESTED_KEY_NAME} />
+      </Field>
+
+      <SectionRule>Scopes</SectionRule>
+      <div style={sx('margin-bottom:18px;border:1px solid var(--line-strong);border-radius:11px;overflow:hidden')}>
+        <div style={sx('padding:13px 14px', { background: accent.tint, borderBottom: `1px solid ${accent.line}` })}>
+          <span style={sx('display:flex;align-items:center;gap:10px')}>
+            <Tick on accent={accent} />
+            <span style={sx('font-size:14px;font-weight:700')}>Trading</span>
+            <span style={sx('margin-left:auto;font-size:11.5px;font-weight:700', { color: accent.text })}>Tick this</span>
+          </span>
+          <div style={sx('margin:12px 0 0 28px')}>
+            <span style={sx('display:flex;align-items:flex-start;gap:10px')}>
+              <Radio on accent={accent} />
+              <span>
+                <span style={sx('display:block;font-size:13.5px;font-weight:700')}>Full access</span>
+                <span style={sx('display:block;margin-top:2px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>
+                  Place orders and manage positions — what lets us close a trade.
+                </span>
+              </span>
+            </span>
+            <div style={sx('margin:11px 0 0 28px')}>
+              <Field label="Account" hint={venue.accountNote}>
+                <Dropdown value={venue.accountDefault} />
+              </Field>
+            </div>
+            <span style={sx('display:flex;align-items:flex-start;gap:10px;margin-top:-4px')}>
+              <Radio accent={accent} />
+              <span>
+                <span style={sx('display:block;font-size:13.5px;font-weight:600;color:var(--ink-3)')}>Read-only</span>
+                <span style={sx('display:block;margin-top:2px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>
+                  Not this one — it can watch but never close a position, and we turn it away.
+                </span>
+              </span>
+            </span>
+          </div>
+        </div>
+        {['Partnership', 'Transfers'].map((label, i) => (
+          <div key={label} style={sx('display:flex;align-items:center;gap:10px;padding:12px 14px', i === 0 ? { borderBottom: '1px solid var(--line)' } : {})}>
+            <Tick accent={accent} />
+            <span style={sx('font-size:13.5px;font-weight:600;color:var(--ink-3)')}>{label}</span>
+            <span style={sx('margin-left:auto;font-size:11.5px;color:var(--ink-faint)')}>Leave off</span>
+          </div>
+        ))}
+      </div>
+
+      <SectionRule>Security</SectionRule>
+      <Field label="Expiry date" hint="Never — a key that expires switches your protection off on the day it lapses.">
+        <Dropdown value="Never" />
+      </Field>
+      <Field label={venue.ipField} hint={venue.ipHint}>
+        <FilledBox value={ENGINE_EGRESS_IP} mono onCopy={onCopy} copied={copiedValue === ENGINE_EGRESS_IP} />
+      </Field>
+      <Field label="Public key">
+        <span style={sx('display:grid;gap:10px')}>
+          <span style={sx('display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-3)')}>
+            <Radio accent={accent} /> I&apos;ll use my own public key
+          </span>
+          <span style={sx('display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700')}>
+            <Radio on accent={accent} /> Generate key for me
+          </span>
+        </span>
+      </Field>
+    </>
+  );
+}
+
 export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
   if (!venue) return null;
   const hasScopeChoice = venue.scopeChoice !== false;
@@ -160,6 +303,10 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
       </figcaption>
 
       <div style={sx('padding:18px 16px 16px')}>
+        {venue.family === 'exness' ? (
+          <ExnessForm venue={venue} onCopy={onCopy} copiedValue={copiedValue} accent={accent} />
+        ) : (
+        <>
         {venue.accountField && (
           /* Delta only. A key made on the wrong account connects and passes
              the scope check, then cannot touch the position the user holds. */
@@ -286,6 +433,8 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
             </span>
           )}
         </div>
+        </>
+        )}
 
         {venue.submitLabel && (
           <span
