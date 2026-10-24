@@ -171,10 +171,10 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
    */
   const steps = [
     {
-      title: inApp ? `Open the key form in the ${v.name} app` : `Open ${v.name}'s key form`,
+      title: inApp ? `Open the key form in the ${v.name} app` : (v.openStepTitle ?? `Open ${v.name}'s key form`),
       body: inApp
         ? 'Three taps to the form, then come back here with the key and secret. The screenshots below show each screen.'
-        : 'We link straight to it. Keep both tabs open — you will paste in each direction.',
+        : (v.openStepBody ?? 'We link straight to it. Keep both tabs open — you will paste in each direction.'),
       kind: 'link',
     },
     {
@@ -389,7 +389,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                   <div className="cx-actions" style={sx('display:flex;flex-wrap:wrap;gap:9px;margin-top:12px')}>
                     {!inApp && (
                       <a href={v.keysUrl(exchangeSlug)} target="_blank" rel="noreferrer" className="cx-link" style={sx('display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700;text-decoration:none')}>
-                        Open the key page
+                        {v.openButton ?? 'Open the key page'}
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 17L17 7M9 7h8v8" /></svg>
                       </a>
                     )}
@@ -425,6 +425,18 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                 </>
               )}
 
+              {st.kind === 'form' && v.formChecklist?.length > 0 && (
+                /* The panel's own order, numbered — the drawing below carries
+                   the same numbers, so list and picture line up item by item. */
+                <ol data-form-checklist="1" style={sx('margin:11px 0 13px;padding:0;list-style:none;display:grid;gap:7px;max-width:74ch')}>
+                  {v.formChecklist.map((item, i) => (
+                    <li key={item} style={sx('display:flex;align-items:baseline;gap:10px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>
+                      <span aria-hidden style={sx("flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface-2);font:700 11px/1 'Space Grotesk',sans-serif;color:var(--ink)")}>{i + 1}</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
               {st.kind === 'form' && (
                 <VenueFormReplica venue={v} onCopy={copy} copiedValue={copied} />
               )}

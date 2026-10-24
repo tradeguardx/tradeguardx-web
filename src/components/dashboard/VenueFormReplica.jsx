@@ -150,6 +150,13 @@ function PermissionCard({ title, note, locked, off, accent, callout }) {
 const CHECK_ON = (accent) => ({ background: accent.solid, color: 'var(--surface)', border: `1.5px solid ${accent.solid}` });
 const CHECK_OFF = { border: '1.5px solid var(--line-strong)', background: 'transparent' };
 
+/** The step number from the checklist above, so list and picture line up. */
+function Num({ n }) {
+  return (
+    <span aria-hidden style={sx("flex:none;display:inline-grid;place-items:center;width:18px;height:18px;margin-right:7px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface-3);font:700 10.5px/1 'Space Grotesk',sans-serif;color:var(--ink);vertical-align:middle")}>{n}</span>
+  );
+}
+
 /** Their square checkbox, drawn. */
 function Tick({ on, accent }) {
   return (
@@ -222,7 +229,7 @@ function SectionRule({ children }) {
 function ExnessForm({ venue, onCopy, copiedValue, accent }) {
   return (
     <>
-      <Field label="Name" hint="English letters and digits only, up to 16.">
+      <Field label={<><Num n={1} />Name</>} hint="English letters and digits only, up to 16.">
         <FilledBox value={SUGGESTED_KEY_NAME} onCopy={onCopy} copied={copiedValue === SUGGESTED_KEY_NAME} />
       </Field>
 
@@ -230,6 +237,7 @@ function ExnessForm({ venue, onCopy, copiedValue, accent }) {
       <div style={sx('margin-bottom:18px;border:1px solid var(--line-strong);border-radius:11px;overflow:hidden')}>
         <div style={sx('padding:13px 14px', { background: accent.tint, borderBottom: `1px solid ${accent.line}` })}>
           <span style={sx('display:flex;align-items:center;gap:10px')}>
+            <Num n={2} />
             <Tick on accent={accent} />
             <span style={sx('font-size:14px;font-weight:700')}>Trading</span>
             <span style={sx('margin-left:auto;font-size:11.5px;font-weight:700', { color: accent.text })}>Tick this</span>
@@ -245,7 +253,7 @@ function ExnessForm({ venue, onCopy, copiedValue, accent }) {
               </span>
             </span>
             <div style={sx('margin:11px 0 0 28px')}>
-              <Field label="Account" hint={venue.accountNote}>
+              <Field label={<><Num n={3} />Account</>} hint={venue.accountNote}>
                 <Dropdown value={venue.accountDefault} />
               </Field>
             </div>
@@ -270,13 +278,13 @@ function ExnessForm({ venue, onCopy, copiedValue, accent }) {
       </div>
 
       <SectionRule>Security</SectionRule>
-      <Field label="Expiry date" hint="Never — a key that expires switches your protection off on the day it lapses.">
+      <Field label={<><Num n={4} />Expiry date</>} hint="Never — a key that expires switches your protection off on the day it lapses.">
         <Dropdown value="Never" />
       </Field>
-      <Field label={venue.ipField} hint={venue.ipHint}>
+      <Field label={<><Num n={5} />{venue.ipField}</>} hint={venue.ipHint}>
         <FilledBox value={ENGINE_EGRESS_IP} mono onCopy={onCopy} copied={copiedValue === ENGINE_EGRESS_IP} />
       </Field>
-      <Field label="Public key">
+      <Field label={<><Num n={6} />Public key</>}>
         <span style={sx('display:grid;gap:10px')}>
           <span style={sx('display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-3)')}>
             <Radio accent={accent} /> I&apos;ll use my own public key
@@ -437,6 +445,8 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
         )}
 
         {venue.submitLabel && (
+          <>
+          {venue.family === 'exness' && <Num n={7} />}
           <span
             aria-hidden
             style={sx('display:inline-block;padding:13px 22px;border-radius:10px;font-size:14px;font-weight:700', {
@@ -447,6 +457,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
           >
             {venue.submitLabel}
           </span>
+          </>
         )}
 
         {venue.otpNote && (

@@ -454,7 +454,21 @@ const VENUES = {
         invalidHint: 'The account number only, e.g. #21000088861.',
       },
     ],
-    formStepBody: 'Name it, tick Trading → Full access and pick your account, set Expiry to Never, add our IP, keep "Generate key for me", and press Create API key.',
+    formStepBody: 'Seven things on Exness\u2019s New API key panel, top to bottom — the numbers match the picture below.',
+    /** Step 2 as a numbered list, in the panel's own order; the drawing carries the same numbers. */
+    formChecklist: [
+      'Name: tradeguardx (letters and digits only)',
+      'Scopes: tick Trading → choose Full access',
+      'Account: pick the account you trade on — note its number',
+      'Expiry date: Never',
+      `Allowed IPs: ${DELTA_EGRESS_IP}`,
+      'Public key: keep “Generate key for me”',
+      'Press Create API key',
+    ],
+    /** Step 1, in Exness's own words. */
+    openStepTitle: 'Open API management on Exness',
+    openStepBody: 'Log in at my.exness.com — the link opens Settings → API management. Keep this tab open; you come back to paste.',
+    openButton: 'Open Exness API management',
     pasteStep: {
       title: 'Paste the API Key, Secret Key and account ID here',
       body: 'Use the copy buttons next to API Key and Secret Key, then add the linked account number as Exness shows it (e.g. #21000088861). We find the right Exness server for the account ourselves.',
