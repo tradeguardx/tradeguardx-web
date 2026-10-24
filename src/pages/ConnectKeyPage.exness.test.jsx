@@ -46,7 +46,7 @@ describe('connect an Exness key', () => {
     expect(screen.getByText(/MT4 and MT5 accounts are not supported/)).toBeInTheDocument();
   });
 
-  it('asks for API Key, Secret Key and account ID; host is optional; all are sent', async () => {
+  it('asks for API Key, Secret Key, account ID and host; all are sent', async () => {
     renderFlow();
     fireEvent.click(screen.getByText('Paste the API Key, Secret Key and account ID here'));
 
@@ -67,10 +67,12 @@ describe('connect an Exness key', () => {
     expect(btn).toBeDisabled();
     expect(screen.getByText('Digits only.')).toBeInTheDocument();
 
-    fireEvent.change(acct, { target: { value: '12345678' } });
-    // The host is optional.
-    expect(btn).toBeEnabled();
+    // As Exness shows it in "Linked account(s)": with a leading #.
+    fireEvent.change(acct, { target: { value: '#12345678' } });
+    // The host is required too: api.exness.com serves no API paths.
+    expect(btn).toBeDisabled();
     fireEvent.change(screen.getByLabelText(/^API host/), { target: { value: 'https://ap-4decef67.exness.com' } });
+    expect(btn).toBeEnabled();
     fireEvent.click(btn);
 
     await waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
@@ -79,7 +81,8 @@ describe('connect an Exness key', () => {
       exchange: 'exness',
       apiKey: 'exnsk-abc',
       apiSecret: PEM,
-      venueFields: { accountId: '12345678', host: 'https://ap-4decef67.exness.com' },
+      // Raw as typed; extraFieldsPayload strips the # when the request is built.
+      venueFields: { accountId: '#12345678', host: 'https://ap-4decef67.exness.com' },
     });
   });
 

@@ -449,21 +449,26 @@ const VENUES = {
         required: true,
         inputMode: 'numeric',
         pattern: /^\d{1,20}$/,
+        /* Exness lists linked accounts as "#21000088861" — accept it as shown. */
+        stripPrefix: '#',
         invalidHint: 'Digits only.',
       },
       {
         name: 'host',
         label: 'API host',
-        hint: 'Leave empty unless Exness shows you a different host.',
-        placeholder: 'https://api.exness.com',
-        required: false,
+        /* Required: api.exness.com answers "404 page not found" for every API
+           path (checked 24 Oct 2026). Each client is served from its own host,
+           shown by the DNS / host widget in API Management. */
+        hint: 'The API host shown in Exness API Management (looks like https://ap-xxxxxxxx.exness.com).',
+        placeholder: 'https://ap-xxxxxxxx.exness.com',
+        required: true,
         inputMode: 'url',
       },
     ],
     formStepBody: 'Pick your Exness platform account, choose a trading key (not an Info key), add our IP, and create the key.',
     pasteStep: {
       title: 'Paste the API Key, Secret Key and account ID here',
-      body: 'Use the copy buttons next to API Key and Secret Key in Key Management, then add the account number the key is for.',
+      body: 'Use the copy buttons next to API Key and Secret Key, then add the linked account number (as shown, e.g. #21000088861) and the API host from API Management.',
     },
     desktopOnly: false,
     mobilePath: null,
@@ -528,8 +533,14 @@ export function extraFieldsFor(exchangeSlug) {
 }
 
 /** True when a venue's extra field holds an acceptable value (or may be left empty). */
+function cleanExtra(field, value) {
+  let s = String(value ?? '').trim();
+  if (field.stripPrefix && s.startsWith(field.stripPrefix)) s = s.slice(field.stripPrefix.length).trim();
+  return s;
+}
+
 export function extraFieldValid(field, value) {
-  const s = String(value ?? '').trim();
+  const s = cleanExtra(field, value);
   if (!s) return !field.required;
   return field.pattern ? field.pattern.test(s) : true;
 }
@@ -546,7 +557,7 @@ export function extraFieldsReady(venue, values) {
 export function extraFieldsPayload(exchangeSlug, values) {
   const out = {};
   for (const f of extraFieldsFor(exchangeSlug)) {
-    const s = String(values?.[f.name] ?? '').trim();
+    const s = cleanExtra(f, values?.[f.name]);
     if (s) out[f.name] = s;
   }
   return out;
