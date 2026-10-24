@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNoAutofill } from '../../lib/noAutofill';
-import { extraFieldValid } from '../../lib/venues';
+import { cleanExtra, extraFieldValid } from '../../lib/venues';
 import { sx } from './shell/sx';
 
 /**
@@ -98,7 +98,8 @@ export function VenueExtraFields({ fields, values, onChange, disabled, variant =
   if (!fields?.length) return null;
   return fields.map((f) => {
     const val = values?.[f.name] ?? '';
-    const bad = val.trim() !== '' && !extraFieldValid(f, val);
+    // Judged on what is left after an allowed prefix: a lone "#" is someone mid-typing, not an error.
+    const bad = cleanExtra(f, val) !== '' && !extraFieldValid(f, val);
     const id = `${idPrefix}-${f.name}`;
     const input = (
       <input

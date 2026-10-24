@@ -451,7 +451,7 @@ const VENUES = {
         pattern: /^\d{1,20}$/,
         /* Exness lists linked accounts as "#21000088861" — accept it as shown. */
         stripPrefix: '#',
-        invalidHint: 'Digits only.',
+        invalidHint: 'The account number only, e.g. #21000088861.',
       },
       {
         name: 'host',
@@ -533,7 +533,7 @@ export function extraFieldsFor(exchangeSlug) {
 }
 
 /** True when a venue's extra field holds an acceptable value (or may be left empty). */
-function cleanExtra(field, value) {
+export function cleanExtra(field, value) {
   let s = String(value ?? '').trim();
   if (field.stripPrefix && s.startsWith(field.stripPrefix)) s = s.slice(field.stripPrefix.length).trim();
   return s;

@@ -65,7 +65,7 @@ describe('connect an Exness key', () => {
     const acct = screen.getByLabelText(/^Account ID/);
     fireEvent.change(acct, { target: { value: '12ab' } });
     expect(btn).toBeDisabled();
-    expect(screen.getByText('Digits only.')).toBeInTheDocument();
+    expect(screen.getByText('The account number only, e.g. #21000088861.')).toBeInTheDocument();
 
     // As Exness shows it in "Linked account(s)": with a leading #.
     fireEvent.change(acct, { target: { value: '#12345678' } });
