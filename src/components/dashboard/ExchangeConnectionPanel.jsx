@@ -9,11 +9,12 @@ import {
   getExchangeCredentialsStatus,
 } from '../../api/exchangeCredentialsApi';
 import { DELTA_EGRESS_IP } from '../../api/config';
-import { venueFor } from '../../lib/venues';
+import { extraFieldsReady, secretFieldFor, splitsPastedPair, venueFor } from '../../lib/venues';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import AppGuide from './AppGuide';
 import VenueSteps from './VenueSteps';
 import SecretInput from '../common/SecretInput';
+import { SecretTextarea, VenueExtraFields, VenuePlatformNote } from './VenueKeyFields';
 import { useNoAutofill } from '../../lib/noAutofill';
 import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPanel } from './deltaConnectShared';
 
@@ -50,6 +51,8 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   const [apiSecret, setApiSecret] = useState('');
   // BloFin only: the key's passphrase.
   const [passphrase, setPassphrase] = useState('');
+  // Exness only (venue.extraFields): { accountId, host }.
+  const [extraVals, setExtraVals] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [ipCopied, setIpCopied] = useState(false);
@@ -107,7 +110,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   if (!exchangeSlug) return null; // Only render for exchange accounts
 
   const isConnected = connection?.status === 'active';
-  const canSubmit = apiKey.trim().length > 0 && apiSecret.trim().length > 0 && (!venueFor(exchangeSlug)?.hasPassphrase || passphrase.trim().length > 0) && !submitting;
+  const canSubmit = apiKey.trim().length > 0 && apiSecret.trim().length > 0 && (!venueFor(exchangeSlug)?.hasPassphrase || passphrase.trim().length > 0) && extraFieldsReady(venueFor(exchangeSlug), extraVals) && !submitting;
 
   // Doubles as the retry handler on the result screen — there's no separate
   // "create account" step here like the first-connect flow, so retrying is
@@ -123,6 +126,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
         apiKey: apiKey.trim(),
         apiSecret: apiSecret.trim(),
         passphrase: v.hasPassphrase ? passphrase.trim() : undefined,
+        venueFields: extraVals,
       });
       setConnection(result);
       setConnectOutcome({ ok: true, summary: result });
@@ -151,6 +155,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
     setApiKey('');
     setApiSecret('');
     setPassphrase('');
+    setExtraVals({});
     setShowForm(false);
     setConnectOutcome(null);
     /*
@@ -475,6 +480,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
             </p>
           </div>
 
+          <VenuePlatformNote venue={v} />
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>API Key</span>
@@ -486,7 +492,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                 onChange={(e) => setApiKey(e.target.value)}
                 onPaste={(e) => {
                   const text = e.clipboardData?.getData('text') ?? '';
-                  const split = trySplitPastedCredentials(text);
+                  const split = splitsPastedPair(v) ? trySplitPastedCredentials(text) : null;
                   if (split) {
                     e.preventDefault();
                     setApiKey(split.key);
@@ -502,6 +508,25 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                 }}
               />
             </label>
+            {secretFieldFor(v).multiline ? (
+              /* Exness: a several-line private key, full width. */
+              <label className="block min-w-0 sm:col-span-2">
+                <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>{secretFieldFor(v).label}</span>
+                <SecretTextarea
+                  name="tgx-delta-secret"
+                  value={apiSecret}
+                  onChange={(e) => setApiSecret(e.target.value)}
+                  placeholder={secretFieldFor(v).placeholder ?? 'Paste API Secret'}
+                  wrapperClassName="mt-1"
+                  className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
+                  style={{
+                    borderColor: 'var(--dash-border)',
+                    backgroundColor: 'var(--dash-bg-input)',
+                    color: 'var(--dash-text-primary)',
+                  }}
+                />
+              </label>
+            ) : (
             <label className="block">
               <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>API Secret</span>
               <SecretInput
@@ -518,6 +543,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                 }}
               />
             </label>
+            )}
             {v.hasPassphrase && (
               <label className="block sm:col-span-2">
                 <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
@@ -538,6 +564,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                 />
               </label>
             )}
+            <VenueExtraFields fields={v.extraFields} values={extraVals} onChange={(name, value) => setExtraVals((prev) => ({ ...prev, [name]: value }))} />
           </div>
           <div className="flex flex-wrap gap-2 pt-1">
             <button
@@ -555,6 +582,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
                   setShowForm(false);
                   setApiKey('');
                   setApiSecret('');
+                  setExtraVals({});
                 }}
                 className="px-4 py-2 rounded-xl text-sm font-semibold border"
                 style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}

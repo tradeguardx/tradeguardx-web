@@ -7,7 +7,7 @@ import { useToast } from '../components/common/ToastProvider';
 import { connectExchangeCredentials, exchangeFromBrokerSlug } from '../api/exchangeCredentialsApi';
 import { triggerHistoryBackfill } from '../api/syncApi';
 import { trySplitPastedCredentials, SUGGESTED_KEY_NAME } from '../components/dashboard/deltaConnectShared';
-import { ENGINE_EGRESS_IP, venueFor } from '../lib/venues';
+import { ENGINE_EGRESS_IP, extraFieldsReady, secretFieldFor, splitsPastedPair, venueFor } from '../lib/venues';
 import { brokerLabel } from '../lib/labels';
 import { sx } from '../components/dashboard/shell/sx';
 import AppGuide from '../components/dashboard/AppGuide';
@@ -17,6 +17,7 @@ import VenueFormReplica from '../components/dashboard/VenueFormReplica';
 import VenueAfterCreate from '../components/dashboard/VenueAfterCreate';
 import { useNoAutofill } from '../lib/noAutofill';
 import SecretInput from '../components/common/SecretInput';
+import { SecretTextarea, VenueExtraFields, VenuePlatformNote } from '../components/dashboard/VenueKeyFields';
 
 /**
  * Connect enforcement — transcribed from the reference (lines 1620–1702).
@@ -49,6 +50,9 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
   const [secretVal, setSecretVal] = useState('');
   // BloFin only: the passphrase the user set on the key. Empty for every other venue.
   const [passVal, setPassVal] = useState('');
+  // Exness only (venue.extraFields): { accountId, host }. Empty for every other venue.
+  const [extraVals, setExtraVals] = useState({});
+  const setExtra = (name, value) => setExtraVals((prev) => ({ ...prev, [name]: value }));
   const [copied, setCopied] = useState('');
   const noAutofill = useNoAutofill();
   const [busy, setBusy] = useState(false);
@@ -95,20 +99,23 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
   const cooled = g.guard === 'locked';
   const exchangeSlug = selectedAccount ? exchangeFromBrokerSlug(selectedAccount.propFirmSlug) : null;
   const v = venueFor(exchangeSlug) ?? venueFor('delta_india');
-  const ready = !cooled && keyVal.trim().length > 4 && secretVal.trim().length > 4 && !!exchangeSlug && (!v.hasPassphrase || passVal.trim().length > 0);
+  const ready = !cooled && keyVal.trim().length > 4 && secretVal.trim().length > 4 && !!exchangeSlug && (!v.hasPassphrase || passVal.trim().length > 0) && extraFieldsReady(v, extraVals);
+  const secretField = secretFieldFor(v);
 
   const copy = async (text) => {
     try { await navigator.clipboard.writeText(text); setCopied(text); setTimeout(() => setCopied(''), 1500); } catch { /* ignore */ }
   };
-  const onKey = (v) => {
-    const split = trySplitPastedCredentials(v);
-    if (split && split.key && split.secret) { setKeyVal(split.key); setSecretVal(split.secret); } else setKeyVal(v);
+  const onKey = (text) => {
+    // Not for a venue whose secret is a multi-line private key (Exness): the
+    // splitter would take one line of the PEM for the whole secret.
+    const split = splitsPastedPair(v) ? trySplitPastedCredentials(text) : null;
+    if (split && split.key && split.secret) { setKeyVal(split.key); setSecretVal(split.secret); } else setKeyVal(text);
   };
   const submit = async () => {
     if (!ready) return;
     setBusy(true);
     try {
-      const summary = await connectExchangeCredentials({ accessToken, accountId: selectedAccount.id, exchange: exchangeSlug, apiKey: keyVal.trim(), apiSecret: secretVal.trim(), passphrase: v.hasPassphrase ? passVal.trim() : undefined });
+      const summary = await connectExchangeCredentials({ accessToken, accountId: selectedAccount.id, exchange: exchangeSlug, apiKey: keyVal.trim(), apiSecret: secretVal.trim(), passphrase: v.hasPassphrase ? passVal.trim() : undefined, venueFields: extraVals });
       /* Start importing their history the moment the key verifies. This is
          the path almost everyone connects through, and it never asked: the
          journal, tax centre and revenge report waited for the 04:00 sweep —
@@ -117,7 +124,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
       triggerHistoryBackfill({ accessToken, tradingAccountId: selectedAccount.id }).catch(() => {});
       onConnected?.(summary);
       setResult({ ok: true, summary });
-      setKeyVal(''); setSecretVal(''); setPassVal('');
+      setKeyVal(''); setSecretVal(''); setPassVal(''); setExtraVals({});
       await refreshTradingAccounts?.(); await refresh();
       toast.success(summary?.enforcementCapable === false ? 'Connected — read-only' : 'Connected and checked', summary?.enforcementCapable === false ? 'This key can watch but not close. Make a new one with trading turned on.' : 'This key can close positions. We start watching from your next trade.');
     } catch (e) {
@@ -174,7 +181,9 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
       title: 'Fill it in and create the key',
       body: v.afterCreate
         ? 'Copy these two values across and press Create. One more screen follows.'
-        : v.hasPassphrase
+        : v.formStepBody
+          ? v.formStepBody
+          : v.hasPassphrase
           ? 'Copy these two values across, set a passphrase of your own, tick the permissions shown, and create the key.'
           : 'Copy these two values across and press Create.',
       kind: 'form',
@@ -199,7 +208,9 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
           kind: 'after',
         }]
       : []),
-    v.hasPassphrase
+    v.pasteStep
+      ? { ...v.pasteStep, kind: 'paste' }
+      : v.hasPassphrase
       ? { title: 'Paste the key, secret and passphrase here', body: 'The passphrase is the one you set on the key. If you copied key and secret together we will split them for you.', kind: 'paste' }
       : { title: 'Paste the key and secret here', body: 'If you copied both together we will split them for you.', kind: 'paste' },
   ].map((st, i) => ({ ...st, n: i + 1 }));
@@ -408,6 +419,8 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                       {v.desktopOnlyNote}
                     </p>
                   )}
+                  {/* Exness: said where someone decides whether this venue is theirs. */}
+                  <VenuePlatformNote venue={v} variant="connect" />
 
                 </>
               )}
@@ -424,9 +437,14 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                     <button type="button" onClick={() => copy(keyName)} style={sx('padding:7px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:600')}>{copied === keyName ? 'Copied' : 'Copy'}</button>
                   </div>
                   <label htmlFor="cx-key" style={sx('display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px')}>API key</label>
-                  <input id="cx-key" name="tgx-cx-a" className="cx-input" {...noAutofill} value={keyVal} onChange={(e) => onKey(e.target.value)} disabled={cooled} placeholder="paste key — or paste key and secret together" style={sx("width:100%;padding:11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace;margin-bottom:12px")} />
-                  <label htmlFor="cx-secret" style={sx('display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px')}>API secret</label>
-                  <SecretInput id="cx-secret" name="tgx-cx-b" className="cx-input" value={secretVal} onChange={(e) => setSecretVal(e.target.value)} disabled={cooled} placeholder="paste secret" wrapperStyle={sx('margin-bottom:12px')} style={sx("width:100%;padding:11px 40px 11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace")} />
+                  <input id="cx-key" name="tgx-cx-a" className="cx-input" {...noAutofill} value={keyVal} onChange={(e) => onKey(e.target.value)} disabled={cooled} placeholder={splitsPastedPair(v) ? 'paste key — or paste key and secret together' : 'paste API key'} style={sx("width:100%;padding:11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace;margin-bottom:12px")} />
+                  <label htmlFor="cx-secret" style={sx('display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px')}>{secretField.label}</label>
+                  {secretField.multiline ? (
+                    /* Exness: a several-line private key. Wraps, never widens the page. */
+                    <SecretTextarea id="cx-secret" name="tgx-cx-b" className="cx-input" value={secretVal} onChange={(e) => setSecretVal(e.target.value)} disabled={cooled} placeholder={secretField.placeholder ?? 'paste secret'} wrapperStyle={sx('margin-bottom:12px')} style={sx("padding:11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 12.5px/1.45 'JetBrains Mono',monospace")} />
+                  ) : (
+                    <SecretInput id="cx-secret" name="tgx-cx-b" className="cx-input" value={secretVal} onChange={(e) => setSecretVal(e.target.value)} disabled={cooled} placeholder="paste secret" wrapperStyle={sx('margin-bottom:12px')} style={sx("width:100%;padding:11px 40px 11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace")} />
+                  )}
                   {/* Only for a venue whose key has a passphrase (BloFin). It
                       signs every request, so a key without it cannot connect. */}
                   {v.hasPassphrase && (
@@ -435,6 +453,8 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                       <SecretInput id="cx-pass" name="tgx-cx-c" className="cx-input" value={passVal} onChange={(e) => setPassVal(e.target.value)} disabled={cooled} placeholder="paste passphrase" wrapperStyle={sx('margin-bottom:12px')} style={sx("width:100%;padding:11px 40px 11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace")} />
                     </>
                   )}
+                  {/* Venue-declared extras (Exness: Account ID, API host). */}
+                  <VenueExtraFields fields={v.extraFields} values={extraVals} onChange={setExtra} disabled={cooled} variant="connect" />
                   <button type="button" disabled={!ready || busy} onClick={submit} style={sx('padding:11px 16px;border-radius:10px;font-size:13px;font-weight:700', { border: `1px solid ${ready ? 'var(--ink)' : 'var(--surface-3)'}`, background: ready ? 'var(--ink)' : 'var(--surface-3)', color: ready ? 'var(--surface)' : 'var(--ink-3)' })}>{busy ? 'Checking…' : cooled ? 'Blocked while your lockout runs' : 'Connect and check'}</button>
                   {cooled && (
                     <p style={sx('margin:11px 0 0;padding:11px 13px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:70ch')}><strong style={sx('color:var(--red);font-weight:700')}>Key changes are blocked while your lockout runs.</strong> Removing the key would stop us closing anything, which would make the lockout pointless. This unblocks itself when the lock expires.</p>
@@ -463,7 +483,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
         )}
         {connected && !g.readOnly && (
           <div style={sx('padding:13px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)')}>
-            <button type="button" onClick={() => { setReplacing(false); setKeyVal(""); setSecretVal(""); setPassVal(""); }} style={sx('padding:8px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Cancel — keep the key I have</button>
+            <button type="button" onClick={() => { setReplacing(false); setKeyVal(""); setSecretVal(""); setPassVal(""); setExtraVals({}); }} style={sx('padding:8px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Cancel — keep the key I have</button>
           </div>
         )}
       </section>

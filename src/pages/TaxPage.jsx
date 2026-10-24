@@ -214,7 +214,7 @@ export default function TaxPage() {
   const accessToken = session?.access_token;
   const tradingAccountId = selectedAccount?.id;
   /*
-   * A venue the tax centre does not cover (BloFin). Decided here, before any
+   * A venue the tax centre does not cover (BloFin, Exness). Decided here, before any
    * request, rather than left to the API: zero and absent look the same on
    * screen, and only one of them is safe to file against.
    */

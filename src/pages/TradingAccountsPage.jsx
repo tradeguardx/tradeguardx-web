@@ -22,10 +22,11 @@ import VenueMark, { VenueBetaBadge } from '../components/dashboard/VenueMark';
 import AppGuide from '../components/dashboard/AppGuide';
 import VenueSteps from '../components/dashboard/VenueSteps';
 import SecretInput from '../components/common/SecretInput';
+import { SecretTextarea, VenueExtraFields, VenuePlatformNote } from '../components/dashboard/VenueKeyFields';
 import { StepRow, SUGGESTED_KEY_NAME, trySplitPastedCredentials, ConnectResultPanel } from '../components/dashboard/deltaConnectShared';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { DELTA_EGRESS_IP } from '../api/config';
-import { venueFor } from '../lib/venues';
+import { extraFieldsReady, secretFieldFor, splitsPastedPair, venueFor } from '../lib/venues';
 import { useNoAutofill } from '../lib/noAutofill';
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel, equityModeLabel } from '../lib/labels';
@@ -558,6 +559,8 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
   const [apiSecret, setApiSecret] = useState('');
   // BloFin only: the key's passphrase.
   const [passphrase, setPassphrase] = useState('');
+  // Exness only (venue.extraFields): { accountId, host }.
+  const [extraVals, setExtraVals] = useState({});
   const isMobile = useIsMobile();
   const [guideOpen, setGuideOpen] = useState(false);
   // Set once the account is created. Non-null switches the panel from the form
@@ -590,6 +593,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
     setApiKey('');
     setApiSecret('');
     setPassphrase('');
+    setExtraVals({});
   }, [selected]);
 
   const sizeValue =
@@ -607,7 +611,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
   // key here as well meant stage 2 had nothing left to do, and the two
   // instruction lists disagreed about how many steps the venue has.
   const deltaCredsProvided =
-    skipKey || !isDelta || (apiKey.trim() !== '' && apiSecret.trim() !== '' && (!v.hasPassphrase || passphrase.trim() !== ''));
+    skipKey || !isDelta || (apiKey.trim() !== '' && apiSecret.trim() !== '' && (!v.hasPassphrase || passphrase.trim() !== '') && extraFieldsReady(v, extraVals));
 
   const canCreate =
     !!selected &&
@@ -658,6 +662,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
           apiKey: apiKey.trim(),
           apiSecret: apiSecret.trim(),
           passphrase: v.hasPassphrase ? passphrase.trim() : undefined,
+          venueFields: extraVals,
         });
         setConnectOutcome({ ok: true, summary });
       } catch (credErr) {
@@ -683,6 +688,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
         apiKey: apiKey.trim(),
         apiSecret: apiSecret.trim(),
         passphrase: v.hasPassphrase ? passphrase.trim() : undefined,
+        venueFields: extraVals,
       });
       setConnectOutcome({ ok: true, summary });
     } catch (credErr) {
@@ -1120,6 +1126,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   Secret shown once — copy it now. Stored encrypted (KMS).
                 </p>
               </div>
+              <VenuePlatformNote venue={v} />
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block">
                   <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
@@ -1133,7 +1140,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                     onChange={(e) => setApiKey(e.target.value)}
                     onPaste={(e) => {
                       const text = e.clipboardData?.getData('text') ?? '';
-                      const split = trySplitPastedCredentials(text);
+                      const split = splitsPastedPair(v) ? trySplitPastedCredentials(text) : null;
                       if (split) {
                         e.preventDefault();
                         setApiKey(split.key);
@@ -1150,6 +1157,27 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                     }}
                   />
                 </label>
+                {secretFieldFor(v).multiline ? (
+                  /* Exness: a several-line private key, full width. */
+                  <label className="block min-w-0 sm:col-span-2">
+                    <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
+                      {secretFieldFor(v).label}
+                    </span>
+                    <SecretTextarea
+                      name="tgx-delta-secret"
+                      value={apiSecret}
+                      onChange={(e) => setApiSecret(e.target.value)}
+                      placeholder={secretFieldFor(v).placeholder ?? 'Paste API Secret'}
+                      wrapperClassName="mt-1"
+                      className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
+                      style={{
+                        borderColor: 'var(--dash-border)',
+                        backgroundColor: 'var(--dash-bg-input)',
+                        color: 'var(--dash-text-primary)',
+                      }}
+                    />
+                  </label>
+                ) : (
                 <label className="block">
                   <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
                     API Secret
@@ -1168,6 +1196,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                     }}
                   />
                 </label>
+                )}
                 {v.hasPassphrase && (
                   <label className="block sm:col-span-2">
                     <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
@@ -1188,8 +1217,15 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                     />
                   </label>
                 )}
+                <VenueExtraFields fields={v.extraFields} values={extraVals} onChange={(name, value) => setExtraVals((prev) => ({ ...prev, [name]: value }))} />
               </div>
-              {(!apiKey.trim() || !apiSecret.trim()) && (
+              {v.extraFields?.length ? (
+                (!apiKey.trim() || !apiSecret.trim() || !extraFieldsReady(v, extraVals)) && (
+                  <p className="text-[11px] mt-2" style={{ color: 'var(--amber)' }}>
+                    {['API key', secretFieldFor(v).label.toLowerCase(), ...v.extraFields.filter((f) => f.required).map((f) => f.label)].join(', ').replace(/, ([^,]*)$/, ' and $1')} are required to create a {v.name} account.
+                  </p>
+                )
+              ) : (!apiKey.trim() || !apiSecret.trim()) && (
                 <p className="text-[11px] mt-2" style={{ color: 'var(--amber)' }}>
                   Both the API Key and Secret are required to create a {v.name} account.
                 </p>

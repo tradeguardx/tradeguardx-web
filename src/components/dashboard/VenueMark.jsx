@@ -21,6 +21,7 @@ const VENUES = {
   bybit: { logo: null, accent: '#F7A600', short: 'BY' },
   shark: { logo: null, accent: '#4DB8E8', short: 'SK' },
   blofin: { logo: null, accent: '#FF8C1A', short: 'BF' },
+  exness: { logo: null, accent: '#E6B800', short: 'EX' },
 };
 
 function familyOf(slug) {
@@ -31,6 +32,7 @@ function familyOf(slug) {
   if (s.startsWith('bitget')) return 'bitget';
   if (s.startsWith('shark')) return 'shark';
   if (s.startsWith('blofin')) return 'blofin';
+  if (s.startsWith('exness')) return 'exness';
   return null;
 }
 

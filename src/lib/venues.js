@@ -379,6 +379,106 @@ const VENUES = {
     taxCentre: false,
     beta: true,
   },
+  /*
+   * Exness — the first forex/CFD venue (FX pairs, metals, indices, energies,
+   * crypto CFDs), and only accounts on Exness's OWN platform (Exness Terminal
+   * / web terminal). The Exness Trader API cannot see MT4 or MT5 accounts, so
+   * the copy says so plainly rather than letting someone connect a key that
+   * will never find their positions.
+   *
+   * UNVERIFIED: nothing below has been checked against a live screenshot of
+   * Exness's Key Management screen. The words come from the Exness Trader API
+   * docs (exness-api.com) and the shared spec: the menu path, the "Info" key
+   * type name, the "trading key" wording, the allowed-IP field label and the
+   * statement that the key cannot withdraw are all to be confirmed with a real
+   * account. No appGuide images, so the connect flow renders the written steps
+   * and the replica only — same as BloFin.
+   *
+   * What is different from every venue before it:
+   *   - The secret is a PRIVATE KEY (Ed25519, PEM, several lines), so the
+   *     secret box is a multi-line textarea (secretMultiline) and the
+   *     key+secret paste-splitter is switched off (pasteSplit: false) — it
+   *     would cut a PEM in half.
+   *   - The key is scoped to one trading account, and the API is served from
+   *     a per-account host, so the connect form asks for two more values
+   *     (extraFields): the account ID (required) and the API host (optional;
+   *     the backend defaults it and only accepts *.exness.com hosts).
+   *   - Exness has a read-only "Info" key type. It must not be used; the
+   *     backend probes for it and rejects it as KEY_READ_ONLY.
+   */
+  exness: {
+    family: 'exness',
+    name: 'Exness',
+    longName: 'Exness (native platform)',
+    // Personal Area; Key Management is reached from there (see navPath).
+    keysUrl: () => 'https://my.exness.com/',
+    keyNameField: 'Key name',
+    keyNameHint: 'Any name you will recognise later.',
+    /** Exness scopes each key to one trading account; drawn as their picker. */
+    accountField: 'Trading account',
+    accountDefault: 'Your Exness native-platform account',
+    accountNote: 'Pick the account you trade on the Exness platform. MT4 and MT5 accounts are not supported.',
+    ipField: 'Allowed IPs',
+    ipRequired: true,
+    ipHint: 'Add our IP to the key. Calls from any other address are refused, so without it we cannot act.',
+    scopeLabel: 'Trading key',
+    scopeNote: 'A key that can place and close trades on this account.',
+    /** Drawn unticked: the read-only key type, which we turn away at connect. */
+    offScopes: [{ label: 'Info key', note: 'Read-only. Do not pick it — it can watch but never close a position, and we reject it.' }],
+    noWithdrawNote: 'A trading key reads the account and opens or closes trades on it. It cannot withdraw or move money.',
+    /** Under the name in the venue picker, where someone decides if this venue is theirs. */
+    pickerNote: 'Exness platform only — not MT4/MT5',
+    /** Shown on the connect forms, before anyone makes a key. */
+    platformNote: 'Exness platform accounts only (Exness Terminal / web terminal). MT4 and MT5 accounts are not supported — their keys cannot see those trades.',
+    /* The secret box: a multi-line private key, not a one-line secret. */
+    secretLabel: 'Private key',
+    secretPlaceholder: '-----BEGIN PRIVATE KEY-----\npaste the whole key, every line\n-----END PRIVATE KEY-----',
+    secretMultiline: true,
+    pasteSplit: false,
+    /**
+     * Inputs beyond key and secret. `name` is the field sent to the API, and
+     * the API sends only the names listed here, for this venue.
+     */
+    extraFields: [
+      {
+        name: 'accountId',
+        label: 'Account ID',
+        hint: 'The number of the Exness account the key is for.',
+        placeholder: 'e.g. 12345678',
+        required: true,
+        inputMode: 'numeric',
+        pattern: /^\d{1,20}$/,
+        invalidHint: 'Digits only.',
+      },
+      {
+        name: 'host',
+        label: 'API host',
+        hint: 'Shown in Key Management next to the key', // UNVERIFIED wording/location
+        placeholder: 'https://api.exness.com',
+        required: false,
+        inputMode: 'url',
+      },
+    ],
+    formStepBody: 'Pick your Exness platform account, choose a trading key (not an Info key), add our IP, and create the key.',
+    pasteStep: {
+      title: 'Paste the key, private key and account ID here',
+      body: 'Copy all three from Key Management. The API host is optional — paste it if Exness shows one next to the key.',
+    },
+    desktopOnly: false,
+    mobilePath: null,
+    navPath: ['Personal Area', 'Key Management', 'Create key'], // UNVERIFIED labels
+    suggestsKeyName: true,
+    createSteps: [
+      { title: 'Personal Area → Key Management', body: 'Log in at my.exness.com and open Key Management. Only accounts on the Exness platform can have a key — MT4 and MT5 accounts cannot.' },
+      { title: 'Create a trading key for your account', body: 'Pick the Exness platform account you trade on. Choose a trading key, not an Info key — an Info key can only read, so the kill switch could not close anything.' },
+      { title: 'Allow our IP', body: 'Add our IP to the key’s allowed IPs. Exness refuses calls from any address that is not on the list.' },
+      { title: 'Copy the four values', body: 'The API key, the private key (every line of it), the account ID, and the API host shown next to the key. The private key is shown once — copy it before you close the screen.' },
+      { title: 'Paste them here', body: 'Paste all four into TradeGuardX. We check the key can trade the moment you connect it.' },
+    ],
+    /** Tax centre is for Indian venues; Exness is not part of it. */
+    taxCentre: false,
+    beta: true,
+  },
 };
 
 /** exchange slug → venue copy; null for non-exchange (prop-firm) accounts. */
@@ -388,6 +488,7 @@ export function venueFor(exchangeSlug) {
   if (exchangeSlug.startsWith('coindcx')) return VENUES.coindcx;
   if (exchangeSlug.startsWith('shark')) return VENUES.shark;
   if (exchangeSlug.startsWith('blofin')) return VENUES.blofin;
+  if (exchangeSlug.startsWith('exness')) return VENUES.exness;
   return null;
 }
 
@@ -403,6 +504,54 @@ export function hasTaxCentre(exchangeSlug) {
 /** True when the venue's key carries a passphrase the connect form must ask for. */
 export function needsPassphrase(exchangeSlug) {
   return Boolean(venueFor(exchangeSlug)?.hasPassphrase);
+}
+
+/**
+ * The secret box, described. Every venue before Exness had a one-line "API
+ * secret"; Exness's is a multi-line private key. Defaults keep the others'
+ * labels exactly as they were.
+ */
+export function secretFieldFor(venue) {
+  return {
+    label: venue?.secretLabel ?? 'API secret',
+    placeholder: venue?.secretPlaceholder ?? null,
+    multiline: Boolean(venue?.secretMultiline),
+  };
+}
+
+/** Inputs the connect form asks for beyond key, secret and passphrase. */
+export function extraFieldsFor(exchangeSlug) {
+  return venueFor(exchangeSlug)?.extraFields ?? [];
+}
+
+/** True when a venue's extra field holds an acceptable value (or may be left empty). */
+export function extraFieldValid(field, value) {
+  const s = String(value ?? '').trim();
+  if (!s) return !field.required;
+  return field.pattern ? field.pattern.test(s) : true;
+}
+
+/** Every extra field the venue asks for is filled (if required) and well-formed. */
+export function extraFieldsReady(venue, values) {
+  return (venue?.extraFields ?? []).every((f) => extraFieldValid(f, values?.[f.name]));
+}
+
+/**
+ * The extra values to send: trimmed, empties dropped, and only names this
+ * venue declares — so nothing typed for one venue can ride along to another.
+ */
+export function extraFieldsPayload(exchangeSlug, values) {
+  const out = {};
+  for (const f of extraFieldsFor(exchangeSlug)) {
+    const s = String(values?.[f.name] ?? '').trim();
+    if (s) out[f.name] = s;
+  }
+  return out;
+}
+
+/** False for a venue whose secret must not be split out of a pasted key (Exness's PEM). */
+export function splitsPastedPair(venue) {
+  return venue?.pasteSplit !== false;
 }
 
 /** True while a venue has not been proven end to end with a real key. */

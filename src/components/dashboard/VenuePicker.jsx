@@ -1,4 +1,5 @@
 import VenueMark from './VenueMark';
+import { venueFor } from '../../lib/venues';
 import { sx } from './shell/sx';
 
 /**
@@ -38,7 +39,7 @@ export default function VenuePicker({ venues, loading, onPick, columns = 'repeat
             <span style={sx('flex:1;min-width:0')}>
               <span style={sx('display:block;font-size:13px;font-weight:600')}>{pf.name}</span>
               <span style={sx('display:block;margin-top:2px;font-size:11.5px;color:var(--ink-3)')}>
-                {planned ? 'Coming soon' : 'Runs on our servers'}
+                {planned ? 'Coming soon' : venueFor(pf.brokerId)?.pickerNote ?? 'Runs on our servers'}
               </span>
             </span>
           </button>

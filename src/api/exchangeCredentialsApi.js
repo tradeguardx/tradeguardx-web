@@ -1,4 +1,5 @@
 import { apiDelete, apiGet, apiPost } from './httpClient';
+import { extraFieldsPayload } from '../lib/venues';
 
 function unwrap(payload) {
   if (payload?.success && payload.data !== undefined) return payload.data;
@@ -15,6 +16,7 @@ export function exchangeFromBrokerSlug(slug) {
   if (slug === 'coindcx') return 'coindcx';
   if (slug === 'shark') return 'shark';
   if (slug === 'blofin') return 'blofin';
+  if (slug === 'exness') return 'exness';
   return null;
 }
 
@@ -29,6 +31,9 @@ export async function connectExchangeCredentials({
   apiKey,
   apiSecret,
   passphrase,
+  // Venue-declared extras (Exness: { accountId, host }). Note `accountId`
+  // above is OUR trading account; Exness's account number travels in here.
+  venueFields,
   signal,
 } = {}) {
   if (!accessToken || !accountId) throw new Error('Missing access token or accountId');
@@ -38,7 +43,9 @@ export async function connectExchangeCredentials({
   const payload = await apiPost(
     `/trading-accounts/${encodeURIComponent(accountId)}/exchange-credentials`,
     // BloFin keys carry a passphrase; other venues never send the field.
-    { exchange, apiKey, apiSecret, ...(passphrase ? { passphrase } : {}) },
+    // Extra fields go only for a venue that declares them (Exness: accountId,
+    // and host when given) — see extraFieldsPayload.
+    { exchange, apiKey, apiSecret, ...(passphrase ? { passphrase } : {}), ...extraFieldsPayload(exchange, venueFields) },
     {
       signal,
       headers: { Authorization: `Bearer ${accessToken}` },
