@@ -2539,48 +2539,5 @@
   .tgx-home:not([data-variant="india"]) [data-page="india"],
   .tgx-home[data-variant="india"] [data-page="global"]{ display: none !important; }
 
-  /* ── Venue strip ───────────────────────────────────────────────────────
-     Seven venues no longer fit one row on a laptop, let alone a phone, so
-     they scroll past instead of wrapping. The track holds the list twice and
-     slides by one copy (-50%), so the loop has no seam. The edges fade so a
-     chip enters and leaves rather than being cut. Hover (or a finger held
-     on it) pauses it, so someone reading a name can finish. */
-  .tgx-home .xbanner-marquee{
-    position: relative; z-index: 1; overflow: hidden; margin-top: 14px;
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
-            mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
-  }
-  .tgx-home .xbanner-track{
-    display: flex; width: max-content;
-    animation: xb-marquee 34s linear infinite;
-  }
-  .tgx-home .xbanner-marquee:hover .xbanner-track,
-  .tgx-home .xbanner-marquee:active .xbanner-track{ animation-play-state: paused; }
-  .tgx-home .xbanner-marquee .xbanner-lockup{
-    flex-wrap: nowrap; margin: 0; padding: 2px 18px 2px 0; gap: 18px;
-    max-width: none; justify-content: flex-start; align-items: center;
-  }
-  .tgx-home .xbanner-marquee .xb-partner,
-  .tgx-home .xbanner-marquee .xb-next{ flex: none; white-space: nowrap; }
-  /* The phone layout hid the "Soon" venues to stop them wrapping onto a row
-     of their own. A strip never wraps, so they come back. */
-  .tgx-home .xbanner-marquee .xb-soon{ display: inline-flex; }
-  @keyframes xb-marquee{
-    from{ transform: translateX(0); }
-    to{ transform: translateX(-50%); }
-  }
-  @media (max-width: 640px){
-    .tgx-home .xbanner-marquee{ margin-top: 11px; }
-    .tgx-home .xbanner-marquee .xbanner-lockup{ gap: 8px; padding-right: 8px; }
-    .tgx-home .xbanner-track{ animation-duration: 26s; }
-  }
-  @media (prefers-reduced-motion: reduce){
-    .tgx-home .xbanner-marquee{ -webkit-mask-image: none; mask-image: none; }
-    .tgx-home .xbanner-track{ animation: none; width: auto; }
-    .tgx-home .xbanner-marquee .xbanner-lockup{ flex-wrap: wrap; justify-content: center; padding: 0; }
-    .tgx-home .xbanner-marquee .xbanner-lockup[aria-hidden="true"]{ display: none; }
-  }
-
-  /* Exness in its brand yellow. BloFin is set plain. */
+  /* Exness in its brand yellow. */
   .tgx-home .xb-exness{ color: #ffde02; letter-spacing: -0.02em; }
-  .tgx-home .xb-blofin{ color: var(--text-2); }

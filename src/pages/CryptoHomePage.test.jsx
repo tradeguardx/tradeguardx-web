@@ -65,10 +65,11 @@ describe('homepage variants', () => {
     expect(document.title).toBe("India's First Crypto Trading Kill Switch — TradeGuardX");
   });
 
-  it('lists every venue in the strip, once for readers', () => {
+  it('lists only the live venues in the hero, untagged', () => {
     const { container } = renderPage();
-    const visible = container.querySelector('.xbanner-marquee .xbanner-lockup:not([aria-hidden])');
-    expect(visible.textContent).toMatch(/Delta[\s\S]*CoinDCX[\s\S]*Shark[\s\S]*Exness[\s\S]*BloFin[\s\S]*Bybit[\s\S]*Bitget/);
-    expect(container.querySelectorAll('.xbanner-marquee .xbanner-lockup[aria-hidden="true"]')).toHaveLength(1);
+    const chips = [...container.querySelector('.xbanner-lockup').children].map((c) => c.textContent.trim());
+    expect(chips).toEqual(['Delta', 'CoinDCX', 'Shark Exchange', 'Exness']);
+    expect(container.querySelector('.xbanner-lockup').textContent).not.toMatch(/BloFin|Bybit|Bitget|Soon|Live/i);
+    expect(container.querySelector('.xbanner-marquee')).toBeNull();
   });
 });
