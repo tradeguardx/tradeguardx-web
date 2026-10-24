@@ -13,6 +13,7 @@ import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../api/userApi';
 import { setRuleLockDays } from '../api/tradingAccountsApi';
 import { RULE_GLYPH, ruleAccent } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
+import DailyResetLine from '../components/dashboard/DailyResetLine';
 import { formatRemaining, zoneLabel } from '../components/dashboard/shell/format';
 import { getUserZone } from '../lib/userZone';
 import { ruleLockNow } from '../lib/guard';
@@ -399,6 +400,7 @@ export default function LiveGuardPage() {
       <div style={sx('margin-bottom:18px')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Live guard</h1>
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>The screen to keep open while you trade. Everything here updates as fills land.</p>
+        <DailyResetLine account={selectedAccount} />
       </div>
 
       {/* ── Session card (build spec §4–§9) ──────────────────────────────

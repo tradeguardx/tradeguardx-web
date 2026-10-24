@@ -11,6 +11,7 @@ import { ruleLockNow } from '../../lib/guard';
 import { keyStateOf } from '../../lib/lifecycle';
 import { Icon, RULE_GLYPH, ICON, ruleAccent } from './shell/icons';
 import { sx } from './shell/sx';
+import DailyResetLine from './DailyResetLine';
 import NoticeCard from './shell/NoticeCard';
 import { currencySymbol } from '../../lib/session';
 
@@ -678,6 +679,7 @@ export default function RulesTerminal() {
       <div style={sx('margin-bottom:18px;max-width:78ch')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Rules</h1>
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>Switch on the ones you want. Every rule is on every plan — set them while calm, because they only matter when you are not.</p>
+        <DailyResetLine account={selectedAccount} />
         {rulesViewOnly && (
           <p style={sx('margin:10px 0 0;font-size:13px;font-weight:600;color:var(--ink-2)')}>Rules are saved but not enforced while your plan is inactive.</p>
         )}
