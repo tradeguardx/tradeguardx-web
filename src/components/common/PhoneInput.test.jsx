@@ -56,6 +56,37 @@ describe('PhoneInput', () => {
     expect(onChange).toHaveBeenLastCalledWith('+971501234567', expect.objectContaining({ valid: true, country: 'AE' }));
   });
 
+  it('typing +971 turns the flag to the UAE before any local digit', () => {
+    geo.guess = 'IN';
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} detect={false} />);
+    expect(countryButton()).toHaveTextContent('+91');
+
+    fireEvent.change(numberField(), { target: { value: '+971' } });
+    expect(countryButton()).toHaveAccessibleName(/United Arab Emirates \+971/);
+    expect(numberField()).toHaveValue('+971');
+
+    // …and keeps going to a whole number, which then shows as the local part.
+    fireEvent.change(numberField(), { target: { value: '+971 50 123 4567' } });
+    expect(countryButton()).toHaveAccessibleName(/United Arab Emirates/);
+    expect(onChange).toHaveBeenLastCalledWith('+971501234567', expect.objectContaining({ valid: true, country: 'AE' }));
+  });
+
+  it('00971 is read as +971', () => {
+    render(<Harness detect={false} />);
+    fireEvent.change(numberField(), { target: { value: '00971' } });
+    expect(countryButton()).toHaveAccessibleName(/United Arab Emirates \+971/);
+  });
+
+  it('a shared code shows its main country, then the whole number decides', () => {
+    render(<Harness detect={false} />);
+    fireEvent.change(numberField(), { target: { value: '+1' } });
+    expect(countryButton()).toHaveAccessibleName(/United States \+1/);
+    // 604 is Vancouver: once the number is whole it is Canada, not the US.
+    fireEvent.change(numberField(), { target: { value: '+1 604 555 1234' } });
+    expect(countryButton()).toHaveAccessibleName(/Canada \+1/);
+  });
+
   it('loads a stored E.164 into country + national number', () => {
     render(<Harness initial="+971501234567" detect={false} />);
     expect(countryButton()).toHaveTextContent('+971');

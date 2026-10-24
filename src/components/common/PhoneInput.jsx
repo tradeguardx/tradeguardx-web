@@ -207,6 +207,10 @@ export default function PhoneInput({
       setCountry(next.country);
       caretRef.current = next.text.length;
     } else {
+      // Typing "+971": the flag turns to 🇦🇪 as soon as the code is complete,
+      // so what they typed and what the picker says always agree. The text
+      // stays "+971 …" (read as-is for E.164) until it is a whole number.
+      if (next.shownCountry && isSupportedCountry(next.shownCountry)) setCountry(next.shownCountry);
       caretRef.current = caretAfterDigits(next.text, digitsBefore);
     }
     setText(next.text);

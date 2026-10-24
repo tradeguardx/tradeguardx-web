@@ -70,7 +70,7 @@ describe('phone helpers', () => {
     expect(formatTyped('2025550123', 'US')).toEqual({ text: '(202) 555-0123', country: null });
     expect(formatTyped('+971 50 123 4567', 'IN')).toEqual({ text: '050 123 4567', country: 'AE' });
     // half-typed international stays international — no premature switch
-    expect(formatTyped('+1 20', 'IN')).toEqual({ text: '+1 20', country: null });
+    expect(formatTyped('+1 20', 'IN')).toMatchObject({ text: '+1 20', country: null, shownCountry: 'US' });
     expect(formatTyped('', 'IN')).toEqual({ text: '', country: null });
   });
 
@@ -102,5 +102,22 @@ describe('searchCountries — the names people actually type', () => {
     const { searchCountries } = await import('./phone');
     expect(searchCountries('usa')[0]?.code).toBe('US');
     expect(searchCountries('uk')[0]?.code).toBe('GB');
+  });
+});
+
+describe('typo-tolerant short names and calling codes', () => {
+  it('finds the UAE from "aue" and the US from "uas"', async () => {
+    const { searchCountries } = await import('./phone');
+    expect(searchCountries('aue')[0]?.code).toBe('AE');
+    expect(searchCountries('uas')[0]?.code).toBe('US');
+  });
+
+  it('knows the country from the calling code alone', async () => {
+    const { countryOfInternational } = await import('./phone');
+    expect(countryOfInternational('+971')).toBe('AE');
+    expect(countryOfInternational('+44')).toBe('GB');
+    expect(countryOfInternational('+1')).toBe('US');
+    expect(countryOfInternational('+91')).toBe('IN');
+    expect(countryOfInternational('+')).toBeNull();
   });
 });

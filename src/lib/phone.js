@@ -12,6 +12,7 @@
  */
 import {
   AsYouType,
+  Metadata,
   getCountries,
   getCountryCallingCode,
   getExampleNumber,
@@ -111,6 +112,18 @@ const ALIASES = {
   CI: ['ivory coast'],
 };
 
+/**
+ * "aue" for "uae", "usa" typed "uas": a three- or four-letter short name with
+ * its letters in the wrong order. Only for short names — on anything longer a
+ * shuffle is a different word, not a typo.
+ */
+const sortLetters = (w) => [...w].sort().join('');
+function isShortAnagram(q, aliases) {
+  if (q.length < 3 || q.length > 4 || !/^[a-z]+$/.test(q)) return false;
+  const key = sortLetters(q);
+  return aliases.some((a) => a.length === q.length && sortLetters(a) === key);
+}
+
 export function searchCountries(query, options = countryOptions()) {
   const q = (query ?? '').trim().toLowerCase();
   if (!q) return options;
@@ -125,6 +138,7 @@ export function searchCountries(query, options = countryOptions()) {
     const name = o.name.toLowerCase();
     const aliases = ALIASES[o.code] ?? [];
     if (o.code.toLowerCase() === q || name === q || aliases.includes(q)) exact.push(o);
+    else if (isShortAnagram(q, aliases)) starts.push(o);
     else if (name.startsWith(q) || aliases.some((a) => a.startsWith(q))) starts.push(o);
     else if (name.includes(q) || aliases.some((a) => a.includes(q))) contains.push(o);
   }
@@ -206,13 +220,41 @@ export function digitsOf(text) {
  * remaining digits would be read against it. Until then the text stays
  * international and still produces the right E.164.
  */
+let metadata;
+/**
+ * The country a "+…" text belongs to, as soon as its calling code is known:
+ * "+971" is the UAE before a single local digit. A code shared by several
+ * countries gives its main one (+1 the US, +44 the UK, +7 Russia) until the
+ * digits after it say otherwise — AsYouType refines it as they arrive.
+ */
+export function countryOfInternational(text) {
+  const digits = digitsOf(text);
+  if (!digits) return null;
+  try {
+    const typer = new AsYouType();
+    typer.input(`+${digits.slice(0, 15)}`);
+    const exact = typer.getCountry();
+    if (exact) return exact;
+    const code = typer.getCallingCode();
+    if (!code) return null;
+    metadata ??= new Metadata();
+    return metadata.getCountryCodesForCallingCode(code)?.[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function formatTyped(raw, country) {
-  const text = raw ?? '';
+  let text = raw ?? '';
+  // "00971…" is how many people dial abroad — the same thing as "+971…".
+  if (/^\s*00\d/.test(text)) text = `+${text.trim().slice(2)}`;
   if (text.trim().startsWith('+')) {
     const capped = `+${digitsOf(text).slice(0, 15)}`;
     const phone = parse(capped);
     if (phone?.country && phone.isValid()) return { text: nationalDisplay(phone), country: phone.country };
-    return { text: new AsYouType().input(capped), country: null };
+    // Not a whole number yet, but the code already says where: the picker
+    // shows that flag while the text stays international (see PhoneInput).
+    return { text: new AsYouType().input(capped), country: null, shownCountry: countryOfInternational(capped) };
   }
   const digits = digitsOf(text).slice(0, MAX_DIGITS);
   if (!digits) return { text: '', country: null };
