@@ -51,14 +51,24 @@ describe('homepage variants', () => {
     const { container } = renderPage();
     await waitFor(() => expect(container.querySelector('.tgx-home').dataset.region).toBe('in'));
     expect(monthly(container)).toBe('₹1,299');
+    // Rupees, but still the global page: "India's first" is /india's line.
+    expect(container.querySelector('.tgx-home').dataset.variant).toBe('global');
   });
 
   it('"/india" is rupees whoever is looking', async () => {
     const { container } = renderPage('india');
     await new Promise((r) => setTimeout(r, 0));
     expect(container.querySelector('.tgx-home').dataset.region).toBe('in');
+    expect(container.querySelector('.tgx-home').dataset.variant).toBe('india');
     expect(monthly(container)).toBe('₹1,299');
     expect(container.querySelector('[data-inr="25000"]').textContent).toBe('₹25,000');
     expect(document.title).toBe("India's First Crypto Trading Kill Switch — TradeGuardX");
+  });
+
+  it('lists every venue in the strip, once for readers', () => {
+    const { container } = renderPage();
+    const visible = container.querySelector('.xbanner-marquee .xbanner-lockup:not([aria-hidden])');
+    expect(visible.textContent).toMatch(/Delta[\s\S]*CoinDCX[\s\S]*Shark[\s\S]*exness[\s\S]*BloFin[\s\S]*Bybit[\s\S]*Bitget/);
+    expect(container.querySelectorAll('.xbanner-marquee .xbanner-lockup[aria-hidden="true"]')).toHaveLength(1);
   });
 });

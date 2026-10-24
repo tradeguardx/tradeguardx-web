@@ -59,8 +59,8 @@ function LandingDivider() {
   );
 }
 
-const RawHtml = memo(function RawHtml({ html, innerRef, className, region }) {
-  return <div className={className} data-region={region} ref={innerRef} dangerouslySetInnerHTML={{ __html: html }} />;
+const RawHtml = memo(function RawHtml({ html, innerRef, className, region, variant }) {
+  return <div className={className} data-region={region} data-variant={variant} ref={innerRef} dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
 const FAQ_LD = {
@@ -268,19 +268,19 @@ function CryptoHomeBody({ variant }) {
       {/* Flat background: base colour and depth glows, no stars. */}
       <div className="landing-bg" aria-hidden />
 
-      <RawHtml className="tgx-home" innerRef={aRef} html={rawBodyAHero} region={region} />
+      <RawHtml className="tgx-home" innerRef={aRef} html={rawBodyAHero} region={region} variant={variant} />
       {/* A day in the life — straight after the hero. */}
-      <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyADayInLife} region={region} />
+      <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyADayInLife} region={region} variant={variant} />
       {/* Trading in Action — proof it's real, right above "Seven rules. Pick yours." */}
       <TradingInAction />
       {/* Rules. */}
-      <RawHtml className="tgx-home" innerRef={a3Ref} html={rawBodyARules} region={region} />
+      <RawHtml className="tgx-home" innerRef={a3Ref} html={rawBodyARules} region={region} variant={variant} />
       <StoryAIJournal />
       {/* Available on. */}
-      <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyBHead} region={region} />
+      <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyBHead} region={region} variant={variant} />
       <LandingDivider />
       {/* Pricing + FAQ. */}
-      <RawHtml className="tgx-home" innerRef={bTailRef} html={rawBodyBTail} region={region} />
+      <RawHtml className="tgx-home" innerRef={bTailRef} html={rawBodyBTail} region={region} variant={variant} />
     </>
   );
 }

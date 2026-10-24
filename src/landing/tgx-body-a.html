@@ -12,49 +12,90 @@
          a partnership agreement with Delta and shouldn't imply one. -->
     <div class="xbanner">
       <div class="xbanner-eyebrow">
-        <!-- data-geo: "in" shows on /india and to visitors in India, "global"
-             to everyone else on "/". CryptoHomePage sets data-region. -->
-        <img src="/flag-in.svg" alt="India" class="xb-flag" data-geo="in">
-        <span data-geo="in">India's first crypto kill switch</span>
-        <span data-geo="global">The crypto kill switch you can't bypass</span>
+        <!-- data-page: which page this line belongs to, whoever is looking
+             ("/india" or "/"). data-geo below is by visitor instead: "in" on
+             /india and for visitors in India. CryptoHomePage sets both. -->
+        <img src="/flag-in.svg" alt="India" class="xb-flag" data-page="india">
+        <span data-page="india">India's first crypto kill switch</span>
+        <span data-page="global">The crypto kill switch you can't bypass</span>
         <i class="xb-div"></i>
         <span class="xb-accent">Now live on</span>
       </div>
 
-      <div class="xbanner-lockup">
-        <!-- Our own name is the logo top-left and the whole page; "now live
-             on TradeGuardX" reads as though we were a venue. The lockup
-             lists the exchanges only, so the "+" goes with it. -->
-        <span class="xb-partner">
-          <img src="/brokers/delta-exchange.svg" alt="Delta Exchange">
-          <span>Delta</span>
-          <!-- Delta carried no tag while CoinDCX said LIVE, so the row read
-               as one live venue next to a logo. Both are live; both say so. -->
-          <span class="xb-next-tag">Live</span>
-        </span>
-        <span class="xb-next">
-          <span class="xb-coindcx"><b>Coin</b>DCX</span>
-          <span class="xb-next-tag">Live</span>
-        </span>
-        <span class="xb-next">
-          <!-- No Shark SVG in public/brokers, and a hand-drawn approximation
-               of someone's logo is worse than setting it as type. Same call
-               as Bybit below. -->
-          <span class="xb-wordmark xb-shark">Shark</span>
-          <span class="xb-next-tag">Live</span>
-        </span>
-        <span class="xb-next xb-soon">
-          <!-- Bybit's logo IS the wordmark with a gold "i" — there is no icon
-               mark. Set as type so it reads at the same size as its
-               neighbours; as an image it shrank to ~9px letters. -->
-          <span class="xb-wordmark xb-bybit">Byb<b>i</b>t</span>
-          <span class="xb-next-tag soon">Soon</span>
-        </span>
-        <span class="xb-next xb-soon">
-          <img src="/brokers/bitget.svg" alt="Bitget" class="xb-logo">
-          <span class="xb-wordmark">Bitget</span>
-          <span class="xb-next-tag soon">Soon</span>
-        </span>
+      <!-- The venues scroll past as a strip. The list is written twice so
+           the loop is seamless: the track slides left by exactly one copy
+           (-50%) and starts again. The second copy is aria-hidden, and with
+           reduced motion it is hidden and the first copy wraps instead.
+           Logos: only Delta and Bitget have real marks in public/brokers;
+           the rest are set as type in their brand colour, because a
+           hand-drawn copy of someone's logo is worse than their name. -->
+      <div class="xbanner-marquee">
+        <div class="xbanner-track">
+          <div class="xbanner-lockup">
+          <span class="xb-partner">
+            <img src="/brokers/delta-exchange.svg" alt="Delta Exchange">
+            <span>Delta</span>
+            <span class="xb-next-tag">Live</span>
+          </span>
+          <span class="xb-next">
+            <span class="xb-coindcx"><b>Coin</b>DCX</span>
+            <span class="xb-next-tag">Live</span>
+          </span>
+          <span class="xb-next">
+            <span class="xb-wordmark xb-shark">Shark</span>
+            <span class="xb-next-tag">Live</span>
+          </span>
+          <span class="xb-next">
+            <span class="xb-wordmark xb-exness">exness</span>
+            <span class="xb-next-tag">Live</span>
+          </span>
+          <span class="xb-next xb-soon">
+            <span class="xb-wordmark xb-blofin">BloFin</span>
+            <span class="xb-next-tag soon">Soon</span>
+          </span>
+          <span class="xb-next xb-soon">
+            <span class="xb-wordmark xb-bybit">Byb<b>i</b>t</span>
+            <span class="xb-next-tag soon">Soon</span>
+          </span>
+          <span class="xb-next xb-soon">
+            <img src="/brokers/bitget.svg" alt="Bitget" class="xb-logo">
+            <span class="xb-wordmark">Bitget</span>
+            <span class="xb-next-tag soon">Soon</span>
+          </span>
+          </div>
+          <div class="xbanner-lockup" aria-hidden="true">
+          <span class="xb-partner">
+            <img src="/brokers/delta-exchange.svg" alt="Delta Exchange">
+            <span>Delta</span>
+            <span class="xb-next-tag">Live</span>
+          </span>
+          <span class="xb-next">
+            <span class="xb-coindcx"><b>Coin</b>DCX</span>
+            <span class="xb-next-tag">Live</span>
+          </span>
+          <span class="xb-next">
+            <span class="xb-wordmark xb-shark">Shark</span>
+            <span class="xb-next-tag">Live</span>
+          </span>
+          <span class="xb-next">
+            <span class="xb-wordmark xb-exness">exness</span>
+            <span class="xb-next-tag">Live</span>
+          </span>
+          <span class="xb-next xb-soon">
+            <span class="xb-wordmark xb-blofin">BloFin</span>
+            <span class="xb-next-tag soon">Soon</span>
+          </span>
+          <span class="xb-next xb-soon">
+            <span class="xb-wordmark xb-bybit">Byb<b>i</b>t</span>
+            <span class="xb-next-tag soon">Soon</span>
+          </span>
+          <span class="xb-next xb-soon">
+            <img src="/brokers/bitget.svg" alt="Bitget" class="xb-logo">
+            <span class="xb-wordmark">Bitget</span>
+            <span class="xb-next-tag soon">Soon</span>
+          </span>
+          </div>
+        </div>
       </div>
 
       <div class="xbanner-feats">
