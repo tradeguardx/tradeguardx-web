@@ -68,7 +68,7 @@ describe('homepage variants', () => {
   it('lists only the live venues in the hero, untagged', () => {
     const { container } = renderPage();
     const chips = [...container.querySelector('.xbanner-lockup').children].map((c) => c.textContent.trim());
-    expect(chips).toEqual(['Delta', 'CoinDCX', 'Shark Exchange', 'Exness']);
+    expect(chips).toEqual(['Delta', 'CoinDCX', 'Shark', 'Exness']);
     expect(container.querySelector('.xbanner-lockup').textContent).not.toMatch(/BloFin|Bybit|Bitget|Soon|Live/i);
     expect(container.querySelector('.xbanner-marquee')).toBeNull();
   });
