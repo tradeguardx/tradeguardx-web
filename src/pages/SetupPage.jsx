@@ -69,10 +69,10 @@ const STEPS = [
   { key: 'billing', label: 'Start free trial', h: 'Start your free trial', p: 'Free for 3 days and nothing is charged today. The guard only runs once this is done.' },
 ];
 
-function Rail({ at, done }) {
+function Rail({ at, done, labels }) {
   return (
     <>
-    <StepsBar names={STEPS.map((s) => s.label)} at={at} done={done} />
+    <StepsBar names={labels} at={at} done={done} />
     <ol className="wiz-rail steps-lg" style={sx('display:flex;align-items:center;gap:0;margin:0 0 26px;padding:0;list-style:none;flex-wrap:wrap;row-gap:10px')}>
       {STEPS.map((s, i) => {
         const isDone = done[i];
@@ -93,7 +93,7 @@ function Rail({ at, done }) {
               {isDone ? '✓' : i + 1}
             </span>
             <span className="wiz-rail__label" style={sx('font-size:12.5px;font-weight:600;white-space:nowrap', here ? {} : { color: 'var(--ink-3)' })}>
-              {s.label}
+              {labels[i]}
             </span>
             {i < STEPS.length - 1 && (
               <span aria-hidden className="wiz-rail__bar" style={sx('flex:none;width:22px;height:1px;margin:0 11px', { background: isDone ? 'var(--mint-solid)' : 'var(--line)' })} />
@@ -132,9 +132,17 @@ export default function SetupPage() {
   const [createdHere, setCreatedHere] = useState(false);
   /* Null until they navigate. The step shown is derived from what is actually
      done, and this only overrides it once they move themselves — see `at`. */
+  /*
+   * `?venue=` only jumps to "Name account" when this pass is creating a NEW
+   * account. Picking an exchange writes it into the URL, so a reload or a
+   * return visit carried it too — and landed someone whose account already
+   * exists back on "Name the account", one click from a duplicate. Without
+   * `new=1` the step is derived from what is actually done (first undone),
+   * which for a brand-new user with ?venue= is "Name account" anyway.
+   */
   const [pickedStep, setPickedStep] = useState(() => {
-    if (params.get('venue')) return 1;
-    return fresh ? 0 : null;
+    if (fresh) return params.get('venue') ? 1 : 0;
+    return null;
   });
 
   useEffect(() => {
@@ -204,6 +212,20 @@ export default function SetupPage() {
    * itself. `pickedStep` takes over as soon as they move, so Back goes back
    * instead of being yanked forward again.
    */
+  /*
+   * The last step is ticked for anyone who already holds a plan — they have
+   * nothing to start. Labelled "Start free trial" while ticked, it read as
+   * though a trial had been started for them; it names what they actually have.
+   */
+  const billingLabel = !done[4]
+    ? 'Start free trial'
+    : planOff
+      ? 'Plan inactive'
+      : user?.access === 'active'
+        ? 'Plan active'
+        : 'Trial started';
+  const labels = STEPS.map((s) => (s.key === 'billing' ? billingLabel : s.label));
+
   const firstUndone = done.indexOf(false);
   const at = pickedStep ?? Math.max(0, firstUndone);
   const step = STEPS[at];
@@ -303,7 +325,7 @@ export default function SetupPage() {
         )}
       </header>
 
-      <Rail at={at} done={done} />
+      <Rail at={at} done={done} labels={labels} />
 
       <div style={sx('margin-bottom:18px;max-width:74ch')}>
         <h2 style={sx("margin:0;font:600 23px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.026em")}>{step.h}</h2>

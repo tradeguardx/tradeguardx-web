@@ -225,3 +225,32 @@ describe('a second account', () => {
     expect(await screen.findByText('create account')).toBeTruthy();
   });
 });
+
+describe('resuming and the last step label', () => {
+  it('a return visit with ?venue= in the URL resumes at Connect key, not "Name the account", when the account exists', async () => {
+    accountsCtx.accounts = [{ id: 'acc-1', name: 'Exness-Demo' }];
+    accountsCtx.selectedAccount = { id: 'acc-1', name: 'Exness-Demo' };
+    guardCtx.selected = { gaps: [{ key: 'key' }] };
+    mount('/dashboard/setup?venue=delta_india');
+    expect(await screen.findByText(/connect-flow/)).toBeTruthy();
+    expect(screen.queryByText('create account')).toBeNull();
+  });
+
+  it('?venue= with new=1 still opens "Name account" for a second account', async () => {
+    accountsCtx.accounts = [{ id: 'acc-1', name: 'Exness-Demo' }];
+    accountsCtx.selectedAccount = { id: 'acc-1', name: 'Exness-Demo' };
+    mount('/dashboard/setup?venue=delta_india&new=1');
+    expect(await screen.findByText('create account')).toBeTruthy();
+  });
+
+  it('someone who already holds a plan sees "Plan active", never a ticked "Start free trial"', async () => {
+    auth.user = { access: 'active', isTrial: false };
+    accountsCtx.accounts = [{ id: 'acc-1', name: 'Exness-Demo' }];
+    accountsCtx.selectedAccount = { id: 'acc-1', name: 'Exness-Demo' };
+    guardCtx.selected = { gaps: [{ key: 'key' }] };
+    mount();
+    await screen.findByText(/connect-flow/);
+    expect(screen.getAllByText('Plan active').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Start free trial')).toBeNull();
+  });
+});
