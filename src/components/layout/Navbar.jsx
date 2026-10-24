@@ -63,6 +63,7 @@ export default function Navbar() {
     { label: 'Pricing', to: '/pricing' },
     // Prop-firm page hidden for now — Delta Exchange (crypto) is the launch focus.
     { label: 'Guides', to: '/help' },
+    { label: 'Blog', to: '/blog' },
   ];
 
   return (

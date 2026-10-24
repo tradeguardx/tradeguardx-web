@@ -17,6 +17,8 @@
  * `node scripts/...` both have to load it.
  */
 
+import { CATEGORIES, POSTS, categoryIndexable, categoryPath, postPath } from '../content/blog/posts.js';
+
 export const SITE = 'https://tradeguardx.com';
 
 /**
@@ -77,6 +79,20 @@ export const PUBLIC_ROUTES = [
   { path: '/help/changing-rules', priority: '0.7', changefreq: 'monthly', og: null },
   { path: '/help/live-dashboard', priority: '0.7', changefreq: 'monthly', og: null },
   { path: '/help/troubleshooting', priority: '0.7', changefreq: 'monthly', og: null },
+
+  // Blog. Posts come from src/content/blog/posts.js, so publishing one is a
+  // single entry there (plus its rewrite in vercel.json, which the vercelRoutes
+  // test enforces). A category page is always prerendered — the blog links to
+  // it — but only submitted once it holds enough posts to not be thin.
+  { path: '/blog', priority: '0.8', changefreq: 'weekly', og: null },
+  ...POSTS.map((p) => ({ path: postPath(p.slug), priority: '0.7', changefreq: 'monthly', og: null })),
+  ...CATEGORIES.map((c) => ({
+    path: categoryPath(c.slug),
+    priority: '0.5',
+    changefreq: 'weekly',
+    og: null,
+    sitemap: categoryIndexable(c.slug),
+  })),
 
   // Company
   { path: '/security', priority: '0.7', changefreq: 'monthly', og: null },

@@ -25,6 +25,7 @@ const links = {
     // prop-firm path, which isn't part of this launch.
     { label: 'What is a crypto kill switch?', to: '/crypto-kill-switch' },
     { label: 'Guides', to: '/help' },
+    { label: 'Blog', to: '/blog' },
     { label: 'Crypto tax India', to: '/crypto-tax-india' },
     { label: 'Security', to: '/security' },
   ],

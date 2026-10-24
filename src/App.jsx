@@ -18,6 +18,9 @@ import DocsSlugRedirect from './pages/DocsSlugRedirect';
 import SecurityPage from './pages/SecurityPage';
 import AboutPage from './pages/AboutPage';
 import RoadmapPage from './pages/RoadmapPage';
+import BlogIndexPage from './pages/blog/BlogIndexPage';
+import BlogCategoryPage from './pages/blog/BlogCategoryPage';
+import BlogPostPage from './pages/blog/BlogPostPage';
 import CryptoTaxIndiaPage from './pages/CryptoTaxIndiaPage';
 import RiskDisclosurePage from './pages/RiskDisclosurePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -115,6 +118,9 @@ function App() {
                   <Route path="crypto-kill-switch" element={<CryptoKillSwitchPage />} />
                   <Route path="crypto-tax-india" element={<CryptoTaxIndiaPage />} />
                   <Route path="roadmap" element={<RoadmapPage />} />
+                  <Route path="blog" element={<BlogIndexPage />} />
+                  <Route path="blog/category/:category" element={<BlogCategoryPage />} />
+                  <Route path="blog/:slug" element={<BlogPostPage />} />
                   {/* Catch-all 404 inside Layout so the page keeps nav + footer.
                       Replaces the previous redirect-to-home that produced soft-404s. */}
                   <Route path="*" element={<NotFoundPage />} />
