@@ -2581,6 +2581,6 @@
     .tgx-home .xbanner-marquee .xbanner-lockup[aria-hidden="true"]{ display: none; }
   }
 
-  /* Exness's mark is its lower-case name in yellow. BloFin is set plain. */
+  /* Exness in its brand yellow. BloFin is set plain. */
   .tgx-home .xb-exness{ color: #ffde02; letter-spacing: -0.02em; }
   .tgx-home .xb-blofin{ color: var(--text-2); }

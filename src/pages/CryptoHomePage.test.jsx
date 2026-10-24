@@ -68,7 +68,7 @@ describe('homepage variants', () => {
   it('lists every venue in the strip, once for readers', () => {
     const { container } = renderPage();
     const visible = container.querySelector('.xbanner-marquee .xbanner-lockup:not([aria-hidden])');
-    expect(visible.textContent).toMatch(/Delta[\s\S]*CoinDCX[\s\S]*Shark[\s\S]*exness[\s\S]*BloFin[\s\S]*Bybit[\s\S]*Bitget/);
+    expect(visible.textContent).toMatch(/Delta[\s\S]*CoinDCX[\s\S]*Shark[\s\S]*Exness[\s\S]*BloFin[\s\S]*Bybit[\s\S]*Bitget/);
     expect(container.querySelectorAll('.xbanner-marquee .xbanner-lockup[aria-hidden="true"]')).toHaveLength(1);
   });
 });
