@@ -254,3 +254,33 @@ describe('resuming and the last step label', () => {
     expect(screen.queryByText('Start free trial')).toBeNull();
   });
 });
+
+describe('going back over finished steps', () => {
+  it('Back to "Name account" for an existing account shows its name, not a blank create form', async () => {
+    accountsCtx.accounts = [{ id: 'acc-1', name: 'Exness-Demo' }];
+    accountsCtx.selectedAccount = { id: 'acc-1', name: 'Exness-Demo' };
+    guardCtx.selected = { gaps: [{ key: 'key' }] };
+    mount();
+    await screen.findByText(/connect-flow/);
+    fireEvent.click(screen.getByText('Back'));
+    expect(await screen.findByText('Exness-Demo')).toBeTruthy();
+    expect(screen.queryByText('create account')).toBeNull();
+    expect(screen.getByText('Add another account')).toBeTruthy();
+  });
+
+  it('with every step done, going back shows "Setup is complete" and a way to the overview', async () => {
+    auth.user = { access: 'active', isTrial: false };
+    accountsCtx.accounts = [{ id: 'acc-1', name: 'Exness-Demo' }];
+    accountsCtx.selectedAccount = { id: 'acc-1', name: 'Exness-Demo' };
+    // Key still missing on mount so the page does not redirect straight away…
+    guardCtx.selected = { gaps: [{ key: 'key' }] };
+    const view = mount();
+    await screen.findByText(/connect-flow/);
+    fireEvent.click(screen.getByText('Back'));
+    // …then the key connects (as the guard state refreshes) while they look back.
+    guardCtx.selected = { gaps: [] };
+    view.rerender(<MemoryRouter><SetupPage /></MemoryRouter>);
+    expect(await screen.findByText(/Setup is complete/)).toBeTruthy();
+    expect(screen.getByText('Go to overview')).toBeTruthy();
+  });
+});

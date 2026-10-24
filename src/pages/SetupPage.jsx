@@ -226,6 +226,11 @@ export default function SetupPage() {
         : 'Trial started';
   const labels = STEPS.map((s) => (s.key === 'billing' ? billingLabel : s.label));
 
+  const allDone = !fresh && done.every(Boolean);
+  /* The name step has nothing to create for an existing account, unless this
+     pass is adding a new one (?new=1) and has not created it yet. */
+  const namedAlready = Boolean(selectedAccount?.name) && (fresh ? createdHere : done[1]);
+
   const firstUndone = done.indexOf(false);
   const at = pickedStep ?? Math.max(0, firstUndone);
   const step = STEPS[at];
@@ -327,6 +332,20 @@ export default function SetupPage() {
 
       <Rail at={at} done={done} labels={labels} />
 
+      {/* Every step done but they navigated back into the flow (Back, or a
+          stale link): say so, and give the one way out, rather than an empty
+          form under five ticks that looks like something is still missing. */}
+      {allDone && (
+        <div role="status" style={sx('display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 22px;padding:14px 16px;border:1px solid var(--mint-line);border-radius:14px;background:var(--mint-tint)')}>
+          <span style={sx('flex:1;min-width:min(240px,100%);font-size:13.5px;line-height:1.5;color:var(--ink-2)')}>
+            <strong style={sx('color:var(--ink)')}>Setup is complete{selectedAccount?.name ? ` for ${selectedAccount.name}` : ''}.</strong> Nothing here needs doing — your guard is on.
+          </span>
+          <button type="button" onClick={finish} style={sx('flex:none;padding:10px 16px;border:0;border-radius:10px;background:var(--mint);color:var(--on-mint);font-size:12.5px;font-weight:700;cursor:pointer')}>
+            Go to overview
+          </button>
+        </div>
+      )}
+
       <div style={sx('margin-bottom:18px;max-width:74ch')}>
         <h2 style={sx("margin:0;font:600 23px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.026em")}>{step.h}</h2>
         <p style={sx('margin:7px 0 0;font-size:13.5px;line-height:1.6;color:var(--ink-3)')}>{step.p}</p>
@@ -338,13 +357,26 @@ export default function SetupPage() {
           loading={venuesLoading}
           onPick={(picked) => {
             setSlug(picked);
-            setParams({ venue: picked }, { replace: true });
+            // Keep new=1: dropping it made a second-account run forget it was one.
+            setParams(fresh ? { venue: picked, new: '1' } : { venue: picked }, { replace: true });
             go(1);
           }}
         />
       )}
 
-      {at === 1 && (
+      {at === 1 && namedAlready && (
+        /* Back on this step for an account that already exists: show its name
+           instead of a blank create form, which made a duplicate one click away. */
+        <div style={sx('display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);font-size:13.5px;color:var(--ink-3)')}>
+          <span style={sx('flex:1;min-width:min(240px,100%)')}>
+            This account is named <strong style={sx('color:var(--ink)')}>{selectedAccount.name}</strong>. Rename it in Accounts.
+          </span>
+          <button type="button" onClick={() => navigate('/dashboard/account/trading')} style={sx('padding:9px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer')}>Open Accounts</button>
+          <button type="button" onClick={() => navigate('/dashboard/setup?new=1')} style={sx('padding:9px 14px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>Add another account</button>
+        </div>
+      )}
+
+      {at === 1 && !namedAlready && (
         <AddAccountForm
           accessToken={accessToken}
           supportedProps={venues}
