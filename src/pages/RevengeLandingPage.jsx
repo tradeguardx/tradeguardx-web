@@ -25,15 +25,12 @@ const EXCHANGES = [
   { slug: 'coindcx', name: 'CoinDCX', cur: 'USDT' },
   { slug: 'shark', name: 'Shark Exchange', cur: 'INR' },
   { slug: 'blofin', name: 'BloFin', cur: 'USDT' },
-  { slug: 'exness', name: 'Exness', cur: 'USD' },
 ];
 
 // The example's figures, per currency. Illustrative, and the card says so.
 const EXAMPLE = {
   USDT: { chase: '−1,646.43 USDT', rest: '+964.70 USDT' },
   INR: { chase: '−₹1,38,200', rest: '+₹81,000' },
-  // Exness accounts are in dollars (cent accounts are converted to dollars).
-  USD: { chase: '−$1,646.43', rest: '+$964.70' },
 };
 
 const ANSWERS = [
@@ -54,7 +51,7 @@ const FAQ = [
   ['Can TradeGuardX trade or withdraw with my key?', 'The report only reads your past trades. TradeGuardX never needs withdrawal permission — create your key without it and your funds cannot be moved with it.'],
   ['How far back does the report look?', 'The last month by default, and up to three months. If a month is too quiet to judge, it looks further back on its own.'],
   ['What counts as a revenge trade in the report?', 'A trade opened within 15 minutes of a loss that also sizes up, goes straight back into the same coin, or comes after two losses in a row.'],
-  ['Which exchanges does it work with?', 'Delta Exchange (India and global), CoinDCX futures, Shark Exchange, BloFin (USDT perpetuals) and Exness (native Exness platform accounts — not MT4 or MT5).'],
+  ['Which exchanges does it work with?', 'Delta Exchange (India and global), CoinDCX futures, Shark Exchange and BloFin (USDT perpetuals).'],
 ];
 
 const PAGE_URL = 'https://tradeguardx.com/revenge-report';

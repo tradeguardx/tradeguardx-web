@@ -63,8 +63,8 @@ describe('Exness venue', () => {
     expect(exness.desktopOnly).toBe(false);
   });
 
-  it('is beta, and outside the tax centre', () => {
-    expect(isBetaVenue('exness')).toBe(true);
+  it('carries no beta badge, and is outside the tax centre', () => {
+    expect(isBetaVenue('exness')).toBe(false);
     expect(hasTaxCentre('exness')).toBe(false);
     expect(needsPassphrase('exness')).toBe(false);
   });

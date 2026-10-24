@@ -477,7 +477,9 @@ const VENUES = {
     ],
     /** Tax centre is for Indian venues; Exness is not part of it. */
     taxCentre: false,
-    beta: true,
+    // No BETA badge: the owner wants Exness listed quietly as a venue to connect,
+    // with no banner or label. Still unproven with a real key — watch the logs.
+    beta: false,
   },
 };
 
