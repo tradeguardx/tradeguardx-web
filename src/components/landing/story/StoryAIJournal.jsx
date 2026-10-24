@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { StorySection } from './StorySection';
+import { useLandingMoney } from '../../../context/LandingMoneyContext';
 
 /**
  * Post-mistake / AI journal section.
@@ -193,8 +194,8 @@ const CALENDAR_CELLS = [
 
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-/** 18500 → "19k": the calendar cells are ~40px wide on a phone; the MTD pill carries the ₹. */
-function compactInr(n) {
+/** 18500 → "19k": the calendar cells are ~40px wide on a phone; the MTD pill carries the currency. */
+function compactAmount(n) {
   return n >= 1000 ? `${Math.round(n / 1000)}k` : String(n);
 }
 
@@ -204,6 +205,8 @@ function pnlIntensity(pnl, max) {
 }
 
 function PnlCalendar() {
+  // Rupees; outside India the homepage shows round local figures.
+  const m = useLandingMoney();
   const tradedCells = CALENDAR_CELLS.filter((c) => c && c.pnl != null);
   const monthTotal = tradedCells.reduce((s, c) => s + c.pnl, 0);
   const maxAbs = Math.max(...tradedCells.map((c) => Math.abs(c.pnl)));
@@ -234,7 +237,7 @@ function PnlCalendar() {
             color: monthTotal >= 0 ? '#6ee7b7' : '#fda4af',
           }}
         >
-          {monthTotal >= 0 ? '+' : '−'}₹{Math.abs(monthTotal).toLocaleString('en-IN')} MTD
+          {monthTotal >= 0 ? '+' : '−'}{m.example(Math.abs(monthTotal))} MTD
         </span>
       </div>
 
@@ -297,7 +300,7 @@ function PnlCalendar() {
                   className="mt-0.5 whitespace-nowrap font-mono text-[8.5px] font-semibold leading-none tabular-nums"
                   style={{ color: textColor }}
                 >
-                  {c.pnl > 0 ? '+' : '−'}{compactInr(Math.abs(c.pnl))}
+                  {c.pnl > 0 ? '+' : '−'}{compactAmount(Math.abs(m.exampleValue(c.pnl)))}
                 </p>
               )}
             </motion.div>

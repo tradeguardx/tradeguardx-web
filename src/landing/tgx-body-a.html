@@ -12,8 +12,11 @@
          a partnership agreement with Delta and shouldn't imply one. -->
     <div class="xbanner">
       <div class="xbanner-eyebrow">
-        <img src="/flag-in.svg" alt="India" class="xb-flag">
-        <span>India's first crypto kill switch</span>
+        <!-- data-geo: "in" shows on /india and to visitors in India, "global"
+             to everyone else on "/". CryptoHomePage sets data-region. -->
+        <img src="/flag-in.svg" alt="India" class="xb-flag" data-geo="in">
+        <span data-geo="in">India's first crypto kill switch</span>
+        <span data-geo="global">The crypto kill switch you can't bypass</span>
         <i class="xb-div"></i>
         <span class="xb-accent">Now live on</span>
       </div>
@@ -61,7 +64,8 @@
         <i class="xb-div"></i>
         <span><i class="xb-dot xb-dot-slate"></i> <span class="xb-long">Trade-only key · never withdrawal</span><span class="xb-short">Trade-only key</span></span>
         <i class="xb-div"></i>
-        <span><i class="xb-dot xb-dot-teal"></i> <span class="xb-long">Indian tax centre built in</span><span class="xb-short">Tax centre</span></span>
+        <span data-geo="in"><i class="xb-dot xb-dot-teal"></i> <span class="xb-long">Indian tax centre built in</span><span class="xb-short">Tax centre</span></span>
+        <span data-geo="global"><i class="xb-dot xb-dot-teal"></i> <span class="xb-long">Locks you can&rsquo;t cancel</span><span class="xb-short">No undo</span></span>
       </div>
     </div>
 
@@ -129,7 +133,7 @@
 
       <!-- Scenario 1: Stop loss missing -->
       <div class="scenario-card escalate-1">
-        <div class="scenario-time">09:15<span class="ampm">IST</span></div>
+        <div class="scenario-time">09:15<span class="ampm" data-geo="in">IST</span></div>
         <div class="scenario-content">
           <div class="scenario-stage">Stage 1 &middot; Soft alert</div>
           <h3>You forgot the stop loss.</h3>
@@ -149,7 +153,7 @@
           <div class="sv1-position">
             <div class="head">
               <span><span class="green-dot"></span>BTCUSD &middot; Long &middot; 10&times;</span>
-              <span>09:13 IST</span>
+              <span>09:13<span data-geo="in"> IST</span></span>
             </div>
             <div class="row"><span class="lbl">Entry</span><span class="val">77,540</span></div>
             <div class="row"><span class="lbl">Size</span><span class="val">+0.05 BTC</span></div>
@@ -169,11 +173,11 @@
 
       <!-- Scenario 2: Oversized position -->
       <div class="scenario-card escalate-2">
-        <div class="scenario-time">11:30<span class="ampm">IST</span></div>
+        <div class="scenario-time">11:30<span class="ampm" data-geo="in">IST</span></div>
         <div class="scenario-content">
           <div class="scenario-stage">Stage 2 &middot; Position closed</div>
           <h3>You sized up after a loss.</h3>
-          <p>Down ₹7,000 from earlier. You go bigger to &ldquo;make it back&rdquo;, with a stop that would cost 1.6% of your account &mdash; over your 1% cap. The moment that stop is set, we close the position at market. The rest of your account is untouched.</p>
+          <p>Down <span data-inr="7000">₹7,000</span> from earlier. You go bigger to &ldquo;make it back&rdquo;, with a stop that would cost 1.6% of your account &mdash; over your 1% cap. The moment that stop is set, we close the position at market. The rest of your account is untouched.</p>
           <div class="scenario-action">
             <div class="you-did">
               <span class="micro-lbl">You did</span>
@@ -214,7 +218,7 @@
 
       <!-- Scenario 3: Cooldown -->
       <div class="scenario-card escalate-3">
-        <div class="scenario-time">14:00<span class="ampm">IST</span></div>
+        <div class="scenario-time">14:00<span class="ampm" data-geo="in">IST</span></div>
         <div class="scenario-content">
           <div class="scenario-stage">Stage 3 &middot; Cooldown engaged</div>
           <h3>Three losses in a row.</h3>
@@ -235,17 +239,17 @@
             <div class="loss">
               <span class="x">&times;</span>
               <span class="lbl">10:42 &middot; BTCUSD</span>
-              <span class="amt">₹7,000</span>
+              <span class="amt"><span data-inr="7000">₹7,000</span></span>
             </div>
             <div class="loss">
               <span class="x">&times;</span>
               <span class="lbl">12:15 &middot; ETHUSD</span>
-              <span class="amt">₹9,500</span>
+              <span class="amt"><span data-inr="9500">₹9,500</span></span>
             </div>
             <div class="loss">
               <span class="x">&times;</span>
               <span class="lbl">13:48 &middot; SOLUSD</span>
-              <span class="amt">₹8,000</span>
+              <span class="amt"><span data-inr="8000">₹8,000</span></span>
             </div>
           </div>
           <div class="sv3-cooldown">
@@ -261,15 +265,15 @@
 
       <!-- Scenario 4: Kill switch -->
       <div class="scenario-card escalate-4">
-        <div class="scenario-time">15:42<span class="ampm">IST</span></div>
+        <div class="scenario-time">15:42<span class="ampm" data-geo="in">IST</span></div>
         <div class="scenario-content">
           <div class="scenario-stage">Stage 4 &middot; Kill switch</div>
           <h3>Daily cap reached.</h3>
-          <p>You hit your ₹25,000 max loss. The day is over. Every open position is closed at market. New entries blocked until tomorrow. The account survives &mdash; because the day ends here.</p>
+          <p>You hit your <span data-inr="25000">₹25,000</span> max loss. The day is over. Every open position is closed at market. New entries blocked until tomorrow. The account survives &mdash; because the day ends here.</p>
           <div class="scenario-action">
             <div class="you-did">
               <span class="micro-lbl">You did</span>
-              Hit <b>₹25,000</b> daily cap
+              Hit <b><span data-inr="25000">₹25,000</span></b> daily cap
             </div>
             <div class="we-did">
               <span class="micro-lbl">We did</span>
@@ -282,7 +286,7 @@
             <div class="sv4-pnl-card">
               <div class="row">
                 <span class="lbl">Daily P&amp;L</span>
-                <span class="val">₹24,800 / ₹25,000</span>
+                <span class="val"><span data-inr="24800">₹24,800</span> / <span data-inr="25000">₹25,000</span></span>
               </div>
               <div class="sv4-pnl-bar"><div class="fill"></div></div>
             </div>
@@ -364,7 +368,7 @@
           <div class="mks-hours">
             <span class="on">3h</span><span>6h</span><span>12h</span>
           </div>
-          <p class="mks-warn">You can&rsquo;t trade on this account until <b>18:42&nbsp;IST</b>. You can&rsquo;t cancel this.</p>
+          <p class="mks-warn">You can&rsquo;t trade on this account until <b>18:42<span data-geo="in">&nbsp;IST</span></b>. You can&rsquo;t cancel this.</p>
           <span class="mks-btn">Lock my account</span>
         </div>
         <div class="mks-locked">
@@ -380,7 +384,7 @@
 
 <!-- TRADING IN ACTION SPLIT -->
 <!-- TAX CENTRE -->
-<section class="block" id="tax">
+<section class="block" id="tax" data-geo="in">
   <div class="wrap">
     <div class="section-head">
       <span class="eyebrow">Risk and tax, one connection</span>

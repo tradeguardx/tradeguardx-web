@@ -24,7 +24,7 @@ import path from 'node:path';
 import { SITE, SITEMAP_ROUTES } from '../src/lib/publicRoutes.js';
 
 const DIST = path.resolve(import.meta.dirname, '../dist');
-const DEFAULT_TITLE = "India's First Crypto Trading Kill Switch — TradeGuardX";
+const DEFAULT_TITLE = "Crypto Trading Kill Switch You Can't Bypass — TradeGuardX";
 
 const pick = (html, re) => (html.match(re) || [])[1];
 

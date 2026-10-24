@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 
 const SITE_NAME = 'TradeGuardX';
-const DEFAULT_TITLE = "India's First Crypto Trading Kill Switch — TradeGuardX";
-const DEFAULT_DESC = "India's first crypto trading kill switch for Delta Exchange, CoinDCX and Shark Exchange. Block new orders, close open positions, and lock your account the moment you break your daily-loss or risk limits.";
+const DEFAULT_TITLE = "Crypto Trading Kill Switch You Can't Bypass — TradeGuardX";
+const DEFAULT_DESC = "The crypto trading kill switch you can't bypass for Delta Exchange, CoinDCX and Shark Exchange. Block new orders, close open positions, and lock your account the moment you break your daily-loss or risk limits.";
 const DEFAULT_URL = 'https://tradeguardx.com';
 const DEFAULT_IMAGE = 'https://tradeguardx.com/og-image.png';
 const DEFAULT_IMAGE_ALT =
-  "TradeGuardX — India's first crypto trading kill switch for Delta Exchange, CoinDCX and Shark";
+  "TradeGuardX — the crypto trading kill switch you can't bypass for Delta Exchange, CoinDCX and Shark";
 
 const PAGE_SCHEMA_ID = 'page-schema';
 const PAGE_ROBOTS_ID = 'page-robots';

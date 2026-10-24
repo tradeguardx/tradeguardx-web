@@ -2,6 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSEO } from '../hooks/useSEO';
 import { useAuth } from '../context/AuthContext';
+import { LandingMoneyProvider, useLandingMoney } from '../context/LandingMoneyContext';
 import StoryAIJournal from '../components/landing/story/StoryAIJournal';
 import TradingInAction from '../components/landing/TradingInAction';
 import HeroLiveDemo from '../components/landing/HeroLiveDemo';
@@ -58,8 +59,8 @@ function LandingDivider() {
   );
 }
 
-const RawHtml = memo(function RawHtml({ html, innerRef, className }) {
-  return <div className={className} ref={innerRef} dangerouslySetInnerHTML={{ __html: html }} />;
+const RawHtml = memo(function RawHtml({ html, innerRef, className, region }) {
+  return <div className={className} data-region={region} ref={innerRef} dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
 const FAQ_LD = {
@@ -73,7 +74,28 @@ const FAQ_LD = {
   ].map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
 
-export default function CryptoHomePage() {
+/**
+ * Two pages from one body. "/" is the global homepage: copy for anyone,
+ * prices in the visitor's currency, and India-only parts (the tax centre, IST)
+ * shown only to visitors in India. "/india" is the Indian page exactly as the
+ * homepage used to be: rupees and Indian copy for everyone.
+ */
+export default function CryptoHomePage({ variant = 'global' }) {
+  return (
+    <LandingMoneyProvider forceIndia={variant === 'india'}>
+      <CryptoHomeBody variant={variant} />
+    </LandingMoneyProvider>
+  );
+}
+
+const SEO_BY_VARIANT = {
+  global: { title: "Crypto Trading Kill Switch You Can't Bypass", url: 'https://tradeguardx.com' },
+  india: { title: "India's First Crypto Trading Kill Switch", url: 'https://tradeguardx.com/india' },
+};
+
+function CryptoHomeBody({ variant }) {
+  const money = useLandingMoney();
+  const region = money.region;
   const aRef = useRef(null);
   const a2Ref = useRef(null);
   const a3Ref = useRef(null);
@@ -83,10 +105,10 @@ export default function CryptoHomePage() {
   const { user } = useAuth();
 
   useSEO({
-    title: "India's First Crypto Trading Kill Switch",
+    title: SEO_BY_VARIANT[variant].title,
     description:
       "Never blow another trading account. Set daily-loss, max-trades, risk-per-trade and cooldown rules once — TradeGuardX blocks new orders, closes open positions, and locks your account the moment you break a limit. Live on Delta Exchange, CoinDCX and Shark.",
-    url: 'https://tradeguardx.com',
+    url: SEO_BY_VARIANT[variant].url,
     jsonLd: FAQ_LD,
   });
 
@@ -228,25 +250,37 @@ export default function CryptoHomePage() {
     };
   }, []);
 
+  // Rupee figures in the raw HTML carry data-inr; rewrite them in the
+  // visitor's currency. Prices ("data-kind=price") convert at the real rate
+  // with "≈"; the story's example amounts convert to round local figures.
+  useEffect(() => {
+    const roots = [aRef.current, a2Ref.current, a3Ref.current, bRef.current, bTailRef.current].filter(Boolean);
+    roots.forEach((r) => r.querySelectorAll('[data-inr]').forEach((el) => {
+      const inr = Number(el.dataset.inr);
+      if (!Number.isFinite(inr)) return;
+      el.textContent = el.dataset.kind === 'price' ? money.price(inr) : money.example(inr);
+    }));
+  }, [money]);
+
   return (
     <>
       {heroDemoNode && createPortal(<HeroLiveDemo />, heroDemoNode)}
       {/* Flat background: base colour and depth glows, no stars. */}
       <div className="landing-bg" aria-hidden />
 
-      <RawHtml className="tgx-home" innerRef={aRef} html={rawBodyAHero} />
+      <RawHtml className="tgx-home" innerRef={aRef} html={rawBodyAHero} region={region} />
       {/* A day in the life — straight after the hero. */}
-      <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyADayInLife} />
+      <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyADayInLife} region={region} />
       {/* Trading in Action — proof it's real, right above "Seven rules. Pick yours." */}
       <TradingInAction />
       {/* Rules. */}
-      <RawHtml className="tgx-home" innerRef={a3Ref} html={rawBodyARules} />
+      <RawHtml className="tgx-home" innerRef={a3Ref} html={rawBodyARules} region={region} />
       <StoryAIJournal />
       {/* Available on. */}
-      <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyBHead} />
+      <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyBHead} region={region} />
       <LandingDivider />
       {/* Pricing + FAQ. */}
-      <RawHtml className="tgx-home" innerRef={bTailRef} html={rawBodyBTail} />
+      <RawHtml className="tgx-home" innerRef={bTailRef} html={rawBodyBTail} region={region} />
     </>
   );
 }

@@ -2526,3 +2526,9 @@
     .tgx-home .mks-grid{ grid-template-columns: 1fr; gap: 36px; }
     .tgx-home .mks-points h4{ font-size: 17px; }
   }
+
+  /* Two audiences, one page. data-region is set by CryptoHomePage: "in" on
+     /india and for visitors in India, "global" for everyone else on "/".
+     Copy that only makes sense to one of them carries data-geo. */
+  .tgx-home[data-region="global"] [data-geo="in"],
+  .tgx-home[data-region="in"] [data-geo="global"]{ display: none !important; }
