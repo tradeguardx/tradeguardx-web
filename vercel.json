@@ -52,11 +52,11 @@
       "destination": "/index.html"
     },
     {
-      "source": "/((?:pricing|signup|exchanges|exchanges/delta|exchanges/delta/api-key|exchanges/coindcx|exchanges/coindcx/api-key|exchanges/coindcx/margin|exchanges/shark|exchanges/shark/api-key|crypto-kill-switch|crypto-tax-india|revenge-report|help|help/how-it-works|help/kill-switch|help/cooldowns|help/rules|help/changing-rules|help/live-dashboard|help/troubleshooting|security|about|roadmap|support|partner-with-us|privacy|terms|refund|risk-disclosure))",
+      "source": "/((?:pricing|signup|exchanges|exchanges/delta|exchanges/delta/api-key|exchanges/coindcx|exchanges/coindcx/api-key|exchanges/coindcx/margin|exchanges/shark|exchanges/shark/api-key|crypto-kill-switch|crypto-tax-india|revenge-report|help|help/how-it-works|help/kill-switch|help/cooldowns|help/rules|help/changing-rules|help/live-dashboard|help/troubleshooting|security|about|roadmap|reviews|support|partner-with-us|privacy|terms|refund|risk-disclosure))",
       "destination": "/app.html"
     },
     {
-      "source": "/((?:login|forgot-password|verify-email|reset-password|home-classic|reel-preview))",
+      "source": "/((?:login|forgot-password|verify-email|reset-password|home-classic|reel-preview|review))",
       "destination": "/app.html"
     },
     {

@@ -18,6 +18,9 @@ import DocsSlugRedirect from './pages/DocsSlugRedirect';
 import SecurityPage from './pages/SecurityPage';
 import AboutPage from './pages/AboutPage';
 import RoadmapPage from './pages/RoadmapPage';
+import ReviewsPage from './pages/reviews/ReviewsPage';
+import ReviewLinkPage from './pages/reviews/ReviewLinkPage';
+import MyReviewPage from './pages/reviews/MyReviewPage';
 import CryptoTaxIndiaPage from './pages/CryptoTaxIndiaPage';
 import RiskDisclosurePage from './pages/RiskDisclosurePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -119,6 +122,8 @@ function App() {
                   {/* The free revenge report, for someone not signed in. */}
                   <Route path="revenge-report" element={<RevengeLandingPage />} />
                   <Route path="roadmap" element={<RoadmapPage />} />
+                  <Route path="reviews" element={<ReviewsPage />} />
+                  <Route path="review" element={<ReviewLinkPage />} />
                   {/* Catch-all 404 inside Layout so the page keeps nav + footer.
                       Replaces the previous redirect-to-home that produced soft-404s. */}
                   <Route path="*" element={<NotFoundPage />} />
@@ -158,6 +163,7 @@ function App() {
                   <Route path="billing" element={<RedirectWithSearch to="/dashboard/account/billing" />} />
                   <Route path="connect" element={<ConnectKeyPage />} />
                   <Route path="alerts" element={<AlertsPage />} />
+                  <Route path="review" element={<MyReviewPage />} />
                   <Route path="preferences" element={<PreferencesPage />} />
                   {/* Extension-era routes: the product is server-side only now. */}
                   <Route path="install-extension" element={<RedirectWithSearch to="/dashboard/account/trading" />} />

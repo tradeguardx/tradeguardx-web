@@ -1,0 +1,80 @@
+/*
+ * Reviews UI. Colours come from the dashboard's own variables, with dark
+ * fallbacks, so the same form renders correctly inside the dashboard (light or
+ * dark theme) and on the public link page, which has no dashboard theme.
+ */
+.rv {
+  --rv-ink: var(--ink, #e2e8f0);
+  --rv-ink-2: var(--ink-2, #94a3b8);
+  --rv-ink-3: var(--ink-3, #64748b);
+  --rv-line: var(--line, rgba(255, 255, 255, 0.08));
+  --rv-line-strong: var(--line-strong, rgba(255, 255, 255, 0.16));
+  --rv-surface: var(--surface, #0b0f17);
+  --rv-surface-2: var(--surface-2, rgba(255, 255, 255, 0.03));
+  --rv-mint: var(--mint, #00d4aa);
+  --rv-red: var(--red, #f43f5e);
+  --rv-star: #f5b301;
+  color: var(--rv-ink);
+}
+
+/* ---- Star picker ---- */
+.rv-stars { display: inline-flex; gap: 6px; }
+.rv-star {
+  appearance: none; border: 0; background: transparent; padding: 2px; cursor: pointer;
+  color: var(--rv-line-strong); line-height: 0; border-radius: 8px;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.rv-star:hover { transform: scale(1.12); }
+.rv-star:focus-visible { outline: 2px solid var(--rv-mint); outline-offset: 2px; }
+.rv-star.on { color: var(--rv-star); }
+.rv-star.pop { animation: rv-pop 0.42s cubic-bezier(0.2, 1.7, 0.4, 1) both; animation-delay: var(--d, 0s); }
+@keyframes rv-pop { 0% { transform: scale(0.6); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.rv-stars-sm .rv-star { padding: 0; cursor: default; }
+.rv-stars-sm .rv-star:hover { transform: none; }
+
+/* ---- Fields ---- */
+.rv-field {
+  width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 10px;
+  border: 1px solid var(--rv-line-strong); background: var(--rv-surface-2); color: var(--rv-ink);
+  font: inherit; font-size: 14px; outline: none; transition: border-color 0.15s ease;
+}
+.rv-field:focus { border-color: var(--rv-mint); }
+textarea.rv-field { resize: vertical; min-height: 130px; line-height: 1.6; }
+.rv-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--rv-ink-2); margin-bottom: 7px; }
+.rv-hint { font-size: 12px; color: var(--rv-ink-3); margin-top: 6px; }
+
+.rv-btn {
+  appearance: none; border: 1px solid var(--rv-ink); background: var(--rv-ink); color: var(--rv-surface);
+  padding: 11px 18px; border-radius: 10px; font-weight: 700; font-size: 13.5px; cursor: pointer;
+}
+.rv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.rv-btn-ghost { background: transparent; color: var(--rv-ink-2); border-color: var(--rv-line-strong); }
+
+/* ---- Verified badge ---- */
+.rv-badge {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 700; color: var(--rv-mint);
+  background: color-mix(in srgb, var(--rv-mint) 12%, transparent);
+}
+
+/* ---- Card ---- */
+.rv-card {
+  border: 1px solid var(--rv-line); border-radius: 16px; background: var(--rv-surface-2);
+  padding: 18px 20px;
+}
+.rv-card.in { animation: rv-in 0.45s ease both; animation-delay: var(--d, 0s); }
+@keyframes rv-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rv-reply { margin-top: 14px; padding: 12px 14px; border-left: 3px solid var(--rv-mint); border-radius: 0 10px 10px 0; background: color-mix(in srgb, var(--rv-mint) 6%, transparent); }
+.rv-hidden { border-style: dashed; }
+
+/* ---- Saved burst ---- */
+.rv-saved { animation: rv-saved 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+@keyframes rv-saved { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+
+/* ---- Histogram ---- */
+.rv-bar { height: 8px; border-radius: 999px; background: var(--rv-star); transform-origin: left; animation: rv-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0s); }
+@keyframes rv-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rv *, .rv *::before, .rv *::after { animation: none !important; transition: none !important; }
+}

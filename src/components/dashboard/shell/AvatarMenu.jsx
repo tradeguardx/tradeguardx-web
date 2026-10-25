@@ -12,6 +12,7 @@ const MENU = [
   { to: '/dashboard/preferences', label: 'Preferences', note: 'Display, currency, defaults', d1: 'M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z', d2: 'M19.4 14.4l.9 1.6-2.3 2.3-1.6-.9a7 7 0 01-1.7 1l-.4 1.8h-3.3l-.4-1.8a7 7 0 01-1.7-1l-1.6.9-2.3-2.3.9-1.6a7 7 0 01-.4-1.9L3.7 12l.5-1.9 1.8-.4a7 7 0 01.9-1.7l-.9-1.6L8.3 4l1.6.9a7 7 0 011.7-.9l.4-1.8h3.3' },
   { to: '/dashboard/account/security', label: 'Security', note: 'Password, sessions, keys', d1: 'M12 3l7 3v6c0 4.2-2.9 7.5-7 9-4.1-1.5-7-4.8-7-9V6l7-3z', d2: 'M9.5 12l1.9 1.9 3.4-3.6' },
   { to: '/dashboard/account/billing', label: 'Plan & billing', note: null, d1: 'M3 7h18v11H3z', d2: 'M3 11h18M7 15h4' },
+  { to: '/dashboard/review', label: 'Write a review', note: 'Published as you write it', d1: 'M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z', d2: 'M12 3.5v0' },
   { to: '/dashboard/alerts', label: 'Alert channels', note: 'Telegram, email, mobile', d1: 'M12 4a5.2 5.2 0 00-5.2 5.2c0 5-2 6.3-2 6.3h14.4s-2-1.3-2-6.3A5.2 5.2 0 0012 4z', d2: 'M10.2 18.4a2 2 0 003.6 0' },
 ];
 

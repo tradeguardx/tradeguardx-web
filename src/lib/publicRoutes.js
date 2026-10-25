@@ -85,6 +85,9 @@ export const PUBLIC_ROUTES = [
   // trust us with an API key, not to rank for anything.
   { path: '/about', priority: '0.4', changefreq: 'yearly', og: null, sitemap: false },
   { path: '/roadmap', priority: '0.6', changefreq: 'weekly', og: null },
+  // Customer reviews. Rendered from the referral service at load; the
+  // prerendered copy carries whatever was live at build time.
+  { path: '/reviews', priority: '0.7', changefreq: 'daily', og: null },
   { path: '/support', priority: '0.6', changefreq: 'monthly', og: null },
   { path: '/partner-with-us', priority: '0.6', changefreq: 'monthly', og: null },
 
@@ -114,6 +117,7 @@ export const EXCLUDED_ROUTES = {
   '/docs': 'Redirects to /help.',
   '/docs/:slug': 'Redirects to /help/:slug, keeping the slug. A redirect is not content.',
   '/home-classic': 'A second copy of the homepage. Rendered noindex; kept only as a reference layout.',
+  '/review': 'The personal review-link form (/review?t=…). A form tied to one person’s signed link, not content. Rendered noindex.',
   '/reel-preview': 'A harness for reviewing the share reel. Not a page, not content, and it renders a 17-second animation — indexing it would put a loading loop in front of a search result.',
 };
 

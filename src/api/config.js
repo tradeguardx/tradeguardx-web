@@ -46,6 +46,13 @@ const SYNC_ENV_BASE_URLS = {
   prod: 'https://api.tradeguardx.com/sync',
 };
 
+/** Referral service (serverless basePath `referral`). Reviews today, referrals next. */
+const REFERRAL_ENV_BASE_URLS = {
+  local: 'http://localhost:3014',
+  dev: 'https://dev.api.tradeguardx.com/referral',
+  prod: 'https://api.tradeguardx.com/referral',
+};
+
 /** Analytics service (serverless basePath `analytics`). Public ingest endpoint. */
 const ANALYTICS_ENV_BASE_URLS = {
   local: 'http://localhost:3010',
@@ -98,6 +105,7 @@ const OVERRIDES = {
   VITE_PAYMENTS_API_BASE_URL: import.meta.env.VITE_PAYMENTS_API_BASE_URL,
   VITE_TRADE_API_BASE_URL: import.meta.env.VITE_TRADE_API_BASE_URL,
   VITE_ANALYTICS_API_BASE_URL: import.meta.env.VITE_ANALYTICS_API_BASE_URL,
+  VITE_REFERRAL_API_BASE_URL: import.meta.env.VITE_REFERRAL_API_BASE_URL,
 };
 
 function readOverride(key) {
@@ -169,6 +177,12 @@ export function resolveSyncApiBaseUrl() {
 }
 
 export const SYNC_API_BASE_URL = resolveSyncApiBaseUrl();
+
+export function resolveReferralApiBaseUrl() {
+  return resolveServiceBaseUrl('VITE_REFERRAL_API_BASE_URL', REFERRAL_ENV_BASE_URLS);
+}
+
+export const REFERRAL_API_BASE_URL = resolveReferralApiBaseUrl();
 
 /**
  * The single public IP users should whitelist on their Delta API key. Returns

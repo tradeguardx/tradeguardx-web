@@ -7,6 +7,7 @@ const links = {
     { label: 'How it Works', to: { pathname: '/', hash: 'scenarios' } },
     { label: 'Pricing', to: '/pricing' },
     { label: 'Roadmap', to: '/roadmap' },
+    { label: 'Reviews', to: '/reviews' },
     { label: 'FAQ', to: { pathname: '/', hash: 'faq' } },
   ],
   // Site-wide links to the venue pages, so they are not orphans depending on
