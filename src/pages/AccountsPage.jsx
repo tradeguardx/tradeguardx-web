@@ -10,6 +10,16 @@ import { checkAccountDeletable, deleteTradingAccount } from '../api/tradingAccou
 import { maxTradingAccountsForPlan } from '../lib/planLimits';
 import { brokerLabel } from '../lib/labels';
 import VenueMark, { VenueBetaBadge } from '../components/dashboard/VenueMark';
+
+/**
+ * The typed confirmation is there to make deleting deliberate, not to test
+ * typing: "Exness-Test" or "exness - test" for "Exness - Test" is clearly the
+ * same account, so spaces and letter case don't count.
+ */
+const sameName = (typed, name) => {
+  const norm = (v) => (v ?? '').replace(/\s+/g, '').toLowerCase();
+  return norm(typed) !== '' && norm(typed) === norm(name);
+};
 import { sx } from '../components/dashboard/shell/sx';
 import { getUserZone } from '../lib/userZone';
 
@@ -65,7 +75,7 @@ export default function AccountsPage() {
   };
 
   const confirmDelete = async () => {
-    if (!del) return;
+    if (!del || !sameName(delTyped, del.name)) return;
     setDelBusy(true);
     try {
       await deleteTradingAccount({ accessToken, accountId: del.id });
@@ -399,9 +409,9 @@ export default function AccountsPage() {
                 <div style={sx('display:flex;gap:9px;margin-top:16px;flex-wrap:wrap')}>
                   <button
                     type="button"
-                    disabled={delBusy || delTyped.trim() !== del.name}
+                    disabled={delBusy || !sameName(delTyped, del.name)}
                     onClick={confirmDelete}
-                    style={sx('flex:1;min-width:150px;padding:11px;border-radius:10px;font-size:12.5px;font-weight:700', delTyped.trim() === del.name && !delBusy
+                    style={sx('flex:1;min-width:150px;padding:11px;border-radius:10px;font-size:12.5px;font-weight:700', sameName(delTyped, del.name) && !delBusy
                       ? { border: '1px solid var(--red-btn)', background: 'var(--red-btn)', color: '#fff' }
                       : { border: '1px solid var(--line)', background: 'var(--surface-3)', color: 'var(--ink-faint)', cursor: 'default' })}
                   >

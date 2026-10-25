@@ -1,4 +1,5 @@
 import { sx } from './shell/sx';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 /**
  * How to reach the venue's create-key form, as the two or three taps it is.
@@ -29,7 +30,11 @@ import { sx } from './shell/sx';
  */
 export default function VenuePath({ venue }) {
   const path = venue?.navPath;
+  const isMobile = useIsMobile();
   if (!path?.length) return null;
+  // A four-tap path (Exness) wraps on a phone as three chips and a lone
+  // fourth. Two per row reads as an even 2×2 instead; short paths stay a row.
+  const grid = isMobile && path.length > 3;
 
   // Delta is the one venue with a working app flow, and its desktop users get
   // a direct link, so the taps are the phone path. The other two have no app
@@ -39,14 +44,16 @@ export default function VenuePath({ venue }) {
   return (
     <div style={sx('margin-top:13px')}>
       <span style={sx('display:block;margin-bottom:7px;font-size:11.5px;color:var(--ink-faint)')}>{where}</span>
-      <div style={sx('display:flex;align-items:center;gap:7px;flex-wrap:wrap')}>
+      <div style={sx(grid ? 'display:grid;grid-template-columns:1fr 1fr;gap:7px' : 'display:flex;align-items:center;gap:7px;flex-wrap:wrap')}>
         {path.map((tap, i) => (
-          <span key={tap} style={sx('display:inline-flex;align-items:center;gap:7px;white-space:nowrap')}>
-            <span style={sx('padding:6px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface-2);font-size:12.5px;font-weight:600')}>
+          <span key={tap} style={sx('display:inline-flex;align-items:center;gap:7px;white-space:nowrap;min-width:0')}>
+            <span style={sx('padding:6px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface-2);font-size:12.5px;font-weight:600', grid ? 'flex:1;min-width:0;text-align:center;overflow:hidden;text-overflow:ellipsis' : '')}>
               {tap}
             </span>
-            {i < path.length - 1 && (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="2" strokeLinecap="round" aria-hidden>
+            {/* In the grid the last chip keeps an invisible arrow so all four
+                chips are the same width. */}
+            {(i < path.length - 1 || grid) && (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="2" strokeLinecap="round" aria-hidden style={i === path.length - 1 ? { visibility: 'hidden', flex: 'none' } : { flex: 'none' }}>
                 <path d="M9 6l6 6-6 6" />
               </svg>
             )}
