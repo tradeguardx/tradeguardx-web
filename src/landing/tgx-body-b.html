@@ -82,12 +82,16 @@
 
     <div class="faq-list">
       <details class="faq-item">
+        <summary>Is TradeGuardX the same as TradeGuard?</summary>
+        <p>No. TradeGuardX, with an X, is a separate company: a server-side kill switch for crypto and forex trading accounts. It is not connected to Nasdaq TradeGuard, TradeGuard (tradeguard.co) or TradeGuardHQ, which are different products.</p>
+      </details>
+      <details class="faq-item">
         <summary>What is a crypto killswitch, and how is it different from a stop loss?</summary>
         <p>A stop loss protects a single trade. A crypto killswitch protects the <b>account</b>: you set a daily loss cap, a maximum number of trades and a cooldown once, and when you cross one we cancel your open orders, close your positions, and block new entries until the lock lifts. It's aimed at the behaviour that actually blows accounts &mdash; the fast re-entry after a loss, the doubled size to win it back. <a href="/crypto-kill-switch">Read the full explainer &rarr;</a></p>
       </details>
       <details class="faq-item">
         <summary>Will TradeGuardX have access to my funds?</summary>
-        <p>No. Your API key can read your account and place trades &mdash; nothing else. It can never withdraw, and your funds never leave your own exchange wallet. None of the exchanges we support even offer a withdrawal permission on an API key, so the option does not exist to give away. During a cooldown we do not move anything: we cancel your orders, close your positions, and block new trades until the lock lifts.</p>
+        <p>No. We only ask for an API key that can read your account and place trades, never one that can withdraw, and your funds never leave your own exchange account. During a cooldown we do not move anything: we cancel your orders, close your positions, and block new trades until the lock lifts.</p>
       </details>
       <details class="faq-item">
         <summary>How are my API keys stored and secured?</summary>
@@ -103,11 +107,11 @@
       </details>
       <details class="faq-item">
         <summary>Which exchanges can I connect?</summary>
-        <p>Delta Exchange, CoinDCX futures and Shark Exchange are live, and one Pro subscription covers every one &mdash; connect any or all, no upgrade required. Delta came first because it has the best perp API in India for what we need: granular, fast, and stable. CoinDCX followed, then Shark.</p>
+        <p>Delta Exchange (India and Global), Exness, CoinDCX futures and Shark Exchange are live, and BloFin is in beta. One Pro subscription covers every one &mdash; connect any or all, no upgrade required.</p>
       </details>
       <details class="faq-item">
         <summary>Is this regulated? Is it safe to give you API access?</summary>
-        <p>API keys are scoped (no withdrawal), encrypted at rest, and tied to whitelisted IPs only. We're not a financial advisor and don't custody funds &mdash; we're a risk-enforcement layer that talks to Delta on your behalf. Read our docs for the full security posture.</p>
+        <p>API keys are scoped (no withdrawal), encrypted at rest, and tied to whitelisted IPs only. We're not a financial advisor and don't custody funds &mdash; we're a risk-enforcement layer that talks to your exchange on your behalf. Read our docs for the full security posture.</p>
       </details>
       <details class="faq-item">
         <summary>Does this work if I trade from the exchange's mobile app?</summary>

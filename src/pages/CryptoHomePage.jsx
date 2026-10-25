@@ -67,10 +67,11 @@ const FAQ_LD = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    ['Will TradeGuardX have access to my funds?', 'No. Your API key can read your account and place trades — nothing else. It can never withdraw, and your funds never leave your own exchange wallet. None of the exchanges we support even offer a withdrawal permission on an API key, so the option does not exist to give away. During a cooldown we cancel orders, close positions, and block new trades until the lock lifts.'],
+    ['Is TradeGuardX the same as TradeGuard?', 'No. TradeGuardX, with an X, is a separate company: a server-side kill switch for crypto and forex trading accounts. It is not connected to Nasdaq TradeGuard, TradeGuard (tradeguard.co) or TradeGuardHQ, which are different products.'],
+    ['Will TradeGuardX have access to my funds?', 'No. We only ask for an API key that can read your account and place trades, never one that can withdraw, and your funds never leave your own exchange account. During a cooldown we cancel orders, close positions, and block new trades until the lock lifts.'],
     ['Does this work if I trade from the exchange’s mobile app?', 'Yes, and it is the reason we run on our own servers instead of in your browser. We hold a live connection to the account itself, so it makes no difference whether the order came from the exchange website, its phone app, or a script you wrote. A breach is checked and acted on within seconds. Alerts go to Telegram or email.'],
     ['Can I disable the rules when I want to trade more?', 'Before your first trade of the day, yes — changes apply straight away. From your first trade until the daily reset your rules are locked, so you cannot loosen one or switch it off in the heat of a bad session. You can still switch on a rule that is off.'],
-    ['Which exchanges can I connect?', 'Delta Exchange, CoinDCX futures and Shark Exchange are live, and one subscription covers every one — connect any or all. Delta came first because it has the most granular, stable perp API in India; CoinDCX followed, then Shark.'],
+    ['Which exchanges can I connect?', 'Delta Exchange (India and Global), Exness, CoinDCX futures and Shark Exchange are live, and BloFin is in beta. One subscription covers every one — connect any or all.'],
   ].map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
 
@@ -107,7 +108,7 @@ function CryptoHomeBody({ variant }) {
   useSEO({
     title: SEO_BY_VARIANT[variant].title,
     description:
-      "Never blow another trading account. Set daily-loss, max-trades, risk-per-trade and cooldown rules once — TradeGuardX blocks new orders, closes open positions, and locks your account the moment you break a limit. Live on Delta Exchange, CoinDCX and Shark.",
+      "Never blow another trading account. Set daily-loss, max-trades and cooldown rules once; TradeGuardX closes your positions and locks the account the moment you break one. Delta Exchange, Exness, CoinDCX, Shark.",
     url: SEO_BY_VARIANT[variant].url,
     jsonLd: FAQ_LD,
   });

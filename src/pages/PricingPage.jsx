@@ -272,8 +272,8 @@ const TRUST_BADGES = [
 
 export default function PricingPage() {
   useSEO({
-    title: 'Pricing',
-    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly. 3 days free — cancel before day 4 and pay nothing. Delta Exchange, CoinDCX and Shark.',
+    title: 'Pricing: One Plan for Every Exchange',
+    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly, in your local price. 3 days free, cancel before day 4 and pay nothing.',
     url: 'https://tradeguardx.com/pricing',
   });
   const [plans, setPlans] = useState([]);

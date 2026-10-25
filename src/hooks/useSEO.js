@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 
 const SITE_NAME = 'TradeGuardX';
 const DEFAULT_TITLE = "Crypto Trading Kill Switch You Can't Bypass — TradeGuardX";
-const DEFAULT_DESC = "The crypto trading kill switch you can't bypass for Delta Exchange, CoinDCX and Shark Exchange. Block new orders, close open positions, and lock your account the moment you break your daily-loss or risk limits.";
+const DEFAULT_DESC = "Set daily-loss, max-trades and cooldown rules once. TradeGuardX closes your positions and locks your account the moment you break one. Crypto and forex.";
 const DEFAULT_URL = 'https://tradeguardx.com';
 const DEFAULT_IMAGE = 'https://tradeguardx.com/og-image.png';
 const DEFAULT_IMAGE_ALT =
-  "TradeGuardX — the crypto trading kill switch you can't bypass for Delta Exchange, CoinDCX and Shark";
+  "TradeGuardX — the trading kill switch you can't bypass, for crypto and forex accounts";
 
 const PAGE_SCHEMA_ID = 'page-schema';
 const PAGE_ROBOTS_ID = 'page-robots';

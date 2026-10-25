@@ -3,12 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export const faqs = [
   {
-    q: 'Is this really the first of its kind in India?',
-    a: 'Yes. TradeGuardX is the first product built in India to actually enforce crypto trading discipline — not just track it or alert you. When you breach a limit you set, we act on your account automatically.',
+    q: 'Is TradeGuardX the same as TradeGuard?',
+    a: 'No. TradeGuardX, with an X, is a separate company: a server-side kill switch for crypto and forex trading accounts. It is not connected to Nasdaq TradeGuard, TradeGuard (tradeguard.co) or TradeGuardHQ.',
   },
   {
     q: 'How does it actually work?',
-    a: 'You connect your Delta account with a read-or-trade API key once. Our servers then watch your account in real time and, the moment you breach a rule you set, take action — close trades, lock the account, or just alert you, depending on the rule. Setup takes about a minute.',
+    a: 'You connect your exchange account with a read-and-trade API key once. Our servers then watch your account in real time and, the moment you breach a rule you set, take action — close trades, lock the account, or just alert you, depending on the rule. Setup takes about a minute.',
   },
   {
     q: 'Can you withdraw my money or trade for me?',
@@ -28,15 +28,15 @@ export const faqs = [
   },
   {
     q: 'What rules can I enforce?',
-    a: 'Daily loss limit, max total drawdown, risk per trade, max trades per day, cooldown after consecutive losses (tilt lockout), hedging prevention, position stacking control, minimum hold time, and stop-loss protection. Turn on whichever fit your style.',
+    a: 'Seven rules. Five act on your account: daily loss limit, max trades per day, daily profit target, a pause after losses in a row, and risk per trade. Two alert you: a position with no stop-loss, and a drawdown past your threshold. Turn on whichever fit your style.',
   },
   {
     q: 'Which exchanges are supported?',
-    a: 'Delta Exchange, CoinDCX and Shark Exchange are live today — we’re the first to bring real risk enforcement to any of them. More Indian crypto exchanges follow based on trader demand.',
+    a: 'Delta Exchange (India and Global), Exness, CoinDCX futures and Shark Exchange are live today, and BloFin is in beta. One plan covers every exchange you connect.',
   },
   {
     q: 'Is there a free plan?',
-    a: 'No — there is one plan, Pro, with everything included. Every new account gets 3 days free: you set up UPI AutoPay or a card first, nothing is charged today, and if you cancel before day 4 you pay nothing.',
+    a: 'No — there is one plan, Pro, with everything included, priced for your country. Every new account gets 3 days free: you set up a card (or UPI AutoPay in India) first, nothing is charged today, and if you cancel before day 4 you pay nothing.',
   },
 ];
 
