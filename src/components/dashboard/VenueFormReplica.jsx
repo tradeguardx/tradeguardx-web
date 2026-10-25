@@ -227,8 +227,10 @@ function SectionRule({ children }) {
  * flags that would bend the shared one out of shape.
  */
 function ExnessForm({ venue, onCopy, copiedValue, accent }) {
+  // One column as wide as the input boxes, so the Scopes card, the section
+  // rules and the fields share a right edge instead of a ragged one.
   return (
-    <>
+    <div style={sx('max-width:420px')}>
       <Field label={<><Num n={1} />Name</>} hint="English letters and digits only, up to 16.">
         <FilledBox value={SUGGESTED_KEY_NAME} onCopy={onCopy} copied={copiedValue === SUGGESTED_KEY_NAME} />
       </Field>
@@ -246,14 +248,14 @@ function ExnessForm({ venue, onCopy, copiedValue, accent }) {
             <span style={sx('display:flex;align-items:flex-start;gap:10px')}>
               <Radio on accent={accent} />
               <span>
-                <span style={sx('display:block;font-size:13.5px;font-weight:700')}>Full access</span>
+                <span style={sx('display:flex;align-items:center;font-size:13.5px;font-weight:700')}><Num n={3} />Full access</span>
                 <span style={sx('display:block;margin-top:2px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>
                   Place orders and manage positions — what lets us close a trade.
                 </span>
               </span>
             </span>
             <div style={sx('margin:11px 0 0 28px')}>
-              <Field label={<><Num n={3} />Account</>} hint={venue.accountNote}>
+              <Field label={<><Num n={4} />Account</>} hint={venue.accountNote}>
                 <Dropdown value={venue.accountDefault} />
               </Field>
             </div>
@@ -278,13 +280,13 @@ function ExnessForm({ venue, onCopy, copiedValue, accent }) {
       </div>
 
       <SectionRule>Security</SectionRule>
-      <Field label={<><Num n={4} />Expiry date</>} hint="Never — a key that expires switches your protection off on the day it lapses.">
+      <Field label={<><Num n={5} />Expiry date</>} hint="Never — a key that expires switches your protection off on the day it lapses.">
         <Dropdown value="Never" />
       </Field>
-      <Field label={<><Num n={5} />{venue.ipField}</>} hint={venue.ipHint}>
+      <Field label={<><Num n={6} />{venue.ipField}</>} hint={venue.ipHint}>
         <FilledBox value={ENGINE_EGRESS_IP} mono onCopy={onCopy} copied={copiedValue === ENGINE_EGRESS_IP} />
       </Field>
-      <Field label={<><Num n={6} />Public key</>}>
+      <Field label={<><Num n={7} />Public key</>}>
         <span style={sx('display:grid;gap:10px')}>
           <span style={sx('display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-3)')}>
             <Radio accent={accent} /> I&apos;ll use my own public key
@@ -294,7 +296,7 @@ function ExnessForm({ venue, onCopy, copiedValue, accent }) {
           </span>
         </span>
       </Field>
-    </>
+  </div>
   );
 }
 
@@ -305,10 +307,12 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
 
   return (
     <figure style={sx('margin:0;border:1px solid var(--line);border-radius:13px;background:var(--surface);overflow:hidden')}>
+      {!venue.formStepBody && (
       <figcaption style={sx('padding:11px 16px;border-bottom:1px solid var(--line);background:var(--surface-3);font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>
         This is {venue.name}&apos;s form, filled in. Make yours look like this —{' '}
         <span style={sx('color:var(--ink-faint)')}>nothing below is live, the boxes are a picture.</span>
       </figcaption>
+      )}
 
       <div style={sx('padding:18px 16px 16px')}>
         {venue.family === 'exness' ? (
@@ -446,7 +450,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
 
         {venue.submitLabel && (
           <>
-          {venue.family === 'exness' && <Num n={7} />}
+          {venue.family === 'exness' && <Num n={8} />}
           <span
             aria-hidden
             style={sx('display:inline-block;padding:13px 22px;border-radius:10px;font-size:14px;font-weight:700', {

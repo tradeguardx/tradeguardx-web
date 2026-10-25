@@ -455,7 +455,7 @@ const VENUES = {
         invalidHint: 'The account number only, e.g. #21000088861.',
       },
     ],
-    formStepBody: 'Make Exness\u2019s New API key panel look like the picture below, top to bottom, then press Create API key.',
+    formStepBody: 'Fill Exness\u2019s New API key panel to match the picture below, top to bottom, then press Create API key. The picture is not a live form.',
     /** Step 1, in Exness's own words. */
     openStepTitle: 'Open API management on Exness',
     openStepBody: 'The button opens API management directly. Or from the Exness homepage: side menu → API management → New API key. Keep this tab open; you come back to paste.',
