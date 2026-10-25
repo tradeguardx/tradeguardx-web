@@ -90,10 +90,18 @@ describe('ReviewForm', () => {
 });
 
 describe('ReviewCard', () => {
+  it('leads with the verified mark and shows every exchange the reviewer trades on', () => {
+    wrap(<ReviewCard review={saved({ exchanges: ['CoinDCX', 'Delta Exchange', 'Exness', 'Shark Exchange'], traderSince: '2026-09' })} />);
+    expect(screen.getByText('Verified trader')).toBeTruthy();
+    expect(screen.getByLabelText('Trades on CoinDCX, Delta Exchange, Exness, Shark Exchange')).toBeTruthy();
+    expect(screen.getByText(/Trader since Sept? 2026/)).toBeTruthy();
+  });
+
   it('shows a hidden review as a stub with its reason and none of its words', () => {
     wrap(<ReviewCard review={{ id: 'h', displayName: 'Rahul V.', exchanges: ['CoinDCX'], traderSince: '2026-09', createdAt: '2026-10-01T00:00:00Z', hidden: { reason: 'Spam or advertising' }, body: null, rating: null, reply: null }} />);
     expect(screen.getByText(/Review hidden: Spam or advertising/)).toBeTruthy();
-    expect(screen.getByText(/Verified · CoinDCX/)).toBeTruthy();
+    expect(screen.getByText('Verified trader')).toBeTruthy();
+    expect(screen.getByLabelText('Trades on CoinDCX')).toBeTruthy();
   });
 
   it('shows our reply under the review', () => {
