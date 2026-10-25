@@ -29,10 +29,7 @@ export default function ReviewLinkPage() {
     <div className="min-h-screen" style={{ backgroundColor: '#07090f' }}>
       <div className="mx-auto max-w-2xl px-4 pb-24 pt-24 sm:px-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-accent">TradeGuardX reviews</p>
-        <h1 className="mt-3 font-display text-3xl font-bold leading-tight text-white md:text-4xl">How has it been for you?</h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-slate-400">
-          Takes two minutes. It goes up on our public page exactly as you write it, good or bad.
-        </p>
+        <p className="mt-2 text-[15px] leading-relaxed text-slate-400">Takes a minute. Good or bad, it goes up as you write it.</p>
         <div className="mt-8 rounded-2xl border p-5 sm:p-6" style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
           {error ? (
             <div>

@@ -70,7 +70,7 @@ export default function ReviewsPage() {
   const max = stats ? Math.max(1, ...Object.values(stats.histogram)) : 1;
 
   return (
-    <div className="rv relative min-h-screen overflow-hidden" style={{ backgroundColor: '#07090f' }}>
+    <div className="rvw relative min-h-screen overflow-hidden" style={{ backgroundColor: '#07090f' }}>
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div className="absolute left-1/2 top-0 h-[480px] w-[900px] -translate-x-1/2 rounded-full blur-[160px]" style={{ background: 'radial-gradient(ellipse, rgba(245,179,1,0.06), transparent 65%)' }} />
       </div>
@@ -88,7 +88,7 @@ export default function ReviewsPage() {
         <div className="mt-10 grid gap-8 lg:grid-cols-[300px_minmax(0,1fr)]">
           {/* Summary + filters */}
           <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-            <div className="rv-card" style={{ padding: 20 }}>
+            <div className="rvw-card" style={{ padding: 20 }}>
               {stats ? (
                 <>
                   <div className="flex items-end gap-3">
@@ -114,7 +114,7 @@ export default function ReviewsPage() {
                         >
                           <span className="text-slate-300">{n} ★</span>
                           <span className="h-2 rounded-full bg-white/[0.06]">
-                            {c > 0 && <span className="rv-bar block" style={{ width: `${(c / max) * 100}%`, '--d': `${i * 0.08}s` }} />}
+                            {c > 0 && <span className="rvw-bar block" style={{ width: `${(c / max) * 100}%`, '--d': `${i * 0.08}s` }} />}
                           </span>
                           <span className="text-right text-slate-500">{c}</span>
                         </button>
@@ -177,7 +177,7 @@ export default function ReviewsPage() {
             )}
 
             {data && items.length === 0 && (
-              <div className="rv-card" style={{ padding: 24 }}>
+              <div className="rvw-card" style={{ padding: 24 }}>
                 <p className="text-[16px] font-bold text-white">{rating || exchange ? 'Nothing here yet.' : 'No reviews yet.'}</p>
                 <p className="mt-2 text-[14px] leading-relaxed text-slate-400">
                   {rating || exchange

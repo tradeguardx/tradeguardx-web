@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import StarPicker from './Stars';
 import ReviewCard, { VerifiedBadge } from './ReviewCard';
@@ -7,70 +7,92 @@ import './reviews.css';
 const ANON = 'A TradeGuardX trader';
 const REDACTED = { email: 'an email address', phone: 'a phone number', link: 'a link' };
 
-/** "a phone number and a link" */
 function listOf(kinds) {
   const words = kinds.map((k) => REDACTED[k]).filter(Boolean);
   if (words.length < 2) return words[0] ?? '';
   return `${words.slice(0, -1).join(', ')} and ${words.at(-1)}`;
 }
 
+/** The question under the stars follows the rating, so the box never feels blank. */
+const PROMPT = {
+  1: 'What went wrong?',
+  2: 'What went wrong?',
+  3: 'What would make it better?',
+  4: 'What do you like about it?',
+  5: 'What do you like about it?',
+};
+
 /**
- * The review form, shared by the dashboard (/dashboard/review) and the
- * personal link page (/review?t=…). `state` is what GET /reviews/me or
- * /reviews/by-token returns; `onSave` and `onDelete` do the network call.
+ * The review form, shared by /dashboard/review and the /review?t=… link page.
  *
- * It says what will happen BEFORE the click — live immediately, low ratings
- * included, contact details blanked — because a reviewer who is surprised
- * afterwards stops trusting every other review on the page.
+ * Deliberately short: stars first, then one box, then post. The policy is one
+ * line under the button rather than a block above it. Someone with a review
+ * already sees it as a card with Edit and Delete, not a pre-filled form.
  */
 export default function ReviewForm({ state, onSave, onDelete }) {
-  const existing = state.review;
-  const limits = state.limits ?? { bodyMin: 20, bodyMax: 2000, titleMax: 80, displayNameMax: 40 };
-
-  const [rating, setRating] = useState(existing?.rating ?? 0);
-  const [title, setTitle] = useState(existing?.title ?? '');
-  const [body, setBody] = useState(existing?.body ?? '');
-  const [anon, setAnon] = useState(existing?.displayName === ANON);
-  const [name, setName] = useState(existing && existing.displayName !== ANON ? existing.displayName : state.defaultName === ANON ? '' : state.defaultName ?? '');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [saved, setSaved] = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
-  const len = body.trim().length;
-  const ready = rating > 0 && len >= limits.bodyMin && len <= limits.bodyMax && !busy;
-
-  const preview = useMemo(
-    () => ({
-      id: 'preview',
-      rating: rating || 5,
-      title: title.trim() || null,
-      body: body.trim() || 'Your review will appear here.',
-      displayName: anon ? ANON : name.trim() || ANON,
-      exchanges: state.exchanges,
-      traderSince: state.traderSince,
-      createdAt: existing?.createdAt ?? new Date().toISOString(),
-      editedAt: existing ? new Date().toISOString() : null,
-      hidden: null,
-      reply: existing?.reply ?? null,
-    }),
-    [rating, title, body, anon, name, state, existing],
-  );
+  const limits = state.limits ?? { bodyMin: 20, bodyMax: 2000, displayNameMax: 40 };
+  const [current, setCurrent] = useState(state.review);
+  const [mode, setMode] = useState(state.review ? 'view' : 'edit');
+  const [justSaved, setJustSaved] = useState(false);
 
   if (!state.eligible) {
     return (
-      <div className="rv rv-card" style={{ padding: 22 }}>
-        <p style={{ margin: 0, fontWeight: 700, fontSize: 16 }}>Reviews open once you’ve connected an exchange</p>
-        <p style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.6, color: 'var(--rv-ink-2)' }}>
-          Every review on TradeGuardX shows the exchange the reviewer actually trades on. That only works if we can see
-          it, so connect your exchange key first and then come back.
-        </p>
-        <Link to="/dashboard/connect" className="rv-btn" style={{ display: 'inline-block', marginTop: 14, textDecoration: 'none' }}>
-          Connect an exchange
-        </Link>
+      <div className="rvw rvw-empty">
+        <p className="rvw-empty-title">Connect an exchange to leave a review</p>
+        <p className="rvw-empty-text">Every review shows the exchange the reviewer trades on, so we need yours first.</p>
+        <Link to="/dashboard/connect" className="rvw-btn rvw-btn-primary">Connect an exchange</Link>
       </div>
     );
   }
+
+  if (mode === 'deleted') {
+    return (
+      <div className="rvw rvw-empty rvw-saved">
+        <p className="rvw-empty-title">Review deleted</p>
+        <button type="button" className="rvw-btn rvw-btn-ghost" onClick={() => { setCurrent(null); setMode('edit'); }}>
+          Write a new one
+        </button>
+      </div>
+    );
+  }
+
+  if (mode === 'view' && current) {
+    return (
+      <ReviewView
+        review={current}
+        justSaved={justSaved}
+        onEdit={() => { setJustSaved(false); setMode('edit'); }}
+        onDelete={onDelete ? async () => { await onDelete(); setMode('deleted'); } : null}
+      />
+    );
+  }
+
+  return (
+    <Editor
+      state={state}
+      existing={current}
+      limits={limits}
+      onCancel={current ? () => setMode('view') : null}
+      onSaved={(r) => { setCurrent(r); setJustSaved(true); setMode('view'); }}
+      onSave={onSave}
+    />
+  );
+}
+
+function Editor({ state, existing, limits, onSave, onSaved, onCancel }) {
+  const [rating, setRating] = useState(existing?.rating ?? 0);
+  const [body, setBody] = useState(existing?.body ?? '');
+  const [anon, setAnon] = useState(existing?.displayName === ANON);
+  const initialName = existing && existing.displayName !== ANON ? existing.displayName : state.defaultName === ANON ? '' : state.defaultName ?? '';
+  const [name, setName] = useState(initialName);
+  const [editingName, setEditingName] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const len = body.trim().length;
+  const short = limits.bodyMin - len;
+  const ready = rating > 0 && len >= limits.bodyMin && len <= limits.bodyMax && !busy;
+  const shownName = anon || !name.trim() ? ANON : name.trim();
 
   const submit = async (e) => {
     e.preventDefault();
@@ -78,162 +100,133 @@ export default function ReviewForm({ state, onSave, onDelete }) {
     setBusy(true);
     setError('');
     try {
-      const res = await onSave({
-        rating,
-        title: title.trim() || null,
-        body: body.trim(),
-        displayName: anon ? ANON : name.trim() || null,
-      });
-      setSaved(res.review);
+      const res = await onSave({ rating, title: existing?.title ?? null, body: body.trim(), displayName: shownName });
+      onSaved(res.review);
     } catch (err) {
-      setError(err?.message || 'Could not post your review. Try again in a moment.');
-    } finally {
+      setError(err?.message || 'Couldn’t post that. Try again in a moment.');
       setBusy(false);
     }
   };
-
-  const remove = async () => {
-    setBusy(true);
-    try {
-      await onDelete();
-      setSaved({ deleted: true });
-    } catch (err) {
-      setError(err?.message || 'Could not delete your review.');
-    } finally {
-      setBusy(false);
-      setConfirmDelete(false);
-    }
-  };
-
-  if (saved?.deleted) {
-    return (
-      <div className="rv rv-card rv-saved" style={{ padding: 22 }}>
-        <p style={{ margin: 0, fontWeight: 700, fontSize: 16 }}>Your review is deleted.</p>
-        <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--rv-ink-2)' }}>It’s gone from the public page. You can write a new one any time.</p>
-      </div>
-    );
-  }
-
-  if (saved) {
-    return (
-      <div className="rv rv-saved">
-        <div className="rv-card" style={{ padding: 22, borderColor: 'color-mix(in srgb, var(--rv-mint) 40%, transparent)' }}>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: 17 }}>{existing ? 'Your review is updated.' : 'Thank you. Your review is live.'}</p>
-          <p style={{ margin: '6px 0 0', fontSize: 14, lineHeight: 1.6, color: 'var(--rv-ink-2)' }}>
-            It’s on the public <Link to="/reviews" style={{ color: 'var(--rv-mint)' }}>reviews page</Link> now, exactly as below.
-            {saved.redactions?.length ? ` We blanked out ${listOf(saved.redactions)}, which we do for everyone’s privacy.` : ''}
-          </p>
-          {saved.status === 'hidden' && (
-            <p style={{ margin: '10px 0 0', fontSize: 13.5, color: 'var(--rv-red)' }}>
-              This review is currently hidden ({saved.hidden?.reason}). Your edit is saved; we’ll look at it again.
-            </p>
-          )}
-        </div>
-        <div style={{ marginTop: 14 }}>
-          <ReviewCard review={saved} />
-        </div>
-        <button type="button" className="rv-btn rv-btn-ghost" style={{ marginTop: 14 }} onClick={() => setSaved(null)}>
-          Edit again
-        </button>
-      </div>
-    );
-  }
 
   return (
-    <form className="rv" onSubmit={submit} noValidate>
-      <div style={{ display: 'grid', gap: 22 }}>
-        <div>
-          <span className="rv-label">How has TradeGuardX been for you?</span>
-          <StarPicker value={rating} onChange={setRating} />
-        </div>
+    <form className="rvw rvw-form" onSubmit={submit} noValidate>
+      <div className="rvw-center">
+        <h2 className="rvw-q">{existing ? 'Edit your review' : 'How’s TradeGuardX been for you?'}</h2>
+        <StarPicker value={rating} onChange={setRating} size={40} />
+      </div>
 
-        <div>
-          <label className="rv-label" htmlFor="rv-body">Your review</label>
+      {rating > 0 && (
+        <div className="rvw-reveal">
+          <label className="rvw-sr" htmlFor="rvw-body">Your review</label>
           <textarea
-            id="rv-body"
-            className="rv-field"
+            id="rvw-body"
+            className="rvw-field"
             value={body}
+            autoFocus={!existing}
             maxLength={limits.bodyMax + 200}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="What happened? Did a rule ever stop you? What annoyed you? Good and bad both help other traders."
+            placeholder={PROMPT[rating]}
           />
-          <p className="rv-hint" style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-            <span>{len < limits.bodyMin ? `At least ${limits.bodyMin} characters` : 'Looks good'}</span>
-            <span style={{ color: len > limits.bodyMax ? 'var(--rv-red)' : undefined }}>
-              {len}/{limits.bodyMax}
-            </span>
-          </p>
-        </div>
+          <div className="rvw-meta">
+            <span>{short > 0 ? `${short} more character${short === 1 ? '' : 's'}` : ''}</span>
+            {len > limits.bodyMax * 0.8 && <span className={len > limits.bodyMax ? 'rvw-over' : ''}>{len}/{limits.bodyMax}</span>}
+          </div>
 
-        <div>
-          <label className="rv-label" htmlFor="rv-title">Headline <span style={{ fontWeight: 400 }}>(optional)</span></label>
-          <input id="rv-title" className="rv-field" value={title} maxLength={limits.titleMax} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Annoying on the day, right every time" />
-        </div>
+          <div className="rvw-who">
+            <span className="rvw-avatar" aria-hidden>{shownName === ANON ? '?' : shownName.charAt(0).toUpperCase()}</span>
+            <div className="rvw-who-text">
+              {editingName && !anon ? (
+                <input
+                  className="rvw-field rvw-name"
+                  value={name}
+                  autoFocus
+                  maxLength={limits.displayNameMax}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => setEditingName(false)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), setEditingName(false))}
+                  aria-label="Name shown"
+                />
+              ) : (
+                <span className="rvw-who-name">
+                  {shownName}
+                  {!anon && (
+                    <button type="button" className="rvw-link" onClick={() => setEditingName(true)}>
+                      change
+                    </button>
+                  )}
+                </span>
+              )}
+              <VerifiedBadge exchanges={state.exchanges} traderSince={state.traderSince} compact />
+              <label className="rvw-toggle">
+                <input type="checkbox" checked={anon} onChange={(e) => setAnon(e.target.checked)} />
+                Hide my name
+              </label>
+            </div>
+          </div>
 
-        <div>
-          <label className="rv-label" htmlFor="rv-name">Name shown</label>
-          <input
-            id="rv-name"
-            className="rv-field"
-            value={anon ? ANON : name}
-            disabled={anon}
-            maxLength={limits.displayNameMax}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="First name and initial"
-          />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 9, fontSize: 13, color: 'var(--rv-ink-2)', cursor: 'pointer' }}>
-            <input type="checkbox" checked={anon} onChange={(e) => setAnon(e.target.checked)} />
-            Post without my name
-          </label>
-          <div style={{ marginTop: 10 }}>
-            <span className="rv-hint" style={{ marginRight: 8 }}>Shown with every review:</span>
-            <VerifiedBadge exchanges={state.exchanges} traderSince={state.traderSince} />
+          {error && <p role="alert" className="rvw-error">{error}</p>}
+
+          <div className="rvw-actions">
+            <button type="submit" className="rvw-btn rvw-btn-primary" disabled={!ready}>
+              {busy ? 'Posting…' : existing ? 'Save changes' : 'Post review'}
+            </button>
+            {onCancel && (
+              <button type="button" className="rvw-btn rvw-btn-ghost" onClick={onCancel}>
+                Cancel
+              </button>
+            )}
+          </div>
+          <p className="rvw-foot">Public right away. We never hide a review for being negative.</p>
+        </div>
+      )}
+    </form>
+  );
+}
+
+function ReviewView({ review, justSaved, onEdit, onDelete }) {
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className="rvw">
+      {justSaved && (
+        <div className="rvw-done rvw-saved">
+          <span className="rvw-tick" aria-hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+          </span>
+          <div>
+            <p className="rvw-done-title">Thanks. It’s live.</p>
+            <p className="rvw-done-text">
+              <Link to="/reviews">See it on the reviews page</Link>
+              {review.redactions?.length ? ` · we blanked out ${listOf(review.redactions)}` : ''}
+            </p>
           </div>
         </div>
-
-        <div className="rv-card" style={{ background: 'transparent' }}>
-          <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--rv-ink-2)' }}>Before you post</p>
-          <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: 'var(--rv-ink-2)' }}>
-            <li>It goes live straight away. We don’t approve reviews first, and we never hide a review for being negative.</li>
-            <li>Phone numbers, emails and links are blanked out automatically.</li>
-            <li>You can edit or delete it later from your dashboard.</li>
-            <li>We don’t pay or reward anyone for reviews.</li>
-          </ul>
-        </div>
-
-        <div>
-          <span className="rv-label">How it will look</span>
-          <ReviewCard review={preview} animate={false} />
-        </div>
-
-        {error && (
-          <p role="alert" style={{ margin: 0, fontSize: 13.5, color: 'var(--rv-red)' }}>
-            {error}
-          </p>
+      )}
+      {!justSaved && <p className="rvw-kicker">Your review</p>}
+      {review.status === 'hidden' && (
+        <p className="rvw-error">Hidden: {review.hidden?.reason}. Edit it and we’ll look again.</p>
+      )}
+      <ReviewCard review={review} animate={justSaved} />
+      <div className="rvw-actions">
+        <button type="button" className="rvw-btn rvw-btn-ghost" onClick={onEdit}>Edit</button>
+        {onDelete && !confirm && (
+          <button type="button" className="rvw-btn rvw-btn-text" onClick={() => setConfirm(true)}>Delete</button>
         )}
-
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <button type="submit" className="rv-btn" disabled={!ready}>
-            {busy ? 'Posting…' : existing ? 'Update review' : 'Post review'}
-          </button>
-          {existing && onDelete && !confirmDelete && (
-            <button type="button" className="rv-btn rv-btn-ghost" onClick={() => setConfirmDelete(true)}>
-              Delete review
+        {onDelete && confirm && (
+          <>
+            <button
+              type="button"
+              className="rvw-btn rvw-btn-danger"
+              disabled={busy}
+              onClick={async () => { setBusy(true); try { await onDelete(); } finally { setBusy(false); } }}
+            >
+              {busy ? 'Deleting…' : 'Yes, delete it'}
             </button>
-          )}
-          {confirmDelete && (
-            <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
-              Delete for good?
-              <button type="button" className="rv-btn" style={{ background: 'var(--rv-red)', borderColor: 'var(--rv-red)', color: '#fff' }} onClick={remove} disabled={busy}>
-                Yes, delete
-              </button>
-              <button type="button" className="rv-btn rv-btn-ghost" onClick={() => setConfirmDelete(false)}>
-                Keep it
-              </button>
-            </span>
-          )}
-        </div>
+            <button type="button" className="rvw-btn rvw-btn-text" onClick={() => setConfirm(false)}>Keep it</button>
+          </>
+        )}
       </div>
-    </form>
+    </div>
   );
 }

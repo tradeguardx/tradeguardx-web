@@ -8,14 +8,22 @@ const DAY = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', y
 const monthLabel = (ym) => (ym ? MONTH.format(new Date(`${ym}-01T00:00:00`)) : '');
 const dayLabel = (iso) => (iso ? DAY.format(new Date(iso)) : '');
 
-export function VerifiedBadge({ exchanges, traderSince }) {
+/**
+ * "Verified · Delta Exchange, CoinDCX +2 · since Aug 2026". At most two names,
+ * so a trader with four venues gets a badge, not a paragraph; the full list is
+ * in the tooltip. `compact` drops the date for tight rows.
+ */
+export function VerifiedBadge({ exchanges = [], traderSince, compact = false }) {
+  const shown = exchanges.slice(0, 2).join(', ');
+  const more = exchanges.length > 2 ? ` +${exchanges.length - 2}` : '';
   return (
-    <span className="rv-badge" title="This reviewer connected this exchange to TradeGuardX">
+    <span className="rvw-badge" title={exchanges.length ? `Connected: ${exchanges.join(', ')}` : undefined}>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M5 12.5l4.5 4.5L19 7" />
       </svg>
-      Verified · {exchanges?.length ? exchanges.join(', ') : 'Exchange trader'}
-      {traderSince ? ` · since ${monthLabel(traderSince)}` : ''}
+      Verified · {shown || 'Exchange trader'}
+      {more}
+      {!compact && traderSince ? ` · since ${monthLabel(traderSince)}` : ''}
     </span>
   );
 }
@@ -28,7 +36,7 @@ export function VerifiedBadge({ exchanges, traderSince }) {
 export default function ReviewCard({ review, delay = 0, animate = true }) {
   const r = review;
   return (
-    <article className={`rv-card ${animate ? 'in' : ''} ${r.hidden ? 'rv-hidden' : ''}`} style={{ '--d': `${delay}s` }}>
+    <article className={`rvw-card ${animate ? 'in' : ''} ${r.hidden ? 'rvw-hidden' : ''}`} style={{ '--d': `${delay}s` }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <p style={{ margin: 0, fontWeight: 700, fontSize: 15 }}>{r.displayName}</p>
@@ -58,7 +66,7 @@ export default function ReviewCard({ review, delay = 0, animate = true }) {
       </p>
 
       {r.reply && (
-        <div className="rv-reply">
+        <div className="rvw-reply">
           <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--rv-mint)' }}>Reply from TradeGuardX</p>
           <p style={{ margin: '5px 0 0', fontSize: 13.5, lineHeight: 1.6, color: 'var(--rv-ink-2)', whiteSpace: 'pre-line' }}>{r.reply.body}</p>
         </div>

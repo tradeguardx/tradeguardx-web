@@ -26,14 +26,14 @@ export default function MyReviewPage() {
   }, [accessToken]);
 
   return (
-    <div style={sx('max-width:760px')}>
+    <div style={sx('max-width:680px')}>
       <div style={sx('margin-bottom:16px')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Your review</h1>
         <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>
-          Tell other traders what it’s really like. Good or bad, it goes up as you write it.
+          Good or bad, it goes up exactly as you write it.
         </p>
       </div>
-      <section style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);padding:22px')}>
+      <section style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);padding:26px 22px')}>
         {error && <p role="alert" style={sx('margin:0;color:var(--red);font-size:13.5px')}>{error}</p>}
         {!error && !state && <p style={sx('margin:0;color:var(--ink-3);font-size:13.5px')}>Loading…</p>}
         {state && (

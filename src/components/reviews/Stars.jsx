@@ -15,9 +15,9 @@ function Star({ size, filled }) {
 /** Read-only stars for a card. */
 export function StarRow({ value, size = 16 }) {
   return (
-    <span className="rv-stars rv-stars-sm" role="img" aria-label={`${value} out of 5 stars`}>
+    <span className="rvw-stars rvw-stars-sm" role="img" aria-label={`${value} out of 5 stars`}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <span key={n} className={`rv-star ${n <= value ? 'on' : ''}`}>
+        <span key={n} className={`rvw-star ${n <= value ? 'on' : ''}`}>
           <Star size={size} filled={n <= value} />
         </span>
       ))}
@@ -42,7 +42,7 @@ export default function StarPicker({ value, onChange, size = 34 }) {
   return (
     <div>
       <div
-        className="rv-stars"
+        className="rvw-stars"
         role="radiogroup"
         aria-label="Your rating"
         onMouseLeave={() => setHover(0)}
@@ -59,7 +59,7 @@ export default function StarPicker({ value, onChange, size = 34 }) {
             aria-checked={value === n}
             aria-label={`${STAR_LABELS[n]}, ${n} of 5`}
             tabIndex={value ? (value === n ? 0 : -1) : n === 1 ? 0 : -1}
-            className={`rv-star ${n <= shown ? 'on' : ''} ${burst && n <= value ? 'pop' : ''}`}
+            className={`rvw-star ${n <= shown ? 'on' : ''} ${burst && n <= value ? 'pop' : ''}`}
             style={{ '--d': `${(n - 1) * 0.05}s` }}
             onMouseEnter={() => setHover(n)}
             onClick={() => pick(n)}
@@ -68,7 +68,7 @@ export default function StarPicker({ value, onChange, size = 34 }) {
           </button>
         ))}
       </div>
-      <p className="rv-hint" style={{ minHeight: 18 }} aria-live="polite">
+      <p className="rvw-hint" style={{ minHeight: 18 }} aria-live="polite">
         {shown ? STAR_LABELS[shown] : 'Tap a star'}
       </p>
     </div>
