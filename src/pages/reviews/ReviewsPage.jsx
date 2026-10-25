@@ -16,18 +16,10 @@ import { REVIEW_FAQ, buildReviewsSchema } from './reviewsSchema';
  * prerender snapshots whatever the API returns at build time; the visible FAQ
  * and its FAQPage markup come from one array so they cannot disagree.
  *
- * The rules section repeats the policy enforced in the referral service
- * (src/reviews/review.ts). If one changes, change both.
+ * The FAQ (reviewsSchema.js) states the policy enforced in the referral
+ * service (src/reviews/review.ts). If one changes, change both.
  */
 const PAGE = 20;
-
-const RULES = [
-  ['Published straight away', 'There is no approval step. A review goes live the moment it’s posted, and we never hold one back for being negative.'],
-  ['Verified traders only', 'You can only review after connecting an exchange to TradeGuardX, so every review shows the exchange that person actually trades on.'],
-  ['Contact details blanked', 'Phone numbers, email addresses and links are removed automatically, for the reviewer’s safety and to stop spam. Nothing else is changed.'],
-  ['Nothing disappears silently', 'We hide a review only for abuse, spam, someone else’s personal information, being off-topic, or a legal request. A hidden review stays on this page with the reason.'],
-  ['Never paid for', 'We don’t offer discounts, free months or anything else for a review.'],
-];
 
 export default function ReviewsPage() {
   const [data, setData] = useState(null);
@@ -214,26 +206,7 @@ export default function ReviewsPage() {
               </button>
             )}
 
-            <div className="mt-14 rounded-2xl border px-5 py-6 sm:px-7" style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.015)' }}>
-              <h2 className="font-display text-xl font-bold text-white">How reviews work here</h2>
-              <ol className="mt-4 space-y-4">
-                {RULES.map(([t, d], i) => (
-                  <li key={t} className="flex gap-3.5">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/15 font-display text-[13px] font-bold text-accent">{i + 1}</span>
-                    <span>
-                      <span className="block text-[14.5px] font-semibold text-white">{t}</span>
-                      <span className="mt-0.5 block text-[13.5px] leading-relaxed text-slate-400">{d}</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-              <p className="mt-5 text-[12.5px] text-slate-500">
-                Think a review breaks these rules, or that we got one wrong? Email{' '}
-                <a href="mailto:support@tradeguardx.com" className="text-accent hover:underline">support@tradeguardx.com</a>.
-              </p>
-            </div>
-
-            <div className="mt-10">
+            <div className="mt-14">
               <h2 className="font-display text-xl font-bold text-white">Questions about these reviews</h2>
               <div className="mt-4 space-y-3">
                 {REVIEW_FAQ.map((f) => (
@@ -254,6 +227,10 @@ export default function ReviewsPage() {
                   </details>
                 ))}
               </div>
+              <p className="mt-5 text-[12.5px] text-slate-500">
+                Think a review shouldn’t be here, or that we got one wrong? Email{' '}
+                <a href="mailto:support@tradeguardx.com" className="text-accent hover:underline">support@tradeguardx.com</a>.
+              </p>
             </div>
           </section>
         </div>
