@@ -54,4 +54,19 @@ describe('fetchUnifiedTrades', () => {
     // Lifecycle status is inferred from closedAt rather than trusted blindly.
     expect(rows.every((r) => r.status === 'CLOSED')).toBe(true);
   });
+  it('keeps the stop from the OPEN version when it merges into the CLOSED one', async () => {
+    apiGet.mockResolvedValue({
+      success: true,
+      data: {
+        trades: [
+          { id: '1', tradeUid: 'u1', symbol: 'ETHUSD', side: 'long', openedAt: '2026-08-05T10:00:00Z', quantity: 1, entryPrice: 100, stopLoss: '95', hasStopLoss: true },
+          { id: '2', tradeUid: 'u1', symbol: 'ETHUSD', side: 'long', openedAt: '2026-08-05T10:00:00Z', closedAt: '2026-08-05T11:00:00Z', quantity: 1, entryPrice: 100 },
+        ],
+      },
+    });
+
+    const rows = await fetchUnifiedTrades(args);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ status: 'CLOSED', stopLoss: '95', hasStopLoss: true });
+  });
 });

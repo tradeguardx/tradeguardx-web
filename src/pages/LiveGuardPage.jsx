@@ -9,6 +9,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { sessionOf, fmtMoney, splitDecimal, ruleConfig } from '../lib/session';
 import { computeRule } from '../components/dashboard/RuleStatusCards';
 import { fetchJournalTrades } from '../api/tradesApi';
+import { stopCellFor } from '../lib/stopLoss';
 import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../api/userApi';
 import { setRuleLockDays } from '../api/tradingAccountsApi';
 import { RULE_GLYPH, ruleAccent } from '../components/dashboard/shell/icons';
@@ -796,7 +797,9 @@ export default function LiveGuardPage() {
             {positions.map((p) => {
               const side = String(pick(p, 'side') || '').toUpperCase();
               const long = side === 'BUY' || side === 'LONG';
-              const stop = pick(p, 'stopLoss', 'stop_loss', 'stopPrice');
+              // Price when we have one; "set" when the venue only says a stop
+              // exists (Shark); "none set" only when we know there is none.
+              const stop = stopCellFor(p);
               /**
                * `pnl` on an OPEN journal row is the realised result, which is
                * null until the position closes — Number(null) is 0, so every
@@ -814,7 +817,7 @@ export default function LiveGuardPage() {
                   <span style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: long ? 'var(--mint)' : 'var(--red)' })}>{long ? 'Long' : 'Short'}</span>
                   <span>{pick(p, 'quantity', 'volume') ?? '—'}</span>
                   <span>{pick(p, 'entryPrice', 'entry_price') ?? '—'}</span>
-                  <span style={{ color: stop ? 'var(--ink-2)' : 'var(--amber)' }}>{stop ?? 'none set'}</span>
+                  <span style={{ color: stop.tone === 'none' ? 'var(--amber)' : stop.tone === 'unknown' ? 'var(--ink-faint)' : 'var(--ink-2)' }}>{stop.text}</span>
                   <span style={sx('text-align:right;font-weight:600', { color: Number.isFinite(upnl) ? (upnl < 0 ? 'var(--red)' : 'var(--mint)') : 'var(--ink-3)' })}>{Number.isFinite(upnl) ? fmtMoney(upnl, cur, { sign: true }) : '—'}</span>
                 </div>
               );

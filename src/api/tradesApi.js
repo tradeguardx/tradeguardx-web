@@ -99,6 +99,10 @@ function mergeTradeRecords(a, b) {
     // Keep richer nested projection data if present in either record.
     aiShortInsight: preferred.aiShortInsight || secondary.aiShortInsight,
     mediaSummary: preferred.mediaSummary || secondary.mediaSummary,
+    // Stop state from either version; `??` so a known false is not replaced.
+    stopLoss: preferred.stopLoss ?? secondary.stopLoss ?? null,
+    takeProfit: preferred.takeProfit ?? secondary.takeProfit ?? null,
+    hasStopLoss: preferred.hasStopLoss ?? secondary.hasStopLoss ?? null,
     status: (leftClosed || rightClosed) ? 'CLOSED' : (preferred.status || secondary.status || 'OPEN'),
   };
 }

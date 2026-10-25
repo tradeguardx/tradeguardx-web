@@ -23,6 +23,7 @@ import {
   MISTAKE_TYPES,
 } from '../hooks/useTradeAnnotations';
 import { shortId, sourceLabel } from '../lib/labels';
+import { rMultipleGap, stopPriceOf } from '../lib/stopLoss';
 import { fmtMoney } from '../lib/session';
 import { getUserZone } from '../lib/userZone';
 import { sx } from '../components/dashboard/shell/sx';
@@ -611,8 +612,10 @@ function JournalNotesPanel({ tradeUid, trade }) {
   const rMultiple = useMemo(() => {
     if (!trade) return null;
     const entry = Number(trade.entryPrice);
-    const sl = Number(trade.stopLoss || trade.sl);
-    const exit = Number(trade.exitPrice);
+    const slRaw = stopPriceOf(trade);
+    // Number(null) is 0 — a missing stop must not become a stop at zero.
+    const sl = slRaw == null ? NaN : Number(slRaw);
+    const exit = trade.exitPrice == null || trade.exitPrice === '' ? NaN : Number(trade.exitPrice);
     if (!Number.isFinite(entry) || !Number.isFinite(sl) || !Number.isFinite(exit) || sl === entry) return null;
     const risk = Math.abs(entry - sl);
     const reward = exit - entry;
@@ -634,7 +637,7 @@ function JournalNotesPanel({ tradeUid, trade }) {
           {rMultiple != null ? (
             <p className={`text-2xl font-bold ${rMultiple >= 0 ? 'text-[var(--mint)]' : 'text-[var(--red)]'}`}>{rMultiple > 0 ? '+' : ''}{rMultiple}R</p>
           ) : (
-            <p className="text-sm" style={{ color: 'var(--dash-text-faint)' }}>No SL data — set stop loss to calculate</p>
+            <p className="text-sm" style={{ color: 'var(--dash-text-faint)' }}>{rMultipleGap(trade)}</p>
           )}
           <div className="mt-2 flex items-center gap-2">
             <span className="text-[11px] font-semibold uppercase" style={{ color: 'var(--dash-text-faint)' }}>Plan followed?</span>
