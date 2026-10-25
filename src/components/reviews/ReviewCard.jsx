@@ -77,7 +77,7 @@ export default function ReviewCard({ review, delay = 0, animate = true }) {
   const initial = r.displayName === 'A TradeGuardX trader' ? '?' : r.displayName?.charAt(0).toUpperCase();
 
   return (
-    <article className={`rvw-card ${animate ? 'in' : ''} ${r.hidden ? 'rvw-hidden' : ''}`} style={{ '--d': `${delay}s` }}>
+    <article id={`review-${r.id}`} className={`rvw-card ${animate ? 'in' : ''} ${r.hidden ? 'rvw-hidden' : ''}`} style={{ '--d': `${delay}s` }}>
       <header className="rvw-card-top">
         <span className="rvw-verified">
           <Shield />

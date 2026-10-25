@@ -1,18 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSEO } from '../../hooks/useSEO';
 import { listPublicReviews } from '../../api/reviewsApi';
 import ReviewCard from '../../components/reviews/ReviewCard';
 import { StarRow } from '../../components/reviews/Stars';
 import '../../components/reviews/reviews.css';
+import { REVIEW_FAQ, buildReviewsSchema } from './reviewsSchema';
 
 /**
  * /reviews — every review, as written.
  *
- * No Review / AggregateRating JSON-LD. Google treats reviews a business hosts
- * about itself as self-serving and will not show stars for them; marking them
- * up anyway is the kind of thing that earns a manual action. The page exists
- * to persuade the person reading it, so it is built for that person.
+ * SEO: reviews are marked up on the SoftwareApplication (see reviewsSchema.js
+ * for why the product and not the Organization), from the UNFILTERED first
+ * load so a visitor's filter never changes what the page tells Google. The
+ * prerender snapshots whatever the API returns at build time; the visible FAQ
+ * and its FAQPage markup come from one array so they cannot disagree.
  *
  * The rules section repeats the policy enforced in the referral service
  * (src/reviews/review.ts). If one changes, change both.
@@ -28,15 +30,19 @@ const RULES = [
 ];
 
 export default function ReviewsPage() {
+  const [data, setData] = useState(null);
+  const [baseline, setBaseline] = useState(null);
+  const jsonLd = useMemo(() => buildReviewsSchema(baseline), [baseline]);
+
   useSEO({
     title: 'TradeGuardX Reviews from Verified Crypto Traders',
     rawTitle: true,
     description:
-      'Unfiltered TradeGuardX reviews from traders who connected Delta Exchange, CoinDCX or Shark Exchange. Every review published as written, including the critical ones.',
+      'Is TradeGuardX legit? Read unfiltered reviews from traders who connected Delta Exchange, CoinDCX or Shark Exchange. Every review published as written.',
     url: 'https://tradeguardx.com/reviews',
+    jsonLd,
   });
 
-  const [data, setData] = useState(null);
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
   const [exchange, setExchange] = useState('');
@@ -50,6 +56,7 @@ export default function ReviewsPage() {
         setError('');
         setData(res);
         setItems(res.reviews);
+        if (!exchange && !rating) setBaseline(res);
       })
       .catch((e) => e?.name !== 'AbortError' && setError('Reviews couldn’t load just now. Try again in a minute.'));
     return () => ctrl.abort();
@@ -165,7 +172,10 @@ export default function ReviewsPage() {
           </aside>
 
           {/* The reviews */}
-          <section aria-label="Reviews">
+          <section aria-labelledby="all-reviews">
+            <h2 id="all-reviews" className="mb-4 font-display text-lg font-bold text-white">
+              {data?.total ? `All ${data.total} review${data.total === 1 ? '' : 's'}` : 'All reviews'}
+            </h2>
             {(rating || exchange) && (
               <p className="mb-4 text-[13px] text-slate-400">
                 Showing {data?.total ?? 0} {rating ? `${rating}-star ` : ''}review{data?.total === 1 ? '' : 's'}
@@ -221,6 +231,29 @@ export default function ReviewsPage() {
                 Think a review breaks these rules, or that we got one wrong? Email{' '}
                 <a href="mailto:support@tradeguardx.com" className="text-accent hover:underline">support@tradeguardx.com</a>.
               </p>
+            </div>
+
+            <div className="mt-10">
+              <h2 className="font-display text-xl font-bold text-white">Questions about these reviews</h2>
+              <div className="mt-4 space-y-3">
+                {REVIEW_FAQ.map((f) => (
+                  <details key={f.q} className="group rounded-xl border px-5 py-4" style={{ borderColor: 'rgba(255,255,255,0.07)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-[15px] font-semibold text-slate-100 marker:hidden">
+                      {f.q}
+                      <span className="mt-0.5 text-accent transition-transform group-open:rotate-45" aria-hidden>+</span>
+                    </summary>
+                    <p className="mt-3 text-[14px] leading-relaxed text-slate-400">
+                      {f.a}
+                      {f.q.startsWith('Is TradeGuardX safe') && (
+                        <>
+                          {' '}
+                          <Link to="/security" className="text-accent hover:underline">How we store and scope your key →</Link>
+                        </>
+                      )}
+                    </p>
+                  </details>
+                ))}
+              </div>
             </div>
           </section>
         </div>
