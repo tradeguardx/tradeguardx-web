@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { tradeFees } from '../lib/tradeFees';
 import { Link, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ShimmerBlock } from '../components/common/LoadingSkeleton';
@@ -1303,6 +1304,7 @@ export default function TradeDetailPage() {
   );
 
   const pnl = Number(trade.pnl);
+  const fees = tradeFees(trade);
   const side = (trade.side || '').toLowerCase();
   const isLong = side === 'buy' || side === 'long';
   const isClosed = String(trade.status || '').toUpperCase() === 'CLOSED';
@@ -1353,6 +1355,12 @@ export default function TradeDetailPage() {
             <span style={sx("font:700 40px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: pnlFg })}>{isClosed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : 'open'}</span>
             {isClosed && Number.isFinite(pnl) && trade.entryPrice && (
               <span style={sx('font-size:14px;color:var(--ink-3)')}>{((pnl / (Number(trade.entryPrice) * (Number(trade.quantity) || 1))) * 100).toFixed(2)}% on the position</span>
+            )}
+            {isClosed && fees && (
+              /* Shown, never counted: limits use the P&L above, fees are charged on top. */
+              <span style={sx('font-size:13px;color:var(--ink-3)')}>
+                Fees paid {fmtMoney(fees.fees, cur)}{fees.net != null ? ` · after fees ${fmtMoney(fees.net, cur, { sign: true })}` : ''}
+              </span>
             )}
             {narrative?.analysis?.disciplineScore?.overall != null && (
               <span style={sx("font:600 16px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums", { color: narrative.analysis.disciplineScore.overall >= 80 ? 'var(--mint)' : narrative.analysis.disciplineScore.overall >= 50 ? 'var(--amber)' : 'var(--red)' })}>{narrative.analysis.disciplineScore.overall}/100 discipline</span>
