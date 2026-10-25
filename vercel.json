@@ -52,7 +52,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/((?:pricing|signup|exchanges|exchanges/delta|exchanges/delta/api-key|exchanges/coindcx|exchanges/coindcx/api-key|exchanges/coindcx/margin|exchanges/shark|exchanges/shark/api-key|crypto-kill-switch|crypto-tax-india|revenge-report|help|help/how-it-works|help/kill-switch|help/cooldowns|help/rules|help/changing-rules|help/live-dashboard|help/troubleshooting|security|about|roadmap|reviews|support|partner-with-us|privacy|terms|refund|risk-disclosure))",
+      "source": "/((?:pricing|signup|exchanges|exchanges/delta|exchanges/delta/api-key|exchanges/coindcx|exchanges/coindcx/api-key|exchanges/coindcx/margin|exchanges/shark|exchanges/shark/api-key|crypto-kill-switch|crypto-tax-india|revenge-report|help|help/how-it-works|help/kill-switch|help/cooldowns|help/rules|help/changing-rules|help/live-dashboard|help/troubleshooting|blog|blog/daily-loss-limit-crypto-futures|blog/best-crypto-risk-management-tools-india|blog/category/(?:tools-and-comparisons|daily-loss-limits|overtrading|trading-psychology|risk-management|leverage-and-liquidation|crypto-tax-india)|security|about|roadmap|reviews|support|partner-with-us|privacy|terms|refund|risk-disclosure))",
       "destination": "/app.html"
     },
     {

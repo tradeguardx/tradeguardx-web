@@ -27,6 +27,7 @@ const links = {
     { label: 'What is a crypto kill switch?', to: '/crypto-kill-switch' },
     { label: 'Revenge trading report', to: '/revenge-report' },
     { label: 'Guides', to: '/help' },
+    { label: 'Blog', to: '/blog' },
     { label: 'Crypto tax India', to: '/crypto-tax-india' },
     { label: 'Security', to: '/security' },
   ],

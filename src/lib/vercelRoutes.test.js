@@ -82,7 +82,7 @@ describe('only the homepage is served the homepage', () => {
   });
 
   it('404s a mistyped page under a public section', () => {
-    for (const path of ['/help/nope', '/exchanges/binance', '/exchanges/delta/whatever', '/pricing/old', '/about/team']) {
+    for (const path of ['/help/nope', '/exchanges/binance', '/exchanges/delta/whatever', '/pricing/old', '/about/team', '/blog/nope', '/blog/category/nope']) {
       expect(resolves(path), `${path} should 404`).toBe(false);
     }
   });
