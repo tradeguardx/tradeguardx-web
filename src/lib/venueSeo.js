@@ -127,6 +127,90 @@ const sharedWithdrawSection = (venue, sentence) => ({
  * enforces the 60-char ceiling and that no two pages share a title or an H1.
  */
 const VENUE_PAGES = {
+  // ── Exness: forex and CFDs on the Exness platform (not MT4/MT5). Live since
+  // 25 Oct 2026; the first venue outside crypto, and the first with a market
+  // that closes, which is why it has its own market-hours section.
+  exness: {
+    slug: 'exness',
+    name: 'Exness',
+    longName: 'Exness',
+    status: 'live',
+    beta: false,
+    title: 'Exness Daily Loss Limit & Kill Switch | TradeGuardX',
+    description:
+      'Set a daily loss limit on your Exness account and have it enforced: TradeGuardX cancels orders, closes positions and locks the account from our servers.',
+    h1: 'Daily loss limit and kill switch for Exness',
+    lede:
+      'Exness gives you stop-losses for each trade, but nothing that stops the trading day. Connect an Exness API key, set your daily loss limit once, and our engine enforces it: orders cancelled, positions closed, account locked until your next daily reset.',
+    sections: [
+      sharedBreachSection('Exness'),
+      {
+        h: 'Which Exness accounts work: Exness platform, not MT4 or MT5',
+        p: [
+          'TradeGuardX works with accounts on the Exness platform itself, the Exness Terminal and web terminal. Exness only issues API keys for those accounts; on the key form, MT4 and MT5 accounts show greyed out, and a key cannot be made for them.',
+          'So if you trade on MT5 today, the kill switch cannot see those trades. The way in is an Exness-platform account: open one in your Personal Area, trade it from the Exness Terminal or the Exness app, and connect that.',
+          'Exness is also still opening its API country by country, and it asks for a fully verified account. If you do not see API management in your Personal Area, it is not available to you yet, and there is no workaround on our side.',
+        ],
+      },
+      {
+        h: 'What is different about Exness',
+        p: [
+          'Exness has no single "close everything" call, so the kill switch works through your account one position and one pending order at a time, and confirms each close before it moves on. A rule firing on a busy account takes a few extra seconds; it does not skip anything.',
+          'Forex and CFD markets close. If a rule fires while an instrument\'s market is shut, that close is held and retried the moment the market reopens, and the account stays locked in the meantime. Crypto venues never close, so this is the one place it matters.',
+          'Your limits are in your Exness account\'s own currency, the figure your Exness statement shows. The daily reset happens early in the morning in your own timezone, so a session never straddles two days.',
+        ],
+      },
+      {
+        h: 'Which Exness rules can TradeGuardX enforce?',
+        rulesTable: true,
+        p: [
+          'All seven, with the same behaviour as on every other venue. It is one engine behind all of them, so a daily loss limit means the same thing on Exness as it does on a crypto exchange.',
+        ],
+      },
+      {
+        h: 'How do I connect my Exness account?',
+        p: [
+          'One key on Exness, one paste into TradeGuardX. On Exness you open API management, tick Trading with Full access, set the expiry to Never and add our IP. Then you paste the API Key, the Secret Key and the account number. About five minutes, on a phone or a computer.',
+        ],
+        guideLink: 'api-key',
+      },
+      sharedWithdrawSection(
+        'Exness',
+        'We only ask for Trading with Full access, which lets us close a position and cancel an order and nothing else. Exness\'s key form also lists Partnership and Transfers; both stay switched off, and a Trading key cannot withdraw or move money.',
+      ),
+    ],
+    faq: [
+      {
+        q: 'Does Exness have a daily loss limit?',
+        a: 'Not an account-wide one. Exness gives you stop-loss and take-profit on each position, and those protect one trade at a time. Nothing stops you opening the next trade after a bad run. TradeGuardX adds that: a daily loss limit across the whole account that closes positions and locks trading when it is hit.',
+      },
+      {
+        q: 'Does TradeGuardX work with Exness MT4 or MT5?',
+        a: 'No. Exness only issues API keys for accounts on the Exness platform (Exness Terminal and web terminal); MT4 and MT5 accounts cannot have a key, so we cannot see or close their trades. If you want the kill switch, trade from an Exness-platform account and connect that.',
+      },
+      {
+        q: 'Why can\'t I find API management in my Exness Personal Area?',
+        a: 'Exness has not opened its API in every country yet, and it asks for a fully verified account first. If API management is missing from the side menu, it is not available on your account today. That is Exness\'s rollout, not a setting we can change.',
+      },
+      {
+        q: 'What happens if my loss limit is hit when the forex market is closed?',
+        a: 'The account locks straight away, and any close the market refuses is held and retried as soon as that market reopens. Positions in instruments that are still open are closed immediately. Nothing waits on you to come back.',
+      },
+      {
+        q: 'Which permission does the Exness API key need?',
+        a: `Trading, set to Full access. Read-only can never close a position, so the kill switch would do nothing; we check for it and refuse a read-only key when you connect. Set Expiry to Never, because a key that expires switches your protection off, and add our IP (${DELTA_EGRESS_IP}) to Allowed IPs, because Exness refuses calls from any other address.`,
+      },
+      {
+        q: 'Does the kill switch still work if I trade from the Exness app?',
+        a: 'Yes. We hold a live connection to the account itself from our servers, so it makes no difference whether a trade came from the Exness app, the web terminal or anywhere else. If it reaches your account, we see it and act if it breaks a rule.',
+      },
+      {
+        q: 'Can I lock my own Exness account before a bad session starts?',
+        a: 'Yes. Pick three, six or twelve hours and confirm, and the account is locked for that long. There is no cancel button. Anything you open during the lock is closed as soon as it appears.',
+      },
+    ],
+  },
+
   // ── Shark: live and connectable, and until now with no documentation at all.
   shark: {
     slug: 'shark',
@@ -134,10 +218,10 @@ const VENUE_PAGES = {
     longName: 'Shark Exchange',
     status: 'live',
     beta: false,
-    title: 'Shark Exchange Kill Switch — Auto-Close | TradeGuardX',
+    title: 'Shark Exchange Daily Loss Limit & Kill Switch | TradeGuardX',
     description:
       'Set a daily loss limit on Shark Exchange and have it enforced. TradeGuardX cancels your orders, closes your positions and locks the account from our servers, in rupees.',
-    h1: 'Kill switch for Shark Exchange',
+    h1: 'Daily loss limit and kill switch for Shark Exchange',
     lede:
       'Connect a Shark Exchange API key with Trade Futures enabled, set your daily loss limit once, and our engine enforces it — cancelling orders, closing positions and locking the account without you having to be at the screen.',
     sections: [
@@ -204,10 +288,10 @@ const VENUE_PAGES = {
     longName: 'CoinDCX Futures',
     status: 'live',
     beta: false,
-    title: 'CoinDCX Kill Switch — Auto-Close Positions | TradeGuardX',
+    title: 'CoinDCX Daily Loss Limit & Kill Switch | TradeGuardX',
     description:
       'Set a daily loss limit on CoinDCX futures and have it enforced. TradeGuardX cancels your orders, closes your positions and locks the account from our servers.',
-    h1: 'Kill switch for CoinDCX',
+    h1: 'Daily loss limit and kill switch for CoinDCX',
     lede:
       'Connect a CoinDCX API key bound to our IP, set your daily loss limit once, and our engine enforces it — cancelling orders, closing positions and locking the account whether your screen is on or not. Futures only.',
     sections: [
@@ -275,10 +359,10 @@ const VENUE_PAGES = {
     longName: 'Delta Exchange',
     status: 'live',
     beta: false,
-    title: 'Delta Exchange Kill Switch — Auto-Close | TradeGuardX',
+    title: 'Delta Exchange Daily Loss Limit & Kill Switch | TradeGuardX',
     description:
       'Set a daily loss limit on Delta Exchange and have it enforced. TradeGuardX cancels your orders, closes your positions and locks the account from our servers, not your browser.',
-    h1: 'Kill switch for Delta Exchange',
+    h1: 'Daily loss limit and kill switch for Delta Exchange',
     lede:
       'Connect a Delta Exchange Trading API key with our IP whitelisted, set your daily loss limit once, and our engine enforces it — cancelling orders, closing positions and locking the account whether your screen is on or not.',
     sections: [
@@ -352,7 +436,7 @@ const VENUE_PAGES = {
  *
  * Re-adding one is a revert of this commit plus its route in publicRoutes.js.
  */
-export const VENUE_ORDER = ['delta', 'coindcx', 'shark'];
+export const VENUE_ORDER = ['delta', 'exness', 'coindcx', 'shark'];
 
 export const VENUE_PAGE_LIST = VENUE_ORDER.map((slug) => VENUE_PAGES[slug]);
 

@@ -58,6 +58,8 @@ export const PUBLIC_ROUTES = [
   { path: '/exchanges', priority: '0.9', changefreq: 'weekly', og: null },
   { path: '/exchanges/delta', priority: '0.9', changefreq: 'weekly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/killswitch-for-delta-exchange.png' },
   { path: '/exchanges/delta/api-key', priority: '0.7', changefreq: 'monthly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/og-guide-delta.png' },
+  { path: '/exchanges/exness', priority: '0.9', changefreq: 'weekly', og: null },
+  { path: '/exchanges/exness/api-key', priority: '0.7', changefreq: 'monthly', og: null },
   { path: '/exchanges/coindcx', priority: '0.9', changefreq: 'weekly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/killswitch-for-coindcx.png' },
   { path: '/exchanges/coindcx/api-key', priority: '0.7', changefreq: 'monthly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/og-guide-coindcx.png' },
   { path: '/exchanges/coindcx/margin', priority: '0.6', changefreq: 'monthly', og: null },

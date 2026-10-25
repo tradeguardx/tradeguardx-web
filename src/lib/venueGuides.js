@@ -16,6 +16,46 @@ import { DELTA_EGRESS_IP } from '../api/config';
  * without shipping a build.
  */
 
+const EXNESS_STEPS = [
+  {
+    title: 'Create your TradeGuardX account',
+    body: 'Sign up at tradeguardx.com/signup with email or Google, then set up payment to start your 3 free days. Nothing is charged until day 4.',
+  },
+  {
+    title: 'Start adding your Exness account',
+    body: 'In the dashboard, open Accounts → "Add trading account" and choose Exness.',
+    sub: [
+      'Keep this form open. It shows the IP you need to add to the key, and it is where you paste the key at the end.',
+    ],
+  },
+  {
+    title: 'Create the API key on Exness',
+    body: 'Log in at my.exness.com. Open API management from the side menu and press New API key. Only accounts on the Exness platform can have a key; MT4 and MT5 accounts show greyed out.',
+    sub: [
+      'Name: English letters and digits only, up to 16. We suggest "tradeguardx".',
+      'Tick Trading and choose Full access, not Read-only. Pick the account you trade on. Leave Partnership and Transfers off.',
+      'Expiry date: Never. A key that expires switches your protection off on that date.',
+      `Allowed IPs: ${DELTA_EGRESS_IP}. Exness refuses calls from any other address.`,
+      'Keep "Generate key for me" selected and press Create API key.',
+      'Copy the API Key and the Secret Key with their copy buttons, and note the linked account number (it looks like #21000088861). Copy the Secret Key before you close the panel.',
+    ],
+    note:
+      'Read-only is the one choice that quietly breaks everything: the key connects, alerts work, and the kill switch can never close a position. We check for it when you connect and refuse it.',
+  },
+  {
+    title: 'Connect the key in TradeGuardX',
+    body: 'On the Add-account form, paste the API Key, the Secret Key and the account number as Exness shows it.',
+    sub: [
+      'We find the right Exness server for the account ourselves and validate the key straight away.',
+      'Your Secret Key is encrypted before storage and never shown again.',
+    ],
+  },
+  {
+    title: 'Set your guardrails',
+    body: 'Open Rules and set the protections you want: daily loss limit, max trades per day, loss-streak pause, risk per trade and more. Limits are in your Exness account\'s own currency.',
+  },
+];
+
 const SHARK_STEPS = [
   {
     title: 'Create your TradeGuardX account',
@@ -184,6 +224,45 @@ const COINDCX_STEPS = [
  * path segment — /exchanges/coindcx/api-key — and nesting stops there.
  */
 export const VENUE_GUIDES = {
+  exness: {
+    'api-key': {
+      slug: 'api-key',
+      navLabel: 'Connect a key',
+      title: 'How to create an Exness API key for TradeGuardX',
+      seoTitle: 'Exness API Key Setup (Trading Key) — TradeGuardX',
+      description:
+        'Step by step: create an Exness trading API key with Full access, set expiry to Never, add our IP, and connect it to TradeGuardX. About five minutes.',
+      intro:
+        'Connect your Exness account and be protected in about five minutes. You create one API key on Exness, add our IP to it, and paste it into TradeGuardX. It works on a phone or a computer.',
+      imagesFrom: null,
+      sections: [
+        {
+          heading: 'Before you start',
+          body: 'Two things about Exness keys that are easy to miss.',
+          list: [
+            {
+              bold: 'Exness platform accounts only:',
+              text: 'Exness issues API keys for accounts on the Exness platform (Exness Terminal and web terminal). MT4 and MT5 accounts show greyed out and cannot have a key.',
+            },
+            {
+              bold: 'API management may not be open to you yet:',
+              text: 'Exness is opening its API country by country and needs a fully verified account. If API management is not in your Personal Area\'s side menu, it is not available on your account today.',
+            },
+            {
+              bold: 'Full access, never Read-only:',
+              text: 'A Read-only key connects and sends alerts, but it can never close a position. The kill switch needs Trading with Full access.',
+            },
+          ],
+        },
+        {
+          heading: 'Set up Exness — step by step',
+          body: 'Follow these in order. The only part done outside TradeGuardX is creating the key on Exness.',
+          steps: EXNESS_STEPS,
+        },
+      ],
+    },
+  },
+
   shark: {
     'api-key': {
       slug: 'api-key',

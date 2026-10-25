@@ -17,6 +17,7 @@ const links = {
   exchanges: [
     { label: 'All supported exchanges', to: '/exchanges' },
     { label: 'Delta Exchange', to: '/exchanges/delta' },
+    { label: 'Exness', to: '/exchanges/exness' },
     { label: 'CoinDCX', to: '/exchanges/coindcx' },
     { label: 'Shark Exchange', to: '/exchanges/shark' },
   ],

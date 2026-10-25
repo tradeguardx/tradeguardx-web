@@ -24,10 +24,10 @@ export default function ExchangeIndexPage() {
   const live = VENUE_PAGE_LIST.filter((v) => v.status === 'live');
 
   useSEO({
-    title: 'Supported Exchanges — Kill Switch for Indian Crypto',
+    title: 'Supported Exchanges & Brokers — TradeGuardX Kill Switch',
     rawTitle: true,
     description:
-      'TradeGuardX enforces your daily loss limit on Delta Exchange, CoinDCX futures and Shark Exchange. Pick your venue for setup steps and exactly which rules it can enforce.',
+      'TradeGuardX enforces your daily loss limit on Delta Exchange, Exness, CoinDCX futures and Shark Exchange. Pick your venue for setup steps and exactly which rules it enforces.',
     url,
     image: ogImageFor('/exchanges'),
     imageAlt: 'Exchanges supported by TradeGuardX',
@@ -71,12 +71,13 @@ export default function ExchangeIndexPage() {
             Which exchanges TradeGuardX protects
           </h1>
           <p className="mt-5 text-lg leading-relaxed text-slate-400">
-            {live.length} Indian venues are live today, all futures. You connect an API key scoped to
-            trade — never to withdraw — and enforcement runs from our servers, so it applies whether
-            the order came from the exchange website, its phone app, or a script you wrote.
+            {live.length} venues are live today: crypto futures on Delta Exchange, CoinDCX and Shark, and
+            forex and CFDs on Exness. You connect an API key scoped to trade — never to withdraw — and
+            enforcement runs from our servers, so it applies whether the order came from the website,
+            the phone app, or a script you wrote.
           </p>
           <p className="mt-4 text-[15px] leading-relaxed text-slate-500">
-            One subscription covers every exchange you connect. Spot is not covered on any of them.
+            One subscription covers every venue you connect. Spot crypto is not covered.
           </p>
         </header>
 

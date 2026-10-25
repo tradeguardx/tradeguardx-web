@@ -14,10 +14,10 @@ export default function BlogIndexPage() {
   const [lead, ...rest] = POSTS;
 
   useSEO({
-    title: 'Crypto Futures Risk Management Blog for Indian Traders',
+    title: 'Crypto Futures Risk Management Blog | TradeGuardX',
     rawTitle: true,
     description:
-      'Daily loss limits, overtrading, revenge trading and leverage, explained for Indian crypto futures traders. Calculators, worked rupee examples, no hype.',
+      'Daily loss limits, overtrading, revenge trading and leverage, explained for crypto futures traders. Calculators, worked examples, no hype.',
     url: `${SITE}/blog`,
     jsonLd: {
       '@context': 'https://schema.org',
@@ -45,8 +45,8 @@ export default function BlogIndexPage() {
           </h1>
           <p className="mt-5 text-lg leading-relaxed text-slate-400">
             Most accounts aren’t lost on a bad setup. They’re lost on the fourth trade of a bad morning. These guides
-            are about that part: limits, leverage and the habits that keep a losing day small. Written for Indian
-            traders, in rupees.
+            are about that part: limits, leverage and the habits that keep a losing day small, written in plain
+            English with worked examples.
           </p>
         </header>
 

@@ -189,7 +189,7 @@ export default function BestCryptoRiskManagementToolsIndia() {
         tag="The parent who takes you home."
         cost="Paid, with a 3-day free trial"
         good="Watching your whole crypto futures account from our servers, all the time. You set a daily loss limit, a max number of trades, a loss-streak pause and a few more rules. When one is hit, it cancels your orders, closes your positions and locks the account until your reset time. It works whether you trade from the website, the phone app or a bot."
-        stops="It can’t stop an order from reaching the exchange. It closes it right after. It’s futures only, and only on Delta Exchange, CoinDCX and Shark Exchange. And it costs money, which the tools above don’t."
+        stops="It can’t stop an order from reaching the exchange. It closes it right after. For Indian crypto it’s futures only, on Delta Exchange, CoinDCX and Shark Exchange. And it costs money, which the tools above don’t."
       />
 
       <H2 id="four-moments">The four-moment test</H2>
@@ -238,8 +238,8 @@ export default function BestCryptoRiskManagementToolsIndia() {
           there. On a fast day that can be a bit past your limit.
         </LI>
         <LI>
-          <B>Futures only, three exchanges.</B> Delta Exchange, CoinDCX and Shark Exchange. No spot, no Binance, no
-          WazirX.
+          <B>Futures only.</B> For Indian crypto that means Delta Exchange, CoinDCX and Shark Exchange; outside India,
+          BloFin is in beta and Exness covers forex. No spot, no Binance, no WazirX.
         </LI>
         <LI>
           <B>It’s a seatbelt you choose to wear.</B> You own your exchange account and you can always delete the API key.

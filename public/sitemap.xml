@@ -38,6 +38,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://tradeguardx.com/exchanges/exness</loc>
+    <lastmod>2026-10-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://tradeguardx.com/exchanges/exness/api-key</loc>
+    <lastmod>2026-10-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://tradeguardx.com/exchanges/coindcx</loc>
     <lastmod>2026-10-13</lastmod>
     <changefreq>weekly</changefreq>

@@ -32,12 +32,12 @@ const FAQ = [
     a: "Yes, and the difference matters. A stop loss protects a single trade; a kill switch protects the account. A stop loss also does nothing about the behaviour that actually blows accounts — re-entering immediately after a loss, doubling size to win it back, trading twelve times on a day you planned to trade three. A kill switch caps the day, not the trade.",
   },
   {
-    q: 'Which exchanges does a crypto kill switch work with in India?',
-    a: 'Three, all live today: Delta Exchange (India or Global), CoinDCX futures, and Shark Exchange. One subscription covers every exchange you connect. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Spot is not covered on any exchange — futures only.',
+    q: 'Which exchanges does the TradeGuardX kill switch work with?',
+    a: 'For crypto futures: Delta Exchange (India or Global), CoinDCX futures and Shark Exchange, with BloFin in beta. For forex and CFDs: Exness. One subscription covers every exchange you connect. Enforcement runs server-side through the exchange API rather than in your browser, so it applies whether you trade from the web, the mobile app, or a third-party client. Spot is not covered on any exchange — futures only.',
   },
   {
     q: 'Does a kill switch need access to my funds?',
-    a: 'No, and you should refuse any tool that asks. We use an API key scoped to read and trade only. That is enough to cancel an order and close a position, and it is nowhere near enough to move a rupee — the key cannot withdraw or transfer. Your funds never leave your own exchange wallet. None of the exchanges we support even offer a withdrawal permission on an API key.',
+    a: 'No, and you should refuse any tool that asks. We use an API key scoped to read and trade only. That is enough to cancel an order and close a position, and nowhere near enough to move money — the key cannot withdraw or transfer. Your funds never leave your own exchange wallet.',
   },
   {
     q: 'Can I turn the kill switch off when I want to keep trading?',
@@ -132,16 +132,16 @@ const SECTIONS = [
     h: 'What you get besides the switch',
     p: [
       'Breach alerts arrive on Telegram or email within seconds, because the engine acting while you are away is only useful if you find out it did.',
-      'Every trade lands in a journal with the rules that fired on it, so a bad week has an actual record instead of a feeling. And there is a tax centre that rebuilds your Indian financial-year result from raw exchange fills — F&O treated as business income, VDA under 115BBH, kept separate because they are different regimes and adding them produces a number that means nothing. It exports the working for your CA.',
+      'Every trade lands in a journal with the rules that fired on it, so a bad week has an actual record instead of a feeling. And for traders in India there is a tax centre that rebuilds your Indian financial-year result from raw exchange fills — F&O treated as business income, VDA under 115BBH, kept separate because they are different regimes and adding them produces a number that means nothing. It exports the working for your CA.',
     ],
   },
   {
-    h: 'Which Indian exchanges we support',
+    h: 'Which exchanges we support',
     // Deliberately short, and deliberately not a pitch for any one exchange.
     // The per-exchange argument lives at /exchanges/<venue>, and repeating it
     // here would put two of our own pages in front of the same query.
     p: [
-      'Three, all live today, all futures, and one subscription covers every one you connect.',
+      'Three crypto futures exchanges are live today, with BloFin in beta, and one subscription covers every one you connect. Exness, for forex and CFDs, runs on the same engine and has its own page.',
       'Delta Exchange came first, India or Global, whichever account you hold. It has the most granular and stable perpetuals API in the country, which matters more than it sounds: your protection is only ever as fast as the data feed behind it. It is also the one exchange of the three where you can create the API key on your phone.',
       'CoinDCX futures followed. Its INR and USDT margin modes are one venue and two wallets, not two exchanges — the same instruments priced in USDT either way — so one key covers both and your rules apply across the pair. Its key form has no permission checkbox at all, which confuses people looking for one.',
       'Shark Exchange is the newest, and it settles in INR, so your limits are rupee amounts that reconcile to the paisa against Shark\'s own statement rather than surviving a conversion. It is also the one that most often goes wrong at setup: Shark issues every key Read-only, and the permission that lets anything be closed is edited after the secret is already on screen, which is exactly when people think they are finished.',
@@ -280,12 +280,12 @@ const HERO = ogImageFor('/crypto-kill-switch');
 
 export default function CryptoKillSwitchPage() {
   useSEO({
-    title: 'Crypto Kill Switch for Indian Traders',
+    title: 'Crypto Kill Switch for Futures Traders',
     description:
-      'What a crypto kill switch is, how server-side enforcement differs from alerts, and what to look for in a killswitch app. Built for Indian crypto futures traders.',
+      'What a crypto kill switch is, how server-side enforcement differs from alerts, and what to look for in a killswitch app. For crypto futures traders on Delta Exchange, CoinDCX and more.',
     url: 'https://tradeguardx.com/crypto-kill-switch',
     image: HERO,
-    imageAlt: 'The crypto kill switch for Indian traders — TradeGuardX',
+    imageAlt: 'The crypto kill switch for futures traders — TradeGuardX',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
@@ -310,7 +310,7 @@ export default function CryptoKillSwitchPage() {
         <header className={HERO ? 'mb-8' : 'mb-14'}>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-accent">Crypto kill switch</p>
           <h1 className="mt-3 font-display text-4xl font-bold leading-tight text-white md:text-5xl">
-            The crypto kill switch for Indian traders
+            The crypto kill switch for futures traders
           </h1>
           <p className="mt-5 text-lg leading-relaxed text-slate-400">
             A kill switch caps the day, not the trade. Set your daily loss limit once — TradeGuardX
@@ -337,7 +337,7 @@ export default function CryptoKillSwitchPage() {
         {HERO && (
           <img
             src={HERO}
-            alt="The crypto kill switch for Indian traders — TradeGuardX"
+            alt="The crypto kill switch for futures traders — TradeGuardX"
             width={1200}
             height={630}
             /* Eager: it sits directly under the H1, so lazy-loading it is a
