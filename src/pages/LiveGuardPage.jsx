@@ -11,6 +11,7 @@ import { computeRule } from '../components/dashboard/RuleStatusCards';
 import { fetchJournalTrades } from '../api/tradesApi';
 import { stopCellFor } from '../lib/stopLoss';
 import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../api/userApi';
+import { OpenTradeLockChoice, PendingLockPanel } from '../components/dashboard/shell/LockChoice';
 import { setRuleLockDays } from '../api/tradingAccountsApi';
 import { RULE_GLYPH, ruleAccent } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
@@ -119,17 +120,24 @@ export default function LiveGuardPage() {
   // Lockout needs a key that can act — not rules. See canLockOutOf in guard.js.
   const noEnforce = !armed && !g.canLockOut;
   const ksGap = g.gap && g.gap.key !== 'alerts' && g.gap.key !== 'rules' ? g.gap : null;
-  const armable = !armed && !noEnforce && !blocked && !posOpen;
-  const arm = async () => {
+  const pendingLock = !armed ? g.pendingLock : null;
+  // With a trade open the user chooses how the lock starts (LockChoice.jsx).
+  const openChoice = !armed && !noEnforce && !pendingLock && (blocked || posOpen);
+  const armable = !armed && !noEnforce && !pendingLock && !blocked && !posOpen;
+  const openSymbols = [...new Set((positions ?? []).map((x) => pick(x, 'symbol')).filter(Boolean))];
+  const arm = async (whenOpen) => {
     setBusy(true);
     try {
-      await armLockout({ accessToken, tradingAccountId: selectedTradingAccountId, hours });
+      const res = await armLockout({ accessToken, tradingAccountId: selectedTradingAccountId, hours, whenOpen });
       await refresh();
-      toast.success(`Locked out for ${hours} hours`, 'Orders placed anywhere in the meantime get closed on sight.');
+      if (res?.status === 'pending') toast.success(`Lock waiting — ${hours} hours`, 'It starts the moment your trade closes. New trades are closed until then.');
+      else if (whenOpen === 'close_now') toast.success(`Locked out for ${hours} hours`, 'Closing your open positions now.');
+      else toast.success(`Locked out for ${hours} hours`, 'Orders placed anywhere in the meantime get closed on sight.');
       setStage(0);
+      setBlocked(false);
     } catch (err) {
       const code = err?.details?.error?.code;
-      if (code === 'POSITION_OPEN') { setBlocked(true); setStage(0); }
+      if (code === 'POSITION_OPEN') { setBlocked(true); setStage(0); loadPositions(); }
       else toast.error('Could not start the lockout', err?.details?.error?.message || err?.message || 'Please try again.');
     } finally { setBusy(false); }
   };
@@ -655,7 +663,7 @@ export default function LiveGuardPage() {
                   armed is how a user ends up asking why THEY set 7 hours. */}
               <h4 style={sx("margin:0;font:600 14.5px/1.2 'Space Grotesk',sans-serif")}>{armed && !manual ? 'Locked by a rule' : 'Manual killswitch'}</h4>
             </div>
-            {!armed && (
+            {!armed && !pendingLock && (
               <p style={sx('margin:0 0 13px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>Lock yourself out of this account for a window you choose. <strong style={sx('color:var(--ink);font-weight:700')}>You can&rsquo;t call it off yourself</strong> — there is no off button, only the clock. Support can lift it if something real happens.</p>
             )}
 
@@ -667,11 +675,11 @@ export default function LiveGuardPage() {
               </div>
             )}
 
-            {!armed && !noEnforce && (blocked || posOpen) && (
-              <div style={sx('padding:13px 14px;border:1px solid var(--amber-line);border-radius:11px;background:var(--amber-tint)')}>
-                <div style={sx('font-size:12.5px;font-weight:700;color:var(--amber)')}>Can&rsquo;t arm while a position is open</div>
-                <p style={sx('margin:5px 0 10px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>Locking you out now would leave you holding {positions?.length === 1 ? 'a position' : `${positions?.length ?? ''} positions`} you could neither manage nor close through us. Flatten first, then arm.</p>
-                <a href="#positions" style={sx('display:inline-block;padding:7px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none')}>View open positions</a>
+            {pendingLock && <PendingLockPanel pending={pendingLock} />}
+
+            {openChoice && (
+              <div style={sx('margin-top:auto')}>
+                <OpenTradeLockChoice symbols={openSymbols} hours={hours} setHours={setHours} busy={busy} onArm={arm} />
               </div>
             )}
 
@@ -690,7 +698,7 @@ export default function LiveGuardPage() {
                     <div style={sx('font-size:12.5px;font-weight:700;color:var(--red)')}>Read this before you confirm</div>
                     <p style={sx('margin:5px 0 11px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>You will not be able to trade this account for {hours} hours. There is no cancel. Orders placed anywhere in the meantime get closed on sight.</p>
                     <div style={sx('display:flex;gap:8px')}>
-                      <button type="button" disabled={busy} onClick={arm} style={sx('flex:1;padding:10px;border:1px solid var(--red-solid);border-radius:9px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${hours} hours`}</button>
+                      <button type="button" disabled={busy} onClick={() => arm()} style={sx('flex:1;padding:10px;border:1px solid var(--red-solid);border-radius:9px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${hours} hours`}</button>
                       <button type="button" disabled={busy} onClick={() => setStage(0)} style={sx('padding:10px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Back</button>
                     </div>
                   </div>

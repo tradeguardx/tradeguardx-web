@@ -7,20 +7,21 @@ import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../../../api/userApi';
 import { fetchJournalTrades } from '../../../api/tradesApi';
 import { sx } from './sx';
 import { formatRemaining } from './format';
+import { OpenTradeLockChoice, PendingLockPanel } from './LockChoice';
 
 /**
  * Manual kill switch — reference header button (lines 338–341) and modal
  * (447–537). Header button becomes the countdown while armed. The modal has
- * four bodies: armed / blocked (position open) / noEnforce / armable.
- *
- * "Position open" is only known when the server refuses (POSITION_OPEN), so
- * the blocked body renders after an attempt rather than before it.
+ * five bodies: armed / waiting (lock starts when the trade closes) /
+ * open trade (choose close now or after close — LockChoice.jsx) / noEnforce
+ * / armable.
  */
 
 export function KillSwitchButton({ onOpen }) {
   const { selected, subscribeTick, life } = useGuard();
   const toast = useToast();
   const armed = selected.guard === 'locked';
+  const waiting = !armed && !!selected.pendingLock;
   /* Disabled only in setup, where there is no key to act with. With no plan
      it stays live: the manual kill switch is the user's own instruction and
      the engine honours it either way. A tap on the disabled button says why
@@ -42,14 +43,14 @@ export function KillSwitchButton({ onOpen }) {
       aria-disabled={usable ? undefined : 'true'}
       title={armed ? undefined : tip}
       style={sx('flex:none;display:flex;align-items:center;gap:8px;height:36px;padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums', {
-        border: `1px solid ${armed ? 'var(--red-line)' : 'var(--red-btn)'}`,
-        background: armed ? 'var(--red-tint)' : 'var(--red-btn)',
-        color: armed ? 'var(--red)' : '#fff',
+        border: `1px solid ${armed || waiting ? 'var(--red-line)' : 'var(--red-btn)'}`,
+        background: armed || waiting ? 'var(--red-tint)' : 'var(--red-btn)',
+        color: armed || waiting ? 'var(--red)' : '#fff',
         opacity: usable ? 1 : 0.45,
       })}
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" style={{ flex: 'none' }}><path d="M12 4v7" /><path d="M6.8 7.4a7.4 7.4 0 1010.4 0" /></svg>
-      <span data-tgx-kslabel="1">{armed ? formatRemaining(selected.lockRemainingMs) : 'Kill switch'}</span>
+      <span data-tgx-kslabel="1">{armed ? formatRemaining(selected.lockRemainingMs) : waiting ? 'Lock waiting' : 'Kill switch'}</span>
     </button>
   );
 }
@@ -77,15 +78,18 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   const cardRef = useRef(null);
   const firstRef = useRef(null);
 
-  const { account, guard, gap, lockRemainingMs, lockReason, readOnly, canLockOut } = selected;
+  const { account, guard, gap, lockRemainingMs, lockReason, readOnly, canLockOut, pendingLock } = selected;
   const armed = guard === 'locked';
+  const waiting = !armed && !!pendingLock;
   useEffect(() => (open && armed ? subscribeTick() : undefined), [open, armed, subscribeTick]);
   // A lockout holds on the key alone. Rules are the automatic half of the
   // product and have nothing to do with a user deciding to stop: the engine's
   // cooldown watchdog closes whatever is opened during the lock either way.
-  const noEnforce = !armed && !canLockOut;
+  const noEnforce = !armed && !waiting && !canLockOut;
   const posOpen = (openPositions?.length ?? 0) > 0;
-  const armable = !armed && !noEnforce && !blocked && !posOpen;
+  const openChoice = !armed && !waiting && !noEnforce && (!!blocked || posOpen);
+  const armable = !armed && !waiting && !noEnforce && !blocked && !posOpen;
+  const openSymbols = [...new Set((openPositions ?? []).map((r) => r?.symbol).filter(Boolean))];
   const ksGap = gap && gap.key !== 'alerts' ? gap : null;
 
   // Same source Live guard reads, so the two screens cannot disagree.
@@ -132,13 +136,16 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
 
   const go = (to) => { onClose(); navigate(to); };
 
-  const arm = async () => {
+  const arm = async (whenOpen) => {
     setBusy(true);
     try {
-      await armLockout({ accessToken: session?.access_token, tradingAccountId: account.id, hours });
+      const res = await armLockout({ accessToken: session?.access_token, tradingAccountId: account.id, hours, whenOpen });
       await refresh();
-      toast.success(`Locked out for ${hours} hours`, 'Orders placed anywhere in the meantime get closed on sight.');
+      if (res?.status === 'pending') toast.success(`Lock waiting — ${hours} hours`, 'It starts the moment your trade closes. New trades are closed until then.');
+      else if (whenOpen === 'close_now') toast.success(`Locked out for ${hours} hours`, 'Closing your open positions now.');
+      else toast.success(`Locked out for ${hours} hours`, 'Orders placed anywhere in the meantime get closed on sight.');
       setStage(0);
+      setBlocked(null);
     } catch (err) {
       const code = err?.details?.error?.code;
       const message = err?.details?.error?.message || err?.message || 'Please try again.';
@@ -185,12 +192,10 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
             </div>
           )}
 
-          {!armed && !noEnforce && (blocked || posOpen) && (
-            <div style={sx('padding:15px 16px;border:1px solid var(--amber-line);border-radius:13px;background:var(--amber-tint)')}>
-              <div style={sx('font-size:12.5px;font-weight:700;color:var(--amber)')}>Can&rsquo;t arm while a position is open</div>
-              <p style={sx('margin:6px 0 10px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>Locking you out now would leave you holding {openPositions?.length === 1 ? 'a position' : `${openPositions?.length ?? ''} positions`} you could neither manage nor close through us. Flatten first, then arm.</p>
-              <button type="button" onClick={() => { onClose(); navigate('/dashboard/live'); }} style={sx('padding:7px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:700')}>View open positions</button>
-            </div>
+          {waiting && <PendingLockPanel pending={pendingLock} />}
+
+          {openChoice && (
+            <OpenTradeLockChoice symbols={openSymbols} hours={hours} setHours={setHours} busy={busy} onArm={arm} firstRef={firstRef} />
           )}
 
           {noEnforce && (
@@ -221,7 +226,7 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
                   <div style={sx('font-size:12.5px;font-weight:700;color:var(--red)')}>Read this before you confirm</div>
                   <p style={sx('margin:6px 0 13px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>You will not be able to trade this account for {hours} hours. There is no cancel. Orders placed anywhere in the meantime get closed on sight.</p>
                   <div style={sx('display:flex;gap:8px')}>
-                    <button type="button" disabled={busy} onClick={arm} style={sx('flex:1;padding:11px;border:1px solid var(--red-solid);border-radius:10px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${hours} hours`}</button>
+                    <button type="button" disabled={busy} onClick={() => arm()} style={sx('flex:1;padding:11px;border:1px solid var(--red-solid);border-radius:10px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${hours} hours`}</button>
                     <button type="button" disabled={busy} onClick={() => setStage(0)} style={sx('padding:11px 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Back</button>
                   </div>
                 </div>

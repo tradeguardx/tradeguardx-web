@@ -36,13 +36,18 @@ export async function initUserProfile({ accessToken, fullName, email, attributio
  */
 export const LOCKOUT_HOUR_OPTIONS = [3, 6, 12];
 
-export async function armLockout({ accessToken, tradingAccountId, hours, signal } = {}) {
+/**
+ * `whenOpen` matters only with a position open: 'after_close' starts the lock
+ * when the account is flat, 'close_now' closes everything and locks now.
+ * Without it the server answers 409 POSITION_OPEN, as it always has.
+ */
+export async function armLockout({ accessToken, tradingAccountId, hours, whenOpen, signal } = {}) {
   if (!accessToken) throw new Error('Missing access token');
   if (!tradingAccountId) throw new Error('Missing trading account');
 
   return apiPost(
     `/trading-accounts/${encodeURIComponent(tradingAccountId)}/lockout`,
-    { hours },
+    whenOpen ? { hours, whenOpen } : { hours },
     { signal, headers: { Authorization: `Bearer ${accessToken}` } },
   );
 }

@@ -243,6 +243,8 @@ export function GuardProvider({ children }) {
         rulesTotal: total,
         lockUntil,
         lockReason: account?.cooldownReason ?? null,
+        // A manual lock waiting for the open trade to close (LockChoice.jsx).
+        pendingLock: lockUntil ? null : account?.pendingLock ?? null,
         lockRemainingMs: lockUntil ? Math.max(0, lockUntil - now) : 0,
         describe: describeGuard(guard, { on, total, gap: gaps[0] ?? null, label: account?.name ?? '', readOnly: slice.connection?.enforcementCapable === false, entitled }),
         copy: enforcementCopy(enforcement),
