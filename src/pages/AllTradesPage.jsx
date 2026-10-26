@@ -12,6 +12,7 @@ import { fmtMoney } from '../lib/session';
 import { getUserZone } from '../lib/userZone';
 import { inference } from '../lib/sample';
 import { sx } from '../components/dashboard/shell/sx';
+import { instrumentOf, symbolLabel } from '../lib/labels';
 
 /**
  * All trades — the reference table (lines 1365–1399) with the full filter
@@ -292,7 +293,7 @@ export default function AllTradesPage() {
               style={sx(GRID, sx('width:100%;padding:13px 18px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;align-items:center;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums;cursor:pointer'))}
             >
               <span data-c="when" style={sx('color:var(--ink-3)')}>{fmtWhen(pick(t, 'openedAt', 'closedAt'))}</span>
-              <span data-c="sym" style={sx('font-weight:600')}>{pick(t, 'symbol')}</span>
+              <span data-c="sym" style={sx('font-weight:600')}>{instrumentOf(pick(t, 'symbol'))}</span>
               <span data-c="side" style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: long ? 'var(--mint)' : 'var(--red)' })}>{long ? 'Long' : 'Short'}</span>
               <span data-c="size">{pick(t, 'quantity', 'volume') ?? '—'}</span>
               <span data-c="hold" style={sx('color:var(--ink-3)')}>{fmtHold(pick(t, 'openedAt'), pick(t, 'closedAt'))}</span>
@@ -307,7 +308,7 @@ export default function AllTradesPage() {
                 {closed && canShare && t.tradeUid && (
                   <button
                     type="button"
-                    aria-label={`Share ${pick(t, 'symbol') ?? 'this trade'}`}
+                    aria-label={`Share ${symbolLabel(pick(t, 'symbol')) ?? 'this trade'}`}
                     title="Share this trade"
                     className="tr-share"
                     onClick={(e) => { e.stopPropagation(); openShare('trade', { tradeUid: t.tradeUid }); }}

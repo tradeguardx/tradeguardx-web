@@ -1,5 +1,6 @@
 import { MINT, RED, STORIES } from './reelStories';
 import { moneyFns, weekdayShort } from './shareData';
+import { instrumentOf } from './labels';
 
 /**
  * A reel story from one account's real data.
@@ -62,7 +63,7 @@ export function tradeStory({ trade, card, paths, rule, currency = 'USD' }) {
 
   const long = !/^(short|sell)/i.test(String(trade.side ?? 'long'));
   const win = realized >= 0;
-  const sym = trade.symbol || 'Position';
+  const sym = instrumentOf(trade.symbol) || 'Position';
   const ruleName = rule || 'rule';
 
   // Scales Guardy's mood and his arms. The reel was tuned against a ±$200
@@ -157,7 +158,7 @@ export function ownTradeStory({ trade, card, paths, currency = 'USD', rulesKept 
   const realized = paths.P[paths.P.length - 1];
   const win = realized >= 0;
   const long = !/^(short|sell)/i.test(String(trade.side ?? 'long'));
-  const sym = trade.symbol || 'Position';
+  const sym = instrumentOf(trade.symbol) || 'Position';
   const held = holdText(trade);
 
   // Same scaling as the guard story: the reel was tuned against a ±$200

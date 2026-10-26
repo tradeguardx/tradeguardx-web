@@ -14,6 +14,7 @@ import {
   weekdayShort,
 } from './shareData';
 import { formatDateKey } from './userZone';
+import { instrumentOf } from './labels';
 
 /**
  * The four cards, built from one account's real trades.
@@ -215,7 +216,7 @@ export function buildTradeCard({ trades, breaches, currency = 'USD', tradeUid, c
 
   // Nothing happened and no rule acted — there is no card here.
   if (!breach && !isMaterial(t, realized, floor)) {
-    return { ...EMPTY, reason: 'immaterial', sym: t.symbol };
+    return { ...EMPTY, reason: 'immaterial', sym: instrumentOf(t.symbol) };
   }
 
   const long = !/^(short|sell)/i.test(String(t.side ?? 'long'));
@@ -261,7 +262,7 @@ export function buildTradeCard({ trades, breaches, currency = 'USD', tradeUid, c
       { k: 'Held', v: holdText(t) || '—' },
     ],
     freshMs: Date.parse(t.closedAt),
-    sym: t.symbol || 'Trade',
+    sym: instrumentOf(t.symbol) || 'Trade',
     meta,
     date: fmtDay(t.closedAt),
     reelStory: 'trade',
@@ -320,7 +321,7 @@ export function buildTradeCard({ trades, breaches, currency = 'USD', tradeUid, c
       ach: 'Saved by the guard',
       ruleName: rule,
       tier: tierFor({ guarded: true, saved: priced.saved, green }),
-      cap: `My ${rule.toLowerCase()} closed ${t.symbol} at ${money(realized)}. It kept ${long ? 'falling' : 'running'} to ${money(priced.low)}. Saved ${plain(priced.saved)} by a rule I set while calm.`,
+      cap: `My ${rule.toLowerCase()} closed ${instrumentOf(t.symbol)} at ${money(realized)}. It kept ${long ? 'falling' : 'running'} to ${money(priced.low)}. Saved ${plain(priced.saved)} by a rule I set while calm.`,
       saved: priced.saved,
       // The trade's own path, so the chart draws THIS trade.
       chart: chartGeometry(priced.paths),
@@ -354,8 +355,8 @@ export function buildTradeCard({ trades, breaches, currency = 'USD', tradeUid, c
       ach: green ? 'Rule held' : 'Stopped at the limit',
       tier: tierFor({ guarded: true, saved: 0, green }),
       cap: green
-        ? `My ${rule.toLowerCase()} locked ${t.symbol} in at ${money(realized)}. I wrote that rule while calm, and it did its job.`
-        : `My ${rule.toLowerCase()} closed ${t.symbol} at ${money(realized)} and stopped there. That is the whole point of writing it while calm.`,
+        ? `My ${rule.toLowerCase()} locked ${instrumentOf(t.symbol)} in at ${money(realized)}. I wrote that rule while calm, and it did its job.`
+        : `My ${rule.toLowerCase()} closed ${instrumentOf(t.symbol)} at ${money(realized)} and stopped there. That is the whole point of writing it while calm.`,
       saved: null,
       chart: ownPath(priced?.paths),
       type: 'guard',
@@ -373,14 +374,14 @@ export function buildTradeCard({ trades, breaches, currency = 'USD', tradeUid, c
     tone: green ? 'mint' : 'red',
     pillText: `${long ? 'Long' : 'Short'} · held ${holdText(t)}`,
     headline: green
-      ? `${t.symbol} closed green, inside my rules.`
-      : `${t.symbol} closed red, inside my rules.`,
+      ? `${instrumentOf(t.symbol)} closed green, inside my rules.`
+      : `${instrumentOf(t.symbol)} closed red, inside my rules.`,
     heroNote: green ? 'banked' : 'taken',
     ach: green ? 'Green trade' : 'Logged and reviewed',
     tier: tierFor({ guarded: false, saved: 0, green }),
     cap: green
-      ? `${t.symbol} closed at ${money(realized)}, inside the rules I set before I opened it.`
-      : `${t.symbol} closed at ${money(realized)}. Inside my rules, logged, and reviewed — that is the job.`,
+      ? `${instrumentOf(t.symbol)} closed at ${money(realized)}, inside the rules I set before I opened it.`
+      : `${instrumentOf(t.symbol)} closed at ${money(realized)}. Inside my rules, logged, and reviewed — that is the job.`,
     saved: null,
     chart: ownPath(priced?.paths),
     type: 'plain',

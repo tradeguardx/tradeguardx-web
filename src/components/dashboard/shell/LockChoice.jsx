@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { LOCKOUT_HOUR_OPTIONS } from '../../../api/userApi';
 import { sx } from './sx';
 import { formatResumes } from './format';
+import { symbolLabel } from '../../../lib/labels';
 
 /**
  * The manual kill switch with a trade open (owner, 26 Oct 2026).
@@ -39,7 +40,7 @@ const CHOICES = [
 ];
 
 function listSymbols(symbols) {
-  const s = (symbols ?? []).filter(Boolean);
+  const s = (symbols ?? []).filter(Boolean).map(symbolLabel);
   if (s.length === 0) return 'your open positions';
   if (s.length === 1) return s[0];
   if (s.length === 2) return `${s[0]} and ${s[1]}`;

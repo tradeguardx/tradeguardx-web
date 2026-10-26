@@ -23,7 +23,7 @@ import {
   EMOTIONS,
   MISTAKE_TYPES,
 } from '../hooks/useTradeAnnotations';
-import { shortId, sourceLabel } from '../lib/labels';
+import { shortId, sourceLabel, symbolLabel, symbolsInText } from '../lib/labels';
 import { rMultipleGap, stopPriceOf } from '../lib/stopLoss';
 import { fmtMoney } from '../lib/session';
 import { getUserZone } from '../lib/userZone';
@@ -819,7 +819,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                       <span className="text-[9px]" style={{ color: 'var(--dash-text-faint)' }}>{v.durationSeconds}s</span>
                     )}
                   </div>
-                  <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>{v.message}</p>
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>{symbolsInText(v.message)}</p>
                 </div>
               </div>
             );
@@ -1339,7 +1339,7 @@ export default function TradeDetailPage() {
       <section style={sx('margin-bottom:18px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
         <div style={sx('padding:22px 24px')}>
           <div style={sx('display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px')}>
-            <span style={sx("font:600 17px/1 'Space Grotesk',sans-serif")}>{trade.symbol || 'Unknown'}</span>
+            <span style={sx("font:600 17px/1 'Space Grotesk',sans-serif")}>{symbolLabel(trade.symbol) || 'Unknown'}</span>
             <span style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: isLong ? 'var(--mint)' : 'var(--red)' })}>{isLong ? 'Long' : 'Short'} {trade.quantity || ''}</span>
             <span style={sx('font-size:12.5px;color:var(--ink-3)')}>{when}{windowText ? ` · ${windowText}` : ''}</span>
             {!isClosed && <span style={sx('font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--amber)')}>Open</span>}

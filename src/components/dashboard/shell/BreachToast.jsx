@@ -8,6 +8,7 @@ import { acknowledgeBreaches } from '../../../api/breachesApi';
 import { sx } from './sx';
 import { getUserZone, zoneLabel } from '../../../lib/userZone';
 import { isUnenforced, ruleNameOf } from '../../../lib/lifecycle';
+import { symbolsInText } from '../../../lib/labels';
 
 /**
  * Breach toast — reference lines 394–415. Shows the newest unacknowledged
@@ -115,7 +116,7 @@ export default function BreachToast() {
             <span style={sx('font-size:11.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums')}>{timeOf(breach.createdAt)}</span>
           </div>
           <div style={sx('margin-top:6px;font-size:13.5px;font-weight:600;line-height:1.4')}>{headline}</div>
-          <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{breach.message}</p>
+          <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{symbolsInText(breach.message)}</p>
           <div style={sx('display:flex;gap:8px;margin-top:11px;flex-wrap:wrap')}>
             {canShare && !notEnforced && <button
               type="button"

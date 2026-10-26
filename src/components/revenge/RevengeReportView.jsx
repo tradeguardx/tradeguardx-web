@@ -2,6 +2,7 @@ import { sx } from '../dashboard/shell/sx';
 import { CARD, GRADE, GRID, LABEL, dateKeyDay, userDay, userTime, moneyOf, worstTimeLabel } from './revengeFormat';
 import { CheckCard, Chip, ScoreRing, Section, Stat } from './RevengeParts';
 import RulePlan from './RevengeRulePlan';
+import { instrumentOf, symbolLabel } from '../../lib/labels';
 
 const RANK = { problem: 0, warning: 1, good: 2, na: 3 };
 
@@ -81,10 +82,10 @@ export default function RevengeReportView({ report, periodLabel, months = 1, rev
               <Stat label="Net result" value={money(p.netPnl, { signed: true })} sub="After fees" tone={p.netPnl >= 0 ? 'mint' : 'red'} />
               <Stat label="Best time" value={p.bestTime ? p.bestTime.label : '—'} sub={p.bestTime ? `${money(p.bestTime.pnl, { signed: true })} over ${p.bestTime.trades} trades` : 'Not enough trades to compare times yet'} tone={p.bestTime ? 'mint' : null} />
               <Stat label="Worst time" value={p.worstTime ? worstTimeLabel(p.worstTime.label, report.timezone) : '—'} sub={p.worstTime ? `${money(p.worstTime.pnl, { signed: true })} over ${p.worstTime.trades} trades` : 'Not enough trades to compare times yet'} tone={p.worstTime ? 'red' : null} />
-              <Stat label="Best symbol" value={p.bestSymbol ? p.bestSymbol.label : '—'} sub={p.bestSymbol ? `${money(p.bestSymbol.pnl, { signed: true })} · ${Math.round(p.bestSymbol.winRate)}% wins · ${p.bestSymbol.trades} trades` : 'Needs 5+ trades in at least two symbols'} tone={p.bestSymbol ? 'mint' : null} />
-              <Stat label="Worst symbol" value={p.worstSymbol ? p.worstSymbol.label : '—'} sub={p.worstSymbol ? `${money(p.worstSymbol.pnl, { signed: true })} · ${Math.round(p.worstSymbol.winRate)}% wins · ${p.worstSymbol.trades} trades` : 'Needs 5+ trades in at least two symbols'} tone={p.worstSymbol ? 'red' : null} />
-              <Stat label="Biggest win" value={p.biggestWin ? money(p.biggestWin.pnl, { signed: true }) : '—'} sub={p.biggestWin ? `${p.biggestWin.symbol} · ${userDay(p.biggestWin.at)}` : null} tone={p.biggestWin ? 'mint' : null} />
-              <Stat label="Biggest loss" value={p.biggestLoss ? money(p.biggestLoss.pnl, { signed: true }) : '—'} sub={p.biggestLoss ? `${p.biggestLoss.symbol} · ${userDay(p.biggestLoss.at)}` : null} tone={p.biggestLoss ? 'red' : null} />
+              <Stat label="Best symbol" value={p.bestSymbol ? symbolLabel(p.bestSymbol.label) : '—'} sub={p.bestSymbol ? `${money(p.bestSymbol.pnl, { signed: true })} · ${Math.round(p.bestSymbol.winRate)}% wins · ${p.bestSymbol.trades} trades` : 'Needs 5+ trades in at least two symbols'} tone={p.bestSymbol ? 'mint' : null} />
+              <Stat label="Worst symbol" value={p.worstSymbol ? symbolLabel(p.worstSymbol.label) : '—'} sub={p.worstSymbol ? `${money(p.worstSymbol.pnl, { signed: true })} · ${Math.round(p.worstSymbol.winRate)}% wins · ${p.worstSymbol.trades} trades` : 'Needs 5+ trades in at least two symbols'} tone={p.worstSymbol ? 'red' : null} />
+              <Stat label="Biggest win" value={p.biggestWin ? money(p.biggestWin.pnl, { signed: true }) : '—'} sub={p.biggestWin ? `${symbolLabel(p.biggestWin.symbol)} · ${userDay(p.biggestWin.at)}` : null} tone={p.biggestWin ? 'mint' : null} />
+              <Stat label="Biggest loss" value={p.biggestLoss ? money(p.biggestLoss.pnl, { signed: true }) : '—'} sub={p.biggestLoss ? `${symbolLabel(p.biggestLoss.symbol)} · ${userDay(p.biggestLoss.at)}` : null} tone={p.biggestLoss ? 'red' : null} />
             </div>
           </Section>
         </div>
@@ -116,7 +117,7 @@ export default function RevengeReportView({ report, periodLabel, months = 1, rev
                 {report.worstDay.timeline.map((t, i) => (
                   <li key={i} style={sx('display:flex;align-items:center;gap:12px;padding:8px 0;font-size:13px', i ? { borderTop: '1px solid var(--line)' } : {})}>
                     <span style={sx("flex:none;width:44px;font:500 11.5px/1 'JetBrains Mono',monospace;color:var(--ink-faint)")}>{userTime(t.at)}</span>
-                    <span style={sx('flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap')} title={`${t.symbol} ${t.side ?? ''}`}>{t.symbol} <span style={sx('font-weight:500;color:var(--ink-3)')}>{t.side ?? ''}</span></span>
+                    <span style={sx('flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap')} title={`${instrumentOf(t.symbol)} ${t.side ?? ''}`}>{instrumentOf(t.symbol)} <span style={sx('font-weight:500;color:var(--ink-3)')}>{t.side ?? ''}</span></span>
                     {t.revenge && <Chip tone="red">Revenge</Chip>}
                     <span style={sx('flex:none;min-width:72px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums', { color: t.pnl < 0 ? 'var(--red)' : 'var(--mint)' })}>{money(t.pnl, { signed: true })}</span>
                   </li>

@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { getUserZone } from '../../lib/userZone';
 import { C, CHARACTER, GRADE, HEADLINE, MASKED, checkOf, moneyShort, oneIn } from './revengeShare';
+import { symbolLabel } from '../../lib/labels';
 
 /**
  * The revenge score as a post: 432 × 540, exported at 2.5× to 1080 × 1350
@@ -92,7 +93,7 @@ function Chaser({ report, amounts }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <Link3 label={`${time(chain.loss.at)} · Loss`} value={money(chain.loss.pnl)} color={C.tone.red} />
             <Arrow text={`${chain.back.gapMin}m`} />
-            <Link3 label={`${time(chain.back.at)} · Back in`} value={chain.back.size ? `${chain.back.size}× size` : chain.back.symbol} color={C.tone.amber} />
+            <Link3 label={`${time(chain.back.at)} · Back in`} value={chain.back.size ? `${chain.back.size}× size` : symbolLabel(chain.back.symbol)} color={C.tone.amber} />
             <Arrow />
             <Link3 label="Then" value={money(chain.next.pnl)} color={C.tone.red} />
           </div>

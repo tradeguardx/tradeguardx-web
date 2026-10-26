@@ -8,7 +8,7 @@ import { useToast } from '../components/common/ToastProvider';
 import { fetchJournalStats, fetchJournalTrades, fetchBehaviorTags } from '../api/tradesApi';
 import { fetchBreaches } from '../api/breachesApi';
 import { journalHistoryDaysForPlan } from '../lib/planLimits';
-import { tagLabel } from '../lib/labels';
+import { tagLabel, instrumentOf, symbolsInText } from '../lib/labels';
 import { fmtMoney } from '../lib/session';
 import { sx } from '../components/dashboard/shell/sx';
 import { enoughSample, inference } from '../lib/sample';
@@ -150,7 +150,7 @@ export default function JournalPage() {
   // Per symbol: gross won vs gross lost, normalised against the card max.
   const bySymbol = useMemo(() => {
     const m = new Map();
-    for (const t of closed90) { const s = pick(t, 'symbol') || '—'; const r = m.get(s) || { symbol: s, won: 0, lost: 0 }; const p = pnlOf(t); if (p > 0) r.won += p; else r.lost += -p; m.set(s, r); }
+    for (const t of closed90) { const s = instrumentOf(pick(t, 'symbol')) || '—'; const r = m.get(s) || { symbol: s, won: 0, lost: 0 }; const p = pnlOf(t); if (p > 0) r.won += p; else r.lost += -p; m.set(s, r); }
     const rows = [...m.values()].map((r) => ({ ...r, net: r.won - r.lost })).sort((a, b) => Math.abs(b.net) - Math.abs(a.net)).slice(0, 5);
     const max = Math.max(1, ...rows.flatMap((r) => [r.won, r.lost]));
     return rows.map((r) => ({ ...r, wonPct: `${Math.round((r.won / max) * 100)}%`, lostPct: `${Math.round((r.lost / max) * 100)}%` }));
@@ -179,7 +179,7 @@ export default function JournalPage() {
     const m = new Map();
     for (const b of breaches90) {
       const slug = breachRule(b); if (!slug) continue;
-      const r = m.get(slug) || { key: slug, slug, name: RULE_NAME[slug] || slug, n: 0, cost: 0, priced: 0, why: b.message };
+      const r = m.get(slug) || { key: slug, slug, name: RULE_NAME[slug] || slug, n: 0, cost: 0, priced: 0, why: symbolsInText(b.message) };
       r.n += 1; const c = breachCost(b, tradeByUid); if (c != null) { r.cost += c; r.priced += 1; }
       m.set(slug, r);
     }
@@ -540,7 +540,7 @@ export default function JournalPage() {
                 const hold = pick(t, 'openedAt') && pick(t, 'closedAt') ? fmtHold((new Date(pick(t, 'closedAt')) - new Date(pick(t, 'openedAt'))) / 1000) : '';
                 return (
                   <div key={pick(t, 'tradeUid', 'trade_uid') || t.id} style={sx('display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line);font-size:13px')}>
-                    <span style={sx('font-weight:600;flex:1')}>{pick(t, 'symbol')}</span>
+                    <span style={sx('font-weight:600;flex:1')}>{instrumentOf(pick(t, 'symbol'))}</span>
                     <span style={sx('color:var(--ink-3);font-size:12px')}>{isLong(t) ? 'Long' : 'Short'}{hold ? ` · ${hold}` : ''}</span>
                     <span style={sx('font-weight:600;font-variant-numeric:tabular-nums', { color: signFg(p) })}>{money(p, cur, 2)}</span>
                   </div>

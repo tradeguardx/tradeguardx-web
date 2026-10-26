@@ -1,3 +1,4 @@
+import { instrumentOf } from './labels';
 /**
  * Price history, from Binance's public spot klines.
  *
@@ -35,7 +36,7 @@ const BINANCE_PAIRS = {
 
 export function resolveBinancePair(symbol) {
   if (!symbol) return null;
-  const upper = String(symbol).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const upper = String(instrumentOf(symbol)).toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (BINANCE_PAIRS[upper]) return BINANCE_PAIRS[upper];
   if (!upper.endsWith('USDT') && !upper.endsWith('USD')) {
     if (BINANCE_PAIRS[`${upper}USDT`]) return BINANCE_PAIRS[`${upper}USDT`];

@@ -5,6 +5,7 @@ import {
   CandlestickSeries, HistogramSeries, LineSeries,
   createSeriesMarkers,
 } from 'lightweight-charts';
+import { symbolLabel } from '../../lib/labels';
 
 // ─── Timeframes ─────────────────────────────────────────────────────────────
 const INTERVALS = [
@@ -1297,7 +1298,7 @@ export default function RealReplayChart({ trade, isDark }) {
         <svg className="h-10 w-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <p className="text-sm font-semibold" style={{ color: 'var(--dash-text-muted)' }}>Chart unavailable for {trade?.symbol || 'this symbol'}</p>
+        <p className="text-sm font-semibold" style={{ color: 'var(--dash-text-muted)' }}>Chart unavailable for {symbolLabel(trade?.symbol) || 'this symbol'}</p>
         <p className="mt-1 text-xs">Real-time charts are available for crypto pairs (BTC, ETH, SOL, etc.)</p>
       </div>
     );
@@ -1322,7 +1323,7 @@ export default function RealReplayChart({ trade, isDark }) {
           </div>
           <div>
             <h3 className="text-sm font-bold" style={{ color: 'var(--dash-text-primary)' }}>
-              {trade.symbol} · {binancePair}
+              {symbolLabel(trade.symbol)} · {binancePair}
             </h3>
             <p className="text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>
               Binance · Real Market Data

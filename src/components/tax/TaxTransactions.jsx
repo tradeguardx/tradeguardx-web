@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { fetchTaxPositions } from '../../api/tradesApi';
+import { symbolLabel } from '../../lib/labels';
 
 /**
  * Position-level detail behind the summary — the audit trail, and the answer to
@@ -424,7 +425,7 @@ export default function TaxTransactions({ accessToken, tradingAccountId, fy }) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-[12.5px] font-bold" style={{ color: PRIMARY }}>
-                          {p.symbol}
+                          {symbolLabel(p.symbol)}
                         </div>
                         {/* A quotable handle for the row, so a CA can point at
                             one position without reciting a symbol and a date. */}

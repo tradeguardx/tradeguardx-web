@@ -19,6 +19,7 @@ import DailyResetLine from '../components/dashboard/DailyResetLine';
 import { formatRemaining, zoneLabel } from '../components/dashboard/shell/format';
 import { getUserZone } from '../lib/userZone';
 import { ruleLockNow } from '../lib/guard';
+import { instrumentOf } from '../lib/labels';
 
 /**
  * Live guard — transcribed from the reference (lines 686–1009).
@@ -821,7 +822,7 @@ export default function LiveGuardPage() {
               const upnl = upnlRaw == null || upnlRaw === '' ? NaN : Number(upnlRaw);
               return (
                 <div key={pick(p, 'tradeUid', 'trade_uid') || p.id} style={sx('display:grid;grid-template-columns:1.1fr .7fr .8fr .8fr .9fr .9fr;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);font-size:13px;align-items:center;font-variant-numeric:tabular-nums')}>
-                  <span style={sx('font-weight:600')}>{pick(p, 'symbol') || '—'}</span>
+                  <span style={sx('font-weight:600')}>{instrumentOf(pick(p, 'symbol')) || '—'}</span>
                   <span style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: long ? 'var(--mint)' : 'var(--red)' })}>{long ? 'Long' : 'Short'}</span>
                   <span>{pick(p, 'quantity', 'volume') ?? '—'}</span>
                   <span>{pick(p, 'entryPrice', 'entry_price') ?? '—'}</span>

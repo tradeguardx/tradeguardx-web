@@ -10,7 +10,7 @@ import { sessionOf, fmtMoney } from '../lib/session';
 import { fetchJournalStats, fetchTaxSummary, fetchJournalTrades } from '../api/tradesApi';
 import { accountHasTaxCentre } from '../lib/venues';
 import { fetchBreaches } from '../api/breachesApi';
-import { brokerLabel } from '../lib/labels';
+import { brokerLabel, instrumentOf, symbolsInText } from '../lib/labels';
 import { ICON } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
 import { heroOf, pillOf } from '../components/dashboard/shell/lifecycleShell';
@@ -132,13 +132,13 @@ export default function OverviewPage() {
           ev.push({ t: new Date(b.createdAt).getTime(), text: unenforcedLabel(b, { unprotected: Boolean(lifeRef.current?.unprotected) }), kind: 'rule', amt: '', fg: 'var(--ink-3)', dot: 'var(--amber-solid)' });
           continue;
         }
-        ev.push({ t: new Date(b.createdAt).getTime(), text: b.message, kind: b.severity === 'critical' ? 'rule' : 'alert', amt: '', fg: 'var(--ink-3)', dot: b.severity === 'critical' ? 'var(--red-solid)' : 'var(--amber-solid)' });
+        ev.push({ t: new Date(b.createdAt).getTime(), text: symbolsInText(b.message), kind: b.severity === 'critical' ? 'rule' : 'alert', amt: '', fg: 'var(--ink-3)', dot: b.severity === 'critical' ? 'var(--red-solid)' : 'var(--amber-solid)' });
       }
       const list = Array.isArray(trades) ? trades : trades?.trades ?? [];
       for (const t of list) {
         if (!t?.closedAt) continue;
         const pnl = Number(t.realizedPnl ?? t.pnl ?? t.netPnl);
-        ev.push({ t: new Date(t.closedAt).getTime(), text: `${t.symbol ?? 'Position'} ${String(t.side ?? '').toLowerCase()} closed`, kind: 'trade', amt: Number.isFinite(pnl) ? fmtMoney(pnl, s.currency, { sign: true }) : '', fg: pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink-3)', dot: pnl < 0 ? 'var(--red-solid)' : 'var(--mint-solid)' });
+        ev.push({ t: new Date(t.closedAt).getTime(), text: `${instrumentOf(t.symbol) ?? 'Position'} ${String(t.side ?? '').toLowerCase()} closed`, kind: 'trade', amt: Number.isFinite(pnl) ? fmtMoney(pnl, s.currency, { sign: true }) : '', fg: pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink-3)', dot: pnl < 0 ? 'var(--red-solid)' : 'var(--mint-solid)' });
       }
       ev.sort((a, b) => b.t - a.t);
       setActivity(ev.slice(0, 5));

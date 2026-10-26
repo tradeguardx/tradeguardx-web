@@ -58,3 +58,35 @@ export function shortId(id, chars = 8) {
   const s = String(id);
   return s.length <= chars ? s : `${s.slice(0, chars)}…`;
 }
+
+/*
+ * Exness positions are tickets: a hedging account can hold several on one
+ * instrument, so the engine names each one `INSTRUMENT#side~ticketId`
+ * ("BTCUSD#long~43195554") and the journal and alerts store that name. It is
+ * an engine key, not copy: show "BTCUSD · Long" and keep the raw value for
+ * matching, dedupe and every API call.
+ */
+const TICKET_RE = /^(.+?)#(long|short)~\S*$/i;
+const TICKET_IN_TEXT_RE = /([A-Za-z0-9._/-]+)#(long|short)~[A-Za-z0-9]+/gi;
+
+const sideWord = (side) => (side.toLowerCase() === 'short' ? 'Short' : 'Long');
+
+/** "BTCUSD#long~43195554" → "BTCUSD · Long"; any other symbol unchanged. */
+export function symbolLabel(symbol) {
+  if (symbol == null) return symbol;
+  const m = TICKET_RE.exec(String(symbol));
+  return m ? `${m[1]} · ${sideWord(m[2])}` : symbol;
+}
+
+/** The instrument alone ("BTCUSD"), for grouping by symbol and price lookups. */
+export function instrumentOf(symbol) {
+  if (symbol == null) return symbol;
+  const m = TICKET_RE.exec(String(symbol));
+  return m ? m[1] : symbol;
+}
+
+/** Engine-written sentences ("Trade on ETHUSD#short~43392093 blocked") → "Trade on ETHUSD short blocked". */
+export function symbolsInText(text) {
+  if (typeof text !== 'string') return text;
+  return text.replace(TICKET_IN_TEXT_RE, (_, inst, side) => `${inst} ${side.toLowerCase()}`);
+}

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useMemo, forwardRef } from 'react';
 import { toPng } from 'html-to-image';
+import { instrumentOf, symbolLabel } from '../../lib/labels';
 
 // Instagram feed portrait 4:5 @1080×1350 — Telegram-friendly (under ~1MB when compressed)
 const SHARE_CARD_W = 432;
@@ -173,7 +174,7 @@ export const TradeShareCard = forwardRef(function TradeShareCard({ trade, discip
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 18, fontWeight: 900, color: '#f1f5f9', letterSpacing: '-0.02em' }}>{trade?.symbol || 'Unknown'}</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#f1f5f9', letterSpacing: '-0.02em' }}>{symbolLabel(trade?.symbol) || 'Unknown'}</span>
                 <span style={{
                   fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 6,
                   background: isLong ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
@@ -281,7 +282,7 @@ export const WeeklySummaryCard = forwardRef(function WeeklySummaryCard({ trades 
     const winRate = closed.length > 0 ? (wins / closed.length) * 100 : 0;
     const best = closed.length > 0 ? closed.reduce((a, b) => (Number(b.pnl) || 0) > (Number(a.pnl) || 0) ? b : a, closed[0]) : null;
     const worst = closed.length > 0 ? closed.reduce((a, b) => (Number(b.pnl) || 0) < (Number(a.pnl) || 0) ? b : a, closed[0]) : null;
-    const symbols = [...new Set(closed.map((t) => t.symbol))];
+    const symbols = [...new Set(closed.map((t) => instrumentOf(t.symbol)))];
     const totalHoldSec = closed.reduce((s, t) => {
       if (!t.openedAt || !t.closedAt) return s;
       return s + Math.max(0, (new Date(t.closedAt) - new Date(t.openedAt)) / 1000);
@@ -372,14 +373,14 @@ export const WeeklySummaryCard = forwardRef(function WeeklySummaryCard({ trades 
             <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.1)' }}>
               <p style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', color: '#22c55e70', textTransform: 'uppercase', marginBottom: 4 }}>Best Trade</p>
               <p style={{ fontSize: 14, fontWeight: 800, color: '#22c55e' }}>{fmt$(stats.best.pnl)}</p>
-              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{stats.best.symbol}</p>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{symbolLabel(stats.best.symbol)}</p>
             </div>
           )}
           {stats.worst && (
             <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.1)' }}>
               <p style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', color: '#ef444470', textTransform: 'uppercase', marginBottom: 4 }}>Worst Trade</p>
               <p style={{ fontSize: 14, fontWeight: 800, color: '#ef4444' }}>{fmt$(stats.worst.pnl)}</p>
-              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{stats.worst.symbol}</p>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{symbolLabel(stats.worst.symbol)}</p>
             </div>
           )}
         </div>
@@ -418,7 +419,7 @@ export const MonthlySummaryCard = forwardRef(function MonthlySummaryCard({ trade
     const losses = closed.filter((t) => Number(t.pnl) <= 0).length;
     const winRate = closed.length > 0 ? (wins / closed.length) * 100 : 0;
     const best = closed.length > 0 ? closed.reduce((a, b) => (Number(b.pnl) || 0) > (Number(a.pnl) || 0) ? b : a, closed[0]) : null;
-    const symbols = [...new Set(closed.map((t) => t.symbol))];
+    const symbols = [...new Set(closed.map((t) => instrumentOf(t.symbol)))];
     const totalHoldSec = closed.reduce((s, t) => {
       if (!t.openedAt || !t.closedAt) return s;
       return s + Math.max(0, (new Date(t.closedAt) - new Date(t.openedAt)) / 1000);
@@ -549,7 +550,7 @@ export const MonthlySummaryCard = forwardRef(function MonthlySummaryCard({ trade
             <div style={{ padding: '12px', borderRadius: 12, background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.08)' }}>
               <p style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', color: '#22c55e60', textTransform: 'uppercase', marginBottom: 4 }}>Best Trade</p>
               <p style={{ fontSize: 16, fontWeight: 800, color: '#22c55e' }}>{fmt$(stats.best.pnl)}</p>
-              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{stats.best.symbol} · {fmtDateShort(stats.best.closedAt)}</p>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{symbolLabel(stats.best.symbol)} · {fmtDateShort(stats.best.closedAt)}</p>
             </div>
           )}
         </div>

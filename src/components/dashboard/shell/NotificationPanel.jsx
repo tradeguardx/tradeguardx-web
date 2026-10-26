@@ -6,6 +6,7 @@ import { useGuard } from '../../../context/GuardContext';
 import { fetchBreaches, acknowledgeBreaches } from '../../../api/breachesApi';
 import { sx } from './sx';
 import { dayKey, getUserZone } from '../../../lib/userZone';
+import { symbolsInText } from '../../../lib/labels';
 
 /**
  * The bell. A toast is a moment; this is the record — every rule fire and
@@ -121,7 +122,7 @@ export default function NotificationPanel() {
                       <span style={sx('flex:1;min-width:0;font-size:13px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis', { fontWeight: unread ? 700 : 600 })}>{ruleName(b)}{acct ? ` · ${acct}` : ''}</span>
                       <span style={sx('flex:none;font-size:11px;color:var(--ink-faint);font-variant-numeric:tabular-nums')}>{when(b.createdAt)}</span>
                     </span>
-                    <span style={sx('display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>{b.message}</span>
+                    <span style={sx('display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>{symbolsInText(b.message)}</span>
                   </span>
                 </button>
               );
