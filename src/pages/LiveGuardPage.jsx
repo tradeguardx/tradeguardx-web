@@ -20,7 +20,8 @@ import { formatRemaining, zoneLabel } from '../components/dashboard/shell/format
 import { getUserZone } from '../lib/userZone';
 import { ruleLockNow } from '../lib/guard';
 import { instrumentOf } from '../lib/labels';
-import GuardActivity from '../components/dashboard/GuardActivity';
+import { ActivityButton, ActivityDrawer } from '../components/dashboard/GuardActivity';
+import { useGuardActivity } from '../hooks/useGuardActivity';
 
 /**
  * Live guard — transcribed from the reference (lines 686–1009).
@@ -85,6 +86,8 @@ export default function LiveGuardPage() {
   const live = noLiveKey ? null : liveRow;
   const s = useMemo(() => sessionOf(live, g.rules), [live, g.rules]);
   const cur = s.currency;
+  const [activityOpen, setActivityOpen] = useState(false);
+  const activity = useGuardActivity({ accessToken, tradingAccountId: selectedTradingAccountId, currency: cur });
   const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });
 
   // ── positions ───────────────────────────────────────────────────────
@@ -432,11 +435,25 @@ export default function LiveGuardPage() {
 
   return (
     <div>
-      <div style={sx('margin-bottom:18px')}>
-        <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Live guard</h1>
-        <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>The screen to keep open while you trade. Everything here updates as fills land.</p>
-        <DailyResetLine account={selectedAccount} />
+      <div style={sx('margin-bottom:18px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap')}>
+        <div style={sx('min-width:0;flex:1 1 320px')}>
+          <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Live guard</h1>
+          <p style={sx('margin:6px 0 0;font-size:13.5px;color:var(--ink-3)')}>The screen to keep open while you trade. Everything here updates as fills land.</p>
+          <DailyResetLine account={selectedAccount} />
+        </div>
+        {/* What the guard did, and how the rules work — in a drawer on demand. */}
+        <ActivityButton counts={activity.counts} onClick={() => setActivityOpen(true)} />
       </div>
+      <ActivityDrawer
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={activity.items}
+        counts={activity.counts}
+        rules={g.rules}
+        currency={cur}
+        equity={live?.currentEquity ?? null}
+        keyLive={g.keyLive}
+      />
 
       {/* ── Session card (build spec §4–§9) ──────────────────────────────
           Colour and motion both mean distance to the limit. The sweep gets
@@ -649,18 +666,6 @@ export default function LiveGuardPage() {
           <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--amber-line);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:92ch')}>Open positions were closed when the lock started, and anything you open before it ends is closed straight away and does not count as a trade. A losing streak is where revenge trading starts. The clock runs down on its own; there is nothing to cancel.</p>
         </section>
       )}
-
-      {/* ── What the guard did / how the rules work ──────────────────────── */}
-      <div style={{ marginBottom: 18 }}>
-        <GuardActivity
-          accessToken={accessToken}
-          tradingAccountId={selectedTradingAccountId}
-          rules={g.rules}
-          currency={cur}
-          equity={live?.currentEquity ?? null}
-          keyLive={g.keyLive}
-        />
-      </div>
 
       {/* ── Commitment controls ───────────────────────────────────────── */}
       <section style={sx('margin-bottom:18px;border:1px solid var(--line-strong);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
