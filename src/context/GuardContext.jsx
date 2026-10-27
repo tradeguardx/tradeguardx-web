@@ -246,10 +246,16 @@ export function GuardProvider({ children }) {
         // A manual lock waiting for the open trade to close (LockChoice.jsx).
         pendingLock: lockUntil ? null : account?.pendingLock ?? null,
         lockRemainingMs: lockUntil ? Math.max(0, lockUntil - now) : 0,
-        describe: describeGuard(guard, { on, total, gap: gaps[0] ?? null, label: account?.name ?? '', readOnly: slice.connection?.enforcementCapable === false, entitled }),
+        describe: describeGuard(guard, { on, total, gap: gaps[0] ?? null, label: account?.name ?? '', readOnly: slice.connection?.status === 'active' && slice.connection?.enforcementCapable === false, entitled }),
         copy: enforcementCopy(enforcement),
         setupDone: gaps.filter((g) => g.key !== 'alerts').length === 0,
-        readOnly: slice.connection?.enforcementCapable === false,
+        // Read-only describes a CONNECTED key that cannot act. A disconnected
+        // key keeps its last enforcement_capable value in the database, and
+        // reading that alone called a revoked key "read-only — we can alert
+        // you", when nothing at all is watching the account.
+        readOnly: slice.connection?.status === 'active' && slice.connection?.enforcementCapable === false,
+        /** false only once we KNOW there is no live key; undefined while loading (fail open). */
+        keyLive: isLoaded && slice.connection ? slice.connection.status === 'active' : undefined,
         // A lockout needs a key that can act, not rules — see canLockOutOf.
         canLockOut: canLockOutOf(input),
       };

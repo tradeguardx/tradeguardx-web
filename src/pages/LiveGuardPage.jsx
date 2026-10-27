@@ -69,7 +69,19 @@ export default function LiveGuardPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
-  const live = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount });
+  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount });
+  /*
+   * NO KEY, NO LIVE NUMBERS.
+   *
+   * The engine writes P&L, equity and counters onto the account row while it
+   * watches the account, and stops when the key is disconnected — the row then
+   * keeps its last values forever. Reading it regardless showed a session P&L,
+   * "target hit" and a trade count from weeks ago as if they were today's.
+   * Hidden only once we KNOW the key is gone (keyLive === false), never while
+   * loading.
+   */
+  const noLiveKey = g.keyLive === false;
+  const live = noLiveKey ? null : liveRow;
   const s = useMemo(() => sessionOf(live, g.rules), [live, g.rules]);
   const cur = s.currency;
   const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });
@@ -206,7 +218,7 @@ export default function LiveGuardPage() {
   const pnlSign = s.pnl == null ? 0 : Math.sign(s.pnl);
   const fg = pnlSign < 0 ? 'var(--red)' : pnlSign > 0 ? 'var(--mint)' : 'var(--ink)';
   const glow = pnlSign < 0 ? 'var(--red-tint)' : pnlSign > 0 ? 'var(--mint-tint)' : 'transparent';
-  const pnlStr = fmtMoney(s.pnl ?? 0, cur, { sign: true });
+  const pnlStr = noLiveKey ? '—' : fmtMoney(s.pnl ?? 0, cur, { sign: true });
   const [pnlMain, pnlDec] = splitDecimal(pnlStr);
   const usedPct = s.budgetPct ?? 0;
   const towardTarget = s.target && s.pnl > 0 ? Math.min(100, (s.pnl / s.target) * 100) : 0;
@@ -214,7 +226,9 @@ export default function LiveGuardPage() {
   const budgetLeft = s.lossLimit ? fmt0(Math.max(0, s.lossLimit - s.budgetUsed)) : '—';
   const lossLimit = s.lossLimit ? fmt0(-s.lossLimit) : '—';
   const target = s.target ? fmt0(s.target) : '—';
-  const summary = !hasLimits
+  const summary = noLiveKey
+    ? 'No key is connected to this account, so nothing is being watched and there is nothing live to show. Connect a key and today\u2019s P&L, limits and trade count appear here.'
+    : !hasLimits
     ? 'No trades yet, and no limits to show. Your loss limit and daily target appear here once setup is finished.'
     : g.readOnly
       ? `You are ${Math.round(usedPct)}% into today's loss budget. The key on this account is read-only, so at 100% we alert you and log it — we cannot close anything. Replace the key to make these limits enforceable.`
@@ -368,6 +382,14 @@ export default function LiveGuardPage() {
       noteFg: g.readOnly || rulesOn === 0 ? 'var(--amber)' : 'var(--ink-3)',
     }),
   ];
+  /* No key: the three account figures are unknown, not zero. Rules armed stays —
+     it is configuration, read from the rules themselves, and still true. */
+  if (noLiveKey) {
+    for (const t of tiles.slice(0, 3)) {
+      Object.assign(t, TONE.neutral, { v: '—', tag: null, bar: '0%', pips: null, fg: 'var(--ink-3)', note: 'No key connected', noteFg: 'var(--ink-3)' });
+    }
+    tiles[3].note = 'Rules are set, but no key is connected to act on them';
+  }
 
 
   const cardLine = locked || band === 'danger' ? 'var(--red-line)' : band === 'caution' ? 'var(--amber-line)' : 'var(--line)';
@@ -379,6 +401,8 @@ export default function LiveGuardPage() {
 
   const strip = locked
     ? { label: 'Locked out', meta: g.readOnly ? 'Lockout is a commitment — this key cannot block orders' : 'New orders are rejected on this account', right: `releases ${clockAt(g.lockUntil)}`, tone: 'var(--red)', bg: 'var(--red-tint)' }
+    : noLiveKey
+      ? { label: 'Not watching', meta: 'No key connected — nothing on this account is being watched', right: '', tone: 'var(--ink-3)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
     : !enforcing
       ? g.readOnly
         ? { label: 'Watching', meta: 'Alerts only — this key cannot close positions', right: 'updates as fills land', tone: 'var(--amber)', bg: 'var(--surface-2)', sweep: SWEEP.calm }

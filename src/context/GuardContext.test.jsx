@@ -49,6 +49,8 @@ function Probe() {
       <span data-testid="title">{g.describe.title}</span>
       <span data-testid="gaps">{g.gaps.map((x) => x.key).join(',') || 'none'}</span>
       <span data-testid="counts">{`${g.rulesOn}/${g.rulesTotal}`}</span>
+      <span data-testid="readOnly">{String(g.readOnly)}</span>
+      <span data-testid="keyLive">{String(g.keyLive)}</span>
     </div>
   );
 }
@@ -128,5 +130,26 @@ describe('entitlement reaches the guard', () => {
 
   it.each(['trial', 'active'])('reports nothing outstanding for access=%s', (access) => {
     expect(gapsOf(row(access))).toEqual([]);
+  });
+
+  /*
+   * A disconnected key keeps its last enforcement_capable value in the
+   * database. Reading that alone called a revoked key "read-only — we can alert
+   * you" and showed weeks-old P&L as today's, when nothing watched the account.
+   */
+  it('never calls a disconnected key read-only, and says there is no live key', async () => {
+    getExchangeCredentialsStatus.mockResolvedValue({ status: 'revoked', enforcementCapable: false });
+    mount();
+    await waitFor(() => expect(screen.getByTestId('pass').textContent).toBe('done'));
+    expect(screen.getByTestId('readOnly').textContent).toBe('false');
+    expect(screen.getByTestId('keyLive').textContent).toBe('false');
+  });
+
+  it('still calls a connected key that cannot act read-only', async () => {
+    getExchangeCredentialsStatus.mockResolvedValue({ status: 'active', enforcementCapable: false });
+    mount();
+    await waitFor(() => expect(screen.getByTestId('pass').textContent).toBe('done'));
+    expect(screen.getByTestId('readOnly').textContent).toBe('true');
+    expect(screen.getByTestId('keyLive').textContent).toBe('true');
   });
 });

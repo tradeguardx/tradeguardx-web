@@ -102,7 +102,10 @@ export default function OverviewPage() {
   const { openShare, items: shareItems, awards: shareAwards, canShare } = useShare();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
-  const live = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount });
+  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount });
+  // No key: the row's P&L and counters are the last values the engine wrote
+  // before it stopped watching — not today's. Same rule as Live guard.
+  const live = g.keyLive === false ? null : liveRow;
   const s = useMemo(() => sessionOf(live, g.rules), [live, g.rules]);
 
   const [stats, setStats] = useState(null);
