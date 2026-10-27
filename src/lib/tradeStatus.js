@@ -85,10 +85,10 @@ const isBlocked = (t) => t?.metadata?.blocked === true || t?.metadata?.blocked =
  * @param unenforced  true when the trade carries an enforcement_unavailable breach
  */
 export function tradeStatusOf(trade, breaches = [], { pnl = null, unenforced = false } = {}) {
-  const found = new Map(); // key → hint override
+  const found = new Map(); // key → { text, breach } (text overrides the label/hint)
 
-  if (isBlocked(trade)) found.set('blocked', null);
-  if (unenforced) found.set('notEnforced', null);
+  if (isBlocked(trade)) found.set('blocked', {});
+  if (unenforced) found.set('notEnforced', {});
 
   const uid = trade?.tradeUid ?? null;
   const opened = ms(trade?.openedAt);
@@ -101,10 +101,10 @@ export function tradeStatusOf(trade, breaches = [], { pnl = null, unenforced = f
     // Per-trade breaches name the trade.
     if (uid && uidOf(b) === uid) {
       if (type === 'risk_per_trade_exceeded') {
-        if (String(b?.context?.onBreach ?? 'close') === 'alert') found.set('alert', ALERT_REASON[type]);
-        else found.set('risk', null);
+        if (String(b?.context?.onBreach ?? 'close') === 'alert') found.set('alert', { text: ALERT_REASON[type], breach: b });
+        else found.set('risk', { breach: b });
       } else if (type === 'missing_stop_loss') {
-        if (!found.has('alert')) found.set('alert', ALERT_REASON[type]);
+        if (!found.has('alert')) found.set('alert', { text: ALERT_REASON[type], breach: b });
       }
       continue;
     }
@@ -118,21 +118,22 @@ export function tradeStatusOf(trade, breaches = [], { pnl = null, unenforced = f
       const openAtBreach = opened != null && opened <= at && closed >= at - 2_000 && closed <= at + AFTER_MS;
       const closedJustBefore = closed <= at + 2_000 && closed >= at - BEFORE_MS;
       if (type === 'consecutive_losses_exceeded' && closedJustBefore && pnl != null && pnl < 0) {
-        found.set('triggered', null);
+        found.set('triggered', { breach: b });
       } else if (openAtBreach && !isBlocked(trade)) {
-        found.set('kill', KILL_REASON[type]);
+        found.set('kill', { text: KILL_REASON[type], breach: b });
       }
     } else if (type === 'daily_target_reached') {
-      if (closed <= at + 2_000 && closed >= at - BEFORE_MS && pnl != null && pnl > 0) found.set('target', null);
+      if (closed <= at + 2_000 && closed >= at - BEFORE_MS && pnl != null && pnl > 0) found.set('target', { breach: b });
     }
   }
 
-  if (found.size === 0) found.set('clean', null);
+  if (found.size === 0) found.set('clean', {});
   const all = PRIORITY.filter((k) => found.has(k)).map((k) => ({
     key: k,
     ...STATUS[k],
-    label: k === 'alert' && found.get(k) ? found.get(k) : STATUS[k].label,
-    hint: k === 'kill' && found.get(k) ? found.get(k) : STATUS[k].hint,
+    label: k === 'alert' && found.get(k).text ? found.get(k).text : STATUS[k].label,
+    hint: k === 'kill' && found.get(k).text ? found.get(k).text : STATUS[k].hint,
+    breach: found.get(k).breach ?? null,
   }));
   return { ...all[0], all };
 }

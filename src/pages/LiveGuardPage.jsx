@@ -20,6 +20,7 @@ import { formatRemaining, zoneLabel } from '../components/dashboard/shell/format
 import { getUserZone } from '../lib/userZone';
 import { ruleLockNow } from '../lib/guard';
 import { instrumentOf } from '../lib/labels';
+import GuardActivity from '../components/dashboard/GuardActivity';
 
 /**
  * Live guard — transcribed from the reference (lines 686–1009).
@@ -645,9 +646,21 @@ export default function LiveGuardPage() {
             <span>Triggered by your Close-after-N-losses rule</span>
             <span style={sx('text-align:right;white-space:nowrap')}>New orders allowed from <strong style={sx('color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums')}>{clockAt(g.lockUntil)}</strong></span>
           </div>
-          <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--amber-line);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:92ch')}>Existing positions are untouched — you can still manage or close what is open. Only new entries are blocked, because the third loss in a row is where revenge trading starts. The clock runs down on its own; there is nothing to cancel.</p>
+          <p style={sx('margin:12px 0 0;padding-top:12px;border-top:1px solid var(--amber-line);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:92ch')}>Open positions were closed when the lock started, and anything you open before it ends is closed straight away and does not count as a trade. A losing streak is where revenge trading starts. The clock runs down on its own; there is nothing to cancel.</p>
         </section>
       )}
+
+      {/* ── What the guard did / how the rules work ──────────────────────── */}
+      <div style={{ marginBottom: 18 }}>
+        <GuardActivity
+          accessToken={accessToken}
+          tradingAccountId={selectedTradingAccountId}
+          rules={g.rules}
+          currency={cur}
+          equity={live?.currentEquity ?? null}
+          keyLive={g.keyLive}
+        />
+      </div>
 
       {/* ── Commitment controls ───────────────────────────────────────── */}
       <section style={sx('margin-bottom:18px;border:1px solid var(--line-strong);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
