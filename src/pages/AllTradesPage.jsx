@@ -13,6 +13,7 @@ import { getUserZone } from '../lib/userZone';
 import { inference } from '../lib/sample';
 import { sx } from '../components/dashboard/shell/sx';
 import { instrumentOf, symbolLabel } from '../lib/labels';
+import { isEventful, tradeStatusOf } from '../lib/tradeStatus';
 
 /**
  * All trades — the reference table (lines 1365–1399) with the full filter
@@ -28,7 +29,7 @@ const VIEWS = [
   { key: 'wins', label: 'Wins' },
   { key: 'losses', label: 'Losses' },
   { key: 'open', label: 'Open' },
-  { key: 'blocked', label: 'With rule breaks' },
+  { key: 'blocked', label: 'Guard acted' },
   { key: 'review', label: 'Needs review' },
   { key: 'annotated', label: 'Annotated' },
 ];
@@ -44,7 +45,14 @@ function pick(o, ...keys) { for (const k of keys) if (o && o[k] != null) return 
 function isClosed(t) { return String(t?.status || '').toUpperCase() === 'CLOSED'; }
 function pnlOf(t) { return Number(pick(t, 'realizedPnl', 'pnl', 'netPnl')); }
 function isLong(t) { const s = String(pick(t, 'side') || '').toUpperCase(); return s === 'BUY' || s === 'LONG'; }
-function ruleBlockCount(t) { return Number(t?.aiShortInsight?.evidence?.eventCounts?.ruleBlocks || 0); }
+/** Chip colours per status tone (see lib/tradeStatus). */
+const TONE_STYLE = {
+  red: { background: 'var(--red-tint)', color: 'var(--red)' },
+  amber: { background: 'var(--amber-tint)', color: 'var(--amber)' },
+  'amber-soft': { background: 'var(--surface-3)', color: 'var(--amber)' },
+  mint: { background: 'var(--mint-tint)', color: 'var(--mint)' },
+  neutral: { background: 'var(--surface-3)', color: 'var(--ink-3)' },
+};
 function hasAnnotation(ann) { return !!(ann && (ann.rating || ann.setupType || ann.emotion || (ann.notes && ann.notes.trim()))); }
 function isMeaningful(t) {
   if (!t || typeof t !== 'object') return false;
@@ -87,7 +95,7 @@ export default function AllTradesPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const { selectedTradingAccountId, accountsLoading, selectedAccount } = useTradingAccounts();
-  const { now, life } = useGuard();
+  const { now } = useGuard();
   const { openShare, canShare } = useShare();
   const [params, setParams] = useSearchParams();
   const get = (k, valid) => { const v = params.get(k) ?? DEFAULTS[k]; return valid && !valid.includes(v) ? DEFAULTS[k] : v; };
@@ -132,15 +140,27 @@ export default function AllTradesPage() {
 
   /* Trades the engine flagged but could not act on — tagged "not enforced"
      (spec §1.5). From the breach log, which is where the engine says so. */
-  const [unenforced, setUnenforced] = useState(() => new Set());
+  const [breaches, setBreaches] = useState([]);
   useEffect(() => {
     if (!accessToken || !selectedTradingAccountId) return undefined;
     const ctrl = new AbortController();
     fetchBreaches({ accessToken, tradingAccountId: selectedTradingAccountId, limit: 200, signal: ctrl.signal })
-      .then((list) => { if (!ctrl.signal.aborted) setUnenforced(new Set((list || []).filter(isUnenforced).map((b) => b.tradeUid).filter(Boolean))); })
+      .then((list) => { if (!ctrl.signal.aborted) setBreaches(Array.isArray(list) ? list : []); })
       .catch(() => {});
     return () => ctrl.abort();
   }, [accessToken, selectedTradingAccountId]);
+
+  const unenforced = useMemo(() => new Set(breaches.filter(isUnenforced).map((b) => b.tradeUid).filter(Boolean)), [breaches]);
+  /* One status per trade — what the guard did to it, if anything. Computed once
+     here so the table, the "Guard acted" view and the summary count agree. */
+  const statusOf = useMemo(() => {
+    const m = new Map();
+    for (const t of rows ?? []) {
+      m.set(t, tradeStatusOf(t, breaches, { pnl: isClosed(t) ? pnlOf(t) : null, unenforced: !!(t.tradeUid && unenforced.has(t.tradeUid)) }));
+    }
+    return m;
+  }, [rows, breaches, unenforced]);
+  const eventful = (t) => isEventful(statusOf.get(t));
 
   const tradeUids = useMemo(() => (rows ?? []).map((t) => t.tradeUid).filter(Boolean), [rows]);
   const annotations = useTradeAnnotationsBulk(tradeUids);
@@ -160,7 +180,7 @@ export default function AllTradesPage() {
         case 'wins': return closed && pnl > 0;
         case 'losses': return closed && pnl < 0;
         case 'open': return !closed;
-        case 'blocked': return ruleBlockCount(t) > 0;
+        case 'blocked': return eventful(t);
         case 'review': return closed && !hasAnnotation(ann);
         case 'annotated': return hasAnnotation(ann);
         default: return true;
@@ -173,21 +193,24 @@ export default function AllTradesPage() {
     else if (sort === 'worst') list.sort((a, b) => p(a) - p(b));
     else list.sort((a, b) => at(b) - at(a));
     return list;
-  }, [rows, view, range, side, sort, q, annotations, now]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, view, range, side, sort, q, annotations, now, statusOf]);
 
   const stats = useMemo(() => {
     const closed = filtered.filter((t) => isClosed(t) && Number.isFinite(pnlOf(t)));
     const wins = closed.filter((t) => pnlOf(t) > 0).length;
     const net = closed.reduce((s, t) => s + pnlOf(t), 0);
-    const breaks = filtered.reduce((s, t) => s + ruleBlockCount(t), 0);
+    const breaks = filtered.filter(eventful).length;
     return { total: filtered.length, open: filtered.length - closed.length, closed: closed.length, net, winRate: closed.length ? Math.round((wins / closed.length) * 100) : null, breaks };
-  }, [filtered]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, statusOf]);
 
   const counts = useMemo(() => {
     const all = rows ?? [];
     const ann = (t) => hasAnnotation(t.tradeUid ? annotations[t.tradeUid] : null);
-    return { all: all.length, wins: all.filter((t) => isClosed(t) && pnlOf(t) > 0).length, losses: all.filter((t) => isClosed(t) && pnlOf(t) < 0).length, open: all.filter((t) => !isClosed(t)).length, blocked: all.filter((t) => ruleBlockCount(t) > 0).length, review: all.filter((t) => isClosed(t) && !ann(t)).length, annotated: all.filter(ann).length };
-  }, [rows, annotations]);
+    return { all: all.length, wins: all.filter((t) => isClosed(t) && pnlOf(t) > 0).length, losses: all.filter((t) => isClosed(t) && pnlOf(t) < 0).length, open: all.filter((t) => !isClosed(t)).length, blocked: all.filter(eventful).length, review: all.filter((t) => isClosed(t) && !ann(t)).length, annotated: all.filter(ann).length };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, annotations, statusOf]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / size));
   const current = Math.min(page, pages);
@@ -248,7 +271,7 @@ export default function AllTradesPage() {
             // An estimate of an edge, not a fact about the filtered set. On
             // five trades one more win moves it thirteen points.
             { k: 'Win rate', ...inference(stats.closed, stats.winRate, 'closed trades in view', { format: (v) => `${v}%` }), fg: 'var(--ink)' },
-            { k: 'Rule breaks', v: String(stats.breaks), note: stats.breaks ? 'across the trades in view' : 'clean', fg: stats.breaks ? 'var(--red)' : 'var(--ink)' },
+            { k: 'Guard acted', v: String(stats.breaks), note: stats.breaks ? 'trades a rule touched, in view' : 'every trade clean', fg: stats.breaks ? 'var(--red)' : 'var(--ink)' },
           ].map((c) => (
             <div key={c.k} style={sx('padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:var(--surface);box-shadow:var(--shadow-card)')}>
               <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)")}>{c.k}</div>
@@ -261,7 +284,7 @@ export default function AllTradesPage() {
 
       <section style={sx('border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card);overflow:hidden')}>
         <div data-tgx-thead="1" style={sx(GRID, sx('padding:11px 18px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600'))}>
-          <span>When</span><span>Symbol</span><span>Side</span><span>Size</span><span>Hold</span><span>Rule breaks</span><span style={{ textAlign: 'right' }}>P&amp;L</span><span />
+          <span>When</span><span>Symbol</span><span>Side</span><span>Size</span><span>Hold</span><span>Status</span><span style={{ textAlign: 'right' }}>P&amp;L</span><span />
         </div>
         {error && <div style={sx('padding:14px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--amber)')}>{error}</div>}
         {rows === null || accountsLoading ? (
@@ -272,7 +295,7 @@ export default function AllTradesPage() {
             <p style={sx('margin:7px auto 0;font-size:12.5px;line-height:1.55;color:var(--ink-3);max-width:46ch')}>{rows.length === 0 ? 'Every fill on this account lands here automatically, tagged with any rules it broke. Nothing to show until you trade.' : 'Widen the range or clear a filter — every fill on this account is still here.'}</p>
           </div>
         ) : slice.map((t) => {
-          const long = isLong(t); const pnl = pnlOf(t); const blocks = ruleBlockCount(t); const closed = isClosed(t);
+          const long = isLong(t); const pnl = pnlOf(t); const status = statusOf.get(t); const closed = isClosed(t);
           const openTrade = () => t.tradeUid && navigate(`/dashboard/trades/${encodeURIComponent(t.tradeUid)}`);
           return (
             /*
@@ -298,9 +321,14 @@ export default function AllTradesPage() {
               <span data-c="size">{pick(t, 'quantity', 'volume') ?? '—'}</span>
               <span data-c="hold" style={sx('color:var(--ink-3)')}>{fmtHold(pick(t, 'openedAt'), pick(t, 'closedAt'))}</span>
               <span data-c="blocks" style={sx('display:flex;gap:5px;flex-wrap:wrap;align-items:center')}>
-                <span style={sx('font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px', blocks > 0 ? { background: 'var(--red-tint)', color: 'var(--red)' } : { background: 'var(--surface-3)', color: 'var(--ink-3)' })}>{blocks > 0 ? `${blocks} ${blocks === 1 ? 'break' : 'breaks'}` : 'clean'}</span>
-                {t.tradeUid && unenforced.has(t.tradeUid) && (
-                  <span title={life?.setup ? 'Not enforced: setup not finished' : 'A rule was reached and nothing was closed'} style={sx('font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--amber-tint);color:var(--amber);white-space:nowrap')}>not enforced</span>
+                {status && (
+                  <span
+                    title={status.all.map((x) => `${x.label}: ${x.hint}`).join('\n')}
+                    style={sx('font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap', TONE_STYLE[status.tone] ?? TONE_STYLE.neutral)}
+                  >
+                    {status.label}
+                    {status.all.length > 1 ? ` +${status.all.length - 1}` : ''}
+                  </span>
                 )}
               </span>
               <span data-c="pnl" style={sx('text-align:right;font-weight:600', { color: !closed ? 'var(--ink-3)' : pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink)' })}>{closed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : 'open'}</span>
