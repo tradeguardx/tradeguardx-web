@@ -1,10 +1,9 @@
 import { getStoredReferralCode } from './referralCode';
 import { getLinkPromoCode } from './promoLink';
-import { getActivePromo } from './activePromo';
 
 /**
  * The code to send to checkout, if any. Referral > promo link (?promo=) >
- * site-wide promo from env.
+ * the site-wide offer from the admin panel (src/api/offersApi.js).
  *
  * Moved out of PricingPage because the setup flow's billing step needs it
  * too. It was only ever applied on the pricing page, so anyone who arrived
@@ -12,19 +11,27 @@ import { getActivePromo } from './activePromo';
  * attribution silently: the referee paid full price and the referrer was
  * never credited for a sale they made.
  *
- * THE INTERVAL RESTRICTION BELONGS TO PROMOS, NOT REFERRALS. A site-wide
- * promo is advertised against the monthly price, so applying it to a
- * quarterly or yearly checkout would make the banner's promise untrue —
- * that is what the restriction is for.
+ * A REFERRAL WINS. It is meant to work on every plan, and the voucher owed to
+ * the referrer is tiered BY the plan bought. Dodo takes one code, so nothing
+ * is stacked.
  *
- * A referral code has no such tie. It is meant to work on every plan, and
- * the voucher owed to the referrer is tiered BY the plan bought, so
- * quarterly and yearly are the ones worth attributing most.
+ * A promo LINK code stays monthly-only on a multi-interval plan: the email
+ * that carries it advertises it against the monthly price.
+ *
+ * The site OFFER says itself which intervals it covers (`offer.intervals`,
+ * the same list its Dodo discount is restricted to), so it is sent exactly
+ * there — including on an interval a link code does not cover, which is what
+ * the server does when no code is sent. `offer` is the applicable offer from useActiveOffer — null while
+ * loading, outside its audience, or after it ends. The server would apply it
+ * on its own as well; sending it explicitly keeps the two in step.
  */
-export function checkoutCouponCode({ interval, multiInterval }) {
+export function checkoutCouponCode({ interval, multiInterval, offer = null }) {
   const referral = getStoredReferralCode();
   if (referral) return referral;
 
-  if (multiInterval && interval !== 'monthly') return undefined;
-  return getLinkPromoCode() || getActivePromo()?.code || undefined;
+  const link = getLinkPromoCode();
+  if (link && !(multiInterval && interval !== 'monthly')) return link;
+
+  if (offer?.code && offer.intervals?.includes(interval)) return offer.code;
+  return undefined;
 }

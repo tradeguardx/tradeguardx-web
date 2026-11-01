@@ -1,0 +1,179 @@
+/*
+ * Diwali night sky for the offer strip (theme 'diwali' only).
+ *
+ * Cheap on purpose: a dozen-odd absolutely positioned elements animating
+ * transform and opacity only (compositor work, no layout or paint per frame),
+ * no canvas, no JS loop. Everything here sits UNDER the strip's text.
+ * Paused while the strip is off-screen or the tab is hidden ([data-paused]);
+ * reduced motion keeps the glow and still sparkles and drops the rockets.
+ */
+
+.dw-sky {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Night: deep indigo into maroon, with the town's lamplight glowing
+     saffron and marigold from below. Dark enough that white text stays
+     well above AA everywhere. */
+  background:
+    radial-gradient(ellipse 45% 120% at 18% 135%, rgba(245, 158, 11, 0.42), transparent 70%),
+    radial-gradient(ellipse 40% 110% at 82% 140%, rgba(234, 88, 12, 0.38), transparent 70%),
+    radial-gradient(ellipse 30% 90% at 50% 150%, rgba(252, 211, 77, 0.22), transparent 70%),
+    linear-gradient(105deg, #1e1b4b 0%, #2e1238 32%, #4a1430 58%, #5b1a0b 100%);
+}
+
+.dw-sky[data-paused] *,
+.dw-sky[data-paused] *::before,
+.dw-sky[data-paused] *::after {
+  animation-play-state: paused !important;
+}
+
+/* Toran: a marigold garland along the top edge — orange and yellow
+   flowers alternating, with a faint green thread. */
+.dw-toran {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 7px;
+  opacity: 0.9;
+  background:
+    radial-gradient(circle at 7px 3px, #f59e0b 2.6px, transparent 3.1px) 0 0 / 28px 7px repeat-x,
+    radial-gradient(circle at 21px 3px, #fbbf24 2.6px, transparent 3.1px) 0 0 / 28px 7px repeat-x,
+    linear-gradient(#3f6212, #3f6212) 0 3px / 100% 1px no-repeat;
+}
+
+/* Twinkling stars. */
+.dw-twinkle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fde68a;
+  box-shadow: 0 0 6px 1px rgba(253, 230, 138, 0.7);
+  animation: dw-twinkle var(--d, 2.6s) ease-in-out var(--delay, 0s) infinite;
+}
+@keyframes dw-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* A rocket: a short gold trail rising from the bottom edge, then a burst
+   at the top of its climb. Trail and burst share one duration, so they
+   stay in step without any JS. */
+.dw-rocket {
+  position: absolute;
+  bottom: 0;
+  left: var(--x);
+  width: 0;
+  height: 0;
+}
+.dw-trail {
+  position: absolute;
+  left: -1px;
+  bottom: -16px;
+  width: 2px;
+  height: 16px;
+  border-radius: 2px;
+  background: linear-gradient(to top, rgba(253, 230, 138, 0), #fde68a 70%, #fff7d6);
+  opacity: 0;
+  animation: dw-rise var(--dur) cubic-bezier(0.25, 0.6, 0.4, 1) var(--delay) infinite;
+}
+@keyframes dw-rise {
+  0% { transform: translateY(0); opacity: 0; }
+  4% { opacity: 1; }
+  30% { transform: translateY(calc(-1 * var(--rise))); opacity: 1; }
+  32%, 100% { transform: translateY(calc(-1 * var(--rise))); opacity: 0; }
+}
+.dw-burst {
+  position: absolute;
+  left: 0;
+  bottom: var(--rise);
+  width: 0;
+  height: 0;
+}
+.dw-flash {
+  position: absolute;
+  left: -22px;
+  top: -22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 247, 214, 0.9), rgba(253, 186, 116, 0.35) 45%, transparent 70%);
+  opacity: 0;
+  animation: dw-flash var(--dur) ease-out var(--delay) infinite;
+}
+@keyframes dw-flash {
+  0%, 29% { opacity: 0; transform: scale(0.2); }
+  32% { opacity: 0.9; transform: scale(1); }
+  48%, 100% { opacity: 0; transform: scale(1.6); }
+}
+/* A spark is a short streak: drawn horizontally, then rotated onto its ray
+   and pushed outwards, so it reads as a trail of light, not a dot. */
+.dw-spark {
+  position: absolute;
+  left: -5px;
+  top: -1px;
+  width: 10px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: linear-gradient(to right, transparent, var(--c) 55%, #fff8e1);
+  box-shadow: 0 0 6px var(--c);
+  opacity: 0;
+  animation: dw-spark var(--dur) cubic-bezier(0.12, 0.75, 0.3, 1) var(--delay) infinite;
+}
+@keyframes dw-spark {
+  0%, 30% { opacity: 0; transform: rotate(var(--a)) translateX(0) scaleX(0.3); }
+  33% { opacity: 1; transform: rotate(var(--a)) translateX(calc(var(--r) * 0.45)) scaleX(1.4); }
+  48% { opacity: 0.85; transform: rotate(var(--a)) translateX(calc(var(--r) * 0.9)) scaleX(1); }
+  64% { opacity: 0; transform: rotate(var(--a)) translateX(var(--r)) translateY(8px) scaleX(0.5); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--r)) translateY(8px) scaleX(0.5); }
+}
+/* An inner ring of glitter, a beat later and closer in. */
+.dw-glitter {
+  position: absolute;
+  left: -1.5px;
+  top: -1.5px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff3c4;
+  box-shadow: 0 0 5px #fde68a;
+  opacity: 0;
+  animation: dw-glitter var(--dur) ease-out var(--delay) infinite;
+}
+@keyframes dw-glitter {
+  0%, 34% { opacity: 0; transform: rotate(var(--a)) translateX(0); }
+  40% { opacity: 1; transform: rotate(var(--a)) translateX(calc(var(--r) * 0.3)); }
+  52% { opacity: 0.2; transform: rotate(var(--a)) translateX(calc(var(--r) * 0.5)); }
+  56% { opacity: 0.9; }
+  70%, 100% { opacity: 0; transform: rotate(var(--a)) translateX(calc(var(--r) * 0.55)) translateY(10px); }
+}
+
+/* The diya's flame flickers; the bowl stays put. */
+.dw-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: dw-flicker 1.3s ease-in-out infinite;
+}
+.dw-flame-alt { animation-duration: 1.7s; animation-delay: -0.4s; }
+@keyframes dw-flicker {
+  0%, 100% { transform: scale(1, 1); opacity: 1; }
+  25% { transform: scale(0.92, 1.08) rotate(-3deg); opacity: 0.92; }
+  50% { transform: scale(1.04, 0.94); opacity: 1; }
+  75% { transform: scale(0.95, 1.06) rotate(3deg); opacity: 0.9; }
+}
+
+/* Phones: only the two edge rockets (the middle ones would burst behind
+   the centred headline), and smaller bursts. */
+@media (max-width: 639px) {
+  .dw-rocket-wide { display: none; }
+  .dw-rocket { --r: 22px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dw-rocket { display: none; }
+  .dw-twinkle { animation: none; opacity: 0.7; }
+  .dw-flame { animation: none; }
+}

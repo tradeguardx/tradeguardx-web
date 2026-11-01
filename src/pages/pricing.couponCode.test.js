@@ -17,25 +17,25 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
  * two tiers worth most (quarterly ₹400, yearly ₹1,000) were exactly the ones
  * that could never be paid.
  *
- * The restriction was not wrong, only misapplied: a site-wide promo IS
+ * The restriction was not wrong, only misapplied: a promo-link code IS
  * advertised against the monthly price, so it has to stay monthly-only. A
- * referral code has no such tie.
+ * referral code has no such tie, and the site offer (admin panel, via
+ * payments-service) names its own intervals.
  */
 
 vi.mock('../lib/referralCode', () => ({ getStoredReferralCode: vi.fn() }));
 vi.mock('../lib/promoLink', () => ({ getLinkPromoCode: vi.fn(), captureLinkPromoFromUrl: vi.fn() }));
-vi.mock('../lib/activePromo', () => ({ getActivePromo: vi.fn(), discountedPrice: vi.fn() }));
 
 const { getStoredReferralCode } = await import('../lib/referralCode');
 const { getLinkPromoCode } = await import('../lib/promoLink');
-const { getActivePromo } = await import('../lib/activePromo');
 const { checkoutCouponCode } = await import('./PricingPage');
 
 const none = () => {
   getStoredReferralCode.mockReturnValue(null);
   getLinkPromoCode.mockReturnValue(null);
-  getActivePromo.mockReturnValue(null);
 };
+
+const OFFER = { code: 'DIWALI30', intervals: ['monthly', 'quarterly', 'yearly'] };
 
 afterEach(() => vi.clearAllMocks());
 
@@ -56,32 +56,46 @@ describe('a referral code rides on every interval', () => {
     // Referral first: it is the only one of the three that owes somebody money.
     getStoredReferralCode.mockReturnValue('PRSH2K');
     getLinkPromoCode.mockReturnValue('LINKPROMO');
-    getActivePromo.mockReturnValue({ code: 'SITEPROMO' });
-    expect(checkoutCouponCode({ interval: 'yearly', multiInterval: true })).toBe('PRSH2K');
+    expect(checkoutCouponCode({ interval: 'yearly', multiInterval: true, offer: OFFER })).toBe('PRSH2K');
   });
 });
 
-describe('promos stay monthly-only', () => {
+describe('a promo-link code stays monthly-only', () => {
   it('sends a promo-link code on monthly', () => {
     none();
     getLinkPromoCode.mockReturnValue('LINKPROMO');
-    expect(checkoutCouponCode({ interval: 'monthly', multiInterval: true })).toBe('LINKPROMO');
+    expect(checkoutCouponCode({ interval: 'monthly', multiInterval: true, offer: OFFER })).toBe('LINKPROMO');
   });
 
-  it.each(['quarterly', 'yearly'])('withholds a promo on %s', (interval) => {
-    // activePromo.discountedPrice takes a MONTHLY figure, so the banner's
-    // promise is only true on monthly. Applying it elsewhere would advertise
-    // a discount the checkout does not give.
+  it.each(['quarterly', 'yearly'])('withholds a promo-link code on %s', (interval) => {
     none();
     getLinkPromoCode.mockReturnValue('LINKPROMO');
-    getActivePromo.mockReturnValue({ code: 'SITEPROMO' });
     expect(checkoutCouponCode({ interval, multiInterval: true })).toBeUndefined();
   });
 
-  it('falls back to the site-wide promo when there is no link code', () => {
+  it.each(['quarterly', 'yearly'])('lets the offer cover %s where the link code does not', (interval) => {
+    // What the server does when no code is sent; sending it keeps the two in step.
     none();
-    getActivePromo.mockReturnValue({ code: 'SITEPROMO' });
-    expect(checkoutCouponCode({ interval: 'monthly', multiInterval: true })).toBe('SITEPROMO');
+    getLinkPromoCode.mockReturnValue('LINKPROMO');
+    expect(checkoutCouponCode({ interval, multiInterval: true, offer: OFFER })).toBe('DIWALI30');
+  });
+});
+
+describe('the site offer follows its own intervals', () => {
+  it.each(['monthly', 'quarterly', 'yearly'])('is sent on %s when it covers it', (interval) => {
+    none();
+    expect(checkoutCouponCode({ interval, multiInterval: true, offer: OFFER })).toBe('DIWALI30');
+  });
+
+  it.each(['quarterly', 'yearly'])('is not sent on %s for a monthly-only offer', (interval) => {
+    none();
+    const offer = { code: 'MONTH20', intervals: ['monthly'] };
+    expect(checkoutCouponCode({ interval, multiInterval: true, offer })).toBeUndefined();
+  });
+
+  it('sends nothing while the offer is unloaded (null)', () => {
+    none();
+    expect(checkoutCouponCode({ interval: 'monthly', multiInterval: true, offer: null })).toBeUndefined();
   });
 });
 

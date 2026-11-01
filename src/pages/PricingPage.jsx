@@ -13,7 +13,8 @@ import { trackCheckoutStarted } from '../lib/analytics';
 import { checkoutCouponCode } from '../lib/checkoutCoupon';
 import { getStoredReferralCode } from '../lib/referralCode';
 import { getLinkPromoCode } from '../lib/promoLink';
-import { getActivePromo, discountedPrice } from '../lib/activePromo';
+import { useActiveOffer } from '../hooks/useActiveOffer';
+import { offerCoversInterval, offerLabel, offerPrice, firstPeriodLabel, discountWording } from '../lib/siteOffer';
 import { bandSync, currencyForBand, formatMoney } from '../lib/priceBands';
 import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
 
@@ -286,22 +287,22 @@ export default function PricingPage() {
   const [checkoutKey, setCheckoutKey] = useState(null);
   const [referralCode, setReferralCode] = useState(null);
   /**
-   * Platform launch promo, read once. `useMemo` because getActivePromo() checks
-   * expiry against Date.now(), and re-reading it every render would let a promo
-   * vanish mid-interaction the instant it lapses — the countdown strip already
-   * handles expiry, and a card silently reverting to full price while someone
-   * is reading it is worse than showing a stale offer for the rest of a visit.
+   * The site offer from the admin panel (useActiveOffer): null until the API
+   * and the visitor's band have answered, outside its audience, and after it
+   * ends — so the cards show list price until an offer is known to apply.
    *
-   * An influencer `?ref=` code takes precedence at checkout, so this block is
-   * hidden when one is present rather than promising a discount that loses.
+   * A referral or `?promo=` code takes precedence at checkout, so offer
+   * prices are hidden when one is present rather than promising a discount
+   * that loses.
    */
-  const launchPromo = useMemo(
-    () => (getStoredReferralCode() || getLinkPromoCode() ? null : getActivePromo()),
-    [],
-  );
-  /* Launch promos are rupee coupons, restricted in Dodo to the INR products —
-     never shown against a dollar price they would not apply to. */
-  const activePromo = currency === 'INR' ? launchPromo : null;
+  const { offer } = useActiveOffer();
+  const hasOwnCode = useMemo(() => Boolean(getStoredReferralCode() || getLinkPromoCode()), []);
+  /* An India-only offer is restricted in Dodo to the INR products — never
+     shown against a dollar price it would not apply to. */
+  const activePromo = offer && !hasOwnCode && (offer.audience === 'all' || currency === 'INR') ? offer : null;
+  /** The offer price for one interval, or null when the offer does not cover it. */
+  const offerPriceFor = (iv, price) =>
+    activePromo && offerCoversInterval(activePromo, iv) && price > 0 ? offerPrice(price, activePromo.discountPct) : null;
   const { session, user, subscription, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -347,7 +348,7 @@ export default function PricingPage() {
         accessToken: session.access_token,
         planSlug: plan.key,
         interval: plan.intervals.length > 1 ? iv : 'monthly',
-        couponCode: checkoutCouponCode({ interval: iv, multiInterval: plan.intervals.length > 1 }),
+        couponCode: checkoutCouponCode({ interval: iv, multiInterval: plan.intervals.length > 1, offer }),
       });
       const url = res?.checkoutUrl;
       if (url) { trackCheckoutStarted(plan.key); window.location.href = url; return; }
@@ -360,6 +361,11 @@ export default function PricingPage() {
   }
 
   const resumeCheckoutRef = useRef(false);
+  /* Read through a ref: the offer usually lands while this resume is in
+     flight, and as an effect dependency it would cancel the redirect. If it
+     has not loaded yet no code is sent, and the server applies the offer. */
+  const offerRef = useRef(offer);
+  useEffect(() => { offerRef.current = offer; }, [offer]);
 
   useEffect(() => {
     if (isLoading || loadError || plans.length === 0 || !session?.access_token) return;
@@ -382,7 +388,7 @@ export default function PricingPage() {
           accessToken: session.access_token,
           planSlug: plan.key,
           interval: plan.intervals.length > 1 ? interval : 'monthly',
-          couponCode: checkoutCouponCode({ interval, multiInterval: plan.intervals.length > 1 }),
+          couponCode: checkoutCouponCode({ interval, multiInterval: plan.intervals.length > 1, offer: offerRef.current }),
         });
         if (cancelled) return;
         const url = res?.checkoutUrl;
@@ -497,7 +503,9 @@ export default function PricingPage() {
        */
       const freeDays = trialDaysOnOffer(user);
       const line = priceFor(plan, iv);
-      const amount = typeof line?.price === 'number' ? money(line.price) : null;
+      /* The first charge is the offer price where the offer covers it — the
+         card above already says so, and this line must not contradict it. */
+      const amount = typeof line?.price === 'number' ? money(offerPriceFor(line.interval, line.price) ?? line.price) : null;
       const startsOn = firstChargeDate(freeDays)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).replace(' ', '\u00a0') ?? null;
       const offer = trialOfferLine(freeDays, amount, startsOn, money(0));
 
@@ -518,7 +526,7 @@ export default function PricingPage() {
     // Signed out: everyone new gets the full trial, so say it the same way
     // the signed-in branch does — the price and date before the click.
     const line = priceFor(plan, iv);
-    const amount = typeof line?.price === 'number' && line.price > 0 ? money(line.price) : null;
+    const amount = typeof line?.price === 'number' && line.price > 0 ? money(offerPriceFor(line.interval, line.price) ?? line.price) : null;
     const startsOn = firstChargeDate(FULL_TRIAL_DAYS)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).replace(' ', '\u00a0') ?? null;
     const offer = amount ? trialOfferLine(FULL_TRIAL_DAYS, amount, startsOn, money(0)) : null;
     return (
@@ -647,9 +655,8 @@ export default function PricingPage() {
                 {order.map((iv) => {
                   const line = priceFor(plan, iv);
                   const isBest = iv === best && line.savingsPct > 0;
-                  const promoPrice = activePromo?.discountPct && iv === 'monthly' && line.price > 0
-                    ? discountedPrice(line.price, activePromo.discountPct)
-                    : null;
+                  const promoPrice = offerPriceFor(iv, line.price);
+                  const firstLabel = promoPrice != null ? firstPeriodLabel(activePromo, iv) : null;
                   return (
                     <div key={iv} className={`relative flex rounded-[1.5rem] p-[1.5px] bg-gradient-to-b ${isBest ? t.border : 'from-slate-700/35 via-slate-700/15 to-slate-800/10'}`}>
                       <div className="flex flex-col flex-1 rounded-[1.4rem] p-7" style={{ backgroundColor: isBest ? '#0d1627' : '#0b1020' }}>
@@ -663,13 +670,20 @@ export default function PricingPage() {
                         </div>
                         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1.5">
                           <span className="font-display text-[44px] leading-none font-black text-white tracking-tight">{money(promoPrice ?? line.price)}</span>
-                          <span className="text-sm font-medium" style={{ color: '#64748b' }}>{promoPrice != null && activePromo.cycles === 1 ? 'first month' : PER[iv]}</span>
+                          <span className="text-sm font-medium" style={{ color: '#64748b' }}>{firstLabel ?? PER[iv]}</span>
                           {promoPrice != null && <span className="text-base font-semibold line-through" style={{ color: '#64748b' }}>{money(line.price)}</span>}
                         </div>
+                        {promoPrice != null && (
+                          <p data-offer-note className="text-[12px] font-semibold leading-relaxed" style={{ color: '#fbbf24' }}>
+                            {offerLabel(activePromo)}: {discountWording({ percentOff: activePromo.discountPct, cycles: activePromo.cycles })}. {activePromo.code} applied at checkout.
+                          </p>
+                        )}
                         <p className="text-[12.5px] leading-relaxed min-h-[20px]" style={{ color: '#94a3b8' }}>
-                          {iv === 'monthly'
-                            ? (promoPrice != null && activePromo.cycles === 1 ? `Then ${money(line.price)}/mo. ${activePromo.code} applied at checkout.` : 'Most flexible. Cancel any month.')
-                            : `That's ${money(line.perMonth)}/mo, ${line.savingsPct}% less than monthly.`}
+                          {promoPrice != null && activePromo.cycles === 1
+                            ? `Then ${money(line.price)}${PER[iv]}.`
+                            : iv === 'monthly'
+                              ? 'Most flexible. Cancel any month.'
+                              : `That's ${money(line.perMonth)}/mo, ${line.savingsPct}% less than monthly.`}
                         </p>
                         <p className="text-[11px] font-medium mt-1" style={{ color: '#475569' }}>Billed {iv} · incl. 18% GST</p>
                         <div className="mt-auto pt-7">{renderCta({ ...plan, primary: isBest }, iv)}</div>
@@ -694,12 +708,10 @@ export default function PricingPage() {
               const multi = plan.intervals.length > 1;
               const perLabel = line.interval === 'yearly' ? '/yr' : line.interval === 'quarterly' ? '/qtr' : '/mo';
               const billedLabel = line.interval === 'yearly' ? 'Billed yearly' : line.interval === 'quarterly' ? 'Billed quarterly' : 'Billed monthly';
-              // First-month promo price for this card. Only on monthly — the
-              // interval discount is the deal on quarterly and yearly.
-              const promoPrice =
-                activePromo?.discountPct && price > 0 && (!multi || line.interval === 'monthly')
-                  ? discountedPrice(price, activePromo.discountPct)
-                  : null;
+              // Offer price for this card's interval — only where the offer's
+              // `intervals` (its Dodo restriction) say it applies.
+              const promoPrice = offerPriceFor(multi ? line.interval : 'monthly', price);
+              const firstLabel = promoPrice != null ? firstPeriodLabel(activePromo, multi ? line.interval : 'monthly') : null;
 
               return (
                 <motion.div
@@ -783,9 +795,9 @@ export default function PricingPage() {
                                   {money(promoPrice)}
                                 </motion.span>
                               </AnimatePresence>
-                              {activePromo.cycles === 1 && (
+                              {firstLabel && (
                                 <span className="text-sm font-medium" style={{ color: '#94a3b8' }}>
-                                  first month
+                                  {firstLabel}
                                 </span>
                               )}
                               <span className="text-lg font-semibold line-through" style={{ color: '#64748b' }}>
@@ -795,12 +807,12 @@ export default function PricingPage() {
 
                             {activePromo.cycles === 1 && (
                               <p className="text-[12px] leading-relaxed mb-1" style={{ color: '#94a3b8' }}>
-                                Then {money(price)}/mo from month two. Cancel before it renews
+                                Then {money(price)}{perLabel} after that. Cancel before it renews
                                 and you pay nothing more.
                               </p>
                             )}
                             <p className="text-[11px] mb-3 font-medium" style={{ color: '#475569' }}>
-                              Incl. 18% GST · billed monthly
+                              Incl. 18% GST · {billedLabel.toLowerCase()}
                             </p>
 
                             {/* States plainly that nothing is required of the
@@ -821,6 +833,7 @@ export default function PricingPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
                               <p className="text-[12px] leading-snug" style={{ color: '#00d4aa' }}>
+                                {offerLabel(activePromo)}:{' '}
                                 <span className="font-mono font-bold tracking-wider">{activePromo.code}</span>{' '}
                                 is applied automatically at checkout — nothing to enter.
                               </p>

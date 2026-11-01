@@ -7,12 +7,9 @@ import ActivePromo from '../promo/ActivePromo';
 export default function Layout() {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/dashboard');
-  // The flash-sale banner only shows on the pricing page. Leading with a discount
-  // on the landing page frames a still-unfamiliar product as "something to buy"
-  // and creates price-anxiety before the value lands — so the offer appears at
-  // the decision point, not the first thing a new visitor sees.
-  // Founding/launch strip: homepage + pricing. A free offer is upside, so unlike
-  // the discount strip it's fine as the first thing a visitor sees.
+  // The offer strip (an admin-run offer such as Diwali, or the founding strip)
+  // shows on the homepage and the pricing page only. It renders nothing until
+  // the offer API and the visitor's band have both answered.
   const showPromo = location.pathname === '/' || location.pathname === '/pricing';
 
   return (

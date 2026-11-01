@@ -32,8 +32,21 @@ vi.mock('../../../api/pricingApi', () => ({
   }],
 }));
 vi.mock('../../../lib/analytics', () => ({ trackBilling: vi.fn() }));
-const autoCoupon = { value: undefined };
-vi.mock('../../../lib/checkoutCoupon', () => ({ checkoutCouponCode: () => autoCoupon.value }));
+/* The real checkoutCouponCode runs; its inputs are mocked. */
+const carried = { referral: null, link: null };
+vi.mock('../../../lib/referralCode', () => ({ getStoredReferralCode: () => carried.referral }));
+vi.mock('../../../lib/promoLink', () => ({ getLinkPromoCode: () => carried.link }));
+/* The applicable site offer, as useActiveOffer hands it over (already
+   filtered for audience and expiry). null = none, or not loaded yet. */
+const siteOffer = { value: null };
+vi.mock('../../../hooks/useActiveOffer', () => ({
+  useActiveOffer: () => ({ ready: true, offer: siteOffer.value, band: 'in' }),
+}));
+const DIWALI = {
+  code: 'DIWALI30', discountPct: 30, cycles: 1, intervals: ['monthly', 'quarterly', 'yearly'],
+  audience: 'in', headline: 'DIWALI OFFER', title: null, theme: 'diwali', endsAt: Date.parse('2026-11-08T18:29:59Z'),
+};
+const DIWALI_OK = { valid: true, code: 'DIWALI30', percentOff: 30, cycles: 1 };
 const auth = { user: { access: 'none', isTrial: false }, session: { access_token: 't' } };
 vi.mock('../../../context/AuthContext', () => ({ useAuth: () => auth }));
 const navigate = vi.fn();
@@ -47,7 +60,9 @@ beforeEach(() => {
   validate.mockClear();
   validate.mockResolvedValue({ valid: true, code: 'SAVE15', percentOff: 15, cycles: null });
   auth.user = { access: 'none', isTrial: false };
-  autoCoupon.value = undefined;
+  carried.referral = null;
+  carried.link = null;
+  siteOffer.value = null;
 });
 
 describe('billing step', () => {
@@ -245,7 +260,7 @@ describe('billing step', () => {
    * never credited for a sale they made.
    */
   it('carries a referral code through setup without being asked', async () => {
-    autoCoupon.value = 'REF123';
+    carried.referral = 'REF123';
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
@@ -253,7 +268,7 @@ describe('billing step', () => {
   });
 
   it('lets a typed code beat the one we carried for them', async () => {
-    autoCoupon.value = 'REF123';
+    carried.referral = 'REF123';
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'MINE' } });
@@ -474,5 +489,119 @@ describe('billing step — the free window it promises', () => {
     render(<BillingStep />);
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Start your free trial/i);
     expect(screen.queryByText(/\d+ days free|\d+-day free trial/)).toBeNull();
+  });
+});
+
+/**
+ * The site offer (Diwali), applied in setup without being asked — but only
+ * at prices the server has confirmed. Monthly ₹1,299 → ₹909, quarterly
+ * ₹3,299 → ₹2,309, yearly ₹8,999 → ₹6,299.
+ */
+describe('billing step — the site offer, auto-applied', () => {
+  it('validates the offer for every interval and shows the verified prices', async () => {
+    siteOffer.value = DIWALI;
+    validate.mockResolvedValue(DIWALI_OK);
+    render(<BillingStep />);
+    const chip = await screen.findByText('Diwali offer applied · 30% off your first payment');
+    expect(chip.closest('[data-offer-chip]')).toHaveTextContent('DIWALI30');
+    expect(validate).toHaveBeenCalledTimes(3);
+    expect(validate.mock.calls.map((c) => [c[0].code, c[0].interval]).sort()).toEqual(
+      [['DIWALI30', 'monthly'], ['DIWALI30', 'quarterly'], ['DIWALI30', 'yearly']],
+    );
+    expect(screen.getAllByText('₹909').length).toBeGreaterThan(0);
+    expect(screen.getByText('₹2,309')).toBeTruthy();
+    expect(screen.getByText('₹6,299')).toBeTruthy();
+    // A first-payment code: the timeline says what comes after it.
+    expect(screen.getByText(/First charge of ₹909, then ₹1,299 every month/)).toBeTruthy();
+    // Applied to everything alike, so the savings badges hold.
+    expect(screen.getByText('SAVE 42%')).toBeTruthy();
+  });
+
+  it('sends the offer code to checkout', async () => {
+    siteOffer.value = DIWALI;
+    validate.mockResolvedValue(DIWALI_OK);
+    render(<BillingStep />);
+    await screen.findByText(/Diwali offer applied/);
+    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'DIWALI30', interval: 'monthly' });
+  });
+
+  it('shows no discounted price before the check has answered', async () => {
+    siteOffer.value = DIWALI;
+    validate.mockImplementation(() => new Promise(() => {}));
+    render(<BillingStep />);
+    await screen.findByText('Due today');
+    expect(screen.queryByText('₹909')).toBeNull();
+    expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
+  });
+
+  it('shows full price and no chip when the server refuses the code', async () => {
+    siteOffer.value = DIWALI;
+    validate.mockResolvedValue({ valid: false, reason: 'EXPIRED' });
+    render(<BillingStep />);
+    await vi.waitFor(() => expect(validate).toHaveBeenCalledTimes(3));
+    await screen.findByText(/First charge of ₹1,299/);
+    expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
+    expect(screen.queryByText('₹909')).toBeNull();
+    // and a refused code is not passed on to checkout
+    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
+  });
+
+  it('lets a typed code win over the offer', async () => {
+    siteOffer.value = DIWALI;
+    validate.mockImplementation(async ({ code }) =>
+      code === 'DIWALI30' ? DIWALI_OK : { valid: true, code: 'SAVE15', percentOff: 15, cycles: null });
+    render(<BillingStep />);
+    await screen.findByText(/Diwali offer applied/);
+    fireEvent.click(screen.getByRole('button', { name: /Have a coupon/ }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
+    // Typing drops the offer at once: no chip, no unverified price.
+    expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
+    expect(screen.queryByText('₹909')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await screen.findByText(/15% off applied/);
+    expect(screen.getAllByText('₹1,104').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'save15' });
+  });
+
+  it('lets a referral win: no offer check, no chip, the referral is sent', async () => {
+    siteOffer.value = DIWALI;
+    carried.referral = 'REF123';
+    render(<BillingStep />);
+    await screen.findByText('Due today');
+    expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
+    expect(validate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'REF123' });
+  });
+
+  it('prices only the intervals the offer covers', async () => {
+    siteOffer.value = { ...DIWALI, intervals: ['monthly'] };
+    validate.mockImplementation(async ({ interval }) =>
+      interval === 'monthly' ? DIWALI_OK : { valid: false, reason: 'WRONG_PLAN' });
+    render(<BillingStep />);
+    await screen.findByText(/Diwali offer applied/);
+    expect(screen.getAllByText('₹909').length).toBeGreaterThan(0);
+    expect(screen.getByText('₹8,999')).toBeTruthy();
+    expect(screen.queryByText('₹6,299')).toBeNull();
+    // Yearly selected: no chip there, and no code sent for it.
+    fireEvent.click(screen.getByRole('radio', { name: /Yearly/ }));
+    expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
+  });
+
+  it('does nothing without an applicable offer', async () => {
+    render(<BillingStep />);
+    await screen.findByText('Due today');
+    expect(validate).not.toHaveBeenCalled();
+    expect(screen.queryByText(/offer applied/)).toBeNull();
   });
 });

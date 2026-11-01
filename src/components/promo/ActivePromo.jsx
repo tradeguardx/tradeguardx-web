@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getActivePromo, splitRemaining } from '../../lib/activePromo';
+import { splitRemaining, discountedPrice, formatInr, normalizePlanName } from '../../lib/activePromo';
 import { getFoundingMemberConfig } from '../../lib/foundingMember';
-import { discountedPrice, formatInr, normalizePlanName } from '../../lib/activePromo';
 import { getPricingPlans } from '../../api/pricingApi';
-import { bandSync, detectBand } from '../../lib/priceBands';
+import { useActiveOffer } from '../../hooks/useActiveOffer';
+import { offerHeadline, offerPriceLine } from '../../lib/siteOffer';
+import DiwaliSky from './DiwaliSky';
 
 const SESSION_KEY = 'tgx_promo_dismissed_for';
 
@@ -65,75 +66,78 @@ function CopyCodeButton({ code }) {
   );
 }
 
-/**
- * Headline wording for a discount promo.
- *
- * At exactly 50% it reads "half price" rather than "50% off". The percentage is
- * a figure the reader has to convert; "half price" is the conclusion they were
- * going to reach anyway, and it lands without arithmetic.
- *
- * The SCOPE is derived from `cycles`, never written by hand, so the headline
- * cannot outrun the coupon: "off all paid plans" reads as an ongoing price,
- * while a cycles=1 coupon gives one discounted month and then bills full price
- * — a difference the customer would otherwise discover on their second invoice.
- */
-function promoHeadline(promo) {
-  const pct = promo.discountPct;
-  const cycles = promo.cycles;
-  if (!pct) return 'Limited-time offer';
+/* Festive accents, only for an offer the admin marked theme 'diwali'. */
+const THEMES = {
+  default: {
+    bg: 'linear-gradient(120deg, #00d4aa 0%, #10b981 25%, #8b5cf6 50%, #f43f5e 75%, #00d4aa 100%)',
+    overlay: 'linear-gradient(180deg, rgba(7,9,15,0.30) 0%, rgba(7,9,15,0.55) 100%)',
+    dot: 'rgba(255,255,255,0.45)',
+    bar: 'linear-gradient(to right, #00d4aa, #10b981, #00d4aa)',
+    accent: 'text-yellow-200',
+  },
+  /* The background is <DiwaliSky /> (night sky, toran, rockets); these are
+     the accents drawn over it. */
+  diwali: {
+    sky: true,
+    bar: 'linear-gradient(to right, #f59e0b, #fde68a, #f59e0b)',
+    accent: 'text-amber-200',
+  },
+};
+const themeOf = (offer) => THEMES[offer?.theme] ?? THEMES.default;
 
-  if (pct === 50) {
-    if (cycles === 1) return 'Your first month, half price';
-    if (cycles) return `Your first ${cycles} months, half price`;
-    return 'Half price on every plan';
-  }
-
-  if (cycles === 1) return `${pct}% off your first month`;
-  if (cycles) return `${pct}% off your first ${cycles} months`;
-  return `${pct}% off all paid plans`;
+/** A small diya: an oil lamp with its flame. */
+function DiyaMark() {
+  return (
+    <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24" aria-hidden>
+      <path className="dw-flame" d="M12 2.5c1.9 2.3 2.5 4.1 1.7 5.5-.5.8-1 1.2-1.7 1.2s-1.2-.4-1.7-1.2C9.5 6.6 10.1 4.8 12 2.5z" fill="#fde68a" />
+      <path className="dw-flame dw-flame-alt" d="M12 5.4c.7 1 .9 1.8.5 2.4-.2.3-.3.4-.5.4s-.3-.1-.5-.4c-.4-.6-.2-1.4.5-2.4z" fill="#f97316" />
+      <path d="M2.5 12.5h19c-.7 4.3-4.6 7.2-9.5 7.2s-8.8-2.9-9.5-7.2z" fill="#f59e0b" />
+      <path d="M7.5 12.5c.8-1.5 2.5-2.4 4.5-2.4s3.7.9 4.5 2.4" fill="none" stroke="#fcd34d" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 function CodePromoContent({ promo, now }) {
-  const remainingMs = promo.expiresAt - now;
+  const remainingMs = promo.endsAt - now;
   const { days, hours, minutes, seconds } = splitRemaining(remainingMs);
   const showDays = days > 0;
-  // Price-led headline ("Go Pro for ₹650 this month") when the pricing API has
-  // answered; the derived wording ("Your first month, half price") otherwise.
-  // A concrete rupee figure outperforms a percentage — it is the number the
-  // reader is actually deciding on — but it must be REAL, so it only appears
-  // once the price is known rather than being guessed or hardcoded.
+  const theme = themeOf(promo);
+  // The headline is derived from the coupon (cycles + intervals), so it
+  // cannot outrun it. The price-led line under it appears only once the
+  // pricing API has answered — a real figure, never a guessed one.
+  const headline = offerHeadline(promo);
   const featured = useFeaturedPlan(null);
-  const promoPrice =
-    featured && promo.discountPct ? discountedPrice(featured.monthly, promo.discountPct) : null;
-  const headline =
-    promoPrice != null
-      ? `Go ${featured.name} for ${formatInr(promoPrice)} this month`
-      : promoHeadline(promo);
+  const priceLine = featured
+    ? offerPriceLine(promo, { planName: featured.name, monthly: featured.monthly, format: formatInr })
+    : null;
 
   return (
     <div className="relative flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between sm:gap-6">
       <div className="text-center sm:text-left">
         <div className="flex items-center justify-center gap-1.5 sm:justify-start">
-          <motion.span
-            className="inline-block"
-            animate={{ scale: [1, 1.18, 1] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-            aria-hidden
-          >
-            <svg className="h-3.5 w-3.5 text-yellow-300 sm:h-4 sm:w-4" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
-            </svg>
-          </motion.span>
+          {promo.theme === 'diwali' ? (
+            <DiyaMark />
+          ) : (
+            <motion.span
+              className="inline-block"
+              animate={{ scale: [1, 1.18, 1] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+              aria-hidden
+            >
+              <svg className="h-3.5 w-3.5 text-yellow-300 sm:h-4 sm:w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
+              </svg>
+            </motion.span>
+          )}
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 sm:text-[11px] sm:tracking-[0.22em]">{promo.headline}</p>
         </div>
         <h2 className="font-display text-sm font-bold leading-tight text-white sm:mt-1 sm:text-2xl">{headline}</h2>
-        {/* Supporting line: the mechanism behind the headline figure. Shown only
-            when the headline carries a price — otherwise the headline IS the
-            percentage and this would repeat it back verbatim. */}
-        {promoPrice != null && (
-          <p className="mt-0.5 text-[11px] font-semibold text-white/80 sm:text-xs">
-            <span className="text-yellow-200">{promo.discountPct}% OFF</span> your first month
-            <span className="mx-1.5 opacity-50">•</span>Limited time
+        {priceLine && (
+          <p className="mt-0.5 text-[11px] font-semibold text-white/85 sm:text-xs">
+            <span className={theme.accent}>{priceLine}</span>
+            {promo.cycles === 1 && featured && (
+              <span className="text-white/70">, then {formatInr(featured.monthly)}/mo</span>
+            )}
           </p>
         )}
       </div>
@@ -309,7 +313,7 @@ function LaunchOfferContent({ founding, promo }) {
           </div>
         ) : (
           <p className="mt-1 text-xs text-white/80 sm:text-sm">
-            Then {promoHeadline(promo).toLowerCase()} with code {promo.code}.
+            Then {offerHeadline(promo).toLowerCase()} with code {promo.code}.
           </p>
         )}
       </div>
@@ -345,8 +349,13 @@ function LaunchOfferContent({ founding, promo }) {
  */
 export default function ActivePromo() {
   const foundingCfg = useMemo(() => getFoundingMemberConfig(), []);
-  const codePromo = useMemo(() => getActivePromo(), []);
-  const mode = foundingCfg && codePromo
+  /* The offer from the admin panel (payments-service). `ready` is false until
+     both it and the visitor's band have answered, and no mode is chosen
+     before then — so nothing flashes and then changes or disappears. */
+  const { ready, offer: codePromo, band } = useActiveOffer();
+  const mode = !ready
+    ? null
+    : foundingCfg && codePromo
     ? 'launch'
     : foundingCfg
       ? 'founding'
@@ -364,7 +373,7 @@ export default function ActivePromo() {
     : foundingCfg
     ? `founding-${foundingCfg.limit}-${foundingCfg.trialDays}-${foundingCfg.plan}`
     : codePromo
-      ? `code-${codePromo.code}@${codePromo.expiresAt}`
+      ? `code-${codePromo.code}@${codePromo.endsAt}`
       : null;
 
   useEffect(() => {
@@ -386,16 +395,12 @@ export default function ActivePromo() {
   // discounted price, so letting it outlive the coupon would advertise a price
   // checkout no longer gives.
   const codeExpired =
-    (mode === 'code' || mode === 'launch') && codePromo.expiresAt - now <= 0;
-  /* Promo codes are rupee coupons, limited in Dodo to the INR products. A
-     visitor priced in US dollars could not use one, so they never see it. */
-  const [band, setBand] = useState(bandSync);
-  useEffect(() => {
-    let alive = true;
-    detectBand().then((b) => { if (alive) setBand(b); });
-    return () => { alive = false; };
-  }, []);
-  const visible = Boolean(mode) && !dismissed && !codeExpired && band === 'in';
+    (mode === 'code' || mode === 'launch') && codePromo.endsAt - now <= 0;
+  /* The offer's audience is already applied by useActiveOffer ('in' offers
+     only reach a visitor in the INR band). The founding strip is an Indian
+     launch programme, so it keeps its own India-only check. */
+  const audienceOk = mode === 'code' ? true : band === 'in';
+  const visible = Boolean(mode) && !dismissed && !codeExpired && audienceOk;
 
   // Publish height as CSS var so the fixed Navbar can offset its `top`,
   // and pad the body so page content doesn't slide under the strip.
@@ -431,6 +436,8 @@ export default function ActivePromo() {
     setDismissed(true);
   };
 
+  const theme = themeOf(mode === 'founding' ? null : codePromo);
+
   return (
     <AnimatePresence>
       <motion.section
@@ -443,13 +450,14 @@ export default function ActivePromo() {
         className="fixed left-0 right-0 top-0 z-[55] overflow-hidden"
         role="region"
         aria-label="Active promotion"
+        data-offer-theme={mode === 'founding' ? undefined : codePromo?.theme ?? 'default'}
       >
+        {theme.sky ? <DiwaliSky /> : (<>
         {/* Animated gradient background */}
         <motion.div
           className="absolute inset-0"
           style={{
-            background:
-              'linear-gradient(120deg, #00d4aa 0%, #10b981 25%, #8b5cf6 50%, #f43f5e 75%, #00d4aa 100%)',
+            background: theme.bg,
             backgroundSize: '300% 100%',
           }}
           animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
@@ -460,7 +468,7 @@ export default function ActivePromo() {
         {/* Darken overlay for text contrast */}
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(180deg, rgba(7,9,15,0.30) 0%, rgba(7,9,15,0.55) 100%)' }}
+          style={{ background: theme.overlay }}
           aria-hidden
         />
 
@@ -474,7 +482,7 @@ export default function ActivePromo() {
               top: '50%',
               width: 4 + (i % 3),
               height: 4 + (i % 3),
-              background: 'rgba(255,255,255,0.45)',
+              background: theme.dot,
               filter: 'blur(0.4px)',
             }}
             animate={{ y: [-12, -24, -12], opacity: [0, 0.7, 0] }}
@@ -482,8 +490,9 @@ export default function ActivePromo() {
             aria-hidden
           />
         ))}
+        </>)}
 
-        <div className="relative mx-auto max-w-7xl px-4 py-2 pr-10 sm:px-6 sm:py-5 sm:pr-16">
+        <div className={`relative mx-auto max-w-7xl px-4 py-2 pr-10 sm:px-6 sm:py-5 sm:pr-16${theme.sky ? ' [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]' : ''}`}>
           {mode === 'launch' && (
             <LaunchOfferContent founding={foundingCfg} promo={codePromo} />
           )}
@@ -507,10 +516,10 @@ export default function ActivePromo() {
         {mode === 'code' && (
           <motion.div
             className="absolute inset-x-0 bottom-0 h-[2px] origin-left"
-            style={{ background: 'linear-gradient(to right, #00d4aa, #10b981, #00d4aa)' }}
+            style={{ background: theme.bar }}
             initial={{ scaleX: 1 }}
             animate={{ scaleX: 0 }}
-            transition={{ duration: Math.max(1, (codePromo.expiresAt - Date.now()) / 1000), ease: 'linear' }}
+            transition={{ duration: Math.max(1, (codePromo.endsAt - Date.now()) / 1000), ease: 'linear' }}
           />
         )}
       </motion.section>

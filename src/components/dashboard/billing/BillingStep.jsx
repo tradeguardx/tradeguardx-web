@@ -6,6 +6,10 @@ import { getPricingPlans } from '../../../api/pricingApi';
 import { bandSync, formatMoney, planForBand } from '../../../lib/priceBands';
 import { trackBilling } from '../../../lib/analytics';
 import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
+import { getStoredReferralCode } from '../../../lib/referralCode';
+import { getLinkPromoCode } from '../../../lib/promoLink';
+import { useActiveOffer } from '../../../hooks/useActiveOffer';
+import { offerCoversInterval, offerLabel, discountWording } from '../../../lib/siteOffer';
 import { PROTECTIONS, GLYPH } from './billingContent';
 import NoticeCard from '../shell/NoticeCard';
 import StepsBar from '../shell/StepsBar';
@@ -183,7 +187,49 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
    * setup lost the attribution silently: they paid full price and the
    * referrer was never credited for a sale they made.
    */
-  const autoCoupon = checkoutCouponCode({ interval: cur.id, multiInterval: options.length > 1 });
+  const typed = coupon.trim().toUpperCase();
+
+  /*
+   * THE SITE OFFER, APPLIED FOR THEM — AND CHECKED BEFORE IT IS SHOWN.
+   *
+   * When an offer is live for this visitor (useActiveOffer: loaded, in its
+   * audience, not ended) and nothing else would be sent — no typed code, no
+   * referral, no promo-link code — its code is validated for every interval,
+   * the same calls Apply makes. Only what the server confirms is priced: a
+   * code it refuses shows full price and no chip, rather than a promise.
+   */
+  const { offer } = useActiveOffer();
+  const ownCode = useMemo(() => Boolean(getStoredReferralCode() || getLinkPromoCode()), []);
+  const offerCode =
+    !typed && !ownCode && offer && options.some((o) => offerCoversInterval(offer, o.id)) ? offer.code : null;
+  const [offerCheck, setOfferCheck] = useState(null);
+  const intervalKey = options.map((o) => o.id).join(',');
+  const token = session?.access_token;
+  useEffect(() => {
+    if (!offerCode || !token) return undefined;
+    let alive = true;
+    Promise.all(
+      intervalKey.split(',').map((iv) =>
+        validateCoupon({ accessToken: token, code: offerCode, planSlug: 'pro', interval: iv })
+          .then((res) => [iv, res])
+          .catch(() => [iv, { valid: false, reason: 'LOOKUP' }]),
+      ),
+    ).then((results) => {
+      if (!alive) return;
+      const byInterval = Object.fromEntries(results);
+      setOfferCheck({ code: offerCode, byInterval });
+      trackBilling('billing_offer_checked', { code: offerCode, valid: Object.values(byInterval).some((r) => r?.valid) });
+    });
+    return () => { alive = false; };
+  }, [offerCode, intervalKey, token]);
+  const offerVerified = offerCode && offerCheck?.code === offerCode ? offerCheck.byInterval : null;
+
+  /* The offer is sent where it covers the plan, unless the server has
+     already said no for this interval — a refused code is not passed on. */
+  const offerVerdict = offerVerified?.[cur.id];
+  const offerRefused = Boolean(offerVerdict && !offerVerdict.valid && offerVerdict.reason !== 'LOOKUP' && offerVerdict.reason !== 'UNSUPPORTED');
+  const carried = checkoutCouponCode({ interval: cur.id, multiInterval: options.length > 1, offer });
+  const autoCoupon = offerRefused && carried === offer?.code ? undefined : carried;
   const effectiveCoupon = coupon.trim() || autoCoupon || undefined;
 
   /*
@@ -198,8 +244,9 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
    * Three calls on one deliberate click is a fair price for every row on
    * screen being a number we have actually verified.
    */
-  const verified =
-    applied && applied.code === coupon.trim().toUpperCase() ? applied.byInterval : null;
+  const verified = typed
+    ? (applied && applied.code === typed ? applied.byInterval : null)
+    : offerVerified;
   const priceOf = (option) => {
     const v = verified?.[option.id];
     return v?.valid ? Math.round(option.price * (1 - v.percentOff / 100)) : option.price;
@@ -235,6 +282,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
      "we don't recognise that code", and the one that keeps someone looking at
      the other two rows instead of hunting for a typo. */
   const refusal = verified?.[cur.id] && !verified[cur.id].valid ? verified[cur.id].reason : null;
+  /* The chip: the offer, verified for the selected plan, and nothing typed. */
+  const offerApplied = !typed && offerVerified?.[cur.id]?.valid ? offerVerified[cur.id] : null;
 
   const apply = async () => {
     const code = coupon.trim().toUpperCase();
@@ -593,6 +642,22 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   })}
                 </div>
 
+                {/* Only once the server has confirmed the offer for the plan
+                    that is selected. Before that, and for a code it refuses,
+                    there is no chip and the rows show list price. */}
+                {offerApplied && (
+                  <div
+                    data-offer-chip
+                    style={{ marginTop: 12, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: '9px 12px', borderRadius: 12, background: 'var(--mint-tint)', boxShadow: 'inset 0 0 0 1px var(--mint-line)', color: 'var(--mint)', fontSize: 12.5, fontWeight: 700, lineHeight: 1.35 }}
+                  >
+                    <Glyph d={['M5 13l4 4L19 7']} size={14} width={2.6} />
+                    <span style={{ flex: '1 1 auto', minWidth: 0 }}>
+                      {`${offerLabel(offer)} applied · ${discountWording(offerApplied)}`}
+                    </span>
+                    <span style={{ font: "700 11px/1 'JetBrains Mono',monospace", letterSpacing: '.08em', padding: '4px 7px', borderRadius: 6, background: 'color-mix(in srgb, var(--mint-solid) 14%, transparent)' }}>{offerCode}</span>
+                  </div>
+                )}
+
                 <div style={{ marginTop: 20, padding: 16, borderRadius: 16, background: 'var(--surface-2)', boxShadow: 'inset 0 0 0 1px var(--line)' }}>
                   <div style={{ font: "600 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.16em', color: 'var(--ink-faint)' }}>WHAT HAPPENS NEXT</div>
                   <div style={{ marginTop: 14, display: 'grid' }}>
@@ -649,7 +714,13 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                         </button>
                       </div>
 
-                      {discount ? (
+                      {!typed ? (
+                        <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--ink-faint)' }}>
+                          {offerApplied
+                            ? `A code you enter here replaces the ${offerLabel(offer).toLowerCase()}.`
+                            : 'Press Apply to see the new price. It is applied at checkout either way.'}
+                        </p>
+                      ) : discount ? (
                         <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--mint)' }}>
                           {discount.percentOff}% off applied.{' '}
                           {discount.cycles
