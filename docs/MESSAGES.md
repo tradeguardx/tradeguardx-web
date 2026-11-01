@@ -23,11 +23,13 @@ Every user is in exactly one case. They're checked in this order, and the first 
 3. No plan yet, key working → `s3`
 4. Otherwise, the plan case.
 
+> **No free trial since 1 November 2026.** New signups pay at checkout (`trial-eligibility` returns `trialDays: 0`), so a new user goes `s3` → `p`/`ac` with no trial in between. The trial cases (`t1`, `t6`, `tc`, `tx`, `te`) stay because users granted a trial before that date are still in them until it ends.
+
 | Case | Meaning | Protected |
 |---|---|---|
 | `s0` | Signed up, no account | no |
 | `s2` | Key not connected (or, with no plan, disconnected) | no |
-| `s3` | Key on, no trial yet | no |
+| `s3` | Key on, no plan yet | no |
 | `t1` | Trial running (more than 2 days left) | yes |
 | `t6` | Trial ending (2 days or less) | yes |
 | `tc` | Trial cancelled, inside the trial | yes |
@@ -58,7 +60,7 @@ The band under the top bar shows **only the highest-ranked message**. One banner
 | 20 | **Finish setup to switch your guard on.** "About three minutes. Until then nothing is watching your trades." | `s0` | grey | Continue setup | no |
 | 20 | **Nothing is watching {account} yet.** "Connect the key to turn your rules into actions." | `s2` | red | Connect key | no |
 | 20 | **{account}'s key is disconnected.** "Reconnect it to turn your rules into actions." | `s2`, key once worked | red | Reconnect key | no |
-| 20 | **Key connected. Guard is off.** "Start your 7-day free trial to switch it on. ₹0 today." | `s3` | amber | Start free trial | no |
+| 20 | **Key connected. Guard is off.** "Choose a plan to switch it on. Pay monthly, cancel anytime." | `s3` | amber | Choose a plan | no |
 | 30 | **This account cannot trade until the lockout expires** | account locked (manual or by a rule) | red | See the countdown | no |
 | 40 | **This account is not set up yet** | account missing venue or balance | red | Finish setup | no |
 | 40 | **No key with trading scope** | key failed or revoked (plan protected) | red | Connect the key | no |
@@ -133,7 +135,7 @@ The page renders blurred underneath, with one card and one button. The button ca
 |---|---|---|---|
 | `s0` | Live guard, Journal, All trades, Tax | Connect your key to see this | Continue setup |
 | `s2` | Live guard, Journal, All trades, Tax | Connect your key to see this | Connect key |
-| `s3` | Live guard, Journal | Starts with your free trial | Start free trial |
+| `s3` | Live guard, Journal | Starts with your plan | Choose a plan |
 | `pf` | Live guard, Journal | Off until your payment goes through | Pay ₹1,299 |
 | `te` `pe` `lf` | Live guard, Journal | Needs an active plan | Subscribe |
 | `pg` | Live guard, Journal | Needs an active plan | Pay ₹1,299 |
@@ -164,7 +166,7 @@ Every other page stays usable in every case. Trades and Tax are your own record.
 | Where | When | Says |
 |---|---|---|
 | Kill switch button (tooltip) | plan off | Works without a plan: your rules are off, your kill switch is not |
-| Kill switch button (disabled, tap toast) | `s0` `s2` / `s3` | Works once your key is connected / Starts with your free trial |
+| Kill switch button (disabled, tap toast) | `s0` `s2` / `s3` | Works once your key is connected / Starts with your plan |
 | Kill switch sheet | plan off | Your rules aren't active right now. This kill switch is. |
 | Rules page, under the title | plan off | Rules are saved but not enforced while your plan is inactive. (toggles disabled) |
 | Sidebar plan line | each case | e.g. Trial · 5 days left · Pro · Pro · payment failed · No plan · trial ended · Setup · step 3 of 4 |

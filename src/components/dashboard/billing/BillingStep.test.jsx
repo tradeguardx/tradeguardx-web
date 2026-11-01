@@ -5,17 +5,17 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
  * The acceptance checks from the billing-step brief, as tests.
  *
  * The ones worth having are about promises: what the headline says, that the
- * price and cadence follow the selected plan, that "due today" is always ₹0
- * during the trial, that the tax wording stays as written, and — the one that
+ * price and cadence follow the selected plan, that "due today" is ₹0 only
+ * while someone still holds trial days and the full price otherwise, that the tax wording stays as written, and — the one that
  * caught a real problem — that nothing claims a reminder email we do not send.
  */
 
 const checkout = vi.fn(async () => ({ checkoutUrl: 'https://test.checkout/x' }));
 const validate = vi.fn(async () => ({ valid: true, code: 'SAVE15', percentOff: 15, cycles: null }));
 /* The free days this user actually gets, from the same function checkout
-   uses. Defaults to the full window so the existing cases read as a new
-   signup; the cohort cases below override it. */
-let eligibility = { trialDays: 7, fullTrialDays: 7 };
+   uses. Defaults to a new signup since 1 Nov 2026: no free trial, so zero.
+   The cohort cases below override it for someone still holding trial days. */
+let eligibility = { trialDays: 0, fullTrialDays: 0 };
 vi.mock('../../../api/paymentsApi', () => ({
   createCheckoutSession: (...a) => checkout(...a),
   validateCoupon: (...a) => validate(...a),
@@ -55,7 +55,7 @@ vi.mock('react-router-dom', async (orig) => ({ ...(await orig()), useNavigate: (
 const { default: BillingStep } = await import('./BillingStep');
 
 beforeEach(() => {
-  eligibility = { trialDays: 7, fullTrialDays: 7 };
+  eligibility = { trialDays: 0, fullTrialDays: 0 };
   checkout.mockClear();
   validate.mockClear();
   validate.mockResolvedValue({ valid: true, code: 'SAVE15', percentOff: 15, cycles: null });
@@ -69,11 +69,11 @@ describe('billing step', () => {
   it('says what the step is and what it costs', async () => {
     render(<BillingStep />);
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
-      /Start your 7-day free trial/,
+      /Subscribe to switch your guard on/,
     );
-    expect(screen.getByText('Pay ₹0 today')).toBeTruthy();
-    // The date and amount of the first debit, once the server has answered.
-    expect(await screen.findByText(/· ₹[\d,]+ on \d{1,2} \w{3} · cancel any time before\./)).toBeTruthy();
+    // No free trial for a new customer: the price is due today, said as a number.
+    expect(await screen.findByText(/₹1,299 is charged today/)).toBeTruthy();
+    expect(screen.queryAllByText(/free trial|days free|Pay ₹0 today/i)).toHaveLength(0);
   });
 
   it('shows one guard-off message, and it carries no button', async () => {
@@ -137,18 +137,19 @@ describe('billing step', () => {
   it('starts on monthly and prices the button accordingly', async () => {
     render(<BillingStep />);
     expect(await screen.findByRole('radio', { name: /Monthly/ })).toHaveAttribute('aria-checked', 'true');
-    // Waits for the eligibility answer: the label starts on the default trial and settles once it lands.
-    expect(await screen.findByRole('button', { name: /Start 7 days free · Monthly/ })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /Subscribe · Monthly/ })).toBeTruthy();
   });
 
   it('follows the selected plan through the button and the timeline', async () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('radio', { name: /Monthly/ }));
-    expect(screen.getByRole('button', { name: /Start 7 days free · Monthly/ })).toBeTruthy();
-    expect(screen.getByText(/First charge of ₹1,299, then every month until you cancel\./)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Subscribe · Monthly/ })).toBeTruthy();
+    expect(screen.getByText(/Your first charge of ₹1,299 is today\./)).toBeTruthy();
+    expect(screen.getByText(/Then every month/)).toBeTruthy();
   });
 
   it('says ₹0 is due today while there are free days', async () => {
+    eligibility = { trialDays: 7, fullTrialDays: 7 };
     render(<BillingStep />);
     await screen.findByText('Due today');
     expect(screen.getAllByText('₹0').length).toBeGreaterThan(0);
@@ -175,7 +176,7 @@ describe('billing step', () => {
   it('sends the chosen interval to checkout', async () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('radio', { name: /Quarterly/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free · Quarterly/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Subscribe · Quarterly/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ planSlug: 'pro', interval: 'quarterly' });
   });
@@ -248,7 +249,7 @@ describe('billing step', () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: ' save20 ' } });
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Subscribe · / }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'save20' });
   });
@@ -262,7 +263,7 @@ describe('billing step', () => {
   it('carries a referral code through setup without being asked', async () => {
     carried.referral = 'REF123';
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe · / }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'REF123' });
   });
@@ -272,7 +273,7 @@ describe('billing step', () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'MINE' } });
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Subscribe · / }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'MINE' });
   });
@@ -285,7 +286,7 @@ describe('billing step', () => {
     expect(screen.getByText(/Press Apply to see the new price/i)).toBeTruthy();
     expect(screen.queryByText(/% off applied/)).toBeNull();
     // The full price still stands until something is actually applied.
-    expect(screen.getByText(/First charge of ₹1,299/)).toBeTruthy();
+    expect(screen.getByText(/first charge of ₹1,299/i)).toBeTruthy();
   });
 
   it('prices the selected plan after Apply, and the timeline with it', async () => {
@@ -296,7 +297,7 @@ describe('billing step', () => {
     await screen.findByText(/15% off applied/);
     // Monthly ₹1,299 less 15% = ₹1,104, on the plan row and in the timeline.
     expect(screen.getAllByText('₹1,104').length).toBeGreaterThan(0);
-    expect(screen.getByText(/First charge of ₹1,104/)).toBeTruthy();
+    expect(screen.getByText(/first charge of ₹1,104/i)).toBeTruthy();
     /* And the rows above, because a code checked only against the selected
        plan leaves the other two showing a price nobody verified. */
     expect(screen.getByText('₹2,804')).toBeTruthy();
@@ -320,7 +321,7 @@ describe('billing step', () => {
     await screen.findByText(/15% off applied/);
     fireEvent.click(screen.getByRole('radio', { name: /Yearly/ }));
     expect(screen.getByText(/15% off applied/)).toBeTruthy();
-    expect(screen.getByText(/First charge of ₹7,649/)).toBeTruthy();
+    expect(screen.getByText(/first charge of ₹7,649/i)).toBeTruthy();
   });
 
   /*
@@ -338,7 +339,8 @@ describe('billing step', () => {
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'monthly10' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/10% off applied/);
-    expect(screen.getByText('₹1,169')).toBeTruthy();
+    // On its row and, with no free days, as the amount due today.
+    expect(screen.getAllByText('₹1,169').length).toBeGreaterThan(0);
     // Quarterly and yearly keep their full prices, not a discount we never got.
     expect(screen.getByText('₹3,299')).toBeTruthy();
     expect(screen.getByText('₹8,999')).toBeTruthy();
@@ -379,7 +381,7 @@ describe('billing step', () => {
    */
   it('follows the checkout url the api returns', async () => {
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe · / }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(screen.queryByText(/Could not open checkout/)).toBeNull();
   });
@@ -450,12 +452,14 @@ describe('billing step — the free window it promises', () => {
      place, and the day count only renders once prices have loaded. */
   const show = async () => { render(<BillingStep />); await screen.findByText('Choose how you pay'); };
 
-  it('names the carried days for someone part-way through a trial', async () => {
-    eligibility = { trialDays: 4, fullTrialDays: 7 };
+  it('names the carried days for someone part-way through a trial granted before 1 Nov 2026', async () => {
+    eligibility = { trialDays: 4, fullTrialDays: 0 };
     await show();
     /* Both the headline and the button carry it — someone who scrolls past
        one must not be able to read the other and get a different number. */
-    expect(await screen.findByText(/4-day free trial/)).toBeTruthy(); // headline
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Keep your 4 free days/); // headline
+    expect(screen.getByText('Pay ₹0 today')).toBeTruthy();
+    expect(await screen.findByText(/· ₹[\d,]+ on \d{1,2} \w{3} · cancel any time before\./)).toBeTruthy();
     expect(screen.getAllByText(/4 days free/).length).toBeGreaterThanOrEqual(1); // button
     expect(screen.queryByText(/7 days free|7-day free trial/)).toBeNull();
   });
@@ -483,12 +487,22 @@ describe('billing step — the free window it promises', () => {
     expect(screen.getByText(/is charged today/)).toBeTruthy();
   });
 
-  /* A number is a promise about money; silence beats a guess. */
-  it('states no day count until the server has answered', async () => {
+  /* A number is a promise about money. Until the server answers, nothing
+     says "free": the screen is the paid path, which is the truth for every
+     new customer since 1 Nov 2026. */
+  it('promises no trial until the server has answered', async () => {
     eligibility = new Promise(() => {});
     render(<BillingStep />);
-    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Start your free trial/i);
-    expect(screen.queryByText(/\d+ days free|\d+-day free trial/)).toBeNull();
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Subscribe to switch your guard on/i);
+    expect(screen.queryAllByText(/free trial|days free|free days|Pay ₹0 today/i)).toHaveLength(0);
+  });
+
+  it('says nothing about a trial to a new customer (eligibility 0)', async () => {
+    eligibility = { trialDays: 0, fullTrialDays: 0 };
+    await show();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Subscribe to switch your guard on/i);
+    expect(screen.queryAllByText(/trial|days free|free days/i)).toHaveLength(0);
+    expect(screen.queryByText(/Your free trial has ended/)).toBeNull();
   });
 });
 
@@ -512,7 +526,8 @@ describe('billing step — the site offer, auto-applied', () => {
     expect(screen.getByText('₹2,309')).toBeTruthy();
     expect(screen.getByText('₹6,299')).toBeTruthy();
     // A first-payment code: the timeline says what comes after it.
-    expect(screen.getByText(/First charge of ₹909, then ₹1,299 every month/)).toBeTruthy();
+    expect(screen.getByText(/Your first charge of ₹909 is today/)).toBeTruthy();
+    expect(screen.getByText(/Renews at ₹1,299 every month until you cancel/)).toBeTruthy();
     // Applied to everything alike, so the savings badges hold.
     expect(screen.getByText('SAVE 42%')).toBeTruthy();
   });
@@ -522,7 +537,7 @@ describe('billing step — the site offer, auto-applied', () => {
     validate.mockResolvedValue(DIWALI_OK);
     render(<BillingStep />);
     await screen.findByText(/Diwali offer applied/);
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Subscribe · / }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'DIWALI30', interval: 'monthly' });
   });
@@ -541,11 +556,11 @@ describe('billing step — the site offer, auto-applied', () => {
     validate.mockResolvedValue({ valid: false, reason: 'EXPIRED' });
     render(<BillingStep />);
     await vi.waitFor(() => expect(validate).toHaveBeenCalledTimes(3));
-    await screen.findByText(/First charge of ₹1,299/);
+    await screen.findByText(/Your first charge of ₹1,299 is today/);
     expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
     expect(screen.queryByText('₹909')).toBeNull();
     // and a refused code is not passed on to checkout
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Subscribe · / }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
   });
@@ -564,7 +579,7 @@ describe('billing step — the site offer, auto-applied', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/15% off applied/);
     expect(screen.getAllByText('₹1,104').length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Subscribe · / }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'save15' });
   });
@@ -576,7 +591,7 @@ describe('billing step — the site offer, auto-applied', () => {
     await screen.findByText('Due today');
     expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
     expect(validate).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Subscribe · / }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'REF123' });
   });
@@ -593,7 +608,7 @@ describe('billing step — the site offer, auto-applied', () => {
     // Yearly selected: no chip there, and no code sent for it.
     fireEvent.click(screen.getByRole('radio', { name: /Yearly/ }));
     expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Subscribe · / }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
   });

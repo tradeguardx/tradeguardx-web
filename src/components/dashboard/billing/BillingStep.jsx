@@ -47,7 +47,7 @@ function Glyph({ d, size = 15, width = 2 }) {
   );
 }
 
-const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Your revenge score', 'Start free trial'];
+const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Your revenge score', 'Choose a plan'];
 const LAST = STEP_NAMES.length - 1;
 
 /* Fallback only, when the pricing endpoint fails: the rupee plan, re-priced
@@ -65,15 +65,15 @@ const PLAN_FALLBACK = {
 const PER = { monthly: 'per month', quarterly: 'per quarter', yearly: 'per year' };
 const SUB = { monthly: 'Billed every month', quarterly: 'billed every 3 months', yearly: 'billed once a year' };
 const NEXT = { monthly: 'every month', quarterly: 'every 3 months', yearly: 'every year' };
-/* The offer for someone who has never started. What any given user actually
-   gets comes from the server — see `trialDays` below. */
-const TRIAL_DAYS = 3;
+/* No free trial since 1 Nov 2026: someone who has never started pays today.
+   The only free days left are the remainder of a trial granted before then,
+   and that number comes from the server — see `trialDays` below. */
 
 const fmtDay = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: getUserZone() });
 
 /**
  * `setupCta` — Plan & billing renders this step before a key is verified
- * (s0, s2). A trial cannot start then, so the button names the step that is
+ * (s0, s2). A plan cannot start then, so the button names the step that is
  * actually next and goes there instead of to checkout.
  *
  * `stepsDone` — how many of the five setup steps are finished (default 4:
@@ -84,7 +84,7 @@ const fmtDay = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'sh
  * `onBack` — setup only: this step fills the screen, so it carries its own
  * way back to the revenge score. Plan & billing passes nothing.
  * `revenge` — the report setup just showed. With it, the way back is the
- * score itself: the reason for the trial, one tap from the button that
+ * score itself: the reason for the plan, one tap from the button that
  * starts it. Without it (skipped, too few trades), a plain back link.
  */
 export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onBack, revenge }) {
@@ -119,13 +119,14 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   /*
    * HOW MANY FREE DAYS THIS PERSON ACTUALLY GETS.
    *
-   * Not TRIAL_DAYS. Checkout calls `trialDaysForUser`, which carries a
+   * Not a constant. Checkout calls `trialDaysForUser`, which carries a
    * part-used trial across and gives nothing to one that has already ended —
    * so a hardcoded 7 here promised days the charge would not honour, and told
    * a lapsed trialist "₹0 today" before debiting them in full.
    *
-   * `null` until it answers, and no day-count is stated before then: every
-   * number on this screen is a promise about money.
+   * `null` until it answers. Until then — and whenever it says 0, which is
+   * every new customer since 1 Nov 2026 — the screen is the paid path: no
+   * "free" is ever said before the server has said so.
    */
   const [trialDays, setTrialDays] = useState(null);
   useEffect(() => {
@@ -134,7 +135,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
     let alive = true;
     fetchTrialEligibility({ accessToken: token })
       .then((r) => { if (alive && typeof r?.trialDays === 'number') setTrialDays(r.trialDays); })
-      .catch(() => { /* Stays null; the screen says "free trial" without a count. */ });
+      .catch(() => { /* Stays null; the screen shows the paid path. */ });
     return () => { alive = false; };
   }, [session?.access_token]);
   useEffect(() => { trackBilling('billing_step_viewed'); }, []);
@@ -316,8 +317,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   };
 
   /*
-   * Dates from the real trial length, in the user's own zone (lib/userZone). "Today" is when the guard comes
-   * on; the charge is TRIAL_DAYS later.
+   * Dates from the real remaining trial length, in the user's own zone (lib/userZone). "Today" is when the guard comes
+   * on; the charge is `freeDays` later.
    *
    * THE REMINDER ROW IS DELIBERATELY ABSENT. trialEmail.ts selects on
    * `source = 'free'`, and a mandate-backed trial is `source = 'payment'` —
@@ -329,22 +330,34 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
    */
   const today = new Date();
   /* The free window this user actually gets. Unknown until the server
-     answers; zero for a trial that has already run out. */
+     answers; zero for every new customer and for a trial that has run out.
+     Only a positive number from the server opens the trial path. */
   const freeDays = trialDays;
-  const charged = freeDays === 0;
-  const chargeOn = new Date(today.getTime() + (freeDays ?? TRIAL_DAYS) * 86400000);
+  const charged = !(typeof freeDays === 'number' && freeDays > 0);
+  const chargeOn = new Date(today.getTime() + (charged ? 0 : freeDays) * 86400000);
   const timeline = charged
     ? [
-        /* Their free window is spent. "₹0 charged" here and then taking the
-           money is the worst thing this screen could say. */
+        /* No free window (new customer, or a trial already spent). "₹0
+           charged" here and then taking the money is the worst thing this
+           screen could say. */
         {
           when: `Today · ${fmtDay(today)}`,
-          what: `Your free trial has ended, so your first charge of ${money(payable)} is today. Your guard switches on straight away.`,
+          what: `Your first charge of ${money(payable)} is today. Your guard switches on straight away.`,
           dot: 'var(--mint-solid)',
           glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)',
           line: true,
         },
-        { when: `Then ${cur.next}`, what: 'Renews automatically until you cancel.', dot: 'var(--ink-faint)', glow: 'none', line: false },
+        {
+          when: `Then ${cur.next}`,
+          /* A first-payment discount (the Diwali offer) ends after today's
+             charge; the renewal line says so, or ₹909 reads like the price. */
+          what: discount && discount.cycles === 1
+            ? `Renews at ${money(cur.price)} ${cur.next} until you cancel.`
+            : 'Renews automatically until you cancel.',
+          dot: 'var(--ink-faint)',
+          glow: 'none',
+          line: false,
+        },
       ]
     : [
     { when: `Today · ${fmtDay(today)}`, what: `Your guard switches on. All five protections start working. ${money(0)} charged.`, dot: 'var(--mint-solid)', glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)', line: true },
@@ -471,11 +484,12 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
               {charged
                 ? 'Subscribe to switch your guard on'
                 : (
-                  /* Lead with what they get, not the chore: a trial, not "billing". */
+                  /* Only someone still holding days from a trial granted
+                     before 1 Nov 2026 reaches this branch. */
                   <>
-                    Start your{' '}
+                    Keep your{' '}
                     <span style={{ color: 'var(--mint)' }}>
-                      {freeDays == null ? 'free trial' : `${freeDays}-day free trial`}
+                      {`${freeDays} free day${freeDays === 1 ? '' : 's'}`}
                     </span>
                   </>
                 )}
@@ -487,13 +501,11 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 appears once the server has said how many days are free. */}
             <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: 'var(--ink-2)', textWrap: 'pretty' }}>
               {charged ? (
-                <>Your free trial is already used, so <b style={{ color: 'var(--ink)' }}>{money(payable)} is charged today</b>. Cancel any time.</>
+                <><b style={{ color: 'var(--ink)' }}>{money(payable)} is charged today</b>. Cancel anytime; you keep access until the end of the period you paid for.</>
               ) : (
                 <>
                   <b style={{ color: 'var(--mint)' }}>Pay {money(0)} today</b>
-                  {freeDays == null
-                    ? ' · cancel any time.'
-                    : ` · ${money(payable)} on ${fmtDay(chargeOn)} · cancel any time before.`}
+                  {` · ${money(payable)} on ${fmtDay(chargeOn)} · cancel any time before.`}
                 </>
               )}
             </p>
@@ -750,8 +762,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
 
                 <div style={{ marginTop: 18, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                   <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>Due today</span>
-                  {/* Not a constant: someone whose free week is used is charged
-                      in full today, and this line said ₹0 to them too. */}
+                  {/* Not a constant: only someone still holding free days pays
+                      ₹0 today; everyone else is charged in full. */}
                   <span style={{ font: "700 30px/1 'Space Grotesk',sans-serif", letterSpacing: '-.03em', color: charged ? 'var(--ink)' : 'var(--mint)' }}>{charged ? money(payable) : money(0)}</span>
                 </div>
 
@@ -768,7 +780,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                     ? (charged ? 'Starting…' : 'Starting your trial…')
                     : charged
                       ? `Subscribe · ${cur.name}`
-                      : `Start ${freeDays == null ? 'free trial' : `${freeDays} day${freeDays === 1 ? '' : 's'} free`} · ${cur.name}`}
+                      : `Start ${freeDays} day${freeDays === 1 ? '' : 's'} free · ${cur.name}`}
                 </button>
 
                 {error && (
@@ -798,13 +810,13 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                       <>
                         Your bank or UPI app will ask you to approve AutoPay for {money(payable)} {cur.per}. UPI may also show a ₹1 check and a limit of
                         {' '}&ldquo;up to ₹15,000&rdquo; &mdash; that&rsquo;s UPI&rsquo;s standard ceiling, not what we charge.
-                        {!charged && freeDays != null ? ` First charge ${fmtDay(chargeOn)}.` : ''} Your bank tells you before every debit.
+                        {!charged ? ` First charge ${fmtDay(chargeOn)}.` : ''} Your bank tells you before every debit.
                         {' '}Cancel any time in Plan &amp; billing or your UPI app.
                       </>
                     ) : (
                       <>
                         Charged in US dollars: {money(payable)} {cur.per}.
-                        {!charged && freeDays != null ? ` First charge ${fmtDay(chargeOn)}.` : ''} Cancel any time in Plan &amp; billing.
+                        {!charged ? ` First charge ${fmtDay(chargeOn)}.` : ''} Cancel any time in Plan &amp; billing.
                       </>
                     )}
                   </p>
@@ -819,7 +831,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   );
 }
 
-/* Setup's free-trial step: the score they just saw, small, as the way back.
+/* Setup's plan step: the score they just saw, small, as the way back.
    The whole card is the button — a 52px ring is an easy target on a phone. */
 function ScoreReminder({ report, onBack }) {
   const grade = report.grade ? GRADE[report.grade] : null;

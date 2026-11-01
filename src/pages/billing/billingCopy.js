@@ -117,7 +117,7 @@ export const CANCEL_COPY = {
   },
   ended: {
     title: 'Your data is safe',
-    body: 'Rules, trades, journal and tax history are kept. There is no second free trial; subscribing restarts protection immediately.',
+    body: 'Rules, trades, journal and tax history are kept. Subscribing restarts protection immediately.',
     btn: 'Subscribe',
   },
 };

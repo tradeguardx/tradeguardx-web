@@ -103,7 +103,7 @@ export default function Footer() {
               to="/signup"
               className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-[#0a0c10] shadow-lg shadow-accent/20 transition hover:bg-accent/90 active:scale-[0.98]"
             >
-              Start free
+              Choose a plan
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
