@@ -51,6 +51,10 @@ export default defineConfig(async () => {
         rendererOptions: {
           renderAfterTime: 2500,
           maxConcurrentRoutes: 4,
+          // The 30s default failed the build intermittently (1 Nov 2026): four
+          // pages at once, each calling the live API. A slow page should cost
+          // build time, not the deploy.
+          timeout: 60_000,
           headless: true,
           ...(launchOptions ? { launchOptions } : {}),
         },
