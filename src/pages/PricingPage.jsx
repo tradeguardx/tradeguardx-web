@@ -583,18 +583,6 @@ export default function PricingPage() {
             Everything is included: the kill switch, every rule, every exchange we support, unlimited accounts and the tax centre. Pay by UPI AutoPay or card. Cancel anytime and you keep access until the end of the period you paid for.
           </p>
 
-          {/* Owner's call (1 Nov 2026): say who this is NOT for, right where
-              people decide. A buyer who wanted a toy refunds or churns; one who
-              was told the truth and paid anyway is the customer we want. */}
-          <div
-            className="mx-auto mb-7 max-w-xl rounded-2xl border px-5 py-4 text-left"
-            style={{ borderColor: 'rgba(251,191,36,0.22)', backgroundColor: 'rgba(251,191,36,0.05)' }}
-          >
-            <p className="text-sm font-semibold text-amber-300">Don't buy this if you're not serious about trading.</p>
-            <p className="mt-1 text-sm leading-relaxed text-slate-400">
-              TradeGuardX closes your trades and locks you out the moment you break your own rules, and a lock stays on until it ends. That's the point. If you want something you can override when it gets in the way, this isn't it.
-            </p>
-          </div>
 
           <div className="flex items-center justify-center gap-2 flex-wrap">
             {TRUST_BADGES.map((b) => (
