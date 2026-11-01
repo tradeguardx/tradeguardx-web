@@ -259,7 +259,9 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
     ),
-    label: 'UPI AutoPay or card',
+    /* UPI and GST mean nothing to a buyer abroad; Dodo takes cards there, and
+       its dollar prices are tax-inclusive just like the rupee ones. */
+    label: ({ isInr }) => (isInr ? 'UPI AutoPay or card' : 'Pay by card'),
   },
   {
     icon: (
@@ -267,7 +269,7 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
       </svg>
     ),
-    label: 'Incl. 18% GST',
+    label: ({ isInr }) => (isInr ? 'Incl. 18% GST' : 'Price includes tax'),
   },
 ];
 
@@ -282,6 +284,8 @@ export default function PricingPage() {
      load, the best guess from this device, so a ₹/$ flip never shows. */
   const currency = plans[0]?.currency ?? currencyForBand(bandSync());
   const money = (n) => formatMoney(n, currency);
+  const isInr = currency === 'INR';
+  const taxNote = isInr ? 'incl. 18% GST' : 'incl. tax';
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [checkoutKey, setCheckoutKey] = useState(null);
@@ -580,19 +584,21 @@ export default function PricingPage() {
           </h1>
 
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
-            Everything is included: the kill switch, every rule, every exchange we support, unlimited accounts and the tax centre. Pay by UPI AutoPay or card. Cancel anytime and you keep access until the end of the period you paid for.
+            {isInr
+              ? 'Everything is included: the kill switch, every rule, every exchange we support, unlimited accounts and the tax centre. Pay by UPI AutoPay or card. Cancel anytime and you keep access until the end of the period you paid for.'
+              : 'Everything is included: the kill switch, every rule, every exchange we support and unlimited accounts. Pay by card, in US dollars, tax included. Cancel anytime and you keep access until the end of the period you paid for.'}
           </p>
 
 
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            {TRUST_BADGES.map((b) => (
+            {TRUST_BADGES.map((b, i) => (
               <span
-                key={typeof b.label === 'function' ? 'zero-today' : b.label}
+                key={i}
                 className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium"
                 style={{ borderColor: 'rgba(255,255,255,0.07)', color: '#64748b', backgroundColor: 'rgba(255,255,255,0.025)' }}
               >
                 <span style={{ color: 'rgba(0,212,170,0.65)' }}>{b.icon}</span>
-                {typeof b.label === 'function' ? b.label(money) : b.label}
+                {typeof b.label === 'function' ? b.label({ money, isInr }) : b.label}
               </span>
             ))}
           </div>
@@ -688,7 +694,7 @@ export default function PricingPage() {
                               ? 'Most flexible. Cancel any month.'
                               : `That's ${money(line.perMonth)}/mo, ${line.savingsPct}% less than monthly.`}
                         </p>
-                        <p className="text-[11px] font-medium mt-1" style={{ color: '#475569' }}>Billed {iv} · incl. 18% GST</p>
+                        <p className="text-[11px] font-medium mt-1" style={{ color: '#475569' }}>Billed {iv} · {taxNote}</p>
                         <div className="mt-auto pt-7">{renderCta({ ...plan, primary: isBest }, iv)}</div>
                       </div>
                     </div>
@@ -815,7 +821,7 @@ export default function PricingPage() {
                               </p>
                             )}
                             <p className="text-[11px] mb-3 font-medium" style={{ color: '#475569' }}>
-                              Incl. 18% GST · {billedLabel.toLowerCase()}
+                              {isInr ? 'Incl. 18% GST' : 'Incl. tax'} · {billedLabel.toLowerCase()}
                             </p>
 
                             {/* States plainly that nothing is required of the
@@ -867,7 +873,7 @@ export default function PricingPage() {
                               </p>
                             )}
                             <p className="text-[11px] mb-6 font-medium" style={{ color: '#475569' }}>
-                              {`${billedLabel} · incl. 18% GST`}
+                              {`${billedLabel} · ${taxNote}`}
                             </p>
                           </>
                         )}
