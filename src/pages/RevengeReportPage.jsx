@@ -189,7 +189,7 @@ export default function RevengeReportPage() {
               reveal={reveal}
               onShare={() => setSharing(true)}
               cta={planOff
-                ? { label: 'Choose a plan →', to: '/dashboard/account/billing', note: 'Pay monthly, cancel anytime · you set each limit on the Rules page', trial: true }
+                ? { label: 'Start my 3-day free trial →', to: '/dashboard/account/billing', note: '₹0 today · you set each limit on the Rules page', trial: true }
                 : { label: 'Set up these rules →', to: '/dashboard/rules' }}
             />
           </div>

@@ -131,17 +131,17 @@ describe('key connected, never started a trial (s3)', () => {
 
   it('shows every rule, none switchable, under the one step left', async () => {
     mount('/dashboard/rules');
-    await waitFor(() => expect(screen.getByText('Your rules switch on with your plan')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Your rules switch on with your free trial')).toBeTruthy());
     expect(screen.getAllByText('Setup · step 5 of 5').length).toBeGreaterThan(1); // logo line and the card
-    expect(screen.getByRole('button', { name: 'Choose a plan →' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Start free trial →' })).toBeTruthy();
     expect(await screen.findByText('Daily loss protection')).toBeTruthy();
     expect(screen.getByText('Max trades per day')).toBeTruthy();
     for (const sw of screen.getAllByRole('switch')) expect(sw.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('locks All trades until a plan starts', async () => {
+  it('locks All trades until the trial starts', async () => {
     mount('/dashboard/trades');
-    await waitFor(() => expect(screen.getAllByText('Starts with your plan').length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByText('Starts with your free trial').length).toBeGreaterThan(0));
   });
 });
 

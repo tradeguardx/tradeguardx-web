@@ -33,7 +33,7 @@ describe('setup: the revenge report between the key and billing', () => {
     expect(await screen.findByText('Your revenge report is unlocked', {}, { timeout: 5000 })).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Revenge score 38 out of 100' })).toBeTruthy();
     expect(screen.getByText('After a loss, you trade to get it back.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Fix this — choose a plan/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Fix this — start your 3-day free trial/ }));
     expect(onContinue).toHaveBeenCalled();
   });
 
@@ -54,7 +54,7 @@ describe('setup: the revenge report between the key and billing', () => {
 
   it('can always be skipped, even while it builds', async () => {
     const onContinue = mount();
-    fireEvent.click(screen.getByRole('button', { name: 'Skip to choosing a plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip to your free trial' }));
     await waitFor(() => expect(onContinue).toHaveBeenCalled());
   });
 

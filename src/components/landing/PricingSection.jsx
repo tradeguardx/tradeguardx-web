@@ -14,7 +14,7 @@ const Check = () => (
  *
  * The free tier is deliberately NOT a card here. Leading a pricing section
  * with ₹0 sells the wrong thing: the reason to be here is enforcement, and
- * there is no free trial: enforcement is what the plan pays for.
+ * the trial already gives that away for a week without a card.
  */
 const PLANS = [
   {
@@ -133,8 +133,9 @@ export default function PricingSection() {
 
         <div className="mx-auto mt-10 max-w-xl text-center">
           <p className="text-sm leading-relaxed text-slate-400">
-            You pay when you subscribe. Cancel anytime and you keep access until the end of the
-            period you paid for, and there is a 7-day refund if you change your mind after paying.{' '}
+            Free for 3 days — you set up payment first and nothing is charged until day 4.
+            Cancel any time before then and you pay nothing, and there is a 7-day refund if you
+            change your mind after paying.{' '}
             <Link to="/pricing" className="text-accent hover:underline">See full plan comparison →</Link>
           </p>
         </div>

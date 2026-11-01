@@ -8,7 +8,7 @@ import { useSEO } from '../hooks/useSEO';
  * could never tell when the terms actually changed. Bump this by hand, only
  * when the text above it changes.
  */
-const LAST_UPDATED = 'November 1, 2026';
+const LAST_UPDATED = 'September 23, 2026';
 
 const sections = [
   {
@@ -50,8 +50,8 @@ const sections = [
     ],
   },
   {
-    title: '7. Subscription and Payment',
-    content: 'No free trial is offered. Paid plans are billed in advance, starting on the day you subscribe, at the price displayed when you confirm. Paid plans renew automatically for successive periods until cancelled; you can cancel at any time and retain access through the end of the current billing period. Any free trial granted before 1 November 2026 runs to its stated end on the terms shown when it began. Fees are non-refundable except as stated in our Refund Policy. We may change pricing with reasonable notice; continued use after a price change constitutes acceptance.',
+    title: '7. Free Trial, Subscription and Payment',
+    content: 'New accounts include a 3-day free trial with full access. To start the trial you set up a payment method and authorise a recurring mandate; no payment is collected during the trial itself. Unless you cancel before the trial ends, the subscription converts automatically and the first payment is taken on the day after the trial period closes, at the price displayed when you signed up. We show you that date before you confirm and again in your billing settings, and you can cancel at any time before it at no charge. Paid plans renew for successive periods until cancelled; you can cancel at any time and retain access through the end of the current billing period. Fees are non-refundable except as stated in our Refund Policy. We may change pricing with reasonable notice; continued use after a price change constitutes acceptance.',
   },
   {
     title: '8. Disclaimer of Warranties',

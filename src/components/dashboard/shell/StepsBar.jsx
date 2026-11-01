@@ -1,7 +1,7 @@
 import { sx } from './sx';
 
 /**
- * A step list for a phone: "Step 5 of 5 · Choose a plan" over five slim
+ * A step list for a phone: "Step 5 of 5 · Start free trial" over five slim
  * segments. Five numbered steps with connectors do not fit a 390px screen —
  * they wrapped, and lost their labels — so under 560px the full list hides
  * (.steps-lg) and this shows (.steps-sm). Tokens only: follows theme and accent.

@@ -66,7 +66,7 @@ const STEPS = [
   /* The reward for connecting the key: their own last month read back to
      them. Ticked the moment the key connects — it informs, never blocks. */
   { key: 'report', label: 'Your revenge score', h: 'Your revenge score', p: 'Key connected. Before anything else, here is how you have been trading after a loss — read from your own trades.' },
-  { key: 'billing', label: 'Choose a plan', h: 'Choose your plan', p: 'The guard only runs once this is done. Pay monthly, quarterly or yearly, and cancel anytime.' },
+  { key: 'billing', label: 'Start free trial', h: 'Start your free trial', p: 'Free for 3 days and nothing is charged today. The guard only runs once this is done.' },
 ];
 
 function Rail({ at, done, labels }) {
@@ -214,11 +214,11 @@ export default function SetupPage() {
    */
   /*
    * The last step is ticked for anyone who already holds a plan — they have
-   * nothing to start. Labelled "Start free trial" (now "Choose a plan") while ticked, it read as
+   * nothing to start. Labelled "Start free trial" while ticked, it read as
    * though a trial had been started for them; it names what they actually have.
    */
   const billingLabel = !done[4]
-    ? 'Choose a plan'
+    ? 'Start free trial'
     : planOff
       ? 'Plan inactive'
       : user?.access === 'active'
@@ -235,7 +235,7 @@ export default function SetupPage() {
   const at = pickedStep ?? Math.max(0, firstUndone);
   const step = STEPS[at];
 
-  /* The report step's result, kept here so the plan step can show the
+  /* The report step's result, kept here so the free-trial step can show the
      score and "back" reopens it without reading the exchange again. */
   const [revenge, setRevenge] = useState(null);
   const revengeHere = revenge && revenge.accountId === selectedAccount?.id ? revenge : null;
@@ -310,7 +310,7 @@ export default function SetupPage() {
           onBack={() => go(3)}
           revenge={revengeHere?.report?.enoughData ? { ...revengeHere.report, months: revengeHere.months } : null}
         />
-        <div style={sx('max-width:1220px;margin:-48px auto 40px')}><FounderHelp step="Choose a plan" /></div>
+        <div style={sx('max-width:1220px;margin:-48px auto 40px')}><FounderHelp step="Start free trial" /></div>
       </>
     );
   }

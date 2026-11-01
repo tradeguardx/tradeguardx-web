@@ -97,7 +97,7 @@ function App() {
                       recovery session is what authorises the change. */}
                   <Route path="reset-password" element={<ResetPasswordPage />} />
                   <Route path="support" element={<SupportPage />} />
-                  {/* Beta program retired — redirect old links to signup. */}
+                  {/* Beta program retired — redirect old links to signup (free trial). */}
                   <Route path="beta-traders" element={<Navigate to="/signup" replace />} />
                   <Route path="beta-testers" element={<Navigate to="/signup" replace />} />
                   <Route path="privacy" element={<PrivacyPolicyPage />} />

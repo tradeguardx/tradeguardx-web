@@ -19,7 +19,7 @@ import { DELTA_EGRESS_IP } from '../api/config';
 const EXNESS_STEPS = [
   {
     title: 'Create your TradeGuardX account',
-    body: 'Sign up at tradeguardx.com/signup with email or Google. You choose a plan at the end of setup: pay monthly, quarterly or yearly, and cancel anytime.',
+    body: 'Sign up at tradeguardx.com/signup with email or Google, then set up payment to start your 3 free days. Nothing is charged until day 4.',
   },
   {
     title: 'Start adding your Exness account',
@@ -59,7 +59,7 @@ const EXNESS_STEPS = [
 const SHARK_STEPS = [
   {
     title: 'Create your TradeGuardX account',
-    body: 'Sign up at tradeguardx.com/signup with email or Google. You choose a plan at the end of setup: pay monthly, quarterly or yearly, and cancel anytime.',
+    body: 'Sign up at tradeguardx.com/signup with email or Google, then set up payment to start your 3 free days. Nothing is charged until day 4.',
   },
   {
     title: 'Start adding your Shark account',
@@ -106,7 +106,7 @@ const SHARK_STEPS = [
 const DELTA_STEPS = [
   {
     title: 'Create your TradeGuardX account',
-    body: 'Sign up at tradeguardx.com/signup with email or Google. You choose a plan at the end of setup: pay monthly, quarterly or yearly, and cancel anytime.',
+    body: 'Sign up at tradeguardx.com/signup with email or Google, then set up payment to start your 3 free days. Nothing is charged until day 4.',
   },
   {
     title: 'Start adding your Delta account',
@@ -164,7 +164,7 @@ const DELTA_STEPS = [
 const COINDCX_STEPS = [
   {
     title: 'Create your TradeGuardX account',
-    body: 'Sign up at tradeguardx.com/signup with email or Google. You choose a plan at the end of setup: pay monthly, quarterly or yearly, and cancel anytime.',
+    body: 'Sign up at tradeguardx.com/signup with email or Google, then set up payment to start your 3 free days. Nothing is charged until day 4.',
   },
   {
     title: 'Start adding your CoinDCX account',

@@ -777,15 +777,15 @@ export default function RulesTerminal() {
 }
 
 /* The one step setup still needs, above the rules it unlocks. */
-const SETUP_STEP_NAMES = ['Exchange', 'Account', 'Key', 'Revenge score', 'Plan'];
+const SETUP_STEP_NAMES = ['Exchange', 'Account', 'Key', 'Revenge score', 'Free trial'];
 function setupGateCopy(lifeId, keyState) {
-  if (lifeId === 's0') return { step: 1, title: 'Add your trading account to use these rules', body: 'Pick your exchange and name the account — about a minute. Every rule below switches on once you choose a plan.', cta: 'Continue setup' };
+  if (lifeId === 's0') return { step: 1, title: 'Add your trading account to use these rules', body: 'Pick your exchange and name the account — about a minute. Every rule below switches on with your 3-day free trial.', cta: 'Continue setup' };
   if (lifeId === 's2') {
     return keyState === 'failed'
-      ? { step: 3, title: 'Reconnect your key to use these rules', body: 'Your key is disconnected, so no rule can act on your trades. Reconnect it, then choose a plan.', cta: 'Reconnect key' }
-      : { step: 3, title: 'Connect your exchange key to use these rules', body: 'Rules act through your key — closing positions and locking the account when a limit is hit. Two minutes, then choose a plan.', cta: 'Connect key' };
+      ? { step: 3, title: 'Reconnect your key to use these rules', body: 'Your key is disconnected, so no rule can act on your trades. Reconnect it, then start your free trial.', cta: 'Reconnect key' }
+      : { step: 3, title: 'Connect your exchange key to use these rules', body: 'Rules act through your key — closing positions and locking the account when a limit is hit. Two minutes, then your free trial.', cta: 'Connect key' };
   }
-  return { step: 5, title: 'Your rules switch on with your plan', body: 'Your key is connected. Choose a plan, then switch on the rules you want and set your limits.', cta: 'Choose a plan' };
+  return { step: 5, title: 'Your rules switch on with your free trial', body: 'Your key is connected. Start your 3-day free trial — nothing is charged today — then switch on the rules you want and set your limits.', cta: 'Start free trial' };
 }
 
 const SetupGate = forwardRef(function SetupGate({ lifeId, keyState, pulse, onGo }, ref) {

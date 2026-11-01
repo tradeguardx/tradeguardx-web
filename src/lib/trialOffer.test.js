@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { trialDaysOnOffer, trialOfferLine, firstChargeDate } from './trialOffer';
 
 describe('trialDaysOnOffer', () => {
-  it('offers no free days to someone who has not started (no free trial since 1 Nov 2026)', () => {
-    expect(trialDaysOnOffer({ needsMandate: true })).toBe(0);
+  it('offers the full window to someone who has not started', () => {
+    expect(trialDaysOnOffer({ needsMandate: true })).toBe(3);
   });
 
   it('carries the remaining days of a no-card trial', () => {

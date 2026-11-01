@@ -179,7 +179,7 @@ export function lifecycleView(id, ctx = {}) {
         ks: { enabled: false, tip: 'Works once your key is connected' },
         badges: id === 's2' ? { connect: '!' } : {},
         rulesBadge: 'DRAFT',
-        facts: [['Rules', 'Draft', 'Nothing enforced yet'], ['Key', ctx.keyState === 'failed' ? 'Disconnected' : 'Not connected', 'Needed to act on trades'], ['Guard', 'Off', 'Switches on with your plan']],
+        facts: [['Rules', 'Draft', 'Nothing enforced yet'], ['Key', ctx.keyState === 'failed' ? 'Disconnected' : 'Not connected', 'Needed to act on trades'], ['Guard', 'Off', 'Switches on with your trial']],
         dial: { label: 'guard off · finish setup' },
         plainEnglish: 'Until setup is finished we are not watching or closing anything. Your rules are saved as a draft.',
         toast: id === 's0' ? 'Welcome. Three minutes to your first protected trade.' : null,
@@ -190,20 +190,20 @@ export function lifecycleView(id, ctx = {}) {
         pill: 'Guard off',
         tone: 'amber',
         plan: 'Setup · step 5 of 5',
-        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Choose a plan to switch it on. Pay monthly, cancel anytime.', cta: 'Choose a plan', to: ONBOARDING },
+        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Start your 3-day free trial to switch it on. ₹0 today.', cta: 'Start free trial', to: ONBOARDING },
         /* Never paid: everything but setup, the revenge report (the reason
-           to start), rules as drafts, and the account pages waits for a
-           plan. No free trial since 1 Nov 2026, so none is offered here. */
+           to start), rules as drafts, and the account pages waits for the
+           trial. */
         locks: ['live', 'journal', 'trades', 'tax', 'overview'],
         lock: {
-          title: 'Starts with your plan',
-          body: 'Your key is connected and history is filling in. This switches on the moment your plan starts.',
-          cta: 'Choose a plan',
+          title: 'Starts with your free trial',
+          body: 'Your key is connected and history is filling in. This switches on the moment the trial starts.',
+          cta: 'Start free trial',
           to: ONBOARDING,
         },
-        ks: { enabled: false, tip: 'Starts with your plan' },
+        ks: { enabled: false, tip: 'Starts with your free trial' },
         rulesBadge: 'DRAFT',
-        facts: [['Rules', 'Draft', 'Nothing enforced yet'], ['Key', 'Connected', 'Needed to act on trades'], ['Guard', 'Off', 'Switches on with your plan']],
+        facts: [['Rules', 'Draft', 'Nothing enforced yet'], ['Key', 'Connected', 'Needed to act on trades'], ['Guard', 'Off', 'Switches on with your trial']],
         dial: { label: 'guard off · finish setup' },
         plainEnglish: 'Until setup is finished we are not watching or closing anything. Your rules are saved as a draft.',
       };

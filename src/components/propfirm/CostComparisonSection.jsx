@@ -228,7 +228,7 @@ export default function CostComparisonSection() {
           className="mt-10 text-center"
         >
           <p className="mb-4 text-slate-400">
-            Pay monthly. Cancel anytime.
+            Start free. Upgrade when you see the difference.
           </p>
           <Link
             to="/pricing"
