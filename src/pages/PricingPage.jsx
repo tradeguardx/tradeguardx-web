@@ -259,9 +259,11 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
     ),
-    /* UPI and GST mean nothing to a buyer abroad; Dodo takes cards there, and
-       its dollar prices are tax-inclusive just like the rupee ones. */
-    label: ({ isInr }) => (isInr ? 'UPI AutoPay or card' : 'Pay by card'),
+    /* UPI and GST mean nothing to a buyer abroad, and the owner wants no
+       payment method named there at all; the badge is India-only. Dodo's
+       dollar prices are tax-inclusive just like the rupee ones. */
+    indiaOnly: true,
+    label: 'UPI AutoPay or card',
   },
   {
     icon: (
@@ -586,12 +588,12 @@ export default function PricingPage() {
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
             {isInr
               ? 'Everything is included: the kill switch, every rule, every exchange we support, unlimited accounts and the tax centre. Pay by UPI AutoPay or card. Cancel anytime and you keep access until the end of the period you paid for.'
-              : 'Everything is included: the kill switch, every rule, every exchange we support and unlimited accounts. Pay by card, in US dollars, tax included. Cancel anytime and you keep access until the end of the period you paid for.'}
+              : 'Everything is included: the kill switch, every rule, every exchange we support and unlimited accounts. Prices are in US dollars, tax included. Cancel anytime and you keep access until the end of the period you paid for.'}
           </p>
 
 
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            {TRUST_BADGES.map((b, i) => (
+            {TRUST_BADGES.filter((b) => isInr || !b.indiaOnly).map((b, i) => (
               <span
                 key={i}
                 className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium"
