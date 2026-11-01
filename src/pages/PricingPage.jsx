@@ -256,18 +256,6 @@ const TRUST_BADGES = [
   {
     icon: (
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-      </svg>
-    ),
-    /* UPI and GST mean nothing to a buyer abroad, and the owner wants no
-       payment method named there at all; the badge is India-only. Dodo's
-       dollar prices are tax-inclusive just like the rupee ones. */
-    indiaOnly: true,
-    label: 'UPI AutoPay or card',
-  },
-  {
-    icon: (
-      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
       </svg>
     ),
@@ -587,13 +575,13 @@ export default function PricingPage() {
 
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
             {isInr
-              ? 'Everything is included: the kill switch, every rule, every exchange we support, unlimited accounts and the tax centre. Pay by UPI AutoPay or card. Cancel anytime and you keep access until the end of the period you paid for.'
+              ? 'Everything is included: the kill switch, every rule, every exchange we support, unlimited accounts and the tax centre. Cancel anytime and you keep access until the end of the period you paid for.'
               : 'Everything is included: the kill switch, every rule, every exchange we support and unlimited accounts. Prices are in US dollars, tax included. Cancel anytime and you keep access until the end of the period you paid for.'}
           </p>
 
 
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            {TRUST_BADGES.filter((b) => isInr || !b.indiaOnly).map((b, i) => (
+            {TRUST_BADGES.map((b, i) => (
               <span
                 key={i}
                 className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium"
