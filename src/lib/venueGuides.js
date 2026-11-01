@@ -219,6 +219,54 @@ const COINDCX_STEPS = [
   },
 ];
 
+/*
+ * BloFin's key flow, from BloFin's API docs (docs.blofin.com) and the BloFin
+ * key guides other platforms publish (1 Nov 2026). Not yet checked against our
+ * own screenshots: correct the labels here and in venues.js together when the
+ * owner sends them. Step 1 says nothing about trials or prices on purpose;
+ * that copy belongs to the pricing pages.
+ */
+const BLOFIN_STEPS = [
+  {
+    title: 'Create your TradeGuardX account',
+    body: 'Sign up at tradeguardx.com/signup with email or Google.',
+  },
+  {
+    title: 'Start adding your BloFin account',
+    body: 'In the dashboard, open Accounts → "Add trading account" and choose BloFin.',
+    sub: [
+      'Keep this form open. It shows the IP you need to add to the key, and it is where you paste the key at the end.',
+    ],
+  },
+  {
+    title: 'Create the API key on BloFin',
+    body: 'Log in to your real BloFin account (not Demo Trading). Open the profile menu top right, choose API, and press Create API Key.',
+    sub: [
+      'API Key Usage: leave "Connect to Third-Party Applications" off. TradeGuardX is not on BloFin\'s app list, so the key is a plain one.',
+      'Name: anything you will recognise. We suggest "tradeguardx".',
+      'Permissions: tick Read and Trade. Leave Transfer off.',
+      'Passphrase: choose one and write it down. You paste it into TradeGuardX too, and BloFin will not show it again.',
+      `IP address: ${DELTA_EGRESS_IP}. BloFin expires a key with no IP after 90 days.`,
+      'Press Next, enter the code BloFin emails you (and your 2FA code), then Submit.',
+      'Copy the API Key and the Secret Key, then press Confirm. The Secret Key is shown only once.',
+    ],
+    note:
+      'Trade is the permission that matters. A Read-only key connects and can send alerts, but it can never close a position. We check for it when you connect and refuse it.',
+  },
+  {
+    title: 'Connect the key in TradeGuardX',
+    body: 'On the Add-account form, paste the API Key, the Secret Key and your passphrase.',
+    sub: [
+      'We check the key with BloFin straight away, including that it can trade.',
+      'Your Secret Key and passphrase are encrypted before storage and never shown again.',
+    ],
+  },
+  {
+    title: 'Set your guardrails',
+    body: 'Open Rules and set the protections you want: daily loss limit, max trades per day, loss-streak pause, risk per trade and more. Limits are in USDT.',
+  },
+];
+
 /**
  * Guides keyed by venue slug, then by guide slug. The guide slug is the second
  * path segment — /exchanges/coindcx/api-key — and nesting stops there.
@@ -258,6 +306,45 @@ export const VENUE_GUIDES = {
           heading: 'Set up Exness — step by step',
           body: 'Follow these in order. The only part done outside TradeGuardX is creating the key on Exness.',
           steps: EXNESS_STEPS,
+        },
+      ],
+    },
+  },
+
+  blofin: {
+    'api-key': {
+      slug: 'api-key',
+      navLabel: 'Connect a key',
+      title: 'How to create a BloFin API key for TradeGuardX',
+      seoTitle: 'BloFin API Key Setup (Read + Trade) — TradeGuardX',
+      description:
+        'Step by step: create a BloFin API key with Read and Trade, set a passphrase, add our IP, and connect it to TradeGuardX. About five minutes.',
+      intro:
+        'Connect your BloFin futures account and be protected in about five minutes. You create one API key on BloFin, add our IP to it, and paste the key, the secret and your passphrase into TradeGuardX.',
+      imagesFrom: null,
+      sections: [
+        {
+          heading: 'Before you start',
+          body: 'Three things about BloFin keys that are easy to miss.',
+          list: [
+            {
+              bold: 'You choose a passphrase:',
+              text: 'BloFin asks for one when you make the key, and every request is signed with it. Write it down; you paste it into TradeGuardX, and BloFin cannot show it again.',
+            },
+            {
+              bold: 'Add our IP:',
+              text: 'The IP field is optional on BloFin, but a key with no IP expires after 90 days, and your protection stops with it.',
+            },
+            {
+              bold: 'Real account, not demo:',
+              text: 'Demo Trading keys only work on BloFin\'s demo servers. Make the key on your real account.',
+            },
+          ],
+        },
+        {
+          heading: 'Set up BloFin — step by step',
+          body: 'Follow these in order. The only part done outside TradeGuardX is creating the key on BloFin.',
+          steps: BLOFIN_STEPS,
         },
       ],
     },

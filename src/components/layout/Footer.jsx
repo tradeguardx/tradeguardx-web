@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const links = {
@@ -20,6 +20,8 @@ const links = {
     { label: 'Exness', to: '/exchanges/exness' },
     { label: 'CoinDCX', to: '/exchanges/coindcx' },
     { label: 'Shark Exchange', to: '/exchanges/shark' },
+    // Not on India pages: BloFin is for traders outside India (FIU-IND).
+    { label: 'BloFin', to: '/exchanges/blofin', globalOnly: true },
   ],
   resources: [
     // "Install for Chrome" removed — the crypto/Delta product enforces
@@ -77,6 +79,7 @@ const socials = [
 ];
 
 export default function Footer() {
+  const onIndiaPage = /india/i.test(useLocation().pathname);
   return (
     <footer className="relative">
       {/* Top callout band — small CTA strip above the link grid. */}
@@ -154,7 +157,7 @@ export default function Footer() {
                 {title}
               </h4>
               <ul className="space-y-3.5">
-                {items.map((link) => {
+                {items.filter((link) => !(link.globalOnly && onIndiaPage)).map((link) => {
                   const isExternal =
                     typeof link.to === 'string' &&
                     (link.to.startsWith('http') || link.to.startsWith('mailto:'));

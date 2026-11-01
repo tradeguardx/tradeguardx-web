@@ -470,7 +470,13 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
 
                 <StepRow n={4} label="Create the key, then paste it below">
                   <p className="text-[12px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-                    Click <strong>Create API key</strong> — selecting and pasting both values together into the field below works too.
+                    {v.hasPassphrase ? (
+                      /* BloFin: set a passphrase, then Next → codes → Submit;
+                         the keys appear on the screen after, shown once. */
+                      <>Set a passphrase of your own, then press <strong>{v.submitLabel ?? 'Create API key'}</strong>. {v.otpNote}</>
+                    ) : (
+                      <>Click <strong>Create API key</strong> — selecting and pasting both values together into the field below works too.</>
+                    )}
                   </p>
                 </StepRow>
               </div>
@@ -528,12 +534,12 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               </label>
             ) : (
             <label className="block">
-              <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>API Secret</span>
+              <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>{v?.secretLabel ?? 'API Secret'}</span>
               <SecretInput
                 name="tgx-delta-secret"
                 value={apiSecret}
                 onChange={(e) => setApiSecret(e.target.value)}
-                placeholder="Paste API Secret"
+                placeholder={v?.secretPlaceholder ?? 'Paste API Secret'}
                 wrapperClassName="mt-1"
                 className="w-full rounded-xl border px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--mint-line)]"
                 style={{

@@ -211,6 +211,79 @@ const VENUE_PAGES = {
     ],
   },
 
+  // ── BloFin: USDT-margined perpetual futures, for traders outside India.
+  // Live for global users from the BloFin go-live (Nov 2026). Not linked from
+  // any India page: BloFin is on FIU-IND's non-compliance list.
+  blofin: {
+    slug: 'blofin',
+    name: 'BloFin',
+    longName: 'BloFin',
+    status: 'live',
+    beta: false,
+    title: 'BloFin Daily Loss Limit & Kill Switch | TradeGuardX',
+    description:
+      'Set a daily loss limit on your BloFin futures account and have it enforced: TradeGuardX cancels orders, closes positions and locks the account from our servers.',
+    h1: 'Daily loss limit and kill switch for BloFin',
+    lede:
+      'BloFin gives you a stop-loss on each position, but nothing that ends the trading day. Connect a BloFin API key, set your daily loss limit once, and our engine enforces it: orders cancelled, positions closed, account locked until your next daily reset.',
+    sections: [
+      sharedBreachSection('BloFin'),
+      {
+        h: 'What is different about BloFin',
+        p: [
+          'We cover BloFin\'s USDT-margined perpetual futures. Your limits are in USDT, the figure BloFin shows you, and the daily reset happens early in the morning in your own timezone.',
+          'BloFin has no single "cancel everything" or "close everything" call. So the kill switch cancels your open orders, including take-profit, stop-loss and trigger orders, in batches, then closes each position on its own and confirms it. It works in one-way and hedge mode alike.',
+          'A BloFin key has three parts: the API key, the Secret Key and a passphrase you choose when you make it. You paste all three into TradeGuardX. If you lose the passphrase, make a new key; BloFin cannot show it again.',
+          'BloFin expires a key that has no IP address after 90 days. Add our IP when you make the key, and it keeps working until you delete it.',
+        ],
+      },
+      {
+        h: 'Which BloFin rules can TradeGuardX enforce?',
+        rulesTable: true,
+        p: [
+          'All seven, with the same behaviour as on every other venue. It is one engine behind all of them, so a daily loss limit means the same thing on BloFin as it does anywhere else.',
+        ],
+      },
+      {
+        h: 'How do I connect my BloFin account?',
+        p: [
+          'One key on BloFin, one paste into TradeGuardX. On BloFin you open API from the profile menu, create a key with Read and Trade, set a passphrase and add our IP. Then you paste the API Key, the Secret Key and the passphrase. About five minutes.',
+        ],
+        guideLink: 'api-key',
+      },
+      sharedWithdrawSection(
+        'BloFin',
+        'We only ask for Read and Trade, which let us see the account, cancel an order and close a position. BloFin\'s key form also offers Transfer; it stays off. BloFin API keys have no withdrawal permission at all.',
+      ),
+    ],
+    faq: [
+      {
+        q: 'Does BloFin have a daily loss limit?',
+        a: 'Not an account-wide one. BloFin gives you stop-loss and take-profit on each position, and those protect one trade at a time. Nothing stops you opening the next trade after a bad run. TradeGuardX adds that: a daily loss limit across the whole account that closes positions and locks trading when it is hit.',
+      },
+      {
+        q: 'Which permissions does the BloFin API key need?',
+        a: `Read and Trade. Leave Transfer off. A Read-only key can never close a position, so the kill switch would do nothing; we check for it and refuse it when you connect. Add our IP (${DELTA_EGRESS_IP}) to the key, because BloFin expires keys with no IP after 90 days.`,
+      },
+      {
+        q: 'Why does TradeGuardX ask for my BloFin passphrase?',
+        a: 'BloFin signs every API request with three things: the key, the secret and the passphrase you chose. Without the passphrase the key cannot be used at all. It is encrypted with the secret before storage and never shown again.',
+      },
+      {
+        q: 'Can I connect a BloFin demo trading key?',
+        a: 'No. Demo trading keys only work on BloFin\'s demo servers, and we watch real accounts. Make the key on your real BloFin account.',
+      },
+      {
+        q: 'Is the BloFin kill switch for traders in India?',
+        a: 'No. We list BloFin for traders outside India. If you trade crypto futures from India, connect Delta Exchange, CoinDCX or Shark Exchange instead; all three are live.',
+      },
+      {
+        q: 'Does the kill switch still work if I trade from the BloFin app?',
+        a: 'Yes. We hold a live connection to the account itself from our servers, so it makes no difference whether a trade came from the BloFin app, the website or a bot. If it reaches your account, we see it and act if it breaks a rule.',
+      },
+    ],
+  },
+
   // ── Shark: live and connectable, and until now with no documentation at all.
   shark: {
     slug: 'shark',
@@ -436,7 +509,7 @@ const VENUE_PAGES = {
  *
  * Re-adding one is a revert of this commit plus its route in publicRoutes.js.
  */
-export const VENUE_ORDER = ['delta', 'exness', 'coindcx', 'shark'];
+export const VENUE_ORDER = ['delta', 'exness', 'coindcx', 'shark', 'blofin'];
 
 export const VENUE_PAGE_LIST = VENUE_ORDER.map((slug) => VENUE_PAGES[slug]);
 

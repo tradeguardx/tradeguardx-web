@@ -59,11 +59,36 @@ function LandingDivider() {
   );
 }
 
+/*
+ * Global-only parts of the shared body, marked in the HTML as
+ * <!-- global-only --> … <!-- /global-only -->. On /india they are cut out of
+ * the markup itself, not hidden with CSS: BloFin is not offered to Indian
+ * traders (FIU-IND), so it must not be in /india's page source at all.
+ */
+const GLOBAL_ONLY_RE = /<!-- global-only -->[\s\S]*?<!-- \/global-only -->/g;
+function bodyForVariant(html, variant) {
+  return variant === 'india' ? html.replace(GLOBAL_ONLY_RE, '') : html;
+}
+const BODIES = Object.fromEntries(
+  ['global', 'india'].map((variant) => [
+    variant,
+    {
+      aHero: bodyForVariant(rawBodyAHero, variant),
+      aDayInLife: bodyForVariant(rawBodyADayInLife, variant),
+      aRules: bodyForVariant(rawBodyARules, variant),
+      bHead: bodyForVariant(rawBodyBHead, variant),
+      bTail: bodyForVariant(rawBodyBTail, variant),
+    },
+  ]),
+);
+
 const RawHtml = memo(function RawHtml({ html, innerRef, className, region, variant }) {
   return <div className={className} data-region={region} data-variant={variant} ref={innerRef} dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
-const FAQ_LD = {
+/* The FAQ answers, as the page shows them. "Which exchanges" differs by page:
+   BloFin is listed on "/" only (see bodyForVariant). */
+const faqLd = (variant) => ({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
@@ -71,9 +96,12 @@ const FAQ_LD = {
     ['Will TradeGuardX have access to my funds?', 'No. We only ask for an API key that can read your account and place trades, never one that can withdraw, and your funds never leave your own exchange account. During a cooldown we cancel orders, close positions, and block new trades until the lock lifts.'],
     ['Does this work if I trade from the exchange’s mobile app?', 'Yes, and it is the reason we run on our own servers instead of in your browser. We hold a live connection to the account itself, so it makes no difference whether the order came from the exchange website, its phone app, or a script you wrote. A breach is checked and acted on within seconds. Alerts go to Telegram or email.'],
     ['Can I disable the rules when I want to trade more?', 'Before your first trade of the day, yes — changes apply straight away. From your first trade until the daily reset your rules are locked, so you cannot loosen one or switch it off in the heat of a bad session. You can still switch on a rule that is off.'],
-    ['Which exchanges can I connect?', 'Delta Exchange (India and Global), Exness, CoinDCX futures and Shark Exchange are live, and BloFin is in beta. One subscription covers every one — connect any or all.'],
+    ['Which exchanges can I connect?', variant === 'india'
+      ? 'Delta Exchange (India and Global), Exness, CoinDCX futures and Shark Exchange are live. One subscription covers every one — connect any or all.'
+      : 'Delta Exchange (India and Global), Exness, CoinDCX futures, BloFin and Shark Exchange are live. One subscription covers every one — connect any or all.'],
   ].map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
-};
+});
+const FAQ_LD = { global: faqLd('global'), india: faqLd('india') };
 
 /**
  * Two pages from one body. "/" is the global homepage: copy for anyone,
@@ -110,7 +138,7 @@ function CryptoHomeBody({ variant }) {
     description:
       "Never blow another trading account. Set daily-loss, max-trades and cooldown rules once; TradeGuardX closes your positions and locks the account the moment you break one. Delta Exchange, Exness, CoinDCX, Shark.",
     url: SEO_BY_VARIANT[variant].url,
-    jsonLd: FAQ_LD,
+    jsonLd: FAQ_LD[variant],
   });
 
   // The hero is injected as raw HTML, so the animated device is portalled into a
@@ -273,19 +301,19 @@ function CryptoHomeBody({ variant }) {
       {/* Flat background: base colour and depth glows, no stars. */}
       <div className="landing-bg" aria-hidden />
 
-      <RawHtml className="tgx-home" innerRef={aRef} html={rawBodyAHero} region={region} variant={variant} />
+      <RawHtml className="tgx-home" innerRef={aRef} html={BODIES[variant].aHero} region={region} variant={variant} />
       {/* A day in the life — straight after the hero. */}
-      <RawHtml className="tgx-home" innerRef={a2Ref} html={rawBodyADayInLife} region={region} variant={variant} />
+      <RawHtml className="tgx-home" innerRef={a2Ref} html={BODIES[variant].aDayInLife} region={region} variant={variant} />
       {/* Trading in Action — proof it's real, right above "Seven rules. Pick yours." */}
       <TradingInAction />
       {/* Rules. */}
-      <RawHtml className="tgx-home" innerRef={a3Ref} html={rawBodyARules} region={region} variant={variant} />
+      <RawHtml className="tgx-home" innerRef={a3Ref} html={BODIES[variant].aRules} region={region} variant={variant} />
       <StoryAIJournal />
       {/* Available on. */}
-      <RawHtml className="tgx-home" innerRef={bRef} html={rawBodyBHead} region={region} variant={variant} />
+      <RawHtml className="tgx-home" innerRef={bRef} html={BODIES[variant].bHead} region={region} variant={variant} />
       <LandingDivider />
       {/* Pricing + FAQ. */}
-      <RawHtml className="tgx-home" innerRef={bTailRef} html={rawBodyBTail} region={region} variant={variant} />
+      <RawHtml className="tgx-home" innerRef={bTailRef} html={BODIES[variant].bTail} region={region} variant={variant} />
     </>
   );
 }

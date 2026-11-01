@@ -362,6 +362,9 @@
          row so they land two-up. */
       max-width: 250px; margin-left: auto; margin-right: auto;
     }
+    /* "/" also lists BloFin: five venues, which two-up leaves one alone.
+       A wider cap lands them three over two. /india keeps four, two-up. */
+    .tgx-home:not([data-variant="india"]) .xbanner-lockup{ max-width: 262px; }
     .tgx-home .xb-brand,
     .tgx-home .xb-partner,
     .tgx-home .xb-next{
@@ -2541,3 +2544,4 @@
 
   /* Exness in its brand yellow. */
   .tgx-home .xb-exness{ color: #ffde02; letter-spacing: -0.02em; }
+  .tgx-home .xb-blofin{ color: #ff8c1a; letter-spacing: -0.01em; }

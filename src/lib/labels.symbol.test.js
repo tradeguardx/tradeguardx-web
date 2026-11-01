@@ -29,3 +29,15 @@ describe('Exness ticket symbols', () => {
     expect(symbolsInText(null)).toBe(null);
   });
 });
+
+describe('BloFin symbols', () => {
+  it('show as BloFin writes them, and still find a price chart', async () => {
+    const { resolveBinancePair } = await import('./binanceKlines');
+    for (const s of ['BTC-USDT', 'ETH-USDT', 'SOL-USDT']) {
+      expect(symbolLabel(s)).toBe(s);
+      expect(instrumentOf(s)).toBe(s);
+      expect(symbolsInText(`Daily loss hit on ${s}`)).toBe(`Daily loss hit on ${s}`);
+    }
+    expect(resolveBinancePair('BTC-USDT')).toBe('BTCUSDT');
+  });
+});

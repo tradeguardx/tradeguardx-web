@@ -155,14 +155,14 @@ export function VenuePlatformNote({ venue, variant = 'dash' }) {
   if (variant === 'connect') {
     return (
       <p style={sx('margin:11px 0 0;padding:11px 13px;border:1px solid var(--amber-line);border-radius:10px;background:var(--amber-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:70ch')}>
-        <strong style={sx('font-weight:700', { color: 'var(--amber)' })}>Not for MT4 or MT5.</strong>{' '}
+        <strong style={sx('font-weight:700', { color: 'var(--amber)' })}>{venue.platformNoteLead ?? 'Not for MT4 or MT5.'}</strong>{' '}
         {venue.platformNote}
       </p>
     );
   }
   return (
     <p className="rounded-lg px-3 py-2 text-[12px] leading-relaxed" style={{ border: '1px solid var(--amber-line)', background: 'var(--amber-tint)', color: 'var(--dash-text-secondary)' }}>
-      <strong style={{ color: 'var(--amber)' }}>Not for MT4 or MT5.</strong> {venue.platformNote}
+      <strong style={{ color: 'var(--amber)' }}>{venue.platformNoteLead ?? 'Not for MT4 or MT5.'}</strong> {venue.platformNote}
     </p>
   );
 }

@@ -43,12 +43,23 @@ describe('BloFin venue', () => {
     expect(ENGINE_EGRESS_IP).toBe('13.205.214.83');
   });
 
-  it('walks the same journey: navigate, name, passphrase, permissions, IP, copy', () => {
+  it('walks BloFin\'s own journey: open, name, permissions, passphrase, IP + Next, copy', () => {
     expect(blofin.createSteps).toHaveLength(6);
-    expect(blofin.createSteps[0].title).toMatch(/API Management/);
+    expect(blofin.createSteps[0].title).toBe('Profile icon → API → Create API Key');
     expect(blofin.createSteps.some((s) => /passphrase/i.test(s.title))).toBe(true);
-    expect(blofin.navPath.at(-1)).toMatch(/create api key/i);
-    expect(blofin.navPath.length).toBeLessThanOrEqual(3);
+    expect(blofin.navPath).toEqual(['Profile icon', 'API', 'Create API Key']);
+    expect(blofin.createSteps.map((s) => s.body).join(' ')).toMatch(/not Demo Trading/);
+  });
+
+  it('keeps BloFin\'s third-party switch off, and names its own buttons and fields', () => {
+    expect(blofin.usageField).toBe('API Key Usage');
+    expect(blofin.usageOffOption).toBe('Connect to Third-Party Applications');
+    expect(blofin.submitLabel).toBe('Next');
+    expect(blofin.otpNote).toMatch(/Submit/);
+    expect(blofin.secretLabel).toBe('Secret Key');
+    expect(blofin.pasteStep.title).toBe('Paste the API Key, Secret Key and passphrase here');
+    expect(blofin.openButton).toBe('Open BloFin API management');
+    expect(blofin.platformNoteLead).toBe('USDT perpetual futures only.');
   });
 
   it('has no screenshots and no app path, so the link and written steps carry it', () => {
@@ -56,8 +67,8 @@ describe('BloFin venue', () => {
     expect(blofin.mobilePath).toBeNull();
   });
 
-  it('is marked beta until a real key has run through it', () => {
-    expect(isBetaVenue('blofin')).toBe(true);
+  it('is listed without a BETA badge (global go-live)', () => {
+    expect(isBetaVenue('blofin')).toBe(false);
   });
 });
 

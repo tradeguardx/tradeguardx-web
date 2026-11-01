@@ -443,13 +443,13 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                     /* Exness: a several-line private key. Wraps, never widens the page. */
                     <SecretTextarea id="cx-secret" name="tgx-cx-b" className="cx-input" value={secretVal} onChange={(e) => setSecretVal(e.target.value)} disabled={cooled} placeholder={secretField.placeholder ?? 'paste secret'} wrapperStyle={sx('margin-bottom:12px')} style={sx("padding:11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 12.5px/1.45 'JetBrains Mono',monospace")} />
                   ) : (
-                    <SecretInput id="cx-secret" name="tgx-cx-b" className="cx-input" value={secretVal} onChange={(e) => setSecretVal(e.target.value)} disabled={cooled} placeholder="paste secret" wrapperStyle={sx('margin-bottom:12px')} style={sx("width:100%;padding:11px 40px 11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace")} />
+                    <SecretInput id="cx-secret" name="tgx-cx-b" className="cx-input" value={secretVal} onChange={(e) => setSecretVal(e.target.value)} disabled={cooled} placeholder={secretField.placeholder ?? 'paste secret'} wrapperStyle={sx('margin-bottom:12px')} style={sx("width:100%;padding:11px 40px 11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace")} />
                   )}
                   {/* Only for a venue whose key has a passphrase (BloFin). It
                       signs every request, so a key without it cannot connect. */}
                   {v.hasPassphrase && (
                     <>
-                      <label htmlFor="cx-pass" style={sx('display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px')}>Passphrase <span style={sx('font-weight:400;color:var(--ink-3)')}>— the one you set when creating the key</span></label>
+                      <label htmlFor="cx-pass" style={sx('display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px')}>{v.passphraseField ?? 'Passphrase'} <span style={sx('font-weight:400;color:var(--ink-3)')}>— the one you set when creating the key</span></label>
                       <SecretInput id="cx-pass" name="tgx-cx-c" className="cx-input" value={passVal} onChange={(e) => setPassVal(e.target.value)} disabled={cooled} placeholder="paste passphrase" wrapperStyle={sx('margin-bottom:12px')} style={sx("width:100%;padding:11px 40px 11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace")} />
                     </>
                   )}

@@ -81,7 +81,9 @@ describe('the key form a venue describes', () => {
   it('every other venue keeps its one-line "API secret" and the splitter', () => {
     for (const slug of OTHERS) {
       const v = venueFor(slug);
-      expect(secretFieldFor(v)).toEqual({ label: 'API secret', placeholder: null, multiline: false });
+      // BloFin, like Exness, uses its own screen's name: "Secret Key".
+      const label = slug === 'blofin' ? { label: 'Secret Key', placeholder: 'Paste the Secret Key' } : { label: 'API secret', placeholder: null };
+      expect(secretFieldFor(v)).toEqual({ ...label, multiline: false });
       expect(splitsPastedPair(v)).toBe(true);
       expect(extraFieldsFor(slug)).toEqual([]);
     }

@@ -238,8 +238,8 @@ export default function BestCryptoRiskManagementToolsIndia() {
           there. On a fast day that can be a bit past your limit.
         </LI>
         <LI>
-          <B>Futures only.</B> For Indian crypto that means Delta Exchange, CoinDCX and Shark Exchange; outside India,
-          BloFin is in beta and Exness covers forex. No spot, no Binance, no WazirX.
+          <B>Futures only.</B> For Indian crypto that means Delta Exchange, CoinDCX and Shark Exchange; for forex,
+          Exness. No spot, no Binance, no WazirX.
         </LI>
         <LI>
           <B>It’s a seatbelt you choose to wear.</B> You own your exchange account and you can always delete the API key.

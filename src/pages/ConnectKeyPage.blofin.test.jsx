@@ -41,9 +41,9 @@ describe('connect a BloFin key', () => {
 
   it('asks for the passphrase and sends it with key and secret', async () => {
     renderFlow();
-    fireEvent.click(screen.getByText('Paste the key, secret and passphrase here'));
+    fireEvent.click(screen.getByText('Paste the API Key, Secret Key and passphrase here'));
     fireEvent.change(screen.getByLabelText('API key'), { target: { value: 'blofin-key-1' } });
-    fireEvent.change(screen.getByLabelText('API secret'), { target: { value: 'blofin-secret-1' } });
+    fireEvent.change(screen.getByLabelText('Secret Key'), { target: { value: 'blofin-secret-1' } });
 
     const btn = screen.getByRole('button', { name: 'Connect and check' });
     // No passphrase yet: a BloFin key without one cannot sign a request.
@@ -69,6 +69,19 @@ describe('connect a BloFin key', () => {
     expect(screen.getByText('Transfer')).toBeInTheDocument();
     expect(screen.getByText(/Leave Transfer off/)).toBeInTheDocument();
     expect(screen.getByText('13.205.214.83')).toBeInTheDocument();
+  });
+
+  it('follows BloFin\'s own screen: open step, numbered form, Next, then the codes', () => {
+    renderFlow();
+    expect(screen.getByText('Open API management on BloFin')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Fill it in and create the key'));
+    expect(screen.getByText(/Fill BloFin.s Create API Key form to match the picture below/)).toBeInTheDocument();
+    expect(screen.getByText('API Key Usage')).toBeInTheDocument();
+    expect(screen.getByText('Connect to Third-Party Applications')).toBeInTheDocument();
+    expect(screen.getByText('Read')).toBeInTheDocument();
+    expect(screen.getByText('Trade')).toBeInTheDocument();
+    expect(screen.getByText('Next')).toBeInTheDocument();
+    expect(screen.getByText(/code it emails you/)).toBeInTheDocument();
   });
 
   it('shows no passphrase field for a venue without one', () => {

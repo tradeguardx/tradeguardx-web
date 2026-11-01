@@ -323,12 +323,19 @@ const VENUES = {
     ],
   },
   /*
-   * BloFin — the first global venue, USDT-margined perpetuals only.
+   * BloFin — the first global venue, USDT-margined perpetuals only. Not offered
+   * on Indian pages (FIU-IND); the venue itself is listed to global users.
    *
-   * NOT YET CHECKED against a live screenshot of BloFin's form: the field
-   * names below are the ones in BloFin's API docs and help pages, kept
-   * generic where we are not sure of the exact label. No appGuide images, so
-   * the connect flow renders the written steps and the replica only.
+   * WHERE THE FORM COMES FROM. Read off BloFin's API docs and the key guides
+   * other platforms publish for BloFin (1 Nov 2026), NOT yet off a screenshot
+   * of our own: docs.blofin.com (permissions READ / TRADE / TRANSFER, up to 20
+   * IPs, unbound keys expire after 90 days, passphrase set at creation, demo
+   * trading on its own host); docs.blofin.com/broker.html ("API Key Usage" →
+   * "Connect to Third-Party Applications"); Tealstreet, HaasOnline and Insilico
+   * guides (profile icon → API → Create API Key; Name, Trade, Passphrase, IP;
+   * Next → email code + 2FA; Secret Key shown once, then Confirm). The labels
+   * below are those words. BloFinForm in VenueFormReplica draws this order;
+   * when the owner sends screenshots, correct the strings here first.
    *
    * Two things are different from every venue before it:
    *   - The key has a PASSPHRASE the user chooses on BloFin's form, and every
@@ -339,45 +346,75 @@ const VENUES = {
    *
    * The IP bind is optional on their side, but an unbound BloFin key expires
    * after 90 days — and a key that silently dies is a guard that silently
-   * stops. So we treat it as required in our copy.
+   * stops. So our copy treats it as required.
    */
   blofin: {
     family: 'blofin',
     name: 'BloFin',
     longName: 'BloFin',
     keysUrl: () => 'https://blofin.com/account/apis',
-    keyNameField: 'API name',
+    /**
+     * BloFin's "API Key Usage" choice. Its third-party option binds the key to
+     * an app on BloFin's own list, and TradeGuardX is not on it — so it stays
+     * off and the key is a plain one. Drawn so nobody switches it on.
+     */
+    usageField: 'API Key Usage',
+    usageOffOption: 'Connect to Third-Party Applications',
+    usageNote: 'Leave this off. TradeGuardX is not on BloFin\u2019s app list, and a plain key is what we need.',
+    keyNameField: 'Name',
     keyNameHint: 'Any name you will recognise later.',
-    ipField: 'IP address (bind IP)',
+    ipField: 'IP address',
     ipRequired: false,
-    ipHint: 'Optional on BloFin, but bind it: an unbound key expires after 90 days, and then the guard cannot act.',
+    ipHint: 'Add our IP. Without one, BloFin expires the key after 90 days and the guard stops with it.',
     readScopeLabel: 'Read',
-    readScopeNote: 'Tick it — we need to see positions and orders.',
+    readScopeNote: 'Leave it on. We need to see positions and orders.',
     readScopeSelectable: true,
     scopeLabel: 'Trade',
-    scopeNote: 'Lets us close a position when a rule fires.',
+    scopeNote: 'Lets us close a position when a rule fires. A Read-only key is refused.',
     /** Permissions that must stay unticked, drawn so nobody ticks them. */
     offScopes: [{ label: 'Transfer', note: 'Leave this off. We never move money, and the key does not need it.' }],
-    noWithdrawNote: 'Read and Trade only. Leave Transfer off — the key can read your account and place or close trades, and nothing that moves money.',
+    noWithdrawNote: 'Read and Trade only. Leave Transfer off. BloFin has no withdrawal permission on API keys, so the key can read your account and place or close trades, and nothing that moves money.',
     /** BloFin keys carry a passphrase the user sets; the connect form asks for it. */
     hasPassphrase: true,
     passphraseField: 'Passphrase',
-    passphraseNote: 'You choose this on BloFin. Write it down — you paste it here too, and BloFin will not show it again.',
+    passphraseNote: 'You choose this on BloFin. Write it down: you paste it here too, and BloFin will not show it again.',
+    /** BloFin's button is Next; the codes and Submit come after it. */
+    submitLabel: 'Next',
+    otpNote: 'BloFin then asks for the code it emails you, and your authenticator code if 2FA is on. Press Submit. The next screen shows the API Key and Secret Key. Copy both before you press Confirm: the Secret Key is not shown again.',
+    /* BloFin's own names on the screen after Submit: "API Key" and "Secret Key". */
+    secretLabel: 'Secret Key',
+    secretPlaceholder: 'Paste the Secret Key',
+    /** Under the name in the venue picker, where someone decides if this venue is theirs. */
+    pickerNote: 'USDT perpetual futures',
+    /** Shown on the connect forms, before anyone makes a key. */
+    platformNoteLead: 'USDT perpetual futures only.',
+    platformNote: 'Make the key on your real BloFin account, not in Demo Trading. Demo keys only work on BloFin\u2019s demo servers, so they cannot connect here.',
+    formStepBody: 'Fill BloFin\u2019s Create API Key form to match the picture below, top to bottom, then press Next. The picture is not a live form.',
+    /** Step 1, in BloFin's own words. */
+    openStepTitle: 'Open API management on BloFin',
+    openStepBody: 'The button opens BloFin\u2019s API page directly. Or on BloFin: profile icon → API → Create API Key. Keep this tab open; you come back to paste.',
+    openButton: 'Open BloFin API management',
+    pasteStep: {
+      title: 'Paste the API Key, Secret Key and passphrase here',
+      body: 'Copy the API Key and Secret Key from the screen BloFin shows after Submit, then add the passphrase you chose.',
+    },
     desktopOnly: false,
     mobilePath: null,
-    navPath: ['Account', 'API Management', 'Create API key'],
+    navPath: ['Profile icon', 'API', 'Create API Key'],
     suggestsKeyName: true,
     createSteps: [
-      { title: 'Account → API Management', body: 'Log in to BloFin, open your account menu and choose API Management.' },
-      { title: 'Create API key and give it a name', body: 'Any name you will recognise later. We suggest the name shown below.' },
-      { title: 'Set a passphrase', body: 'You choose it. Keep it somewhere safe — you paste it into TradeGuardX as well, and BloFin will not show it again.' },
-      { title: 'Permissions: Read and Trade only', body: 'Tick Read and Trade. Never tick Transfer — we do not need it, and a key without it cannot move your money.' },
-      { title: 'Bind our IP', body: 'Paste our IP into the IP field. BloFin expires a key with no IP after 90 days, and from then on the guard cannot act.' },
-      { title: 'Copy the API key and secret', body: 'Then paste the key, the secret and your passphrase here.' },
+      { title: 'Profile icon → API → Create API Key', body: 'Log in to your real BloFin account (not Demo Trading), open the profile menu top right, choose API, and press Create API Key.' },
+      { title: 'Leave "Connect to Third-Party Applications" off, and name the key', body: 'TradeGuardX is not on BloFin\u2019s app list, so the key is a plain one. Any name you will recognise later.' },
+      { title: 'Permissions: Read and Trade only', body: 'Tick Read and Trade. Never tick Transfer. We do not need it, and a key without it cannot move your money. A Read-only key is refused.' },
+      { title: 'Set a passphrase', body: 'You choose it. Keep it somewhere safe: you paste it into TradeGuardX as well, and BloFin will not show it again.' },
+      { title: 'Add our IP, then Next', body: 'Paste our IP into the IP address field. BloFin expires a key with no IP after 90 days, and from then on the guard cannot act. Press Next and enter the code BloFin emails you (and your 2FA code), then Submit.' },
+      { title: 'Copy the API Key and Secret Key', body: 'The Secret Key is shown once. Copy both, press Confirm, then paste the key, the secret and your passphrase here.' },
     ],
     /** Tax centre is for Indian venues; BloFin is not part of it. */
     taxCentre: false,
-    beta: true,
+    // No BETA badge: BloFin goes live for global users (owner, 1 Nov 2026).
+    // Visibility in setup is the prop_firms row's status, not this flag.
+    beta: false,
   },
   /*
    * Exness — the first forex/CFD venue (FX pairs, metals, indices, energies,

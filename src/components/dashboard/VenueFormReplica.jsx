@@ -300,6 +300,83 @@ function ExnessForm({ venue, onCopy, copiedValue, accent }) {
   );
 }
 
+/**
+ * BLOFIN'S "CREATE API KEY" FORM, in the order BloFin's docs and the key
+ * guides other platforms publish describe it (1 Nov 2026):
+ *
+ *   API Key Usage: [ ] Connect to Third-Party Applications   ← stays off
+ *   Name
+ *   Permissions: [✓] Read  [✓] Trade  [ ] Transfer
+ *   Passphrase
+ *   IP address
+ *   [Next] → email code (+ 2FA) → Submit → API Key / Secret Key → Confirm
+ *
+ * PLACEHOLDER UNTIL SCREENSHOTS: this has not been checked against a live
+ * screenshot of BloFin's form. The order and labels come from venues.js and
+ * are the documented ones; when the owner sends screenshots of the form, the
+ * verification step and the key summary, correct the strings in venues.js and
+ * the layout here. The numbers are ours, so list and picture can be checked
+ * against each other item by item.
+ */
+function BloFinForm({ venue, onCopy, copiedValue, accent }) {
+  return (
+    <div style={sx('max-width:420px')}>
+      <Field label={<><Num n={1} />{venue.usageField}</>} hint={venue.usageNote}>
+        <span style={sx(FIELD, 'gap:10px')}>
+          <span aria-hidden style={sx('flex:none;position:relative;width:30px;height:18px;border-radius:999px;border:1.5px solid var(--line-strong);background:var(--surface-3)')}>
+            <span style={sx('position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:var(--ink-faint)')} />
+          </span>
+          <span style={sx('font-size:13px;font-weight:600;color:var(--ink-3)')}>{venue.usageOffOption}</span>
+          <span style={sx('margin-left:auto;flex:none;font-size:11.5px;color:var(--ink-faint)')}>Off</span>
+        </span>
+      </Field>
+
+      <Field label={<><Num n={2} />{venue.keyNameField}</>} hint={venue.keyNameHint}>
+        <FilledBox value={SUGGESTED_KEY_NAME} onCopy={onCopy} copied={copiedValue === SUGGESTED_KEY_NAME} />
+      </Field>
+
+      <div style={sx('margin-bottom:17px')}>
+        <span style={sx('display:flex;align-items:center;margin-bottom:9px;font-size:12px;color:var(--ink-3)')}><Num n={3} />Permissions</span>
+        <div style={sx('border:1px solid var(--line-strong);border-radius:11px;overflow:hidden')}>
+          {[
+            { label: venue.readScopeLabel, note: venue.readScopeNote, on: true },
+            { label: venue.scopeLabel, note: venue.scopeNote, on: true, callout: 'Tick this' },
+            ...(venue.offScopes ?? []).map((o) => ({ label: o.label, note: o.note, on: false })),
+          ].map((row, i, all) => (
+            <div
+              key={row.label}
+              style={sx(
+                'display:flex;align-items:flex-start;gap:10px;padding:12px 14px',
+                row.on ? { background: accent.tint } : {},
+                i < all.length - 1 ? { borderBottom: `1px solid ${row.on ? accent.line : 'var(--line)'}` } : {},
+              )}
+            >
+              <Tick on={row.on} accent={accent} />
+              <span style={sx('min-width:0;flex:1')}>
+                <span style={sx('display:flex;align-items:center;gap:8px')}>
+                  <span style={sx('font-size:13.5px;font-weight:700', row.on ? {} : { color: 'var(--ink-3)' })}>{row.label}</span>
+                  <span style={sx('margin-left:auto;font-size:11.5px;font-weight:700', row.on ? { color: accent.text } : { color: 'var(--ink-faint)', fontWeight: 400 })}>
+                    {row.callout ?? (row.on ? 'On' : 'Leave off')}
+                  </span>
+                </span>
+                {row.note && <span style={sx('display:block;margin-top:3px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>{row.note}</span>}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Field label={<><Num n={4} />{venue.passphraseField}</>} hint={venue.passphraseNote}>
+        <span style={sx(FIELD, 'color:var(--ink-faint);font-size:13px')}>Your own passphrase</span>
+      </Field>
+
+      <Field label={<><Num n={5} />{venue.ipField}</>} hint={venue.ipHint}>
+        <FilledBox value={ENGINE_EGRESS_IP} mono onCopy={onCopy} copied={copiedValue === ENGINE_EGRESS_IP} />
+      </Field>
+    </div>
+  );
+}
+
 export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
   if (!venue) return null;
   const hasScopeChoice = venue.scopeChoice !== false;
@@ -317,6 +394,8 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
       <div style={sx('padding:18px 16px 16px')}>
         {venue.family === 'exness' ? (
           <ExnessForm venue={venue} onCopy={onCopy} copiedValue={copiedValue} accent={accent} />
+        ) : venue.family === 'blofin' ? (
+          <BloFinForm venue={venue} onCopy={onCopy} copiedValue={copiedValue} accent={accent} />
         ) : (
         <>
         {venue.accountField && (
@@ -339,7 +418,8 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
         )}
 
         {venue.hasPassphrase && (
-          /* BloFin. The user chooses it here, on their form — so there is no
+          /* A venue whose key has a passphrase (BloFin draws its own form
+             above). The user chooses it on their form — so there is no
              value of ours to copy, only the instruction to keep it. */
           <Field label={venue.passphraseField ?? 'Passphrase'} hint={venue.passphraseNote}>
             <span style={sx(FIELD, 'max-width:420px;color:var(--ink-faint);font-size:13px')}>Your own passphrase</span>
@@ -451,6 +531,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
         {venue.submitLabel && (
           <>
           {venue.family === 'exness' && <Num n={8} />}
+          {venue.family === 'blofin' && <Num n={6} />}
           <span
             aria-hidden
             style={sx('display:inline-block;padding:13px 22px;border-radius:10px;font-size:14px;font-weight:700', {
