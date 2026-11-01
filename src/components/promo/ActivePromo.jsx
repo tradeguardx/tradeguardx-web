@@ -196,7 +196,7 @@ function FoundingMemberContent({ cfg }) {
           </p>
         </div>
         <h2 className="mt-1 font-display text-lg font-bold leading-snug text-white sm:text-xl">
-          Join the first {cfg.limit} traders. <span className="text-yellow-200">Get {cfg.plan} free for {cfg.trialDays} days.</span>
+          Join the first {cfg.limit} traders.{cfg.trialDays > 0 && <> <span className="text-yellow-200">Get {cfg.plan} free for {cfg.trialDays} days.</span></>}
         </h2>
       </div>
 
@@ -266,9 +266,10 @@ function useFeaturedPlan(planName) {
 /**
  * Founding-member AND a discount code, in one strip.
  *
- * This is the offer as it actually works: the trial is free (payment is set
- * up first, nothing is charged until day 8), and the coupon only bites on the
- * FIRST PAID month afterwards. Showing them
+ * This is the offer as it actually works: since 1 Nov 2026 there is no free
+ * trial (trialDays defaults to 0), so the strip leads with the founding spot
+ * and the coupon on the FIRST PAID month. Only if free days are configured
+ * does it say "free for N days" first. Showing them
  * separately (as the two original modes did) split one offer into two
  * half-offers, and whichever rendered second was never seen at all.
  *
@@ -289,13 +290,15 @@ function LaunchOfferContent({ founding, promo }) {
         </p>
 
         <h2 className="mt-1 font-display text-lg font-bold leading-snug text-white sm:text-2xl">
-          Get {founding.plan} free for {founding.trialDays} days.
+          {founding.trialDays > 0
+            ? `Get ${founding.plan} free for ${founding.trialDays} days.`
+            : `Join the first ${founding.limit} traders on ${founding.plan}.`}
         </h2>
 
         {showPrice ? (
           <div className="mt-1 flex flex-col items-center gap-x-3 gap-y-0.5 sm:flex-row sm:items-baseline">
             <span className="text-xs text-white/80 sm:text-sm">
-              Then your first month for
+              {founding.trialDays > 0 ? 'Then your first month for' : 'Your first month for'}
             </span>
             <span className="font-display text-2xl font-bold text-yellow-200 sm:text-3xl">
               {formatInr(after)}
@@ -309,7 +312,7 @@ function LaunchOfferContent({ founding, promo }) {
           </div>
         ) : (
           <p className="mt-1 text-xs text-white/80 sm:text-sm">
-            Then {promoHeadline(promo).toLowerCase()} with code {promo.code}.
+            {founding.trialDays > 0 ? `Then ${promoHeadline(promo).toLowerCase()}` : promoHeadline(promo)} with code {promo.code}.
           </p>
         )}
       </div>
@@ -330,7 +333,8 @@ function LaunchOfferContent({ founding, promo }) {
 /**
  * Top-of-viewport launch promo strip. Three modes:
  *   1. Launch — BOTH founding-member and a discount code are configured. One
- *      strip carries the whole offer: free trial, then a discounted first month.
+ *      strip carries the whole offer: the founding spot (plus free days only
+ *      if configured), then a discounted first month.
  *   2. Founding-member alone — flat message + signup CTA, no countdown.
  *   3. Discount code alone — coupon + live countdown for time-bounded promos.
  *

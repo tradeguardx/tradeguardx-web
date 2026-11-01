@@ -441,10 +441,10 @@ export default function BillingPage() {
               ? `Your free trial has ${left} day${left === 1 ? '' : 's'} left and no payment method attached, so your guard stops when it ends. Add one and you keep all ${left} — nothing is charged today.`
               : spent
                 ? `Your free trial ended${endedOn ? ` on ${endedOn}` : ''}, so nothing is enforcing your rules. Subscribe to switch the guard back on${cur ? ` — ${inr(cur.price)} ${PER[interval]}` : ''}. Your free trial is already used, so the first charge is today.`
-                : 'You don’t have a plan yet. Setting one up switches your guard on — the first 3 days are free and nothing is charged today.'}
+                : 'You don’t have a plan yet. Choosing one switches your guard on. Pay monthly, quarterly or yearly, and cancel anytime.'}
           </p>
           <button type="button" onClick={() => navigate('/dashboard/activate')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800')}>
-            {settling ? 'Subscribe' : carrying ? `Set up billing · keep your ${left} days` : spent ? 'Subscribe' : 'Start 3 days free'}
+            {settling ? 'Subscribe' : carrying ? `Set up billing · keep your ${left} days` : spent ? 'Subscribe' : 'Choose a plan'}
           </button>
         </section>
       </div>
@@ -836,7 +836,7 @@ export default function BillingPage() {
         )}
         {state === 'ended' && (
           <p style={sxw('margin:12px 0 0;font-size:12.5px;color:var(--ink-faint)')}>
-            Pick the period for your new subscription. It is charged today — there is no second free trial.
+            Pick the period for your new subscription. It is charged today.
           </p>
         )}
       </section>}

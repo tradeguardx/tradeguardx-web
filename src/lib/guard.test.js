@@ -190,7 +190,7 @@ describe('gapsOf — asked for billing, not blocked', () => {
   it('keeps the harder copy for someone with no access at all', () => {
     const billing = gapsOf({ ...base, entitled: false, mandate: false }).find((g) => g.key === 'billing');
     expect(billing.title).toBe('Billing is not set up');
-    expect(billing.cta).toBe('Start 3 days free');
+    expect(billing.cta).toBe('Choose a plan');
   });
 
   /* Fail-open: an unloaded subscription must never accuse someone who has
@@ -210,10 +210,11 @@ describe('gapsOf — asked for billing, not blocked', () => {
 describe('gapsOf — the trial that has already been used', () => {
   const base = { account, connection: readOnly, rules, notifications: alerts, entitled: false, mandate: false };
 
-  it('offers the free trial to someone who never started', () => {
+  it('asks someone who never started to choose a plan, with no free trial (none since 1 Nov 2026)', () => {
     const billing = gapsOf({ ...base, trialSpent: false }).find((g) => g.key === 'billing');
     expect(billing.title).toBe('Billing is not set up');
-    expect(billing.body).toMatch(/first 3 days are free/);
+    expect(billing.body).toMatch(/Choose a plan/);
+    expect(billing.body).not.toMatch(/free|nothing is charged today/i);
   });
 
   it('does not re-offer it to someone whose trial ended', () => {

@@ -140,7 +140,7 @@ export default function StoryHero() {
             to="/pricing"
             className="inline-flex items-center gap-2 rounded-2xl bg-accent px-8 py-4 text-lg font-semibold text-[#0a0c10] shadow-lg shadow-accent/25 transition hover:bg-accent/90 active:scale-95"
           >
-            Start free
+            Choose a plan
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
@@ -181,7 +181,7 @@ export default function StoryHero() {
           transition={{ delay: 0.4 }}
           className="mt-5 text-xs text-slate-600"
         >
-          3 days free · Nothing charged until day 4 · Setup in &lt; 2 minutes
+          Pay monthly · Cancel anytime · Setup in &lt; 2 minutes
         </motion.p>
       </div>
 

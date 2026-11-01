@@ -34,7 +34,7 @@ vi.mock('../components/revenge/RevengeSetupStep', () => ({
   default: ({ onContinue, continueLabel }) => (
     <div>
       <span>revenge score step</span>
-      <button type="button" onClick={onContinue}>{continueLabel || 'fix this — start free trial'}</button>
+      <button type="button" onClick={onContinue}>{continueLabel || 'fix this — choose a plan'}</button>
     </div>
   ),
 }));
@@ -73,7 +73,7 @@ describe('setup, as a page', () => {
     expect(screen.queryByText(/connect-flow/)).toBeNull();
   });
 
-  it('goes venue → name → key → revenge score → free trial, in that order', async () => {
+  it('goes venue → name → key → revenge score → plan, in that order', async () => {
     mount();
     fireEvent.click(await screen.findByText('Delta'));
     expect(await screen.findByText('create account')).toBeTruthy();
@@ -83,7 +83,7 @@ describe('setup, as a page', () => {
     /* Step 4: the reward for connecting the key. */
     expect(await screen.findByText('revenge score step')).toBeTruthy();
     expect(screen.getByText('Your revenge score', { selector: 'h2' })).toBeTruthy();
-    fireEvent.click(screen.getByText('fix this — start free trial'));
+    fireEvent.click(screen.getByText('fix this — choose a plan'));
     /* Billing sits after the key: the balance is read from the key, so this is
        the first point the ask can name their own daily limit. */
     expect(await screen.findByText('billing step')).toBeTruthy();
@@ -97,7 +97,7 @@ describe('setup, as a page', () => {
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
-    fireEvent.click(await screen.findByText('fix this — start free trial'));
+    fireEvent.click(await screen.findByText('fix this — choose a plan'));
     await screen.findByText('billing step');
     expect(screen.queryByText(/Alerts/)).toBeNull();
     expect(screen.queryByText(/^Rules$/)).toBeNull();
@@ -161,7 +161,7 @@ describe('setup, as a page', () => {
     fireEvent.click(await screen.findByText('Delta'));
     fireEvent.click(await screen.findByText('create account'));
     fireEvent.click(await screen.findByText('connect'));
-    fireEvent.click(await screen.findByText('fix this — start free trial'));
+    fireEvent.click(await screen.findByText('fix this — choose a plan'));
     expect(await screen.findByText('billing step')).toBeTruthy();
   });
 
@@ -243,7 +243,7 @@ describe('resuming and the last step label', () => {
     expect(await screen.findByText('create account')).toBeTruthy();
   });
 
-  it('someone who already holds a plan sees "Plan active", never a ticked "Start free trial"', async () => {
+  it('someone who already holds a plan sees "Plan active", never a ticked "Choose a plan"', async () => {
     auth.user = { access: 'active', isTrial: false };
     accountsCtx.accounts = [{ id: 'acc-1', name: 'Exness-Demo' }];
     accountsCtx.selectedAccount = { id: 'acc-1', name: 'Exness-Demo' };
@@ -251,7 +251,7 @@ describe('resuming and the last step label', () => {
     mount();
     await screen.findByText(/connect-flow/);
     expect(screen.getAllByText('Plan active').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Start free trial')).toBeNull();
+    expect(screen.queryByText('Choose a plan')).toBeNull();
   });
 });
 

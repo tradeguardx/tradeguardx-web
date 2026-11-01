@@ -140,10 +140,12 @@ describe('setup states carry the spec’s own pill and band', () => {
     expect(v.lock.title).toBe('Connect your key to see this');
   });
 
-  it('s3 offers the trial with ₹0 today', () => {
+  it('s3 asks for a plan and never offers a free trial (none since 1 Nov 2026)', () => {
     const v = lifecycleView('s3');
     expect(v.pill).toBe('Guard off');
-    expect(v.band.body).toMatch(/₹0 today/);
+    expect(v.band.cta).toBe('Choose a plan');
+    expect(v.lock.cta).toBe('Choose a plan');
+    expect(JSON.stringify(v)).not.toMatch(/free trial|₹0 today|days free/i);
   });
 });
 

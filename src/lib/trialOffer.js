@@ -13,7 +13,9 @@
  * the only direction this is allowed to be wrong in.
  */
 
-export const FULL_TRIAL_DAYS = 3; // new customers, since 13 Oct 2026 (was 7)
+// New customers get NO free days since 1 Nov 2026 (was 3 from 13 Oct, 7 before).
+// Someone already in a trial keeps it; that path is handled below.
+export const FULL_TRIAL_DAYS = 0;
 /** The old no-card trial was 7 days; someone still in one keeps what is left
  *  (mirrors payments LEGACY_TRIAL_DAYS — the server decides, this only says it). */
 export const LEGACY_TRIAL_DAYS = 7;
@@ -26,7 +28,7 @@ export const LEGACY_TRIAL_DAYS = 7;
 export function trialDaysOnOffer(user) {
   if (!user) return 0;
 
-  // Never started: the whole window.
+  // Never started: the whole window (0 since 1 Nov 2026 — no free trial).
   if (user.needsMandate) return FULL_TRIAL_DAYS;
 
   if (user.isTrial) {

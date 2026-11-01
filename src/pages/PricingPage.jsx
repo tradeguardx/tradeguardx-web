@@ -7,7 +7,7 @@ import { getPricingPlans } from '../api/pricingApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/ToastProvider';
 import { createCheckoutSession } from '../api/paymentsApi';
-import { trialDaysOnOffer, trialOfferLine, firstChargeDate, FULL_TRIAL_DAYS } from '../lib/trialOffer';
+import { trialDaysOnOffer, trialOfferLine, firstChargeDate } from '../lib/trialOffer';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch, getPendingCheckoutInterval, normalizeInterval, BILLING_INTERVALS } from '../lib/checkoutIntent';
 import { trackCheckoutStarted } from '../lib/analytics';
 import { checkoutCouponCode } from '../lib/checkoutCoupon';
@@ -45,7 +45,7 @@ const PLAN_THEME = {
     badgeBg: 'rgba(100,116,139,0.10)',
     badgeBorder: 'rgba(100,116,139,0.22)',
     badgeText: '#94a3b8',
-    tagline: 'Full access, free for 3 days. Nothing charged until day 4.',
+    tagline: 'Everything included. Pay monthly, cancel anytime.',
     ctaBg: 'rgba(255,255,255,0.06)',
     ctaBorder: 'rgba(255,255,255,0.08)',
     ctaText: '#e2e8f0',
@@ -242,7 +242,7 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
     ),
-    label: (money) => `${money(0)} today`,
+    label: 'Pay monthly, quarterly or yearly',
   },
   {
     icon: (
@@ -250,7 +250,7 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    label: 'Cancel before day 4, pay nothing',
+    label: 'Cancel anytime',
   },
   {
     icon: (
@@ -273,7 +273,7 @@ const TRUST_BADGES = [
 export default function PricingPage() {
   useSEO({
     title: 'Pricing: One Plan for Every Exchange',
-    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly, in your local price. 3 days free, cancel before day 4 and pay nothing.',
+    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly, in your local price. Cancel anytime; you keep access until the end of the period you paid for.',
     url: 'https://tradeguardx.com/pricing',
   });
   const [plans, setPlans] = useState([]);
@@ -487,8 +487,9 @@ export default function PricingPage() {
       /*
        * SAY THE PRICE AND THE DATE BEFORE THE CLICK, NOT AFTER.
        *
-       * This button now sets up an autopay mandate: nothing is charged today,
-       * and a real debit lands on a real date. Someone who meets that fact for
+       * Since 1 Nov 2026 there is no free trial: a new customer pays today.
+       * Only someone already mid-trial still carries free days (freeDays > 0),
+       * and for them a real debit lands on a real date. Someone who meets that fact for
        * the first time on Dodo's checkout page — or worse, on their bank
        * statement — is entitled to feel misled, and will say so in a
        * chargeback rather than an email. So the offer is stated here, in the
@@ -499,7 +500,9 @@ export default function PricingPage() {
       const line = priceFor(plan, iv);
       const amount = typeof line?.price === 'number' ? money(line.price) : null;
       const startsOn = firstChargeDate(freeDays)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).replace(' ', '\u00a0') ?? null;
-      const offer = trialOfferLine(freeDays, amount, startsOn, money(0));
+      const offer = freeDays > 0
+        ? trialOfferLine(freeDays, amount, startsOn, money(0))
+        : amount ? `${amount} today · cancel anytime, access runs to the end of the period` : null;
 
       return (
         <>
@@ -515,16 +518,15 @@ export default function PricingPage() {
       );
     }
 
-    // Signed out: everyone new gets the full trial, so say it the same way
-    // the signed-in branch does — the price and date before the click.
+    // Signed out: no free trial since 1 Nov 2026 — a new customer pays at
+    // checkout. Say the price before the click, and how to stop.
     const line = priceFor(plan, iv);
     const amount = typeof line?.price === 'number' && line.price > 0 ? money(line.price) : null;
-    const startsOn = firstChargeDate(FULL_TRIAL_DAYS)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).replace(' ', '\u00a0') ?? null;
-    const offer = amount ? trialOfferLine(FULL_TRIAL_DAYS, amount, startsOn, money(0)) : null;
+    const offer = amount ? `${amount} today · cancel anytime, access runs to the end of the period` : null;
     return (
       <>
         <Link to={signupLink(plan, iv)} className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>
-          {amount ? `Start ${FULL_TRIAL_DAYS} days free` : plan.cta}
+          {plan.cta}
         </Link>
         {offer ? <OfferLine text={offer} color="rgba(226,232,240,0.6)" /> : null}
       </>
@@ -570,7 +572,7 @@ export default function PricingPage() {
           </h1>
 
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
-            Everything is included: the kill switch, every rule, all three exchanges, unlimited accounts and the tax centre. Start with 3 days free. You set up UPI AutoPay or a card first; cancel before day 4 and you pay nothing.
+            Everything is included: the kill switch, every rule, all three exchanges, unlimited accounts and the tax centre. Pay by UPI AutoPay or card. Cancel anytime and you keep access until the end of the period you paid for.
           </p>
 
           <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -996,7 +998,7 @@ export default function PricingPage() {
               <p className="text-base mb-10 max-w-md mx-auto" style={{ color: '#475569' }}>
                 {session?.access_token && !subscriptionLoading && isPaidPlan(user?.billingPlan)
                   ? 'You are on a paid plan. Manage billing anytime from your account.'
-                  : `3 days free · ${money(0)} today · cancel before day 4 and pay nothing.`}
+                  : 'Pay monthly, quarterly or yearly. Cancel anytime.'}
               </p>
               <motion.div
                 className="inline-block"
@@ -1011,7 +1013,7 @@ export default function PricingPage() {
                     boxShadow: '0 4px 24px rgba(0,212,170,0.30)',
                   }}
                 >
-                  {session?.access_token ? 'Open dashboard' : 'Start 3 days free'}
+                  {session?.access_token ? 'Open dashboard' : 'Start protecting your account'}
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>

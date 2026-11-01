@@ -11,7 +11,7 @@ import rawBodyA from '../landing/tgx-body-a.html?raw';
 import rawBodyB from '../landing/tgx-body-b.html?raw';
 
 // Split the landing body right after the hero (before the trust strip) so the
-// Talk-to-founder banner sits between the hero and the "7 rules / trial /
+// Talk-to-founder banner sits between the hero and the "7 rules / setup /
 // <120ms" strip. The two halves each get their own ref, both registered with the
 // reveal/animation effect below.
 const SPLIT_MARKER = '<!-- POST HERO';
@@ -134,8 +134,8 @@ function CryptoHomeBody({ variant }) {
     return () => mo.disconnect();
   }, []);
 
-  // Both primary signup CTAs (hero "Create free account", pricing "Start
-  // free") are baked into the raw HTML pointing at /signup — correct for the
+  // Both primary signup CTAs (hero "Create free account", pricing "Choose
+  // a plan") are baked into the raw HTML pointing at /signup — correct for the
   // prerendered/anonymous default, which is who Google and most visitors are.
   // Swap each for a returning, already-logged-in visitor so they're never told
   // to create an account they already have — mirrors what the navbar's own

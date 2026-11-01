@@ -36,7 +36,7 @@ export const faqs = [
   },
   {
     q: 'Is there a free plan?',
-    a: 'No — there is one plan, Pro, with everything included, priced for your country. Every new account gets 3 days free: you set up a card (or UPI AutoPay in India) first, nothing is charged today, and if you cancel before day 4 you pay nothing.',
+    a: 'No — there is one plan, Pro, with everything included, priced for your country. There is no free trial. You pay when you subscribe, by card (or UPI AutoPay in India). Cancel anytime and you keep access until the end of the period you paid for.',
   },
 ];
 

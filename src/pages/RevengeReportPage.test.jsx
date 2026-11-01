@@ -86,23 +86,23 @@ describe('revenge report page', () => {
     await waitFor(() => expect(unlockRevengeReport).toHaveBeenCalledWith(expect.objectContaining({ months: 3 })));
   });
 
-  it('ends with the rules their trades call for, then the trial, for a trader without a plan', async () => {
+  it('ends with the rules their trades call for, then the plan, for a trader without one', async () => {
     guard.life = { unprotected: true };
     mount();
     expect(await screen.findByText(/Your rule plan/)).toBeTruthy();
     expect(screen.getByText('Close after N losses')).toBeTruthy();
     expect(screen.getByText('Problem', { selector: '.rv-rule span' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /Start my 3-day free trial/ }).getAttribute('href')).toBe('/dashboard/account/billing');
+    expect(screen.getByRole('link', { name: /Choose a plan/ }).getAttribute('href')).toBe('/dashboard/account/billing');
     expect(screen.getByText(/you set each limit on the Rules page/)).toBeTruthy();
     expect(screen.getByText('of your losses, you traded again within 15 minutes')).toBeTruthy(); // their own number, on the rule's card
     expect(screen.getByRole('img', { name: 'Not running — your guard is off' })).toBeTruthy();
   });
 
-  it('a paying trader is sent to set the rules up, not to a trial', async () => {
+  it('a paying trader is sent to set the rules up, not to a plan', async () => {
     guard.life = {};
     mount();
     expect((await screen.findByRole('link', { name: /Set up these rules/ })).getAttribute('href')).toBe('/dashboard/rules');
-    expect(screen.queryByRole('link', { name: /free trial/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Choose a plan|free trial/ })).toBeNull();
   });
 
   it('still shows the report under React StrictMode (dev double mount)', async () => {

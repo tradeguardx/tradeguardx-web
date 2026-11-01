@@ -26,7 +26,8 @@ export default function WelcomeCelebration() {
     setParams(next, { replace: true });
   }, [params, setParams]);
 
-  // A new signup is on the free trial: full access, but they've paid nothing.
+  // Someone on a trial (only those granted before 1 Nov 2026 now): full access,
+  // but they have paid nothing.
   // Don't congratulate them on a purchase they didn't make — tell them the
   // clock is running and what to do next.
   const isTrial = Boolean(user?.isTrial);

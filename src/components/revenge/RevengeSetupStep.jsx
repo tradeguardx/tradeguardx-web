@@ -20,7 +20,7 @@ import { DamageStrip, GuardOffLine } from './RevengeHook';
  * is always one click: this step informs, it never blocks.
  *
  * `initial` — the report this step already showed ({ report, months }), when
- * they come back from the free-trial step: shown at once, no second read.
+ * they come back from the plan step: shown at once, no second read.
  * `onReport` hands each finished report up, so that step can show the score.
  */
 export default function RevengeSetupStep({ accessToken, tradingAccountId, accountName, exchangeName, onContinue, continueLabel, initial, onReport }) {
@@ -74,7 +74,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
   const grade = report?.grade ? GRADE[report.grade] : null;
     const skip = (
     <button type="button" onClick={onContinue} style={sx('padding:6px 2px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600;text-decoration:underline;cursor:pointer')}>
-      Skip to {continueLabel ? continueLabel.toLowerCase() : 'your free trial'}
+      Skip to {continueLabel ? continueLabel.toLowerCase() : 'choosing a plan'}
     </button>
   );
 
@@ -126,7 +126,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
             </div>
             <div className="rv-in" style={sx('position:relative;margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap', { animationDelay: '1.7s' })}>
               <button type="button" onClick={onContinue} className="rv-motion rv-full-sm" style={sx('padding:13px 22px;border:0;border-radius:12px;color:var(--on-mint);font-size:14.5px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint);background-size:200% 100%;animation:rvShine 2.8s linear infinite', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#fff6 50%,var(--mint-solid) 60%)', backgroundColor: 'var(--mint-solid)' })}>
-                {continueLabel ? <>Fix this — {continueLabel.toLowerCase()} →</> : <><span className="rv-hide-sm">Fix this — start your 3-day free trial →</span><span className="rv-show-sm">Start my 3-day free trial →</span></>}
+                {continueLabel ? <>Fix this — {continueLabel.toLowerCase()} →</> : <><span className="rv-hide-sm">Fix this — choose a plan →</span><span className="rv-show-sm">Choose a plan →</span></>}
               </button>
               <button type="button" onClick={toggleFull} aria-expanded={full} className="rv-full-sm" style={sx('padding:12px 18px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer')}>
                 {full ? 'Hide the full report' : 'See my full report'}
@@ -142,9 +142,9 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
                 periodLabel={PERIODS.find((p) => p.months === months)?.label}
                 months={months}
                 cta={{
-                  label: continueLabel || 'Start my 3-day free trial →',
+                  label: continueLabel || 'Choose a plan →',
                   onClick: onContinue,
-                  note: continueLabel ? null : '₹0 today · you set each limit on the Rules page',
+                  note: continueLabel ? null : 'Pay monthly, cancel anytime · you set each limit on the Rules page',
                   trial: !continueLabel,
                 }}
               />
