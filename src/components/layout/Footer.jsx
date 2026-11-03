@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import BrandMark from '../common/BrandMark';
 import { motion } from 'framer-motion';
 
 const links = {
@@ -130,11 +131,9 @@ export default function Footer() {
           >
             <Link to="/" className="mb-5 inline-flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/15 ring-1 ring-accent/30">
-                <svg className="h-[18px] w-[18px] text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
+                <BrandMark />
               </div>
-              <span className="font-display text-base font-bold text-white">TradeGuardX</span>
+              <span className="font-display text-base font-bold text-white">TradeGuard<span className="tgx-x">X</span></span>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-slate-400">
               Automated trade protection for serious traders. A server-side kill
