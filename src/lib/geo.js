@@ -157,17 +157,45 @@ export function detectCountry() {
   return countryPromise;
 }
 
+/*
+ * A token lasts 2 hours on the server; reuse one for 30 minutes so a checkout
+ * started near the end of a long session still has time to spare.
+ */
+const GEO_TOKEN_REUSE_MS = 30 * 60 * 1000;
+let geoTokenCache = null; // { token, country, at }
+let geoTokenInFlight = null;
+
+async function fetchSignedGeo() {
+  // One retry with a longer wait. A missing token is a 400 on production
+  // ("Could not confirm your country"), so a slow first answer — a cold edge
+  // function, a phone on a weak network — must not cost the buyer the offer
+  // price or the checkout itself. Seen on 3 Nov 2026: three parallel coupon
+  // checks each timed out at 4s, all refused; the same calls passed minutes later.
+  for (const ms of [4000, 8000]) {
+    const res = await getJson('/api/geo', ms);
+    if (typeof res?.token === 'string') return res;
+  }
+  return null;
+}
+
 /**
- * A FRESH signed country for checkout: { token, country }. Never cached — a
- * token lasts 2 hours and checkout refuses an expired one. `token` is null
- * where /api/geo does not exist (vite dev); the dev API then accepts the
- * unsigned `country` instead, and production refuses it.
+ * A signed country for checkout and coupon checks: { token, country }.
+ * Parallel callers share one request, and a good token is reused for 30
+ * minutes; a failure is never cached, so the next call tries again. `token`
+ * is null where /api/geo does not exist (vite dev); the dev API then accepts
+ * the unsigned `country` instead, and production refuses it.
  */
 export async function checkoutGeo() {
-  const res = await getJson('/api/geo', 4000);
+  if (geoTokenCache && Date.now() - geoTokenCache.at < GEO_TOKEN_REUSE_MS) {
+    return { token: geoTokenCache.token, country: geoTokenCache.country };
+  }
+  geoTokenInFlight ??= fetchSignedGeo().finally(() => { geoTokenInFlight = null; });
+  const res = await geoTokenInFlight;
   const token = typeof res?.token === 'string' ? res.token : null;
   const c = typeof res?.country === 'string' && /^[A-Z]{2}$/.test(res.country) ? res.country : null;
-  return { token, country: c ?? guessCountrySync() };
+  const country = c ?? guessCountrySync();
+  if (token) geoTokenCache = { token, country, at: Date.now() };
+  return { token, country };
 }
 
 /** Cached or fallback INR rates, synchronously. */
