@@ -184,12 +184,10 @@ async function main() {
     process.exit(1);
   }
 
-  const today = new Date().toISOString().slice(0, 10);
   const urls = SITEMAP_ROUTES.map(
     (r) =>
       `  <url>\n` +
       `    <loc>${SITE}${r.path === '/' ? '/' : r.path}</loc>\n` +
-      `    <lastmod>${today}</lastmod>\n` +
       `    <changefreq>${r.changefreq}</changefreq>\n` +
       `    <priority>${r.priority}</priority>\n` +
       `  </url>`,

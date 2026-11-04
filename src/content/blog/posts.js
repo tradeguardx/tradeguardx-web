@@ -104,7 +104,6 @@ export const PLANNED = [
   { category: 'trading-psychology', title: 'Why crypto traders blow their accounts: the real reasons' },
   { category: 'trading-psychology', title: 'Trading at 2am: the problem with a market that never closes' },
   { category: 'risk-management', title: 'Position sizing for crypto futures, in rupees' },
-  { category: 'risk-management', title: 'Stop loss vs kill switch: what each one actually protects' },
   { category: 'risk-management', title: 'How to stop losing money in crypto futures: five changes that work' },
   { category: 'leverage-and-liquidation', title: 'Your liquidation price is not a stop loss' },
   { category: 'leverage-and-liquidation', title: 'Isolated vs cross margin on Indian crypto exchanges' },
