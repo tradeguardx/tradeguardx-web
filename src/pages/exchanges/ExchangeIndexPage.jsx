@@ -93,11 +93,11 @@ export default function ExchangeIndexPage() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.04, duration: 0.3 }}
               >
-                <Link
-                  to={`/exchanges/${v.slug}`}
-                  className="block rounded-2xl border px-6 py-5 transition-colors hover:border-white/20"
+                <div
+                  className="rounded-2xl border px-6 py-5 transition-colors hover:border-white/20"
                   style={{ borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}
                 >
+                  <Link to={`/exchanges/${v.slug}`} className="block">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <h2 className="font-display text-xl font-bold text-white">{v.longName}</h2>
                     <span
@@ -116,12 +116,19 @@ export default function ExchangeIndexPage() {
                     )}
                   </div>
                   <p className="mt-2.5 text-[15px] leading-relaxed text-slate-400">{v.description}</p>
+                  </Link>
                   {guides.length > 0 && (
-                    <p className="mt-3 text-[13px] text-slate-500">
-                      Also: {guides.map((g) => g.navLabel).join(' · ')}
-                    </p>
+                    <ul className="mt-3 space-y-1.5 text-[14px]">
+                      {guides.map((g) => (
+                        <li key={g.slug}>
+                          <Link to={`/exchanges/${v.slug}/${g.slug}`} className="text-accent hover:underline">
+                            {g.title}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                </Link>
+                </div>
               </motion.div>
             );
           })}

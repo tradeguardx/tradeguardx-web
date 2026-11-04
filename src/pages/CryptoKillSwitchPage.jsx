@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useSEO } from '../hooks/useSEO';
 import { ENFORCED_RULES, VENUE_PAGE_LIST } from '../lib/venueSeo';
 import { ogImageFor } from '../lib/publicRoutes';
+import { guidesFor } from '../lib/venueGuides';
 
 /**
  * Head-term landing page: "crypto kill switch", "crypto killswitch app",
@@ -399,6 +400,13 @@ export default function CryptoKillSwitchPage() {
                 Every exchange we support, and what each one can enforce
               </Link>
             </li>
+            {VENUE_PAGE_LIST.filter((v) => guidesFor(v.slug).some((g) => g.slug === 'api-key')).map((v) => (
+              <li key={v.slug}>
+                <Link to={`/exchanges/${v.slug}/api-key`} className="text-accent hover:underline">
+                  How to create a {v.longName} API key
+                </Link>
+              </li>
+            ))}
             <li>
               <Link to="/help/kill-switch" className="text-accent hover:underline">
                 How the kill switch works, step by step

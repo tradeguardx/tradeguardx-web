@@ -136,7 +136,7 @@ function CryptoHomeBody({ variant }) {
   useSEO({
     title: SEO_BY_VARIANT[variant].title,
     description:
-      "Never blow another trading account. Set daily-loss, max-trades and cooldown rules once; TradeGuardX closes your positions and locks the account the moment you break one. Delta Exchange, Exness, CoinDCX, Shark.",
+      "Set a daily loss limit and trade cap once. Break one and TradeGuardX closes your positions and locks your account. Delta, Exness, CoinDCX, Shark and BloFin.",
     url: SEO_BY_VARIANT[variant].url,
     jsonLd: FAQ_LD[variant],
   });
