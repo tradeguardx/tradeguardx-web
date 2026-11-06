@@ -182,10 +182,6 @@ export default function DailyLossLimitCryptoFutures() {
           Ask how many days in a row you could hit the limit before the account is down 20%. At 2% a day it takes 11;
           at 5% a day, only 4. If you can’t picture surviving a bad fortnight at your number, the number is too big.
         </p>
-        <p>
-          For reference, prop-firm challenges commonly cap a single day at around 4–5% of the account. They also cap
-          the account as a whole, and you lose their money, not yours.
-        </p>
       </Step>
 
       <P>Or run your own numbers:</P>

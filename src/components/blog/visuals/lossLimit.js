@@ -21,6 +21,6 @@ export function computeLimit({ capital, riskPct, losses }) {
 export function verdictFor(pct) {
   if (pct < 1) return { label: 'Tight', color: '#f59e0b', note: 'Likely to fire on fees and ordinary noise. Fine for a new strategy; restrictive for an established one.' };
   if (pct <= 3) return { label: 'Balanced', color: '#00d4aa', note: 'Room for a normal losing streak, and still a long runway before real damage.' };
-  if (pct <= 5) return { label: 'Loose', color: '#f59e0b', note: 'A handful of bad days does serious damage. Common in prop-firm rules, which also cap the account as a whole.' };
+  if (pct <= 5) return { label: 'Loose', color: '#f59e0b', note: 'A handful of bad days does serious damage.' };
   return { label: 'Too wide', color: '#f43f5e', note: 'At this size the limit only fires after the day is already a disaster. Lower the risk per trade before anything else.' };
 }

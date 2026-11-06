@@ -15,7 +15,7 @@ const COMMANDS = [
   { label: 'Risk rules', path: '/dashboard/rules', keywords: 'rules terminal risk protection limits prop' },
   { label: 'Trade journal', path: '/dashboard/journal', keywords: 'journal analytics equity pnl' },
   { label: 'Trades', path: '/dashboard/trades', keywords: 'trades history sync' },
-  { label: 'Trading accounts', path: '/dashboard/account/trading', keywords: 'accounts pairing connect delta api key prop platform size' },
+  { label: 'Trading accounts', path: '/dashboard/account/trading', keywords: 'accounts connect delta api key platform size' },
   { label: 'Plans & billing', path: '/dashboard/account/billing', keywords: 'subscription payment upgrade invoice' },
   { label: 'Account home', path: '/dashboard/account', keywords: 'account profile summary plan' },
 ];

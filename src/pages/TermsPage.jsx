@@ -13,7 +13,7 @@ const LAST_UPDATED = 'November 6, 2026';
 const sections = [
   {
     title: '1. Agreement to Terms',
-    content: 'By accessing or using TradeGuardX ("Service"), including our website, dashboard, server-side risk engine, and browser extension, you agree to be bound by these Terms and Conditions. If you do not agree, do not use the Service.',
+    content: 'By accessing or using TradeGuardX ("Service"), including our website, dashboard and server-side risk engine, you agree to be bound by these Terms and Conditions. If you do not agree, do not use the Service.',
   },
   {
     title: '2. Description of Service',

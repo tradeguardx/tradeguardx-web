@@ -39,7 +39,7 @@ export default function DailyResetLine({ account, style }) {
 
   return (
     <p data-daily-reset="1" style={sx('margin:8px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-3)', style)}>
-      {funded ? 'Your firm’s day resets at ' : 'Your day resets at '}
+      {funded ? 'Your broker’s day resets at ' : 'Your day resets at '}
       <strong style={sx('color:var(--ink-2);font-weight:700;font-variant-numeric:tabular-nums')}>{clock} {zoneLabel(zone)}</strong>
       {` · in ${untilLabel(at - now)}`}
       {pending && ` · then ${resetBoundaryFor(zone).time} ${zonePlace(zone)} time from the next day`}

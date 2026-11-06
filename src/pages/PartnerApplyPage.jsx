@@ -12,7 +12,6 @@ const CHANNELS = [
   { value: 'tiktok', label: 'TikTok' },
   { value: 'discord', label: 'Discord / Telegram' },
   { value: 'newsletter', label: 'Newsletter / Blog' },
-  { value: 'prop_firm', label: 'Prop firm / Broker' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -38,7 +37,7 @@ export default function PartnerApplyPage() {
   useSEO({
     title: 'Partner with TradeGuardX',
     description:
-      'Refer paying customers to TradeGuardX and earn recurring commission. Apply to our partner program for trading creators, educators, and prop firms.',
+      'Refer paying customers to TradeGuardX and earn recurring commission. Apply to our partner program for trading creators and educators.',
     url: 'https://tradeguardx.com/partner-with-us',
   });
 
@@ -121,7 +120,7 @@ export default function PartnerApplyPage() {
             Earn recurring commission for every trader you bring to TradeGuardX.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-400 md:text-lg">
-            We work with trading creators, educators, prop firms, and community
+            We work with trading creators, educators and community
             leaders. If your audience trades — and you'd vouch for protecting
             their accounts — we want to talk.
           </p>
@@ -241,7 +240,7 @@ export default function PartnerApplyPage() {
                       name="content_type"
                       type="text"
                       required
-                      placeholder="e.g. day trading futures, prop firm reviews, ICT education…"
+                      placeholder="e.g. crypto futures, risk management, trading education…"
                       className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-slate-500 transition focus:border-accent/40 focus:bg-white/[0.04] focus:outline-none"
                     />
                   </Field>

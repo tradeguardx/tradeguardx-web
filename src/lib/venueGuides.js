@@ -360,7 +360,7 @@ export const VENUE_GUIDES = {
       description:
         'Step by step: create a Shark Exchange API key on a laptop, whitelist our IP, enable Trade Futures, and connect it to TradeGuardX. About five minutes.',
       intro:
-        'Connect your Shark Exchange account and be protected in about five minutes. There is no extension to install — you create an API key on Shark, whitelist our IP, enable Trade Futures, and paste the key into TradeGuardX.',
+        'Connect your Shark Exchange account and be protected in about five minutes. You create an API key on Shark, whitelist our IP, enable Trade Futures, and paste the key into TradeGuardX.',
       imagesFrom: 'shark',
       sections: [
         {
@@ -396,7 +396,7 @@ export const VENUE_GUIDES = {
       description:
         'Step by step: create a CoinDCX API key on a desktop browser, bind it to our IP, confirm the OTPs, and connect it to TradeGuardX. About five minutes.',
       intro:
-        'Connect your CoinDCX futures account and be protected in about five minutes. There is no extension to install — you create an API key on CoinDCX, bind it to our IP, and paste the key into TradeGuardX.',
+        'Connect your CoinDCX futures account and be protected in about five minutes. You create an API key on CoinDCX, bind it to our IP, and paste the key into TradeGuardX.',
       imagesFrom: 'coindcx',
       sections: [
         {
@@ -474,7 +474,7 @@ export const VENUE_GUIDES = {
       description:
         'Step by step: create a Delta Exchange Trading API key, whitelist our IP, and connect it to TradeGuardX. Works on Delta India and Delta Global. About five minutes.',
       intro:
-        'Connect your Delta account and be protected in about five minutes. There is no extension to install — you create a Trading API key on Delta, whitelist our IP, and paste the key into TradeGuardX.',
+        'Connect your Delta account and be protected in about five minutes. You create a Trading API key on Delta, whitelist our IP, and paste the key into TradeGuardX.',
       imagesFrom: 'delta',
       sections: [
         {

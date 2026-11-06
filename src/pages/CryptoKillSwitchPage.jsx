@@ -110,7 +110,7 @@ const SECTIONS = [
   {
     h: 'Why server-side enforcement matters',
     p: [
-      "A browser extension can only see the tab it's in, and only while that tab is open. Shut the laptop, pick up your phone, place an order through a third-party client, and it sees nothing at all. It is a reminder wearing the costume of a safety system.",
+      "A tool that runs on your own device only works while that device is on and only sees what happens there. Shut the laptop, pick up your phone, place an order through a third-party client, and it sees nothing at all.",
       'TradeGuardX holds a live connection to your exchange from our own servers. Screen off, phone in your pocket, laptop shut in a bag — the feed pushes the change to us rather than us asking for it, and the breach is checked and acted on within seconds. The exact speed belongs to the exchange, not to us: it depends on what that exchange publishes and how quickly, which is why each exchange page states its own position rather than one number standing in for all of them. If you open a position while a lock is running, it gets closed on sight, and it does not count toward your trade limit or your losing streak.',
     ],
   },

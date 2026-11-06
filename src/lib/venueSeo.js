@@ -420,7 +420,7 @@ const VENUE_PAGES = {
       },
       {
         q: 'Does the kill switch still work if I trade from the CoinDCX app?',
-        a: 'Yes. That is the whole reason it runs on our servers rather than as a browser extension. An extension can only see the tab it is in, and only while that tab is open; we hold a live connection to the account, so a position opened from the CoinDCX app, the website or a third-party client is seen the same way.',
+        a: 'Yes. It runs on our servers and holds a live connection to the account, so a position opened from the CoinDCX app, the website or a third-party client is seen the same way.',
       },
     ],
   },
@@ -470,7 +470,7 @@ const VENUE_PAGES = {
     faq: [
       {
         q: 'Does TradeGuardX work with Delta Exchange?',
-        a: 'Yes, on both Delta India and Delta Global, and it is the exchange we built the engine against. There is no extension to install: you create a Trading API key on Delta, whitelist our IP, and paste it in. We hold a live connection to the account and enforce your rules from our servers.',
+        a: 'Yes, on both Delta India and Delta Global, and it is the exchange we built the engine against. You create a Trading API key on Delta, whitelist our IP, and paste it in. We hold a live connection to the account and enforce your rules from our servers.',
       },
       {
         q: 'Which Delta Exchange API permissions does a kill switch need?',

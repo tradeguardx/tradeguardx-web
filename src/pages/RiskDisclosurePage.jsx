@@ -38,9 +38,9 @@ const SECTIONS = [
       "We are not a registered investment advisor (RIA), broker-dealer, or financial planner under any jurisdiction's regulations. We are a software vendor. If you need investment advice tailored to your personal financial situation, please consult a qualified, licensed financial professional in your country.",
   },
   {
-    title: 'No affiliation with brokers or prop firms',
+    title: 'No affiliation with exchanges or brokers',
     body:
-      "TradeGuardX is independent. We are not affiliated with, sponsored by, or endorsed by any broker, prop firm, exchange, or trading platform — including those whose names appear in our supported broker list. Mentioning a broker by name (or supporting integration with their platform) is not an endorsement of that broker by us, nor an endorsement of TradeGuardX by them.",
+      "TradeGuardX is independent. We are not affiliated with, sponsored by, or endorsed by any exchange, broker or trading platform — including those whose names appear in our supported list. Mentioning a broker by name (or supporting integration with their platform) is not an endorsement of that broker by us, nor an endorsement of TradeGuardX by them.",
   },
   {
     title: 'Software can fail',
@@ -48,11 +48,6 @@ const SECTIONS = [
       "TradeGuardX is software that depends on our servers, your API key and your exchange or broker. It can fail. An exchange can go down, limit our requests, change its API or reject a close. Markets can be closed, gap or run out of liquidity. If you delete or disable your key, we can no longer act on your account. We work hard to keep these failures rare and to recover gracefully, but they will happen.",
     afterListNote:
       "Do not rely on TradeGuardX as your only line of defense against catastrophic loss. Keep broker-side stops, position-size limits, and your own discipline as primary protections. Treat TradeGuardX as one layer of safety, not the only layer.",
-  },
-  {
-    title: 'Prop firm rules',
-    body:
-      "If you trade a funded or evaluation account with a prop firm, that firm has its own rules — daily loss limits, max drawdown, lot sizing, hedging restrictions, news trading restrictions, etc. TradeGuardX can help you enforce these rules, but you are ultimately responsible for understanding and complying with your firm's terms. Violating prop firm rules typically forfeits your account and any unpaid earnings, regardless of why the violation happened.",
   },
   {
     title: 'Your responsibility',

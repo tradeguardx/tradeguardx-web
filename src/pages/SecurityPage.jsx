@@ -5,18 +5,18 @@ const SECTIONS = [
   {
     title: 'We never have your exchange login',
     body:
-      "We never ask for or store your exchange or broker password or 2FA codes. For crypto exchanges like Delta Exchange, you give us a scoped API key with Read and Trade permissions only — it can cancel orders and close positions to enforce your rules, but it can never withdraw or transfer funds. We encrypt that key at rest with AWS KMS. For prop firms, the browser extension reads only what's already visible on the broker page and enforces rules at the click. Either way: no access to your money, and no backdoor into your account.",
+      "We never ask for or store your exchange or broker password or 2FA codes. You give us a scoped API key with read and trade permissions only — we use it to cancel orders and close positions to enforce your rules, and never to open a position or change an order. It can never withdraw or transfer funds. We encrypt that key at rest with AWS KMS.",
   },
   {
     title: 'Authentication',
-    body: "Sign-in is handled by Supabase, an industry-standard auth provider. We never see your password. Sessions use signed JWT tokens with a 1-hour expiry; the extension uses a separate, scoped pairing token that only authorizes the trading account it's paired to.",
+    body: "Sign-in is handled by Supabase, an industry-standard auth provider. We never see your password. Sessions use signed JWT tokens with a 1-hour expiry.",
   },
   {
     title: 'What we collect',
     list: [
       { bold: 'Account info:', text: 'email, display name (you set), and authentication identifier from Supabase.' },
-      { bold: 'Trading account metadata:', text: 'the prop firm/broker, account name, starting balance, and currency you enter when adding an account.' },
-      { bold: 'Trade events:', text: 'symbol, side, quantity, entry/exit price, P&L, and timestamps for trades you take in your paired broker tab.' },
+      { bold: 'Trading account metadata:', text: 'the exchange or broker, account name, starting balance, and currency you enter when adding an account.' },
+      { bold: 'Trade events:', text: 'symbol, side, quantity, entry/exit price, P&L, and timestamps for trades on the account you connect, received through its API connection.' },
       { bold: 'Risk rules:', text: "your configured rules and parameters (e.g., 'daily loss limit: 2%')." },
       { bold: 'Subscription state:', text: 'your plan tier and billing reference (the actual card is at Dodo, never on our servers).' },
     ],
@@ -25,22 +25,20 @@ const SECTIONS = [
     title: 'What we do NOT collect',
     list: [
       { text: "Exchange or broker passwords, 2FA codes, or session cookies. (For exchange accounts we hold only a scoped Read + Trade API key, encrypted — never withdrawal access.)" },
-      { text: "Page content unrelated to trading (account numbers in non-trading pages, broker chat, support tickets, etc.)." },
-      { text: "Browsing activity outside your paired broker domain. The extension stays dormant on every other website." },
       { text: "Personal financial information beyond what you enter (we don't pull credit scores, bank info, etc.)." },
     ],
   },
   {
     title: 'Where your data lives',
     body:
-      "Your account, rules, and trade history are stored in a PostgreSQL database hosted on AWS in the ap-south-1 (Mumbai) region. Local extension state (pairing token, recent trades cache, your selectors) lives only in your browser via chrome.storage.local — it never leaves until you sync it by trading.",
+      "Your account, rules, and trade history are stored in a PostgreSQL database hosted on AWS in the ap-south-1 (Mumbai) region.",
   },
   {
     title: 'Encryption',
     list: [
       { bold: 'In transit:', text: 'TLS 1.2+ on every API call and webhook. No HTTP, ever.' },
       { bold: 'At rest:', text: 'The database disk and backups are encrypted. Exchange API credentials get an extra layer — envelope-encrypted with AWS KMS, so they are never stored in plaintext.' },
-      { bold: 'Tokens:', text: 'Auth tokens are signed JWTs (HS256) with short expiries. Pairing tokens are scoped to a single trading account and revocable.' },
+      { bold: 'Tokens:', text: 'Auth tokens are signed JWTs (HS256) with short expiries.' },
     ],
   },
   {
@@ -50,7 +48,7 @@ const SECTIONS = [
       { bold: 'AWS:', text: 'application hosting, database, and Lambda compute. Mumbai region.' },
       { bold: 'Dodo Payments:', text: 'subscription checkout and recurring billing. Card details are stored at Dodo, not on our servers.' },
       { bold: 'Google Gemini:', text: 'AI-written trade summaries and the in-app support chat. It receives the trade you open with behaviour tags from your recent trades, or your question with your account state and recent enforcement events.' },
-      { bold: 'Sentry (EU region):', text: 'crash and error reporting. We strip query strings and skip console breadcrumbs to avoid leaking session tokens or P&L.' },
+      { bold: 'Sentry (EU region):', text: 'crash and error reporting. A report can include your account ID and email if you are signed in, the page address, and recent clicks and console messages.' },
     ],
   },
   {
@@ -98,7 +96,7 @@ export default function SecurityPage() {
             Security & data handling
           </h1>
           <p className="mt-4 text-base leading-relaxed text-slate-400">
-            Plain-language answers to the question every trader asks before installing a Chrome extension that watches their broker tab: <em>what does it actually do with my data?</em>
+            Plain-language answers to the question every trader asks before connecting an API key: <em>what do you actually do with my data?</em>
           </p>
         </header>
 

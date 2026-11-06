@@ -135,7 +135,7 @@ export const EXCLUDED_ROUTES = {
   '/reset-password': 'Transactional auth step, reached from a tokenised link.',
   '/beta-traders': 'Redirects to /signup.',
   '/beta-testers': 'Redirects to /signup.',
-  '/prop-firm': 'Redirects to / — the prop-firm product is not part of this launch.',
+  '/prop-firm': 'Redirects to /. An old address kept so existing links still land somewhere.',
   '/docs': 'Redirects to /help.',
   '/docs/:slug': 'Redirects to /help/:slug, keeping the slug. A redirect is not content.',
   '/home-classic': 'A second copy of the homepage. Rendered noindex; kept only as a reference layout.',

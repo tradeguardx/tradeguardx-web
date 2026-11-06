@@ -75,7 +75,7 @@ function FundedStatus({ account, accessToken, onUpdated, toast }) {
   const submit = async () => {
     const n = Number(declared);
     if (!Number.isFinite(n) || n <= 0) {
-      toast.error('Invalid amount', 'Enter your actual balance from the prop firm dashboard.');
+      toast.error('Invalid amount', 'Enter your actual balance from your account dashboard.');
       return;
     }
     setSaving(true);
@@ -110,7 +110,7 @@ function FundedStatus({ account, accessToken, onUpdated, toast }) {
               color: 'var(--mint)',
             }}
           >
-            Funded
+            Managed
           </span>
           <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--dash-text-muted)' }}>
             Account status
@@ -166,7 +166,7 @@ function FundedStatus({ account, accessToken, onUpdated, toast }) {
           style={{ borderColor: 'var(--dash-border)' }}
         >
           <p className="text-xs mb-2" style={{ color: 'var(--dash-text-secondary)' }}>
-            Open your prop firm dashboard and enter your actual balance:
+            Open your account dashboard and enter your actual balance:
           </p>
           <div className="flex flex-wrap gap-2">
             <input
@@ -653,7 +653,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
       // stage's job, so hand back and let it advance. Connecting here as well
       // left stage 2 with nothing to do.
       if (!isDelta || skipKey) {
-        toast.success('Account created', skipKey ? 'Now connect the key.' : 'Configure rules and connect the extension next.');
+        toast.success('Account created', skipKey ? 'Now connect the key.' : 'Configure rules and connect the key next.');
         // Hand the account back: the add-a-venue wizard selects it so its next
         // stage connects a key to the one just made rather than to whatever
         // happened to be selected before.
@@ -863,7 +863,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
           {isFunded && (
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--dash-text-muted)' }}>
-                3. Challenge size
+                3. Account size
               </p>
               {selected.sizes?.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -919,7 +919,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block">
                   <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>
-                    Reset time (local to prop firm)
+                    Reset time (local to your broker)
                   </span>
                   <input
                     type="time"
