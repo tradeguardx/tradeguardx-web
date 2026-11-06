@@ -59,5 +59,5 @@ export const SUGGESTED_QUESTIONS = [
   'Why is my account locked?',
   'Why does it say Unprotected?',
   'What rules do I have turned on?',
-  'How do I connect my Delta API key?',
+  'How do I connect my API key?',
 ];

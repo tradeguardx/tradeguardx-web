@@ -59,7 +59,7 @@ export const PROTECTIONS = [
     pain: "You scalp in one account and swing in another, but one set of rules can't fit both.",
     detail: 'Rules, limits, guard state and history are per account. Nothing is shared between them, so a lockout on one leaves the others trading.',
     n: '04',
-    title: 'Up to 5 trading accounts',
+    title: 'Unlimited trading accounts',
     body: 'Each with its own rules, limits and guard. Switch between them in one tap.',
     gradient: 'linear-gradient(145deg,color-mix(in srgb, var(--mint-solid) 60%, white),var(--mint-solid))',
     color: 'var(--on-mint)',
