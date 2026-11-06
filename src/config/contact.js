@@ -4,4 +4,4 @@
  */
 
 /** Founder's WhatsApp, international format, digits only (91 = India). */
-export const FOUNDER_WHATSAPP = '918770144119';
+export const FOUNDER_WHATSAPP = '918820285150';
