@@ -110,6 +110,9 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
   if (!exchangeSlug) return null; // Only render for exchange accounts
 
   const isConnected = connection?.status === 'active';
+  // A key that cannot close anything has no protection to lose, so a lock does
+  // not hold it in place (the server agrees).
+  const keyHeld = locked && !(connection?.status === 'failed' || (isConnected && connection?.enforcementCapable === false));
   const canSubmit = apiKey.trim().length > 0 && apiSecret.trim().length > 0 && (!venueFor(exchangeSlug)?.hasPassphrase || passphrase.trim().length > 0) && extraFieldsReady(venueFor(exchangeSlug), extraVals) && !submitting;
 
   // Doubles as the retry handler on the result screen — there's no separate
@@ -270,8 +273,8 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
             <button
               type="button"
               onClick={openForm}
-              disabled={locked}
-              title={locked ? 'Locked during an active cooldown' : undefined}
+              disabled={keyHeld}
+              title={keyHeld ? 'Locked during an active cooldown' : undefined}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold border disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ borderColor: 'var(--dash-border)', color: 'var(--dash-text-secondary)' }}
             >
@@ -288,7 +291,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               {disconnecting ? 'Disconnecting…' : 'Disconnect'}
             </button>
           </div>
-          {locked && (
+          {keyHeld && (
             <p className="pt-1 text-[11px]" style={{ color: 'var(--dash-text-faint)' }}>
               🔒 Key changes are locked while your account is in cooldown — this keeps your kill switch active. Available again once the lock lifts.
             </p>

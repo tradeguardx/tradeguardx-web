@@ -96,7 +96,9 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
    * including the screenshots.
    */
   const keyName = SUGGESTED_KEY_NAME;
-  const cooled = g.guard === 'locked';
+  // A lock holds a working key in place. One that cannot close anything has no
+  // protection to lose, so it can always be swapped (the server agrees).
+  const cooled = g.guard === 'locked' && !g.readOnly && g.connection?.status !== 'failed';
   const exchangeSlug = selectedAccount ? exchangeFromBrokerSlug(selectedAccount.propFirmSlug) : null;
   const v = venueFor(exchangeSlug) ?? venueFor('delta_india');
   const ready = !cooled && keyVal.trim().length > 4 && secretVal.trim().length > 4 && !!exchangeSlug && (!v.hasPassphrase || passVal.trim().length > 0) && extraFieldsReady(v, extraVals);
