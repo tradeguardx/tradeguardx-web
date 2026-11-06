@@ -63,6 +63,23 @@ describe('connect a BloFin key', () => {
     });
   });
 
+  it('reopens the step that fixes a key refused for its permission', async () => {
+    const refused = Object.assign(new Error('This BloFin key is read-only.'), { details: { error: { code: 'KEY_READ_ONLY' } } });
+    connect.mockRejectedValue(refused);
+    renderFlow();
+    fireEvent.click(screen.getByText('Paste the API Key, Secret Key and passphrase here'));
+    fireEvent.change(screen.getByLabelText('API key'), { target: { value: 'blofin-key-1' } });
+    fireEvent.change(screen.getByLabelText('Secret Key'), { target: { value: 'blofin-secret-1' } });
+    fireEvent.change(screen.getByLabelText(/^Passphrase/), { target: { value: 'my passphrase' } });
+    expect(screen.getAllByText('Done').length).toBeGreaterThan(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Connect and check' }));
+
+    await screen.findByText('Trading permission is not selected on this key');
+    // Only the step before the form is still ticked; the form is open again.
+    expect(screen.getAllByText('Done')).toHaveLength(1);
+    expect(screen.queryByLabelText('API key')).toBeNull();
+  });
+
   it('draws BloFin form with Transfer left off', () => {
     renderFlow();
     fireEvent.click(screen.getByText('Fill it in and create the key'));

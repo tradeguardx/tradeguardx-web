@@ -117,6 +117,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
   const submit = async () => {
     if (!ready) return;
     setBusy(true);
+    setPicked(null);
     try {
       const summary = await connectExchangeCredentials({ accessToken, accountId: selectedAccount.id, exchange: exchangeSlug, apiKey: keyVal.trim(), apiSecret: secretVal.trim(), passphrase: v.hasPassphrase ? passVal.trim() : undefined, venueFields: extraVals });
       /* Start importing their history the moment the key verifies. This is
@@ -131,7 +132,9 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
       await refreshTradingAccounts?.(); await refresh();
       toast.success(summary?.enforcementCapable === false ? 'Connected — read-only' : 'Connected and checked', summary?.enforcementCapable === false ? 'This key can watch but not close. Make a new one with trading turned on.' : 'This key can close positions. We start watching from your next trade.');
     } catch (e) {
-      setResult({ ok: false, title: connectFailureTitle(e), message: e?.message || `${venue} rejected the connection. Try again.` });
+      const title = connectFailureTitle(e);
+      if (title) setPicked(fixStep);
+      setResult({ ok: false, title, message: e?.message || `${venue} rejected the connection. Try again.` });
     } finally { setBusy(false); }
   };
 
@@ -218,6 +221,9 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
       : { title: 'Paste the key and secret here', body: 'If you copied both together we will split them for you.', kind: 'paste' },
   ].map((st, i) => ({ ...st, n: i + 1 }));
   const pasteStep = steps.find((s) => s.kind === 'paste')?.n ?? steps.length;
+  // Where a key refused for its permission or IP gets fixed: the screen after
+  // Create on a venue that has one (Shark), otherwise the create form.
+  const fixStep = steps.find((s) => s.kind === 'after')?.n ?? steps.find((s) => s.kind === 'form')?.n ?? 1;
 
   // A key that is in place and can act. A read-only key counts as connected
   // to the exchange and NOT as protection, so it does not hide the guide.
@@ -248,7 +254,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
   const [picked, setPicked] = useState(null);
   const openStep = picked ?? step;
   /** Behind the open one, or behind what we can prove — either finishes it. */
-  const isDone = (n) => n < openStep || n < step;
+  const isDone = (n) => n < openStep || n < (result?.title ? fixStep : step);
   const toggleStep = (n) => setPicked((prev) => ((prev ?? step) === n ? 0 : n));
 
   if (!selectedAccount) {
