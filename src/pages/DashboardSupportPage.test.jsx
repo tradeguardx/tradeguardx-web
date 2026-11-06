@@ -26,6 +26,12 @@ describe('dashboard support page', () => {
     expect(opened.mock.calls[0][0].view).toBe('chat');
   });
 
+  it('asks a suggested question straight away', () => {
+    render(<DashboardSupportPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Why is my account locked?' }));
+    expect(opened.mock.calls[0][0]).toMatchObject({ view: 'chat', ask: 'Why is my account locked?' });
+  });
+
   it('links Telegram and WhatsApp with who is asking already typed', () => {
     render(<DashboardSupportPage />);
     const tg = new URL(screen.getByRole('link', { name: 'Open Telegram' }).href);

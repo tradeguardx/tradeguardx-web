@@ -13,10 +13,10 @@ export function openSupport(prefill) {
   }
 }
 
-/** Opens the panel on the AI conversation rather than the contact form. */
-export function openSupportChat() {
+/** Opens the panel on the AI conversation rather than the contact form, optionally asking a question. */
+export function openSupportChat(ask) {
   try {
-    window.dispatchEvent(new CustomEvent(OPEN_SUPPORT_EVENT, { detail: { view: 'chat' } }));
+    window.dispatchEvent(new CustomEvent(OPEN_SUPPORT_EVENT, { detail: { view: 'chat', ask: ask || '' } }));
   } catch {
     /* non-browser */
   }

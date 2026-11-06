@@ -364,12 +364,14 @@ function SupportChatPanel({ session, selectedAccount, launcher }) {
   const [lastFailed, setLastFailed] = useState('');
   const [suggested, setSuggested] = useState(SUGGESTED_QUESTIONS);
   const [view, setView] = useState('chat'); // 'chat' | 'contact' | 'sent'
+  const [pendingAsk, setPendingAsk] = useState('');
   const [contactPrefill, setContactPrefill] = useState('');
 
   useEffect(() => {
     const onOpen = (e) => {
       setContactPrefill(e?.detail?.prefill || '');
       setView(e?.detail?.view === 'chat' ? 'chat' : 'contact');
+      setPendingAsk(e?.detail?.ask || '');
       setOpen(true);
     };
     window.addEventListener(OPEN_SUPPORT_EVENT, onOpen);
@@ -389,6 +391,13 @@ function SupportChatPanel({ session, selectedAccount, launcher }) {
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
+
+  useEffect(() => {
+    if (!pendingAsk) return;
+    setPendingAsk('');
+    ask(pendingAsk);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAsk]);
 
   async function ask(text) {
     const content = text.trim();
