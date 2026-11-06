@@ -17,13 +17,13 @@ const sections = [
   },
   {
     title: '2. Description of Service',
-    content: 'TradeGuardX is risk-management software for traders on supported exchanges and brokers. You define risk rules — such as a daily loss limit, a maximum number of trades, or a cooldown after consecutive losses — and our server-side risk engine monitors your connected trading account and acts on those rules for you. TradeGuardX does not trade for you.',
+    content: 'TradeGuardX is risk-management software for traders on supported exchanges and brokers: a kill switch, an account lock, and a journal that analyses your past trading. You define risk rules — such as a daily loss limit, a maximum number of trades, or a cooldown after consecutive losses — and our server-side risk engine monitors your connected trading account and acts on those rules for you. TradeGuardX does not trade for you.',
     list: [
       'We never open a position, never add to one, and never change the size, price, stop-loss, take-profit or leverage of an order.',
       'We take only two actions on your connected account, and only when a rule you set is breached or you start or schedule a lock yourself: we cancel your open orders, including stop-loss and take-profit orders, and we close your open positions at market. A close may be sent to the exchange as a reduce-only order, which can only reduce a position.',
       'While a lock is running, your exchange account itself is not locked. An order can still reach the exchange, and we close the resulting position after it opens.',
       'The Service also records your trades and analyses them, including a journal, an AI trade analyser that reviews your past trades and your habits, a revenge-trading report and tax estimates. This analysis looks at what has already happened on your account. It never recommends a new trade, and it is not financial advice.',
-      'We do not provide trading, investment, tax or financial advice, signals or trade suggestions. Nothing in the Service is a recommendation to enter or exit any position.',
+      'We do not offer copy trading, signals or analysis of future trades, and we do not provide trading, investment, tax or financial advice. Nothing in the Service is a recommendation to enter or exit any position.',
     ],
     afterList: 'The Service is provided "as is" for risk-management assistance only.',
   },

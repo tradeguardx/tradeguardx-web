@@ -5,7 +5,7 @@ const SECTIONS = [
   {
     title: 'TradeGuardX is a tool, not investment advice',
     body:
-      "TradeGuardX is a software tool that enforces risk rules YOU configure. We do not provide trading recommendations, signals, market commentary, or investment advice. Nothing on our website, in our journal, AI trade analysis or reports, or in any communication from us should be interpreted as a recommendation to buy, sell, or hold any financial instrument.",
+      "TradeGuardX is a software tool that enforces risk rules YOU configure. We do not offer copy trading or analysis of future trades, and we do not provide trading recommendations, signals, market commentary, or investment advice. Nothing on our website, in our journal, AI trade analysis or reports, or in any communication from us should be interpreted as a recommendation to buy, sell, or hold any financial instrument.",
   },
   {
     title: 'What TradeGuardX does on your account',
