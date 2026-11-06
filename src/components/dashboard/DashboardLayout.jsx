@@ -220,11 +220,11 @@ function Shell() {
       <WelcomeCelebration />
       <LifecycleToast />
       <PhonePrompt />
-      {/* Not rendered on a phone. It sat on top of the bottom tab bar — same
-          corner, same z-index — so the "More" tab and the chat bubble fought
-          for the same thumb. Hiding it with CSS would leave the widget mounted
-          and polling for nothing. Support is still reachable from the menu. */}
-      {!isMobile && <SupportChat />}
+      {/* No bubble on a phone: it sat on top of the bottom tab bar, same corner,
+          same z-index, so the "More" tab and the bubble fought for the same
+          thumb. The panel stays mounted, opened from the Support page and from
+          every "contact support" link. */}
+      <SupportChat launcher={!isMobile} />
     </div>
   );
 }

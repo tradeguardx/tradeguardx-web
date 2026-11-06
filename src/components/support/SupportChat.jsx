@@ -346,16 +346,16 @@ function timeLabel(ts) {
   }
 }
 
-export default function SupportChat() {
+export default function SupportChat({ launcher = true }) {
   const { session } = useAuth();
   const { selectedAccount } = useTradingAccounts();
   if (!session) return null;
   return (
-    <SupportChatPanel key={selectedAccount?.id ?? 'none'} session={session} selectedAccount={selectedAccount} />
+    <SupportChatPanel key={selectedAccount?.id ?? 'none'} session={session} selectedAccount={selectedAccount} launcher={launcher} />
   );
 }
 
-function SupportChatPanel({ session, selectedAccount }) {
+function SupportChatPanel({ session, selectedAccount, launcher }) {
   const [open, setOpen] = useSessionFlag(STORAGE_KEY, false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -369,7 +369,7 @@ function SupportChatPanel({ session, selectedAccount }) {
   useEffect(() => {
     const onOpen = (e) => {
       setContactPrefill(e?.detail?.prefill || '');
-      setView('contact');
+      setView(e?.detail?.view === 'chat' ? 'chat' : 'contact');
       setOpen(true);
     };
     window.addEventListener(OPEN_SUPPORT_EVENT, onOpen);
@@ -454,6 +454,7 @@ function SupportChatPanel({ session, selectedAccount }) {
   return (
     <>
       {/* Launcher */}
+      {launcher && (
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -468,6 +469,7 @@ function SupportChatPanel({ session, selectedAccount }) {
           <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.9} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M8 14h5M21 12a8 8 0 01-11.6 7.1L4 20l1-4.4A8 8 0 1121 12z" /></svg>
         )}
       </button>
+      )}
 
       {/* Panel */}
       <AnimatePresence>
@@ -523,6 +525,17 @@ function SupportChatPanel({ session, selectedAccount }) {
                   style={{ borderColor: `${theme.accent}59`, color: theme.accent, backgroundColor: theme.accentSoft }}
                 >
                   Contact support
+                </button>
+              )}
+              {!launcher && (
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close support assistant"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg"
+                  style={{ color: 'var(--dash-text-muted)' }}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
                 </button>
               )}
             </div>

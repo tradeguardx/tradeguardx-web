@@ -12,3 +12,12 @@ export function openSupport(prefill) {
     /* non-browser */
   }
 }
+
+/** Opens the panel on the AI conversation rather than the contact form. */
+export function openSupportChat() {
+  try {
+    window.dispatchEvent(new CustomEvent(OPEN_SUPPORT_EVENT, { detail: { view: 'chat' } }));
+  } catch {
+    /* non-browser */
+  }
+}

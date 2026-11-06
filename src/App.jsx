@@ -54,6 +54,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import TaxPage from './pages/TaxPage';
 import AlertsPage from './pages/AlertsPage';
+import DashboardSupportPage from './pages/DashboardSupportPage';
 import RedirectWithSearch from './pages/RedirectWithSearch';
 import DashboardLanding from './pages/DashboardLanding';
 import BillingPage from './pages/BillingPage';
@@ -169,6 +170,7 @@ function App() {
                   <Route path="billing" element={<RedirectWithSearch to="/dashboard/account/billing" />} />
                   <Route path="connect" element={<ConnectKeyPage />} />
                   <Route path="alerts" element={<AlertsPage />} />
+                  <Route path="support" element={<DashboardSupportPage />} />
                   <Route path="review" element={<MyReviewPage />} />
                   <Route path="preferences" element={<PreferencesPage />} />
                   {/* Extension-era routes: the product is server-side only now. */}

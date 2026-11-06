@@ -90,6 +90,7 @@ export default function Sidebar({ onNavigate }) {
     { id: 'bell', to: '/dashboard/alerts', label: 'Alerts' },
     { id: 'plan', to: '/dashboard/account/billing', label: 'Plan & billing' },
     { id: 'security', to: '/dashboard/account/security', label: 'Security' },
+    { id: 'support', to: '/dashboard/support', label: 'Support' },
   ];
 
   /* Lifecycle badges sit on top of the counts above: a locked page says
