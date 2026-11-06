@@ -8,53 +8,50 @@ import { useSEO } from '../hooks/useSEO';
  * could never tell when the terms actually changed. Bump this by hand, only
  * when the text above it changes.
  */
-const LAST_UPDATED = 'September 23, 2026';
+const LAST_UPDATED = 'November 6, 2026';
 
 const sections = [
   {
     title: '1. Overview',
-    content: 'TradeGuardX offers a paid Pro subscription, billed monthly, quarterly or yearly. This Refund Policy explains when and how you may request a refund. Our goal is to be fair and transparent.',
+    content: 'TradeGuardX offers a paid Pro subscription, billed monthly, quarterly or yearly. New accounts get a 3-day free trial with full access, so you can try the whole product before you pay anything. Because of that, we do not offer refunds once a payment has been taken.',
   },
   {
-    title: '2. Free Plan',
-    content: 'The Free plan does not require payment. No refunds apply to the Free plan.',
-  },
-  {
-    title: '3. Refund Eligibility',
-    content: 'You may be eligible for a full refund if:',
+    title: '2. No Refunds',
+    content: 'All subscription payments are final and non-refundable. This includes:',
     list: [
-      'You request a refund within 7 days of your initial purchase or renewal.',
-      'You have not previously received a refund for the same plan in the past 12 months.',
-      'The request is made in good faith (e.g. service did not work as described, technical issues we could not resolve).',
-    ],
-    note: 'Refunds are issued at our discretion. We may ask for details about your experience to improve our service.',
-  },
-  {
-    title: '4. Non-Refundable Situations',
-    content: 'We generally do not offer refunds in the following cases:',
-    list: [
-      'Requests made more than 7 days after the charge',
-      'Partial refunds for unused portions of a subscription period',
-      'Change of mind after the 7-day window',
-      'Violation of our Terms and Conditions resulting in account termination',
+      'Your first payment after the free trial',
+      'Renewals, on any billing interval',
+      'Unused time left in a billing period',
+      'A change of mind, or not using the service',
+      'Trading results, including losses from a lock or a closed position',
+      'Accounts terminated for breaking our Terms and Conditions',
     ],
   },
   {
-    title: '5. How to Request a Refund',
-    content: 'Send an email to support@tradeguardx.com with the subject line "Refund Request" and include your account email and the date of the charge. We will respond within 5 business days. If approved, refunds are processed to the original payment method within 7-10 business days.',
+    title: '3. Free Trial and Cancellation',
+    content: 'You pay nothing if you cancel before your free trial ends. We show you the date of your first payment before you confirm, and again in your billing settings. After that, you can cancel at any time from your account. Cancelling stops future charges, and you keep access until the end of the period you have paid for.',
+  },
+  {
+    title: '4. Billing Errors',
+    content: 'We will correct a charge that was our mistake or a billing error, and we will refund any amount the law requires us to. This includes:',
+    list: [
+      'Being charged twice for the same period',
+      'Being charged after your cancellation took effect',
+    ],
+    note: 'Payments made before November 6, 2026 stay under the 7-day refund terms that applied when you paid.',
+  },
+  {
+    title: '5. How to Report a Billing Error',
+    content: 'Email support@tradeguardx.com with the subject line "Billing Error" and include your account email and the date of the charge. We will respond within 5 business days. If a refund is due, it goes to the original payment method within 7-10 business days.',
     email: 'support@tradeguardx.com',
   },
   {
-    title: '6. Cancellation',
-    content: 'You may cancel your subscription at any time from your account or dashboard. Cancellation stops future charges but does not entitle you to a refund for the current billing period unless you meet the refund eligibility criteria above.',
-  },
-  {
-    title: '7. Changes to This Policy',
+    title: '6. Changes to This Policy',
     content: 'We may update this Refund Policy from time to time. The "Last updated" date at the top reflects the latest version. Continued use of paid services after changes constitutes acceptance of the updated policy.',
   },
   {
-    title: '8. Contact',
-    content: 'For refund requests or questions:',
+    title: '7. Contact',
+    content: 'For questions about this policy:',
     email: 'support@tradeguardx.com',
   },
 ];
@@ -62,7 +59,7 @@ const sections = [
 export default function RefundPolicyPage() {
   useSEO({
     title: 'Refund Policy',
-    description: 'When a TradeGuardX subscription can be refunded, how to ask for one, and how long it takes. No hidden conditions and nothing buried in a clause.',
+    description: 'TradeGuardX includes a 3-day free trial, so payments are non-refundable. How cancelling works, and what happens if there is a billing error.',
     url: 'https://tradeguardx.com/refund',
   });
 

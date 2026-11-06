@@ -966,7 +966,7 @@ export default function PricingPage() {
 
         {plans.length > 0 && (
           <p className="mx-auto mb-12 mt-8 max-w-xl text-center text-[12.5px] leading-relaxed" style={{ color: '#64748b' }}>
-            After a charge, you still have 7 days to ask for a full refund.{' '}
+            Cancel before your free trial ends and you pay nothing. Payments are non-refundable after that.{' '}
             <Link to="/refund" className="underline underline-offset-2 hover:text-slate-300">Refund policy</Link>
           </p>
         )}

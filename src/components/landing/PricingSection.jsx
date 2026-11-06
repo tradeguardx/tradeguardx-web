@@ -134,8 +134,8 @@ export default function PricingSection() {
         <div className="mx-auto mt-10 max-w-xl text-center">
           <p className="text-sm leading-relaxed text-slate-400">
             Free for 3 days — you set up payment first and nothing is charged until day 4.
-            Cancel any time before then and you pay nothing, and there is a 7-day refund if you
-            change your mind after paying.{' '}
+            Cancel any time before then and you pay nothing. Payments are non-refundable after
+            that.{' '}
             <Link to="/pricing" className="text-accent hover:underline">See full plan comparison →</Link>
           </p>
         </div>
