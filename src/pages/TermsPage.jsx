@@ -82,7 +82,7 @@ const sections = [
   {
     title: '12. Contact',
     content: 'For questions about these Terms, contact us at:',
-    email: 'legal@tradeguardx.com',
+    email: 'support@tradeguardx.com',
   },
 ];
 
