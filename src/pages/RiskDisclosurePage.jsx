@@ -5,7 +5,7 @@ const SECTIONS = [
   {
     title: 'TradeGuardX is a tool, not investment advice',
     body:
-      "TradeGuardX is a software tool that enforces risk rules YOU configure. We do not provide trading recommendations, signals, market commentary, or investment advice. Nothing on our website, in our journal, AI trade summaries or reports, or in any communication from us should be interpreted as a recommendation to buy, sell, or hold any financial instrument.",
+      "TradeGuardX is a software tool that enforces risk rules YOU configure. We do not provide trading recommendations, signals, market commentary, or investment advice. Nothing on our website, in our journal, AI trade analysis or reports, or in any communication from us should be interpreted as a recommendation to buy, sell, or hold any financial instrument.",
   },
   {
     title: 'What TradeGuardX does on your account',
@@ -14,7 +14,7 @@ const SECTIONS = [
     list: [
       { text: "A forced close can realise a loss, and it can happen at a worse price than you expected." },
       { text: "Your exchange account itself is not locked. An order can still reach the exchange during a lock, and we close the resulting position after it opens." },
-      { text: "Journal entries, AI trade summaries and reports describe your past trades. They do not tell you what to trade." },
+      { text: "Journal entries, AI trade analysis and reports look at your past trades. They never recommend a new trade." },
     ],
   },
   {

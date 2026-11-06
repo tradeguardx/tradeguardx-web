@@ -11,7 +11,7 @@ import { useLandingMoney } from '../../../context/LandingMoneyContext';
  *
  * Two-column layout:
  *   LEFT  — a sample journal entry card (date, trade meta, rule outcome,
- *           AI summary paragraph)
+ *           AI insight paragraph)
  *   RIGHT — a behavior-pattern card (small bar chart by hour of day plus
  *           a "most common pattern" callout)
  *
@@ -124,14 +124,14 @@ export default function StoryAIJournal() {
               </p>
             </div>
 
-            {/* AI summary */}
+            {/* AI insight */}
             <div className="mt-5 lg:mt-auto lg:pt-5">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/[0.10] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-violet-300">
                   <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2L9.91 8.26 3.27 9.27l4.91 4.78-1.16 6.78L12 17.77l5.98 3.06-1.16-6.78 4.91-4.78-6.64-1.01z" />
                   </svg>
-                  AI summary
+                  AI insight
                 </span>
               </div>
               <p className="mt-3 text-sm leading-relaxed text-slate-300">
@@ -139,6 +139,11 @@ export default function StoryAIJournal() {
                 <span className="font-semibold text-violet-300">4 times this week</span> — each
                 during the first 60 minutes after a loss. Pattern:{' '}
                 <span className="text-white">chasing momentum after drawdown → impulse entries with no risk plan.</span>
+              </p>
+              <p className="mt-3 text-xs text-slate-500">
+                Suggested rule:{' '}
+                <span className="text-slate-300">cool-down for 30 min after a losing close</span>{' '}
+                — already used by traders with similar patterns.
               </p>
             </div>
           </motion.div>

@@ -33,7 +33,7 @@ describe('setup: the revenge report between the key and billing', () => {
     expect(await screen.findByText('Your revenge report is unlocked', {}, { timeout: 5000 })).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Revenge score 38 out of 100' })).toBeTruthy();
     expect(screen.getByText('After a loss, you trade to get it back.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Start my 3-day free trial/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Fix this — start your 3-day free trial/ }));
     expect(onContinue).toHaveBeenCalled();
   });
 

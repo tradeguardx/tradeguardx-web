@@ -47,7 +47,7 @@ const SECTIONS = [
       { bold: 'Supabase:', text: 'authentication only. We never see your password.' },
       { bold: 'AWS:', text: 'application hosting, database, and Lambda compute. Mumbai region.' },
       { bold: 'Dodo Payments:', text: 'subscription checkout and recurring billing. Card details are stored at Dodo, not on our servers.' },
-      { bold: 'Google Gemini:', text: 'AI-written trade summaries and the in-app support chat. It receives the trade you open with behaviour tags from your recent trades, or your question with your account state and recent enforcement events.' },
+      { bold: 'Google Gemini:', text: 'AI trade analysis and the in-app support chat. It receives the trade you open with behaviour tags from your recent trades, or your question with your account state and recent enforcement events.' },
       { bold: 'Sentry (EU region):', text: 'crash and error reporting. A report can include your account ID and email if you are signed in, the page address, and recent clicks and console messages.' },
     ],
   },

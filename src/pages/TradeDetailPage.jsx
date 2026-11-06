@@ -61,27 +61,24 @@ function fmtDuration(sec) {
 
 // ─── Narrative parser ─────────────────────────────────────────────────────────
 function parseNarrative(raw) {
-  if (!raw) return { verdict: '', timeline: [], violations: [], cost: '', full: '' };
-
-  // Summaries saved before narrative-v5 end in a FIX section of corrective
-  // advice. We do not tell traders what to do, so it is dropped here too.
-  const text = raw.replace(/---FIX---[\s\S]*$/, '');
+  if (!raw) return { verdict: '', timeline: [], violations: [], cost: '', fix: '', full: '' };
 
   const section = (marker, next) => {
     const re = new RegExp(`---${marker}---\\s*([\\s\\S]*?)(?=---${next}---|$)`);
-    return (text.match(re)?.[1] || '').trim();
+    return (raw.match(re)?.[1] || '').trim();
   };
   const bullets = (s) => s.split('\n').map((l) => l.replace(/^[•\-*]\s*/, '').trim()).filter(Boolean);
 
   const verdict = section('VERDICT', 'TIMELINE');
   const timeline = bullets(section('TIMELINE', 'VIOLATIONS'));
   const violationLines = bullets(section('VIOLATIONS', 'COST'));
-  const cost = section('COST', '___END___');
+  const cost = section('COST', 'FIX');
+  const fix = section('FIX', '___END___');
 
-  let full = text.replace(/---(?:VERDICT|TIMELINE|VIOLATIONS|COST)---/g, '').trim();
+  let full = raw.replace(/---(?:VERDICT|TIMELINE|VIOLATIONS|COST|FIX)---/g, '').trim();
   full = full.replace(/^\s*(TRADE\s*NARRATIVE|Trade\s*narrative)\s*(\n|$)/i, '').trim();
 
-  return { verdict, timeline, violations: violationLines, cost, full };
+  return { verdict, timeline, violations: violationLines, cost, fix, full };
 }
 
 // ─── TTS hook (sentence-by-sentence with natural pauses) ─────────────────────
@@ -954,7 +951,7 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
         </div>
       )}
 
-      {/* ── AI trade summary (plain tone in copy; warm UI) ───────────────── */}
+      {/* ── AI Coach Narrative (friend tone in copy; warm UI) ───────────────── */}
       <div
         className="rounded-2xl border overflow-hidden relative"
         style={{
@@ -984,9 +981,9 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-display font-bold tracking-tight" style={{ color: 'var(--dash-text-primary)' }}>Trade summary</p>
+                <p className="text-sm font-display font-bold tracking-tight" style={{ color: 'var(--dash-text-primary)' }}>Discipline coach</p>
                 <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--dash-text-muted)' }}>
-                  What happened on this trade, which rules it broke and what that cost.
+                  Plain talk on this trade — what happened, how it fits your habits, and what to try next.
                 </p>
               </div>
             </div>
@@ -1140,13 +1137,37 @@ function NarrativeBlock({ narrative, narrativeBusy, narrativeErr, fetchNarrative
                 </div>
               )}
 
+              {/* Fix — elevated CTA card */}
+              {parsed.fix && (
+                <div
+                  className="relative overflow-hidden rounded-2xl"
+                  style={{
+                    background: `linear-gradient(135deg, ${mix('var(--mint-solid)', 14)} 0%, ${mix('var(--mint-solid)', 6)} 100%)`,
+                    border: '1px solid var(--mint-line)',
+                    boxShadow: 'var(--glow-mint)',
+                  }}
+                >
+                  <div className="pointer-events-none absolute -right-6 -bottom-6 h-20 w-20 rounded-full blur-2xl opacity-40" style={{ backgroundColor: 'var(--mint-solid)' }} aria-hidden />
+                  <div className="relative px-5 py-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ backgroundColor: mix('var(--mint-solid)', 18), color: 'var(--mint)' }}>
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                      </div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--mint)' }}>Try this next</p>
+                    </div>
+                    <p className="text-sm leading-relaxed font-medium" style={{ color: 'var(--dash-text-primary)' }}>
+                      {parsed.fix}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* Footer */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t" style={{ borderColor: 'var(--dash-border)' }}>
             <p className="text-[9px]" style={{ color: 'var(--dash-text-faint)' }}>
-              A summary of your own trade data. Not advice or a recommendation.
+              Coaching from your trade data — not financial advice.
             </p>
             {narrative?.model && (
               <p className="text-[9px]" style={{ color: 'var(--dash-text-faint)' }}>

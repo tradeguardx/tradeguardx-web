@@ -126,7 +126,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
             </div>
             <div className="rv-in" style={sx('position:relative;margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap', { animationDelay: '1.7s' })}>
               <button type="button" onClick={onContinue} className="rv-motion rv-full-sm" style={sx('padding:13px 22px;border:0;border-radius:12px;color:var(--on-mint);font-size:14.5px;font-weight:800;cursor:pointer;box-shadow:var(--glow-mint);background-size:200% 100%;animation:rvShine 2.8s linear infinite', { backgroundImage: 'linear-gradient(110deg,var(--mint-solid) 40%,#fff6 50%,var(--mint-solid) 60%)', backgroundColor: 'var(--mint-solid)' })}>
-                {continueLabel ? <>{continueLabel} →</> : <>Start my 3-day free trial →</>}
+                {continueLabel ? <>Fix this — {continueLabel.toLowerCase()} →</> : <><span className="rv-hide-sm">Fix this — start your 3-day free trial →</span><span className="rv-show-sm">Start my 3-day free trial →</span></>}
               </button>
               <button type="button" onClick={toggleFull} aria-expanded={full} className="rv-full-sm" style={sx('padding:12px 18px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer')}>
                 {full ? 'Hide the full report' : 'See my full report'}

@@ -274,24 +274,24 @@ export default function JournalPage() {
   const xLabels = equityDates.length ? [equityDates[0], equityDates[Math.floor((equityDates.length - 1) / 2)], equityDates[equityDates.length - 1]].map(shortDate) : [];
 
   const readEquity = netPnl < 0
-    ? `You are ${money(netPnl, cur, 0)} over ${days} days. ${ruleOn('daily-loss') ? 'Daily loss protection is on — the curve should stop falling at the limit each day.' : 'Daily loss protection is off.'}`
-    : `You are ${money(netPnl, cur, 0)} over ${days} days. ${ruleOn('daily-profit-target') ? 'Daily profit target is on, so green days are banked instead of handed back.' : 'Daily profit target is off.'}`;
+    ? `You are ${money(netPnl, cur, 0)} over ${days} days. ${ruleOn('daily-loss') ? 'Daily loss protection is on — the curve should stop falling at the limit each day.' : 'Daily loss protection is off, so there is no floor under a bad day.'}`
+    : `You are ${money(netPnl, cur, 0)} over ${days} days. ${ruleOn('daily-profit-target') ? 'Daily profit target is on, so green days are banked instead of handed back.' : 'Daily profit target is off — switching it on banks a green day before it turns.'}`;
   const readDd = maxDd < 0
     ? `${recovered ? 'You recovered your worst drawdown' : `You have not recovered a drawdown since ${shortDate(maxDdAt)}`}. Your max drawdown rule is ${ruleOn('max-total-loss') ? 'on — it would have alerted at your limit' : 'off'}.`
     : 'No drawdown yet — every closed trade so far has kept the curve at its peak.';
   const readSymbol = bySymbol[0]
     ? (bySymbol[0].net < 0
-      ? `${bySymbol[0].symbol} takes the most: ${money(bySymbol[0].net, cur, 0)} net. Risk per trade ${ruleOn('risk-per-trade') ? 'is on, so no single position on it can exceed your cap' : 'is off'}.`
+      ? `${bySymbol[0].symbol} takes the most: ${money(bySymbol[0].net, cur, 0)} net. Risk per trade ${ruleOn('risk-per-trade') ? 'is on, so no single position on it can exceed your cap' : 'is off — a cap per position is what stops one symbol from running the whole account'}.`
       : `${bySymbol[0].symbol} earns the most at ${money(bySymbol[0].net, cur, 0)} net. ${leak ? `${leak.symbol} is the leak at ${money(leak.net, cur, 0)}.` : 'Nothing is leaking yet.'}`)
     : '—';
   const readWeekday = worstDay && worstDay.v < 0
-    ? `${DAY_LONG[worstDay.day]} costs you ${money(worstDay.v, cur, 0)} on its own. ${breaksOnWorstDay > 0 ? `${breaksOnWorstDay} of your ${breaches90.length} rule ${breaches90.length === 1 ? 'break' : 'breaks'} happened on a ${DAY_LONG[worstDay.day]}.` : ruleOn('max-trades-day') ? 'Max trades per day is on — it caps how much that day can run.' : 'Max trades per day is off.'}`
+    ? `${DAY_LONG[worstDay.day]} costs you ${money(worstDay.v, cur, 0)} on its own. ${breaksOnWorstDay > 0 ? `${breaksOnWorstDay} of your ${breaches90.length} rule ${breaches90.length === 1 ? 'break' : 'breaks'} happened on a ${DAY_LONG[worstDay.day]}.` : ruleOn('max-trades-day') ? 'Max trades per day is on — it caps how much that day can run.' : 'Max trades per day is off — a cap is the cheapest brake for a day that keeps losing.'}`
     : bestDay && bestDay.v > 0 ? `No losing weekday yet. ${DAY_LONG[bestDay.day]} is your best at ${money(bestDay.v, cur, 0)}.` : '—';
   const readSides = (() => {
     const [l, s] = sides;
     if (!l.n || !s.n) return `${l.n ? 'Only longs' : 'Only shorts'} so far — nothing to compare yet.`;
     const worse = l.net < s.net ? l : s; const better = worse === l ? s : l;
-    return `${better.label}s pay you ${money(better.net, cur, 0)}; ${worse.label.toLowerCase()}s ${worse.net < 0 ? 'cost' : 'only add'} ${money(worse.net, cur, 0)}. ${ruleOn('close-after-losses') ? 'Close after N losses is on — a losing streak in the weaker direction gets stopped.' : 'Close after N losses is off.'}`;
+    return `${better.label}s pay you ${money(better.net, cur, 0)}; ${worse.label.toLowerCase()}s ${worse.net < 0 ? 'cost' : 'only add'} ${money(worse.net, cur, 0)}. ${ruleOn('close-after-losses') ? 'Close after N losses is on — a losing streak in the weaker direction gets stopped.' : 'Close after N losses is off — a streak in the weaker direction runs until you stop it yourself.'}`;
   })();
 
   return (
@@ -302,7 +302,7 @@ export default function JournalPage() {
       </div>
 
       <div className="jn-tabs" style={sx('display:inline-flex;gap:3px;margin-bottom:20px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);box-shadow:inset 0 1px 2px rgba(0,0,0,.35)')} role="tablist">
-        {[['perf', 'Performance'], ['coach', 'Review'], ['calendar', 'P&L calendar'], ['behaviour', 'Behaviour']].map(([id, label]) => (
+        {[['perf', 'Performance'], ['coach', 'Coach'], ['calendar', 'P&L calendar'], ['behaviour', 'Behaviour']].map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={sx(tab === id ? TAB_ON : TAB_OFF)}>{label}</button>
         ))}
       </div>

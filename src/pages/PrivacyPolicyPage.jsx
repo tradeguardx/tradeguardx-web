@@ -56,7 +56,7 @@ const sections = [
     list: [
       { text: 'Provide, maintain, and improve our services' },
       { text: 'Evaluate your risk rules against your trades and notify you of violations' },
-      { text: 'Generate AI-written summaries of your past trades and behaviour tags for your journal (uses the Google Gemini API). These describe what happened and are not advice' },
+      { text: 'Generate AI analysis of your past trades and behaviour tags for your journal (uses the Google Gemini API). This never recommends a new trade and is not financial advice' },
       { text: 'Process subscription payments and send related communications' },
       { text: 'Send you updates, security alerts, and support messages' },
       { text: 'Respond to your requests and comply with legal obligations' },
@@ -73,7 +73,7 @@ const sections = [
     content: 'TradeGuardX integrates with the following third parties. Their handling of your information is governed by their respective privacy policies:',
     list: [
       { bold: 'Supabase:', text: 'Authentication and user identity.' },
-      { bold: 'Google:', text: 'Optional "Sign in with Google" authentication — used only if you choose that sign-in method. Google Gemini also generates AI trade summaries and answers the in-app support chat. For a summary, it receives the details and timeline of the trade you open, with behaviour tags worked out from your recent trades. For the support chat, it receives your question, your account state and your recent enforcement events.' },
+      { bold: 'Google:', text: 'Optional "Sign in with Google" authentication — used only if you choose that sign-in method. Google Gemini also generates AI trade analysis and answers the in-app support chat. For trade analysis, it receives the details and timeline of the trade you open, with behaviour tags worked out from your recent trades. For the support chat, it receives your question, your account state and your recent enforcement events.' },
       { bold: 'AWS:', text: 'Application hosting, database, encrypted credential storage (KMS), and our first-party analytics.' },
       { bold: 'Vercel:', text: 'Website hosting and privacy-focused, cookie-free web analytics.' },
       { bold: 'Dodo Payments:', text: 'Subscription checkout and payment processing.' },

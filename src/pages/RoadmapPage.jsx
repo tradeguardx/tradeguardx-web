@@ -25,7 +25,7 @@ const ROADMAP = {
     { title: 'Manual lockout', body: "Shut yourself out for 3, 6 or 12 hours when you can feel the tilt coming. No cancel button — you can extend it, never shorten it." },
     { title: 'Rule lock and cooling-off', body: "Tightening a limit applies instantly; loosening waits 24 hours. Your API key is frozen while a lock runs, so pulling the key is not an exit either." },
     { title: 'Tax centre for Indian traders', body: "Your financial-year result rebuilt from raw exchange fills with FIFO lot matching, F&O and VDA kept separate, reconciled against your wallet and exported for your CA." },
-    { title: 'Journal, behaviour ledger and alerts', body: "Every trade recorded with the rules that fired on it, AI-written trade summaries and pattern detection, breach alerts on Telegram and email within seconds." },
+    { title: 'Journal, behaviour ledger and alerts', body: "Every trade recorded with the rules that fired on it, AI-written narratives and pattern detection, breach alerts on Telegram and email within seconds." },
   ],
   inProgress: [
     { title: 'Bybit and Bitget', body: "Both integrations are built and being tested against live accounts before release. Same engine, same rules, same subscription — no regional pricing and nothing to re-learn." },

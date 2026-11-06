@@ -15,7 +15,7 @@ export function RuleChips({ report }) {
   if (!rules.length) return null;
   return (
     <div style={sx('display:flex;flex-direction:column;align-items:center;gap:9px')}>
-      <span style={sx(LABEL)}>TradeGuardX rules for this</span>
+      <span style={sx(LABEL)}>The rules that fix this</span>
       <div style={sx('display:flex;justify-content:center;gap:7px;flex-wrap:wrap')}>
         {rules.map((r) => (
           <span key={r.rule} style={sx('display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface-2);font-size:12.5px;font-weight:700;color:var(--ink)')}>
@@ -46,8 +46,8 @@ export default function RulePlan({ report, cta, enterProps = {} }) {
      Rules page. Nothing here says the trial creates them. */
   const label = switches ? 'Start my 3-day free trial →' : cta?.label;
   const lead = !calm && report.revengeTrades > 0
-    ? <><span style={sx('color:var(--red)')}>{report.revengeTrades} revenge trade{report.revengeTrades === 1 ? '' : 's'}.</span> {n === 1 ? 'One rule covers' : `${n} rules cover`} them.</>
-    : calm ? 'Two rules that cover this' : `${n === 1 ? 'One rule covers' : `${n} rules cover`} this`;
+    ? <><span style={sx('color:var(--red)')}>{report.revengeTrades} revenge trade{report.revengeTrades === 1 ? '' : 's'}.</span> {n === 1 ? 'One rule' : `${n} rules`} stop them.</>
+    : calm ? 'Keep it this way with two rules' : `${n === 1 ? 'One rule' : `${n} rules`} that stop this`;
   const btn = 'flex:none;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:46px;padding:11px 20px;border:0;border-radius:12px;background:var(--mint-solid);color:var(--on-mint);font-size:14.5px;font-weight:800;text-decoration:none;cursor:pointer;box-shadow:var(--glow-mint);white-space:nowrap';
   const btnInner = <>{switches && <Power />}{label}</>;
 
