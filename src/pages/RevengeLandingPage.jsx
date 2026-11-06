@@ -348,6 +348,7 @@ export default function RevengeLandingPage() {
                   </li>
                 ))}
               </ol>
+              <p className="mt-3 text-[13px] text-slate-500">General education about risk limits. Not trading or investment advice, and not a suggestion to make any trade.</p>
             </div>
 
             <div>

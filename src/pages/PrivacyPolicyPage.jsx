@@ -8,9 +8,7 @@ import { useSEO } from '../hooks/useSEO';
  * could never tell when the terms actually changed. Bump this by hand, only
  * when the text above it changes.
  */
-// NOTE: set to the deploy date because the real last-change date was lost
-// to the dynamic value. Correct it if you know when this policy last changed.
-const LAST_UPDATED = 'September 23, 2026';
+const LAST_UPDATED = 'November 6, 2026';
 
 const sections = [
   {
@@ -23,9 +21,9 @@ const sections = [
     list: [
       { bold: 'Account information:', text: 'Email address and authentication credentials when you create an account. Authentication is handled by Supabase; we do not store your password directly. If you sign in with Google, we receive your basic Google profile (name and email) via that sign-in.' },
       { bold: 'Trading account metadata:', text: 'Display name, exchange or prop firm identifier, equity mode, starting balance, current balance, account currency, and timezone for the trading accounts you add.' },
-      { bold: 'Exchange API credentials:', text: 'For crypto exchange accounts (e.g. Delta Exchange), the API key and secret you provide so the kill switch can cancel orders and close positions on your behalf. These are encrypted at rest using AWS KMS and used only to enforce your rules. Delta API keys carry Read and Trade permissions only and can never withdraw funds; we never receive your exchange login password or 2FA codes.' },
+      { bold: 'Exchange API credentials:', text: 'For exchange and broker accounts, the API key and secret you provide so the kill switch can cancel orders and close positions on your behalf. We never use them to open a position, add to one, or change an order. They are encrypted at rest using AWS KMS and used only to operate the Service for your account. We never request withdrawal or transfer permission; we never receive your exchange login password or 2FA codes.' },
       { bold: 'Trade events:', text: 'Open, modify, and close events for your trades — symbol, side, quantity, entry/exit prices, stop loss, take profit, P&L, and timestamps. For crypto exchange accounts these are received server-side via your exchange API connection; for prop-firm accounts they are captured by the browser extension on supported broker tabs.' },
-      { bold: 'Risk rule configuration:', text: 'The risk rules you configure (daily loss limits, per-trade risk, hedging prevention, max trades per day, cooldowns, etc.) and their parameters.' },
+      { bold: 'Risk rule configuration:', text: 'The risk rules you configure (daily loss limits, per-trade risk, max trades per day, cooldowns, etc.) and their parameters.' },
       { bold: 'Pairing and session tokens:', text: 'When you pair the browser extension with your account, we issue a session token that the extension stores in your browser\'s local storage and sends to our API as proof of authorization.' },
       { bold: 'Subscription and payment information:', text: 'Subscription tier and billing identifiers. Payment card details are processed by Dodo Payments and never stored on our servers.' },
       { bold: 'Notification preferences:', text: 'If you enable alerts, the email address or Telegram chat you connect so we can send trade and breach notifications.' },
@@ -55,8 +53,8 @@ const sections = [
     ],
   },
   {
-    title: '5. What the Extension Does and Does Not Do',
-    content: 'To set clear expectations about the scope of the browser extension:',
+    title: '5. What the Browser Extension Does and Does Not Do',
+    content: 'This section covers the browser extension only. Our server-side risk engine works differently: it can cancel orders and close positions on a connected account, as described in section 2 and in our Terms. For the extension:',
     list: [
       { text: 'The extension does not execute trades, modify orders, or interact with broker APIs. It only observes trading activity and enforces user-defined rules within the browser interface.' },
       { text: 'All executable code used by the extension is bundled within the extension package. No external scripts are dynamically loaded or executed at runtime.' },
@@ -80,7 +78,7 @@ const sections = [
     list: [
       { text: 'Provide, maintain, and improve our services' },
       { text: 'Evaluate your risk rules against your trades and notify you of violations' },
-      { text: 'Generate AI insights, narratives, and behavior tags for trades you save to your journal (uses the Anthropic API)' },
+      { text: 'Generate AI-written summaries of your past trades and behaviour tags for your journal (uses the Google Gemini API). These describe what happened and are not advice' },
       { text: 'Process subscription payments and send related communications' },
       { text: 'Send you updates, security alerts, and support messages' },
       { text: 'Respond to your requests and comply with legal obligations' },
@@ -97,13 +95,12 @@ const sections = [
     content: 'TradeGuardX integrates with the following third parties. Their handling of your information is governed by their respective privacy policies:',
     list: [
       { bold: 'Supabase:', text: 'Authentication and user identity.' },
-      { bold: 'Google:', text: 'Optional "Sign in with Google" authentication — used only if you choose that sign-in method.' },
+      { bold: 'Google:', text: 'Optional "Sign in with Google" authentication — used only if you choose that sign-in method. Google Gemini also generates AI trade summaries and answers the in-app support chat. For a summary, it receives the details and timeline of the trade you open, with behaviour tags worked out from your recent trades. For the support chat, it receives your question, your account state and your recent enforcement events.' },
       { bold: 'AWS:', text: 'Application hosting, database, encrypted credential storage (KMS), and our first-party analytics.' },
       { bold: 'Vercel:', text: 'Website hosting and privacy-focused, cookie-free web analytics.' },
       { bold: 'Dodo Payments:', text: 'Subscription checkout and payment processing.' },
       { bold: 'Telegram:', text: 'Optional trade and breach notifications, if you connect a Telegram account for alerts.' },
       { bold: 'Sentry (EU region):', text: 'Crash and error reporting (see section 6).' },
-      { bold: 'Anthropic:', text: 'AI generation for trade narratives, behavior tags, and journal insights. Only the trade context you choose to analyze is sent.' },
     ],
   },
   {
@@ -129,7 +126,7 @@ export default function PrivacyPolicyPage() {
   });
 
   return (
-    <div className="min-h-screen pt-28 pb-24 px-6 relative">
+    <div className="min-h-screen pt-28 pb-24 px-6 relative overflow-x-clip">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="max-w-3xl mx-auto relative">

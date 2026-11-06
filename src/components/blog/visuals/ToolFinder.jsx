@@ -98,7 +98,7 @@ export default function ToolFinder() {
           )}
         </div>
       ) : (
-        <p className="mt-6 text-[13px] text-slate-500">Answer all three to see what we’d suggest.</p>
+        <p className="mt-6 text-[13px] text-slate-500">Answer all three to see which type of tool fits.</p>
       )}
     </Figure>
   );

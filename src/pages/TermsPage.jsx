@@ -8,7 +8,7 @@ import { useSEO } from '../hooks/useSEO';
  * could never tell when the terms actually changed. Bump this by hand, only
  * when the text above it changes.
  */
-const LAST_UPDATED = 'September 23, 2026';
+const LAST_UPDATED = 'November 6, 2026';
 
 const sections = [
   {
@@ -17,7 +17,15 @@ const sections = [
   },
   {
     title: '2. Description of Service',
-    content: 'TradeGuardX is a risk-management service for traders on supported exchanges. You define risk rules — such as a daily loss limit, a maximum number of trades, or a cooldown after consecutive losses — and our server-side risk engine monitors your connected trading account and acts on those rules for you. Acting means cancelling your open orders, closing your open positions at market, and blocking further trading for a cooldown period. We do not provide trading, investment, tax, or financial advice, and nothing in the Service is a recommendation to enter or exit any position. The Service is provided "as is" for risk-management assistance only.',
+    content: 'TradeGuardX is risk-management software for traders on supported exchanges and brokers. You define risk rules — such as a daily loss limit, a maximum number of trades, or a cooldown after consecutive losses — and our server-side risk engine monitors your connected trading account and acts on those rules for you. TradeGuardX does not trade for you.',
+    list: [
+      'We never open a position, never add to one, and never change the size, price, stop-loss, take-profit or leverage of an order.',
+      'We take only two actions on your connected account, and only when a rule you set is breached or you start or schedule a lock yourself: we cancel your open orders, including stop-loss and take-profit orders, and we close your open positions at market. A close may be sent to the exchange as a reduce-only order, which can only reduce a position.',
+      'While a lock is running, your exchange account itself is not locked. An order can still reach the exchange, and we close the resulting position after it opens.',
+      'The Service also keeps a record of your trades and reports on them, including a journal, AI-written summaries of past trades, a revenge-trading report and tax estimates. These describe what has already happened on your account. They do not tell you what to trade, and they are not advice.',
+      'We do not provide trading, investment, tax or financial advice, signals or trade suggestions. Nothing in the Service is a recommendation to enter or exit any position.',
+    ],
+    afterList: 'The Service is provided "as is" for risk-management assistance only.',
   },
   {
     title: '3. Eligibility',
@@ -39,8 +47,8 @@ const sections = [
     ],
   },
   {
-    title: '6. Exchange Connections and Automated Action',
-    content: 'To enforce your rules we require an API key for your exchange account. By connecting one you authorise us to act on that account automatically and without asking you first, including cancelling orders and closing positions, whenever the engine determines a rule you configured has been breached. You are responsible for the rules you set and for any trading outcome that follows from them, including any loss realised by a forced close.',
+    title: '6. Exchange and Broker Connections and Automated Action',
+    content: 'To enforce your rules we require an API key for your exchange or broker account. By connecting one you authorise us to act on that account automatically and without asking you first, including cancelling orders and closing positions, whenever the engine determines a rule you configured has been breached. You are responsible for the rules you set and for any trading outcome that follows from them, including any loss realised by a forced close.',
     list: [
       'We require keys scoped to trading only. We never request withdrawal or transfer permission, and we reject a key that carries it. We cannot move funds out of your exchange account.',
       'Your keys are encrypted at rest and used only to operate the Service for your account.',
@@ -86,7 +94,7 @@ export default function TermsPage() {
   });
 
   return (
-    <div className="min-h-screen pt-28 pb-24 px-6 relative">
+    <div className="min-h-screen pt-28 pb-24 px-6 relative overflow-x-clip">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-purple-500/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="max-w-3xl mx-auto relative">
@@ -125,6 +133,9 @@ export default function TermsPage() {
                     </li>
                   ))}
                 </ul>
+              )}
+              {section.afterList && (
+                <p className="mt-4 text-sm leading-relaxed text-slate-400">{section.afterList}</p>
               )}
               {section.email && (
                 <a href={`mailto:${section.email}`} className="inline-flex items-center gap-2 text-accent hover:text-accent-hover transition-colors text-sm font-medium mt-3">

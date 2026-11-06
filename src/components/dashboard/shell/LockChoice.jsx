@@ -28,7 +28,7 @@ const CHOICES = [
   {
     key: 'after_close',
     title: 'Lock when this trade closes',
-    tag: 'Recommended',
+    tag: null,
     body: (h) => `Your stop-loss and target stay. The ${h}h lock starts the moment you're flat. Any new trade before then is closed straight away.`,
   },
   {

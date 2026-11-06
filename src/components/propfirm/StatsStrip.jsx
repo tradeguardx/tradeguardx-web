@@ -18,7 +18,7 @@ const stats = [
   },
   {
     value: 'AI Journal',
-    label: 'Behavior pattern analysis',
+    label: 'Patterns from your own trades',
     icon: (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path

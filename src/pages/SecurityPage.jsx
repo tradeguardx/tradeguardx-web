@@ -49,7 +49,7 @@ const SECTIONS = [
       { bold: 'Supabase:', text: 'authentication only. We never see your password.' },
       { bold: 'AWS:', text: 'application hosting, database, and Lambda compute. Mumbai region.' },
       { bold: 'Dodo Payments:', text: 'subscription checkout and recurring billing. Card details are stored at Dodo, not on our servers.' },
-      { bold: 'Anthropic (Claude):', text: 'AI-generated journal insights. Only the trade context you choose to analyze is sent — never bulk-export of your data.' },
+      { bold: 'Google Gemini:', text: 'AI-written trade summaries and the in-app support chat. It receives the trade you open with behaviour tags from your recent trades, or your question with your account state and recent enforcement events.' },
       { bold: 'Sentry (EU region):', text: 'crash and error reporting. We strip query strings and skip console breadcrumbs to avoid leaking session tokens or P&L.' },
     ],
   },

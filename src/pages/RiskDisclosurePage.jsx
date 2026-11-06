@@ -5,7 +5,17 @@ const SECTIONS = [
   {
     title: 'TradeGuardX is a tool, not investment advice',
     body:
-      "TradeGuardX is a software tool that enforces risk rules YOU configure. We do not provide trading recommendations, signals, market commentary, or investment advice. Nothing on our website, in our extension, in our journal insights, or in any communication from us should be interpreted as a recommendation to buy, sell, or hold any financial instrument.",
+      "TradeGuardX is a software tool that enforces risk rules YOU configure. We do not provide trading recommendations, signals, market commentary, or investment advice. Nothing on our website, in our journal, AI trade summaries or reports, or in any communication from us should be interpreted as a recommendation to buy, sell, or hold any financial instrument.",
+  },
+  {
+    title: 'What TradeGuardX does on your account',
+    body:
+      "TradeGuardX never opens a position, never adds to one, and never changes the size, price, stop-loss, take-profit or leverage of an order. It takes only two actions, and only when a rule you set is breached or you start or schedule a lock yourself: it cancels your open orders, including stop-loss and take-profit orders, and it closes your open positions at market.",
+    list: [
+      { text: "A forced close can realise a loss, and it can happen at a worse price than you expected." },
+      { text: "Your exchange account itself is not locked. An order can still reach the exchange during a lock, and we close the resulting position after it opens." },
+      { text: "Journal entries, AI trade summaries and reports describe your past trades. They do not tell you what to trade." },
+    ],
   },
   {
     title: 'Trading involves substantial risk of loss',
@@ -20,7 +30,7 @@ const SECTIONS = [
   {
     title: 'Past performance does not guarantee future results',
     body:
-      "Any trading performance shown on our website, in marketing materials, in user testimonials, or in your own historical journal is not a guarantee of future results. Each trading session, each market condition, and each trader's psychology is different. Discipline tools improve outcomes on average — they do not make any individual trader profitable.",
+      "Any trading performance shown on our website, in marketing materials, in user testimonials, or in your own historical journal is not a guarantee of future results. Each trading session, each market condition, and each trader's psychology is different. Discipline tools do not make any trader profitable.",
   },
   {
     title: 'TradeGuardX is not a registered investment advisor or broker',
@@ -35,7 +45,7 @@ const SECTIONS = [
   {
     title: 'Software can fail',
     body:
-      "TradeGuardX is software running in your browser. It can fail. The browser can crash. The extension can be disabled by you, by Chrome, by an update, or by a website blocking script execution. The internet can drop. Your broker can update their interface in a way that breaks our selectors. We work hard to keep these failures rare and to recover gracefully, but they will happen.",
+      "TradeGuardX is software that depends on our servers, your API key and your exchange or broker. It can fail. An exchange can go down, limit our requests, change its API or reject a close. Markets can be closed, gap or run out of liquidity. If you delete or disable your key, we can no longer act on your account. We work hard to keep these failures rare and to recover gracefully, but they will happen.",
     afterListNote:
       "Do not rely on TradeGuardX as your only line of defense against catastrophic loss. Keep broker-side stops, position-size limits, and your own discipline as primary protections. Treat TradeGuardX as one layer of safety, not the only layer.",
   },
@@ -149,7 +159,7 @@ export default function RiskDisclosurePage() {
           className="mt-14 rounded-2xl border p-6 text-center"
           style={{ borderColor: 'rgba(255,255,255,0.07)', backgroundColor: 'rgba(255,255,255,0.02)' }}
         >
-          <p className="text-sm font-semibold text-white">Last updated: 2026</p>
+          <p className="text-sm font-semibold text-white">Last updated: November 6, 2026</p>
           <p className="mt-1.5 text-xs text-slate-500">
             Questions about this disclosure? Email{' '}
             <a href="mailto:support@tradeguardx.com" className="text-accent hover:underline">

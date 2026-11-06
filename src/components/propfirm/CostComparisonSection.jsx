@@ -57,9 +57,9 @@ const withItems = [
     note: 'A single avoided prop reset covers a full year of Pro.',
   },
   {
-    label: 'AI behavior analysis',
+    label: 'Behaviour patterns',
     cost: 'Included',
-    note: 'Identifies the patterns you repeat — before they cost you.',
+    note: 'Shows the patterns you repeat and what they cost.',
   },
   {
     label: 'Automatic enforcement',

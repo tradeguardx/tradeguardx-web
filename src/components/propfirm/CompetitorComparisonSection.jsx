@@ -10,8 +10,8 @@ const features = [
     manual: { value: false, note: 'Fails under pressure' },
   },
   {
-    label: 'AI behavior pattern analysis',
-    tgx: { value: true, note: 'Identifies repeat mistakes' },
+    label: 'Behaviour patterns from your own trades',
+    tgx: { value: true, note: 'Shows what you repeat' },
     broker: { value: false, note: 'No analytics' },
     journal: { value: 'partial', note: 'Aggregate stats only' },
     manual: { value: false, note: 'Blind spots persist' },
@@ -45,7 +45,7 @@ const features = [
     manual: { value: false, note: "That's the whole problem" },
   },
   {
-    label: 'Trade journal with AI insights',
+    label: 'Trade journal with AI summaries',
     tgx: { value: true, note: 'Built in — same platform' },
     broker: { value: false, note: 'No journaling' },
     journal: { value: true, note: 'Core feature' },

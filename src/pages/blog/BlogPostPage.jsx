@@ -112,6 +112,7 @@ function PostView({ post, mod }) {
 
           <div className="mt-8">
             <Article />
+            <p className="mt-10 text-[13px] leading-relaxed text-slate-500">General education about risk limits. Not trading or investment advice, and not a suggestion to make any trade.</p>
           </div>
 
           {faq.length > 0 && (

@@ -137,7 +137,7 @@ export function CheckCard({ check, money }) {
       {check.status !== 'good' && check.status !== 'na' && check.fix?.text && (
         <div style={sx('display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:11px 18px;border-top:1px solid var(--line);background:var(--surface-2)')}>
           <span style={sx('flex:1;min-width:min(240px,100%);font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>
-            <b style={sx('color:var(--ink)')}>Fix: </b>{check.fix.text}
+            <b style={sx('color:var(--ink)')}>TradeGuardX rule: </b>{check.fix.text}
           </span>
           <Link to="/dashboard/rules" style={sx('flex:none;padding:7px 12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700;text-decoration:none')}>
             Set up {RULE_NAME[check.fix.rule] ?? 'this rule'}

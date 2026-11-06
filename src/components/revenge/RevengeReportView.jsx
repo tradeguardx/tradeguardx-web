@@ -57,7 +57,7 @@ export default function RevengeReportView({ report, periodLabel, months = 1, rev
 
       {report.enoughData ? (
         <div {...enter()}>
-          <Section title="What makes up your score" note="Each check, what we found, and the rule that fixes it.">
+          <Section title="What makes up your score" note="Each check, what we found, and the TradeGuardX rule that covers it.">
             <div style={sx('display:grid;gap:12px')}>
               {[...report.checks]
                 .sort((a, b) => RANK[a.status] - RANK[b.status] || b.weight - a.weight)
