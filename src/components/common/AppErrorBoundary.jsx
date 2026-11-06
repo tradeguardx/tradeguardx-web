@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { Sentry } from '../../sentry.js';
+import { isStaleBundleError, reloadForStaleBundle } from '../../lib/staleBundle';
 
 export default class AppErrorBoundary extends Component {
   constructor(props) {
@@ -12,6 +13,7 @@ export default class AppErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    if (isStaleBundleError(error) && reloadForStaleBundle()) return;
     // Keep console error for local debugging visibility.
     // eslint-disable-next-line no-console
     console.error('Unhandled UI error:', error);
