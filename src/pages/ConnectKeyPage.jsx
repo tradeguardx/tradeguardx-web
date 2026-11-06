@@ -129,6 +129,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
       onConnected?.(summary);
       setResult({ ok: true, summary });
       setKeyVal(''); setSecretVal(''); setPassVal(''); setExtraVals({});
+      setReplacing(false);
       await refreshTradingAccounts?.(); await refresh();
       toast.success(summary?.enforcementCapable === false ? 'Connected — read-only' : 'Connected and checked', summary?.enforcementCapable === false ? 'This key can watch but not close. Make a new one with trading turned on.' : 'This key can close positions. We start watching from your next trade.');
     } catch (e) {
