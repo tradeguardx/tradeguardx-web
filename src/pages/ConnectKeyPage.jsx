@@ -1,3 +1,4 @@
+import { connectFailureTitle } from '../lib/connectFailure';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -130,7 +131,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
       await refreshTradingAccounts?.(); await refresh();
       toast.success(summary?.enforcementCapable === false ? 'Connected — read-only' : 'Connected and checked', summary?.enforcementCapable === false ? 'This key can watch but not close. Make a new one with trading turned on.' : 'This key can close positions. We start watching from your next trade.');
     } catch (e) {
-      setResult({ ok: false, message: e?.message || `${venue} rejected the connection. Try again.` });
+      setResult({ ok: false, title: connectFailureTitle(e), message: e?.message || `${venue} rejected the connection. Try again.` });
     } finally { setBusy(false); }
   };
 
@@ -296,7 +297,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
         <div ref={resultRef} style={sx('display:flex;align-items:flex-start;gap:12px;padding:15px 18px;margin-bottom:16px;border-radius:13px', result.ok ? (result.summary?.enforcementCapable === false ? { border: '1px solid var(--amber-line)', background: 'var(--amber-tint)' } : { border: '1px solid var(--mint-line)', background: 'var(--mint-tint)' }) : { border: '1px solid var(--red-line)', background: 'var(--red-tint)' })}>
           <div style={sx('flex:1')}>
             <div style={sx('font-size:13.5px;font-weight:700', { color: result.ok ? (result.summary?.enforcementCapable === false ? 'var(--amber)' : 'var(--mint)') : 'var(--red)' })}>
-              {result.ok ? (result.summary?.enforcementCapable === false ? 'Connected — but this key cannot close positions' : 'Connected and checked') : 'That key did not connect'}
+              {result.ok ? (result.summary?.enforcementCapable === false ? 'Connected — but this key cannot close positions' : 'Connected and checked') : (result.title ?? 'That key did not connect')}
             </div>
             <p style={sx('margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:92ch')}>
               {result.ok ? (result.summary?.enforcementCapable === false ? 'It connects and looks healthy, and it cannot close anything. Make a new key with trading turned on and we start watching from your next trade.' : 'We are connected to your account and watching it live. Switch on a rule and it starts working straight away.') : result.message}

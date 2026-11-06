@@ -132,7 +132,7 @@ export function ConnectResultPanel({ outcome, retrying, onRetry, onContinue, api
       style={{ borderColor: 'var(--red-line)', backgroundColor: 'var(--red-tint)' }}
     >
       <p className="mb-2 text-[13px] font-bold" style={{ color: 'var(--red)' }}>
-        Could not connect
+        {outcome.title ?? 'Could not connect'}
       </p>
       <p className="mb-4 text-[12.5px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
         {outcome.message}

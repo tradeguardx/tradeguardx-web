@@ -1,3 +1,4 @@
+import { connectFailureTitle } from '../../lib/connectFailure';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -146,7 +147,7 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
         /* History is a bonus, never a blocker. The daily sweep gap-fills. */
       });
     } catch (e) {
-      setConnectOutcome({ ok: false, message: e?.message || `${v.name} rejected the connection. Try again.` });
+      setConnectOutcome({ ok: false, title: connectFailureTitle(e), message: e?.message || `${v.name} rejected the connection. Try again.` });
     } finally {
       setSubmitting(false);
     }

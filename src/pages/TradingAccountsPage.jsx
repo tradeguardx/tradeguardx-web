@@ -1,3 +1,4 @@
+import { connectFailureTitle } from '../lib/connectFailure';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -674,7 +675,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
         });
         setConnectOutcome({ ok: true, summary });
       } catch (credErr) {
-        setConnectOutcome({ ok: false, message: credErr?.message || `${v.name} rejected the connection. Try again.` });
+        setConnectOutcome({ ok: false, title: connectFailureTitle(credErr), message: credErr?.message || `${v.name} rejected the connection. Try again.` });
       }
     } catch (e) {
       toast.error('Could not create', e?.message || 'Try again.');
@@ -700,7 +701,7 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
       });
       setConnectOutcome({ ok: true, summary });
     } catch (credErr) {
-      setConnectOutcome({ ok: false, message: credErr?.message || `${v.name} rejected the connection. Try again.` });
+      setConnectOutcome({ ok: false, title: connectFailureTitle(credErr), message: credErr?.message || `${v.name} rejected the connection. Try again.` });
     } finally {
       setRetrying(false);
     }
