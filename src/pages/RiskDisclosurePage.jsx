@@ -10,10 +10,10 @@ const SECTIONS = [
   {
     title: 'What TradeGuardX does on your account',
     body:
-      "TradeGuardX never opens a position, never adds to one, and never changes the size, price, stop-loss, take-profit or leverage of an order. It takes only two actions, and only when a rule you set is breached or you start or schedule a lock yourself: it cancels your open orders, including stop-loss and take-profit orders, and it closes your open positions at market.",
+      "TradeGuardX never opens a position, never adds to one, and never changes the size, price, stop-loss, take-profit or leverage of an order. When a rule you set is breached, or you start or schedule a lock yourself, it locks your trading account for the set period. Rules that apply to a single trade close that trade instead. How a lock works depends on what your exchange or broker offers. None of our supported venues currently offers a lock of its own, so today a lock cancels your open orders, including stop-loss and take-profit orders, closes your open positions at market, and closes any position opened while it runs. If a venue offers its own lock, it may use that instead.",
     list: [
-      { text: "A forced close can realise a loss, and it can happen at a worse price than you expected." },
-      { text: "Your exchange account itself is not locked. An order can still reach the exchange during a lock, and we close the resulting position after it opens." },
+      { text: "A lock can realise a loss, and a close can happen at a worse price than you expected." },
+      { text: "Until a venue offers its own lock, an order can still reach the exchange during a lock, and we close the resulting position after it opens." },
       { text: "Journal entries, AI trade analysis and reports look at your past trades. They never recommend a new trade." },
     ],
   },

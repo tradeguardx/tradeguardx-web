@@ -5,7 +5,7 @@ const SECTIONS = [
   {
     title: 'We never have your exchange login',
     body:
-      "We never ask for or store your exchange or broker password or 2FA codes. You give us a scoped API key with read and trade permissions only — we use it to cancel orders and close positions to enforce your rules, and never to open a position or change an order. It can never withdraw or transfer funds. We encrypt that key at rest with AWS KMS.",
+      "We never ask for or store your exchange or broker password or 2FA codes. You give us a scoped API key with read and trade permissions only — we use it to enforce your rules and locks, and never to open a position or change an order. It can never withdraw or transfer funds. We encrypt that key at rest with AWS KMS.",
   },
   {
     title: 'Authentication',
