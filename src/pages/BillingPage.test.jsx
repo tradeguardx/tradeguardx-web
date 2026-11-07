@@ -10,6 +10,8 @@ import { lifecycleView } from '../lib/lifecycle';
 const auth = { user: null, subscription: null };
 const guard = { life: null };
 const checkout = vi.fn(async () => ({ checkoutUrl: 'https://x' }));
+const validate = vi.fn();
+const siteOffer = { value: null };
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({ session: { access_token: 't', user: { email: 'a@b.c' } }, user: auth.user, subscription: auth.subscription, refetchSubscription: vi.fn() }),
@@ -28,7 +30,11 @@ vi.mock('../api/paymentsApi', () => ({
   openBillingPortal: vi.fn(), updateSubscriptionPaymentMethod: vi.fn(), createCheckoutSession: (...a) => checkout(...a),
   changeSubscriptionPlan: vi.fn(), cancelSubscriptionPlanChange: vi.fn(), cancelSubscription: vi.fn(), resumeSubscription: vi.fn(),
   fetchPendingPlanChange: vi.fn(async () => ({ pending: null })),
+  validateCoupon: (...a) => validate(...a),
 }));
+vi.mock('../hooks/useActiveOffer', () => ({ useActiveOffer: () => ({ ready: true, offer: siteOffer.value, band: 'in' }) }));
+vi.mock('../lib/referralCode', () => ({ getStoredReferralCode: () => null }));
+vi.mock('../lib/promoLink', () => ({ getLinkPromoCode: () => null }));
 vi.mock('../lib/analytics', () => ({ trackBilling: vi.fn() }));
 vi.mock('../components/support/supportBus', () => ({ openSupport: vi.fn() }));
 vi.mock('../components/dashboard/billing/BillingStep', () => ({
@@ -46,7 +52,7 @@ const show = (lifeId, { user = {}, subscription = {}, ctx = {} } = {}) => {
   render(<MemoryRouter><BillingPage /></MemoryRouter>);
 };
 
-beforeEach(() => { checkout.mockClear(); });
+beforeEach(() => { checkout.mockClear(); validate.mockReset(); siteOffer.value = null; });
 
 describe('Plan & billing, case by case', () => {
   it('s0 / s2: the billing setup step, saying "Continue setup"', async () => {
@@ -67,6 +73,62 @@ describe('Plan & billing, case by case', () => {
     expect(screen.getByText('Your data is safe')).toBeTruthy();
     // The hero button and the Monthly card both offer it.
     expect((await screen.findAllByRole('button', { name: 'Subscribe · ₹1,299' })).length).toBe(2);
+  });
+
+  describe('trial ended, an offer is on', () => {
+    const lapsed = { user: { access: 'expired', isExpired: true }, subscription: { status: 'trialing', source: 'free', currentPeriodEnd: '2026-10-01T00:00:00Z' } };
+    const OFFER = { code: 'DIWALI25', discountPct: 25, cycles: 1, intervals: ['monthly', 'quarterly', 'yearly'], audience: 'in', headline: 'DIWALI OFFER', title: null };
+
+    it('prices every button at the offer and sends the code', async () => {
+      siteOffer.value = OFFER;
+      validate.mockResolvedValue({ valid: true, code: 'DIWALI25', percentOff: 25, cycles: 1 });
+      show('te', lapsed);
+      const buttons = await screen.findAllByRole('button', { name: 'Subscribe · ₹974' });
+      expect(buttons.length).toBe(2);
+      expect(screen.getByText('Diwali offer applied · 25% off your first payment')).toBeTruthy();
+      expect(screen.getByText(/first payment, then ₹1,299 per month/)).toBeTruthy();
+      fireEvent.click(buttons[0]);
+      await waitFor(() => expect(checkout).toHaveBeenCalledWith(expect.objectContaining({ interval: 'monthly', couponCode: 'DIWALI25' })));
+    });
+
+    it('shows list price until the server confirms the offer', async () => {
+      siteOffer.value = OFFER;
+      validate.mockResolvedValue({ valid: false, reason: 'EXPIRED' });
+      show('te', lapsed);
+      expect((await screen.findAllByRole('button', { name: 'Subscribe · ₹1,299' })).length).toBe(2);
+      expect(screen.queryByText(/applied/)).toBeNull();
+    });
+
+    it('takes a typed code and reprices', async () => {
+      validate.mockResolvedValue({ valid: true, code: 'SAVE10', percentOff: 10, cycles: null });
+      show('te', lapsed);
+      fireEvent.click(await screen.findByRole('button', { name: 'Have a coupon?' }));
+      fireEvent.change(screen.getByLabelText('Coupon code'), { target: { value: 'save10' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+      const good = await screen.findAllByRole('button', { name: 'Subscribe · ₹1,169' });
+      fireEvent.click(good[0]);
+      await waitFor(() => expect(checkout).toHaveBeenCalledWith(expect.objectContaining({ couponCode: 'SAVE10' })));
+    });
+
+    it('a refused code is not sent, so checkout can still apply the offer', async () => {
+      validate.mockResolvedValue({ valid: false, reason: 'UNKNOWN' });
+      show('te', lapsed);
+      fireEvent.click(await screen.findByRole('button', { name: 'Have a coupon?' }));
+      fireEvent.change(screen.getByLabelText('Coupon code'), { target: { value: 'NOPE' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+      expect(await screen.findByText('We don’t recognise that code.')).toBeTruthy();
+      fireEvent.click(screen.getAllByRole('button', { name: 'Subscribe · ₹1,299' })[0]);
+      await waitFor(() => expect(checkout).toHaveBeenCalled());
+      expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
+    });
+
+    it('a failed retry (pg) gets no coupon field: it pays through the portal', async () => {
+      siteOffer.value = OFFER;
+      show('pg', { user: { access: 'expired' }, subscription: { status: 'past_due' } });
+      await screen.findAllByRole('button', { name: /^Pay / });
+      expect(screen.queryByRole('button', { name: 'Have a coupon?' })).toBeNull();
+      expect(validate).not.toHaveBeenCalled();
+    });
   });
 
   it('lf: no active plan, never the word "Free"', async () => {

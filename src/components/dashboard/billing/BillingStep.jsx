@@ -10,7 +10,7 @@ import { getStoredReferralCode } from '../../../lib/referralCode';
 import { getLinkPromoCode } from '../../../lib/promoLink';
 import { useActiveOffer } from '../../../hooks/useActiveOffer';
 import { offerCoversInterval, offerLabel, discountWording } from '../../../lib/siteOffer';
-import { PROTECTIONS, GLYPH } from './billingContent';
+import { PROTECTIONS, GLYPH, COUPON_REFUSAL } from './billingContent';
 import NoticeCard from '../shell/NoticeCard';
 import StepsBar from '../shell/StepsBar';
 import { Chip, ScoreRing } from '../../revenge/RevengeParts';
@@ -304,15 +304,6 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
     } finally {
       setCouponBusy(false);
     }
-  };
-
-  const COUPON_REFUSAL = {
-    UNKNOWN: 'We don’t recognise that code.',
-    EXPIRED: 'That code has expired.',
-    USED_UP: 'That code has been fully claimed.',
-    WRONG_PLAN: 'That code doesn’t apply to this plan — try another billing option.',
-    UNSUPPORTED: 'We can’t preview that code here, but it will still be applied at checkout.',
-    LOOKUP: 'Couldn’t check that code just now. It will still be applied at checkout.',
   };
 
   /*

@@ -86,3 +86,12 @@ export const GLYPH = {
   sparkle: ['M12 3l1.8 4.4L18 9l-4.2 1.6L12 15l-1.8-4.4L6 9l4.2-1.6z', 'M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z'],
   warn: ['M12 3.5l9 16H3l9-16z', 'M12 10v4M12 17h.01'],
 };
+
+export const COUPON_REFUSAL = {
+  UNKNOWN: 'We don’t recognise that code.',
+  EXPIRED: 'That code has expired.',
+  USED_UP: 'That code has been fully claimed.',
+  WRONG_PLAN: 'That code doesn’t apply to this plan — try another billing option.',
+  UNSUPPORTED: 'We can’t preview that code here, but it will still be applied at checkout.',
+  LOOKUP: 'Couldn’t check that code just now. It will still be applied at checkout.',
+};

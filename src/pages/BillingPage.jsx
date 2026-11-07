@@ -27,6 +27,8 @@ import {
   BAR_COLOUR, BODY, CANCEL_COPY, ENDED_BODY, EVERY, NEXT_LABEL, PER, PLAN_NOTE, STATE_CHIP, STATE_SKIN,
 } from './billing/billingCopy';
 import { billingPageOf } from '../lib/billingPage';
+import { useSubscribeDiscount } from './billing/useSubscribeDiscount';
+import SubscribeDiscount from './billing/SubscribeDiscount';
 import { openSupport } from '../components/support/supportBus';
 import BillingStep from '../components/dashboard/billing/BillingStep';
 import DashboardSkeleton from '../components/dashboard/shell/DashboardSkeleton';
@@ -179,6 +181,16 @@ export default function BillingPage() {
   }, [plans]);
   const monthlyPrice = options.find((o) => o.id === 'monthly')?.price ?? null;
   const cur = options.find((o) => o.id === interval) ?? options[0] ?? null;
+
+  /* Buying again: every case that reaches subscribeNow. A failed retry pays
+     through the portal, where no code applies. */
+  const buying = state === 'ended' && endedFrom !== 'unpaid';
+  const intervalIds = useMemo(() => options.map((o) => o.id), [options]);
+  const discount = useSubscribeDiscount({ enabled: buying, intervals: intervalIds, token: accessToken });
+  const payable = (o) => {
+    const d = buying && o ? discount.discountFor(o.id) : null;
+    return d ? Math.round(o.price * (1 - d.percentOff / 100)) : o?.price;
+  };
 
   /* Trial ends on trialEndsAt; a paid period ends on currentPeriodEnd. Both
      are the same question — "when does the next thing happen" — but reading
@@ -367,14 +379,14 @@ export default function BillingPage() {
     trackBilling('billing_subscribe_clicked', { state, interval: toInterval });
     setBusy(`switch:${toInterval}`);
     try {
-      const res = await createCheckoutSession({ accessToken, planSlug: 'pro', interval: toInterval });
+      const res = await createCheckoutSession({ accessToken, planSlug: 'pro', interval: toInterval, couponCode: discount.codeFor(toInterval) });
       if (!res?.checkoutUrl) throw new Error('Could not open checkout.');
       window.location.href = res.checkoutUrl;
     } catch (e) {
       toast.error('Could not open checkout', e?.message || 'Please try again.');
       setBusy('');
     }
-  }, [accessToken, state, toast]);
+  }, [accessToken, state, toast, discount]);
 
   /*
    * SETUP: THE BILLING SETUP STEP ITSELF.
@@ -567,6 +579,8 @@ export default function BillingPage() {
               </div>
             </div>}
 
+            {buying && <SubscribeDiscount discount={discount} />}
+
             <div style={sxw('margin-top:18px;display:flex;gap:8px;flex-wrap:wrap')}>
               {state === 'trial' && rulesOn === 0 && (
                 <button type="button" onClick={() => navigate('/dashboard/rules')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800')}>
@@ -592,7 +606,7 @@ export default function BillingPage() {
               )}
               {state === 'ended' && (
                 <button type="button" disabled={busy.startsWith('switch') || busy === 'card'} onClick={() => (endedFrom === 'unpaid' ? portal('card') : subscribeNow(interval))} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800')}>
-                  {busy.startsWith('switch') || busy === 'card' ? 'Opening…' : endedFrom === 'unpaid' ? `Pay ${price}` : `Subscribe · ${price}`}
+                  {busy.startsWith('switch') || busy === 'card' ? 'Opening…' : endedFrom === 'unpaid' ? `Pay ${price}` : `Subscribe · ${inr(payable(cur))}`}
                 </button>
               )}
               {state === 'unknown' && (
@@ -772,8 +786,9 @@ export default function BillingPage() {
                   {!isCur && !isPending && saving > 0 && <span style={sxw("font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.08em;padding:4px 6px;border-radius:5px;background:var(--amber-tint);color:var(--amber)")}>{`SAVE ${inr(saving)}`}</span>}
                 </div>
                 <div>
-                  <span style={sxw("font:700 22px/1 'Space Grotesk',sans-serif;letter-spacing:-.025em")}>{inr(o.price)}</span>{' '}
-                  <span style={sxw('font-size:12px;color:var(--ink-3)')}>{PER[o.id]}</span>
+                  {payable(o) !== o.price && <s style={sxw('margin-right:6px;font-size:13px;color:var(--ink-faint)')}>{inr(o.price)}</s>}
+                  <span style={sxw("font:700 22px/1 'Space Grotesk',sans-serif;letter-spacing:-.025em")}>{inr(payable(o))}</span>{' '}
+                  <span style={sxw('font-size:12px;color:var(--ink-3)')}>{payable(o) !== o.price && discount.discountFor(o.id)?.cycles ? `first ${discount.discountFor(o.id).cycles === 1 ? 'payment' : `${discount.discountFor(o.id).cycles} payments`}, then ${inr(o.price)} ${PER[o.id]}` : PER[o.id]}</span>
                 </div>
                 <div style={sxw('font-size:12px;line-height:1.45;color:var(--ink-2);min-height:34px')}>{PLAN_NOTE[o.id]}</div>
                 {/* Changes happen here now. This used to open the provider's
@@ -794,7 +809,7 @@ export default function BillingPage() {
                 >
                   {busy === `switch:${o.id}`
                     ? (state === 'cancelled' ? 'Resuming…' : 'Switching…')
-                    : state === 'ended' ? `Subscribe · ${inr(o.price)}`
+                    : state === 'ended' ? `Subscribe · ${inr(payable(o))}`
                     : state === 'cancelled' ? `Resume on ${o.name}`
                       : isCur ? 'Your plan'
                         : isPending ? 'Scheduled' : `Switch to ${o.name}`}
