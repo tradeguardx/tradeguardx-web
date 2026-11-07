@@ -8,8 +8,21 @@ import {
 } from 'react';
 import { useAuth } from './AuthContext';
 import { fetchTradingAccounts } from '../api/tradingAccountsApi';
+import { isMirroring } from '../lib/mirror';
 
 export const LS_TRADING_ACCOUNT = 'tgx_trading_account_id';
+
+// The browser's storage belongs to whoever is logged in, not to the account a
+// mirror is showing: writing here reset the operator's own selected account.
+function readStoredAccount() {
+  if (isMirroring() || typeof localStorage === 'undefined') return '';
+  return localStorage.getItem(LS_TRADING_ACCOUNT);
+}
+function writeStoredAccount(id) {
+  if (isMirroring() || typeof localStorage === 'undefined') return;
+  if (id) localStorage.setItem(LS_TRADING_ACCOUNT, id);
+  else localStorage.removeItem(LS_TRADING_ACCOUNT);
+}
 
 const TradingAccountContext = createContext(null);
 
@@ -37,14 +50,11 @@ export function TradingAccountProvider({ children }) {
       setAccounts(arr);
       setSelectedTradingAccountIdState((prev) => {
         if (prev && arr.some((a) => a.id === prev)) return prev;
-        const stored =
-          typeof localStorage !== 'undefined' ? localStorage.getItem(LS_TRADING_ACCOUNT) : '';
+        const stored = readStoredAccount();
         const first = arr[0]?.id;
         const pick =
           (stored && arr.some((a) => a.id === stored) ? stored : null) || first || '';
-        if (pick && typeof localStorage !== 'undefined') {
-          localStorage.setItem(LS_TRADING_ACCOUNT, pick);
-        }
+        if (pick) writeStoredAccount(pick);
         return pick;
       });
     } catch (e) {
@@ -65,10 +75,7 @@ export function TradingAccountProvider({ children }) {
 
   const setSelectedTradingAccountId = useCallback((id) => {
     setSelectedTradingAccountIdState(id);
-    if (typeof localStorage !== 'undefined') {
-      if (id) localStorage.setItem(LS_TRADING_ACCOUNT, id);
-      else localStorage.removeItem(LS_TRADING_ACCOUNT);
-    }
+    writeStoredAccount(id);
   }, []);
 
   const selectedAccount = useMemo(
