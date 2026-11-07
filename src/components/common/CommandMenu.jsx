@@ -11,6 +11,7 @@ const COMMANDS = [
   { label: 'Privacy Policy', path: '/privacy', keywords: 'privacy legal policy' },
   { label: 'Terms', path: '/terms', keywords: 'terms legal' },
   { label: 'Refund Policy', path: '/refund', keywords: 'refund policy legal' },
+  { label: 'Data Deletion', path: '/data-deletion', keywords: 'delete account data deletion privacy legal' },
   { label: 'Dashboard Overview', path: '/dashboard/overview', keywords: 'dashboard stats home' },
   { label: 'Risk rules', path: '/dashboard/rules', keywords: 'rules terminal risk protection limits prop' },
   { label: 'Trade journal', path: '/dashboard/journal', keywords: 'journal analytics equity pnl' },

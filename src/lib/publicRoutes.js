@@ -117,6 +117,7 @@ export const PUBLIC_ROUTES = [
   { path: '/privacy', priority: '0.3', changefreq: 'yearly', og: null },
   { path: '/terms', priority: '0.3', changefreq: 'yearly', og: null },
   { path: '/refund', priority: '0.3', changefreq: 'yearly', og: null },
+  { path: '/data-deletion', priority: '0.3', changefreq: 'yearly', og: null },
   { path: '/risk-disclosure', priority: '0.3', changefreq: 'yearly', og: null },
 ];
 

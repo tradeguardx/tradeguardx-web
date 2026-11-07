@@ -12,6 +12,7 @@ import SupportPage from './pages/SupportPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
+import DataDeletionPage from './pages/DataDeletionPage';
 import PartnerApplyPage from './pages/PartnerApplyPage';
 import DocsPage from './pages/DocsPage';
 import DocsSlugRedirect from './pages/DocsSlugRedirect';
@@ -104,6 +105,7 @@ function App() {
                   <Route path="privacy" element={<PrivacyPolicyPage />} />
                   <Route path="terms" element={<TermsPage />} />
                   <Route path="refund" element={<RefundPolicyPage />} />
+                  <Route path="data-deletion" element={<DataDeletionPage />} />
                   <Route path="risk-disclosure" element={<RiskDisclosurePage />} />
                   <Route path="partner-with-us" element={<PartnerApplyPage />} />
                   {/* /help now serves the exchange docs (navbar "Guides" → /help). */}

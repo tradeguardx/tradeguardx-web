@@ -135,8 +135,8 @@ export default function PreferencesPage() {
         </div>
         <div style={sx('padding:16px 19px;display:flex;gap:9px;flex-wrap:wrap')}>
           <button type="button" onClick={() => navigate('/dashboard/tax')} style={sx('padding:10px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700')}>Export my data first</button>
-          {/* TODO(api): no close-account endpoint; routes to support. */}
-          <button type="button" onClick={() => navigate('/support')} style={sx('padding:10px 14px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);color:var(--red);font-size:12.5px;font-weight:700')}>Delete account</button>
+          {/* TODO(api): no close-account endpoint; the page explains the email request. */}
+          <button type="button" onClick={() => navigate('/data-deletion')} style={sx('padding:10px 14px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);color:var(--red);font-size:12.5px;font-weight:700')}>Delete account</button>
         </div>
       </section>
     </div>
