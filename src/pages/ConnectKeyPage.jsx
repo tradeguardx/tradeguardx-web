@@ -7,7 +7,7 @@ import { useGuard } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
 import { connectExchangeCredentials, exchangeFromBrokerSlug } from '../api/exchangeCredentialsApi';
 import { triggerHistoryBackfill } from '../api/syncApi';
-import { trySplitPastedCredentials, SUGGESTED_KEY_NAME } from '../components/dashboard/deltaConnectShared';
+import { trySplitPastedCredentials } from '../components/dashboard/deltaConnectShared';
 import { ENGINE_EGRESS_IP, extraFieldsReady, secretFieldFor, splitsPastedPair, venueFor } from '../lib/venues';
 import { brokerLabel } from '../lib/labels';
 import { sx } from '../components/dashboard/shell/sx';
@@ -81,22 +81,6 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
   const isMobile = useIsMobile();
 
   const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'your exchange';
-  /**
-   * The same name the venue flow suggests, and the same one printed in the
-   * walkthrough screenshots.
-   *
-   * This page used to suggest `TradeGuardX-<account>-guard`, so the same person
-   * connecting from here rather than from Accounts was told to type something
-   * different — and, now that the screenshots render on this page too,
-   * something the picture directly beneath contradicts. Whoever is following
-   * the guide is the one least able to tell which to trust.
-   *
-   * A per-account name would genuinely help someone running several accounts on
-   * one exchange tell their keys apart on the venue's side. If that is worth
-   * having it belongs in SUGGESTED_KEY_NAME, applied everywhere at once,
-   * including the screenshots.
-   */
-  const keyName = SUGGESTED_KEY_NAME;
   // A lock holds a working key in place. One that cannot close anything has no
   // protection to lose, so it can always be swapped (the server agrees).
   const cooled = g.guard === 'locked' && !g.readOnly && g.connection?.status !== 'failed';
@@ -441,11 +425,6 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
               {st.kind === 'after' && <VenueAfterCreate venue={v} />}
               {st.kind === 'paste' && (
                 <div style={sx('margin-top:13px')}>
-                  <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap')}>
-                    <span style={sx('font-size:12px;color:var(--ink-3)')}>Suggested name</span>
-                    <code style={sx("padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font:500 12.5px/1 'JetBrains Mono',monospace")}>{keyName}</code>
-                    <button type="button" onClick={() => copy(keyName)} style={sx('padding:7px 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:600')}>{copied === keyName ? 'Copied' : 'Copy'}</button>
-                  </div>
                   <label htmlFor="cx-key" style={sx('display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px')}>API key</label>
                   <input id="cx-key" name="tgx-cx-a" className="cx-input" {...noAutofill} value={keyVal} onChange={(e) => onKey(e.target.value)} disabled={cooled} placeholder={splitsPastedPair(v) ? 'paste key — or paste key and secret together' : 'paste API key'} style={sx("width:100%;padding:11px 13px;border-radius:10px;background:var(--surface-2);color:var(--ink);font:400 13px/1.3 'JetBrains Mono',monospace;margin-bottom:12px")} />
                   <label htmlFor="cx-secret" style={sx('display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px')}>{secretField.label}</label>
