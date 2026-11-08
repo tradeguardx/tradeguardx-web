@@ -53,6 +53,18 @@ describe('guardOf', () => {
   });
 });
 
+describe('gapsOf — a rejected key says so', () => {
+  it('a failed or revoked key is "rejected", not "no key"', () => {
+    const acct = { propFirmSlug: 'exness', accountSize: 1000 };
+    for (const status of ['failed', 'revoked']) {
+      const g = gapsOf({ account: acct, connection: { status }, rules: null, notifications: null }).find((x) => x.key === 'key');
+      expect(g.title).toBe('Your API key was rejected');
+      expect(g.cta).toBe('Reconnect the key');
+    }
+    expect(gapsOf({ account: acct, connection: null, rules: null, notifications: null }).find((x) => x.key === 'key').title).toBe('No key with trading scope');
+  });
+});
+
 describe('gapsOf — first unmet wins, in the brief order', () => {
   it('setup → key → readonly → rules → alerts', () => {
     expect(gapsOf({ account: { ...account, propFirmSlug: null }, connection: null, rules: noRules, notifications: null }).map((g) => g.key))

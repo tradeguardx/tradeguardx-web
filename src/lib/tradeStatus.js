@@ -51,6 +51,11 @@ export const STATUS = {
     tone: 'mint',
     hint: 'This trade reached your daily profit target and locked the day in.',
   },
+  untracked: {
+    label: 'Not tracked',
+    tone: 'amber',
+    hint: 'Your API key stopped working while this was open, so we never saw it close. Its exit and P&L are unknown.',
+  },
   notClosed: {
     label: 'Not closed',
     tone: 'amber',
@@ -68,7 +73,7 @@ export const STATUS = {
   },
 };
 
-const PRIORITY = ['blocked', 'notBlocked', 'kill', 'notClosed', 'risk', 'triggered', 'target', 'alert', 'clean'];
+const PRIORITY = ['blocked', 'notBlocked', 'untracked', 'kill', 'notClosed', 'risk', 'triggered', 'target', 'alert', 'clean'];
 
 const KILL_REASON = {
   daily_loss_exceeded: 'Your daily loss limit was hit while this trade was open, so the engine closed it.',
@@ -91,6 +96,10 @@ const uidOf = (b) => b?.tradeUid ?? b?.context?.tradeUid ?? null;
 const truthy = (v) => v === true || v === 'true';
 const isBlocked = (t) => truthy(t?.metadata?.blocked) && !truthy(t?.metadata?.notBlocked);
 const isNotBlocked = (t) => truthy(t?.metadata?.notBlocked);
+/** The key died while this was open: the engine stopped watching, so its close was never seen. */
+export const isUntracked = (t) => truthy(t?.metadata?.orphaned) || truthy(t?.metadata?.outcomeUnknown);
+/** When we lost sight of it — the end of what we can honestly call its hold. */
+export const untrackedAt = (t) => t?.metadata?.orphanedAt ?? null;
 
 /** Which lock, in the words the user set it up with. */
 const LOCK_NAME = {
@@ -146,6 +155,7 @@ export function tradeStatusOf(trade, breaches = [], { pnl = null, unenforced = f
 
   if (isBlocked(trade)) found.set('blocked', {});
   if (isNotBlocked(trade)) found.set('notBlocked', {});
+  if (isUntracked(trade)) found.set('untracked', {});
 
   const uid = trade?.tradeUid ?? null;
   const opened = ms(trade?.openedAt);
@@ -230,6 +240,8 @@ function detailOf(key, trade, breach) {
     }
     case 'risk':
       return 'Risk per trade';
+    case 'untracked':
+      return 'API key stopped working · close not seen';
     default:
       return null;
   }

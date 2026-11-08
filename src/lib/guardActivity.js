@@ -80,6 +80,8 @@ export function whyOf(status, trade, { currency = 'USD' } = {}) {
     }
     case 'notClosed':
       return 'A rule was reached, but nothing could act on it.';
+    case 'untracked':
+      return 'Your API key stopped working while this was open, so we stopped watching the account and never saw it close. Its exit and P&L are unknown.';
     default:
       return isClosed(trade) ? 'No rule fired on this trade.' : 'Open now. No rule has fired on it.';
   }

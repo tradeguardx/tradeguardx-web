@@ -24,6 +24,7 @@ const KIND = {
   target: { fg: 'var(--mint)', bg: 'var(--mint-tint)', ring: 'var(--mint-tint)', icon: 'flag' },
   notBlocked: { fg: 'var(--amber)', bg: 'var(--amber-tint)', ring: 'var(--amber-tint)', icon: 'alert' },
   notClosed: { fg: 'var(--amber)', bg: 'var(--amber-tint)', ring: 'var(--amber-tint)', icon: 'alert' },
+  untracked: { fg: 'var(--amber)', bg: 'var(--amber-tint)', ring: 'var(--amber-tint)', icon: 'alert' },
   alert: { fg: 'var(--amber)', bg: 'var(--surface-3)', ring: 'var(--surface-3)', icon: 'bell' },
   clean: { fg: 'var(--ink-3)', bg: 'var(--surface-3)', ring: 'var(--surface-3)', icon: 'check' },
 };

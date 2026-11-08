@@ -109,4 +109,12 @@ describe('tradeStatusOf: the lock, honestly', () => {
     expect(isEventful({ key: 'clean' })).toBe(false);
     expect(isEventful({ key: 'alert' })).toBe(true);
   });
+
+  it('a trade open when the key died is "Not tracked", not "Clean"', () => {
+    const s = tradeStatusOf(t({ closedAt: null, metadata: { orphaned: true, orphanedAt: '2026-11-08T05:21:59Z', orphanedReason: 'credential_no_longer_active' } }), []);
+    expect(s.key).toBe('untracked');
+    expect(s.label).toBe('Not tracked');
+    expect(s.detail).toBe('API key stopped working · close not seen');
+    expect(tradeStatusOf(t({ metadata: { outcomeUnknown: true, closedBy: 'key_given_up' } }), []).key).toBe('untracked');
+  });
 });

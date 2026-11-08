@@ -13,7 +13,7 @@ import { getUserZone } from '../lib/userZone';
 import { inference } from '../lib/sample';
 import { sx } from '../components/dashboard/shell/sx';
 import { instrumentOf, symbolLabel } from '../lib/labels';
-import { isEventful, tradeStatusOf } from '../lib/tradeStatus';
+import { isEventful, isUntracked, tradeStatusOf, untrackedAt } from '../lib/tradeStatus';
 
 /**
  * All trades — the reference table (lines 1365–1399) with the full filter
@@ -319,7 +319,7 @@ export default function AllTradesPage() {
               <span data-c="sym" style={sx('font-weight:600')}>{instrumentOf(pick(t, 'symbol'))}</span>
               <span data-c="side" style={sx('font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase', { color: long ? 'var(--mint)' : 'var(--red)' })}>{long ? 'Long' : 'Short'}</span>
               <span data-c="size">{pick(t, 'quantity', 'volume') ?? '—'}</span>
-              <span data-c="hold" style={sx('color:var(--ink-3)')}>{fmtHold(pick(t, 'openedAt'), pick(t, 'closedAt'))}</span>
+              <span data-c="hold" style={sx('color:var(--ink-3)')}>{fmtHold(pick(t, 'openedAt'), pick(t, 'closedAt') ?? untrackedAt(t))}</span>
               <span data-c="blocks" style={sx('display:flex;gap:5px;flex-wrap:wrap;align-items:center')}>
                 {status && (
                   <span
@@ -334,7 +334,7 @@ export default function AllTradesPage() {
                   <span style={sx('flex-basis:100%;font-size:11px;line-height:1.35;color:var(--ink-3)')}>{status.detail}</span>
                 )}
               </span>
-              <span data-c="pnl" style={sx('text-align:right;font-weight:600', { color: !closed ? 'var(--ink-3)' : pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink)' })}>{closed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : 'open'}</span>
+              <span data-c="pnl" style={sx('text-align:right;font-weight:600', { color: !closed ? 'var(--ink-3)' : pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink)' })}>{closed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : isUntracked(t) ? 'unknown' : 'open'}</span>
               <span data-c="share" style={sx('display:flex;justify-content:flex-end')}>
                 {closed && canShare && t.tradeUid && (
                   <button

@@ -98,7 +98,20 @@ export function gapsOf({ account, connection, rules, notifications, entitled = t
     });
   }
   const hasKey = connection && connection.status === 'active';
-  if (!hasKey) {
+  // A key that WAS connected and the exchange now refuses (revoked, deleted,
+  // expired) is not "no key": say what happened. 8 Nov 2026: a revoked demo key
+  // read "No key with trading scope" over a trade we could no longer see.
+  const keyRejected = connection && (connection.status === 'failed' || connection.status === 'revoked');
+  if (keyRejected) {
+    gaps.push({
+      key: 'key',
+      short: 'key rejected',
+      title: 'Your API key was rejected',
+      body: 'The exchange refused your key, so it was revoked, deleted or has expired. We have stopped watching this account: trades you open now are not protected, and we cannot see them close. Connect a new key to switch the guard back on.',
+      cta: 'Reconnect the key',
+      to: '/dashboard/connect',
+    });
+  } else if (!hasKey) {
     gaps.push({
       key: 'key',
       short: 'no trading key',
