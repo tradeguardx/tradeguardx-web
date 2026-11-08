@@ -499,7 +499,6 @@ const VENUES = {
     openButton: 'Open Exness API management',
     pasteStep: {
       title: 'Paste the API Key, Secret Key and account ID here',
-      body: 'Use the copy buttons next to API Key and Secret Key, then add the linked account number as Exness shows it (e.g. #21000088861). We find the right Exness server for the account ourselves.',
     },
     desktopOnly: false,
     mobilePath: null,

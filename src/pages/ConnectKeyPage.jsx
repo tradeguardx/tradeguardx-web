@@ -375,7 +375,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
             </button>
             {open && (
             <div className="cx-body">
-              <p style={sx('margin:0 0 0;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:74ch')}>{st.body}</p>
+              {st.body && <p style={sx('margin:0 0 0;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:74ch')}>{st.body}</p>}
 
               {st.kind === 'link' && (
                 <>
