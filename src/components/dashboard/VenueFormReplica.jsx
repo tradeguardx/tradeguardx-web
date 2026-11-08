@@ -59,7 +59,7 @@ const FIELD =
  */
 function FilledBox({ value, mono, onCopy, copied }) {
   return (
-    <span style={sx(FIELD, 'flex:1;min-width:190px;max-width:420px;justify-content:space-between;gap:10px')}>
+    <span style={sx(FIELD, 'flex:1;min-width:min(200px,100%);justify-content:space-between;gap:10px')}>
       <span style={sx(mono ? "font:500 13px/1.3 'JetBrains Mono',monospace" : 'font-size:13.5px;font-weight:600', 'overflow:hidden;text-overflow:ellipsis')}>
         {value}
       </span>
@@ -90,10 +90,10 @@ function FilledBox({ value, mono, onCopy, copied }) {
  * the field, where it reads as an afterthought about the callout above it.
  * A requirement belongs beside the label it qualifies.
  */
-function Field({ label, hint, note, children }) {
+function Field({ label, hint, note, children, tight }) {
   return (
-    <div style={sx('margin-bottom:17px')}>
-      <span style={sx('display:block;font-size:12px;color:var(--ink-3)')}>{label}</span>
+    <div style={sx(tight ? 'margin-bottom:0' : 'margin-bottom:20px')}>
+      <span style={sx('display:flex;align-items:center;font-size:12.5px;font-weight:600;color:var(--ink-2)')}>{label}</span>
       {hint && (
         <span style={sx('display:block;margin-top:3px;font-size:11.5px;line-height:1.5;color:var(--ink-faint);max-width:62ch')}>{hint}</span>
       )}
@@ -151,9 +151,44 @@ const CHECK_ON = (accent) => ({ background: accent.solid, color: 'var(--surface)
 const CHECK_OFF = { border: '1.5px solid var(--line-strong)', background: 'transparent' };
 
 /** The step number from the checklist above, so list and picture line up. */
-function Num({ n }) {
+function Num({ n, small, gutter }) {
   return (
-    <span aria-hidden style={sx("flex:none;display:inline-grid;place-items:center;width:18px;height:18px;margin-right:7px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface-3);font:700 10.5px/1 'Space Grotesk',sans-serif;color:var(--ink);vertical-align:middle")}>{n}</span>
+    <span
+      aria-hidden
+      style={sx(
+        "flex:none;display:inline-grid;place-items:center;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface-3);font:700 10.5px/1 'Space Grotesk',sans-serif;color:var(--ink-2);vertical-align:middle",
+        small ? 'width:16px;height:16px;margin-right:7px;font-size:9.5px' : gutter ? 'width:20px;height:20px' : 'width:20px;height:20px;margin-right:8px',
+      )}
+    >
+      {n}
+    </span>
+  );
+}
+
+/**
+ * A numbered row: the number sits in its own gutter, so every label, box and
+ * card starts on one left edge instead of being pushed right by its badge.
+ */
+function Step({ n, children }) {
+  return (
+    <div style={sx('display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:clamp(8px,2vw,12px);align-items:start')}>
+      <span style={sx('padding-top:1px;line-height:0')}><Num n={n} gutter /></span>
+      <div style={sx('min-width:0')}>{children}</div>
+    </div>
+  );
+}
+
+/** "Tick this" / "Leave off": what to do with a control, always on its right. */
+function Tag({ children, pick, accent }) {
+  return (
+    <span
+      style={sx(
+        'margin-left:auto;flex:none;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap',
+        pick ? { background: accent.solid, color: 'var(--surface)' } : { background: 'var(--surface-3)', color: 'var(--ink-3)' },
+      )}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -184,8 +219,8 @@ function Radio({ on, accent }) {
 /** A drawn dropdown showing the value to pick. */
 function Dropdown({ value, muted }) {
   return (
-    <span style={sx(FIELD, 'max-width:420px;justify-content:space-between;gap:10px')}>
-      <span style={sx('font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis', muted ? { color: 'var(--ink-3)' } : {})}>{value}</span>
+    <span style={sx(FIELD, 'justify-content:space-between;gap:10px')}>
+      <span style={sx('min-width:0;font-size:13.5px;font-weight:600;line-height:1.35;overflow-wrap:anywhere', muted ? { color: 'var(--ink-3)' } : {})}>{value}</span>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="2" aria-hidden>
         <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
@@ -195,7 +230,7 @@ function Dropdown({ value, muted }) {
 
 function SectionRule({ children }) {
   return (
-    <span style={sx('display:flex;align-items:center;gap:12px;margin:4px 0 14px;font-size:12px;color:var(--ink-faint)')}>
+    <span style={sx('display:flex;align-items:center;gap:12px;margin:6px 0 18px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)')}>
       <span style={sx('flex:1;height:1px;background:var(--line)')} />
       {children}
       <span style={sx('flex:1;height:1px;background:var(--line)')} />
@@ -227,76 +262,90 @@ function SectionRule({ children }) {
  * flags that would bend the shared one out of shape.
  */
 function ExnessForm({ venue, onCopy, copiedValue, accent }) {
-  // One column as wide as the input boxes, so the Scopes card, the section
-  // rules and the fields share a right edge instead of a ragged one.
   return (
-    <div style={sx('max-width:420px')}>
-      <Field label={<><Num n={1} />Name</>} hint="English letters and digits only, up to 16.">
-        <FilledBox value={SUGGESTED_KEY_NAME} onCopy={onCopy} copied={copiedValue === SUGGESTED_KEY_NAME} />
-      </Field>
+    <div>
+      <Step n={1}>
+        <Field label="Name" hint="English letters and digits only, up to 16.">
+          <FilledBox value={SUGGESTED_KEY_NAME} onCopy={onCopy} copied={copiedValue === SUGGESTED_KEY_NAME} />
+        </Field>
+      </Step>
 
       <SectionRule>Scopes</SectionRule>
-      <div style={sx('margin-bottom:18px;border:1px solid var(--line-strong);border-radius:11px;overflow:hidden')}>
-        <div style={sx('padding:13px 14px', { background: accent.tint, borderBottom: `1px solid ${accent.line}` })}>
-          <span style={sx('display:flex;align-items:center;gap:10px')}>
-            <Num n={2} />
-            <Tick on accent={accent} />
-            <span style={sx('font-size:14px;font-weight:700')}>Trading</span>
-            <span style={sx('margin-left:auto;font-size:11.5px;font-weight:700', { color: accent.text })}>Tick this</span>
-          </span>
-          <div style={sx('margin:12px 0 0 28px')}>
-            <span style={sx('display:flex;align-items:flex-start;gap:10px')}>
-              <Radio on accent={accent} />
-              <span>
-                <span style={sx('display:flex;align-items:center;font-size:13.5px;font-weight:700')}><Num n={3} />Full access</span>
-                <span style={sx('display:block;margin-top:2px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>
+      <Step n={2}>
+        <div style={sx('margin-bottom:20px;border:1px solid var(--line-strong);border-radius:11px;overflow:hidden')}>
+          <div style={sx('padding:14px 14px 16px', { background: accent.tint, borderBottom: `1px solid ${accent.line}` })}>
+            <span style={sx('display:flex;align-items:center;gap:10px')}>
+              <Tick on accent={accent} />
+              <span style={sx('font-size:14px;font-weight:700')}>Trading</span>
+              <Tag accent={accent} pick>Tick this</Tag>
+            </span>
+
+            {/* One indent for everything under Trading: the options line up with
+                the word "Trading", and the account picker with "Full access". */}
+            <div style={sx('display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin:14px 0 0 clamp(0px,4vw,28px)')}>
+              <div style={sx('min-width:0')}>
+                <span style={sx('display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px')}>
+                  <Radio on accent={accent} />
+                  <span style={sx('display:flex;align-items:center;font-size:13.5px;font-weight:700;white-space:nowrap')}><Num n={3} small />Full access</span>
+                  <Tag accent={accent} pick>Pick this</Tag>
+                </span>
+                <span style={sx('display:block;margin:3px 0 0 28px;font-size:12px;line-height:1.5;color:var(--ink-3)')}>
                   Place orders and manage positions — what lets us close a trade.
                 </span>
-              </span>
-            </span>
-            <div style={sx('margin:11px 0 0 28px')}>
-              <Field label={<><Num n={4} />Account</>} hint={venue.accountNote}>
-                <Dropdown value={venue.accountDefault} />
-              </Field>
-            </div>
-            <span style={sx('display:flex;align-items:flex-start;gap:10px;margin-top:-4px')}>
-              <Radio accent={accent} />
-              <span>
-                <span style={sx('display:block;font-size:13.5px;font-weight:600;color:var(--ink-3)')}>Read-only</span>
-                <span style={sx('display:block;margin-top:2px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>
-                  Not this one — it can watch but never close a position, and we turn it away.
+                <div style={sx('margin:12px 0 0 clamp(0px,4vw,28px)')}>
+                  <Field label={<><Num n={4} small />Account</>} hint={venue.accountNote} tight>
+                    <Dropdown value={venue.accountDefault} />
+                  </Field>
+                </div>
+              </div>
+
+              <div style={sx('min-width:0;opacity:.7')}>
+                <span style={sx('display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px')}>
+                  <Radio accent={accent} />
+                  <span style={sx('font-size:13.5px;font-weight:600;color:var(--ink-3)')}>Read-only</span>
+                  <Tag accent={accent}>Not this</Tag>
                 </span>
-              </span>
-            </span>
+                <span style={sx('display:block;margin:3px 0 0 28px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>
+                  It can watch but never close a position, so we refuse it when you connect.
+                </span>
+              </div>
+            </div>
           </div>
+          {['Partnership', 'Transfers'].map((label, i) => (
+            <div key={label} style={sx('display:flex;align-items:center;gap:10px;padding:12px 14px', i === 0 ? { borderBottom: '1px solid var(--line)' } : {})}>
+              <Tick accent={accent} />
+              <span style={sx('font-size:13.5px;font-weight:600;color:var(--ink-3)')}>{label}</span>
+              <Tag accent={accent}>Leave off</Tag>
+            </div>
+          ))}
         </div>
-        {['Partnership', 'Transfers'].map((label, i) => (
-          <div key={label} style={sx('display:flex;align-items:center;gap:10px;padding:12px 14px', i === 0 ? { borderBottom: '1px solid var(--line)' } : {})}>
-            <Tick accent={accent} />
-            <span style={sx('font-size:13.5px;font-weight:600;color:var(--ink-3)')}>{label}</span>
-            <span style={sx('margin-left:auto;font-size:11.5px;color:var(--ink-faint)')}>Leave off</span>
-          </div>
-        ))}
-      </div>
+      </Step>
 
       <SectionRule>Security</SectionRule>
-      <Field label={<><Num n={5} />Expiry date</>} hint="Never — a key that expires switches your protection off on the day it lapses.">
-        <Dropdown value="Never" />
-      </Field>
-      <Field label={<><Num n={6} />{venue.ipField}</>} hint={venue.ipHint}>
-        <FilledBox value={ENGINE_EGRESS_IP} mono onCopy={onCopy} copied={copiedValue === ENGINE_EGRESS_IP} />
-      </Field>
-      <Field label={<><Num n={7} />Public key</>}>
-        <span style={sx('display:grid;gap:10px')}>
-          <span style={sx('display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-3)')}>
-            <Radio accent={accent} /> I&apos;ll use my own public key
+      <Step n={5}>
+        <Field label="Expiry date" hint="Never — a key that expires switches your protection off on the day it lapses.">
+          <Dropdown value="Never" />
+        </Field>
+      </Step>
+      <Step n={6}>
+        <Field label={venue.ipField} hint={venue.ipHint}>
+          <FilledBox value={ENGINE_EGRESS_IP} mono onCopy={onCopy} copied={copiedValue === ENGINE_EGRESS_IP} />
+        </Field>
+      </Step>
+      <Step n={7}>
+        <Field label="Public key">
+          <span style={sx('display:grid;gap:11px')}>
+            <span style={sx('display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-3);opacity:.7')}>
+              <Radio accent={accent} /> I&apos;ll use my own public key
+            </span>
+            <span style={sx('display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;font-size:13.5px;font-weight:700')}>
+              <Radio on accent={accent} /> <span style={sx('white-space:nowrap')}>Generate key for me</span>
+              <Tag accent={accent} pick>Pick this</Tag>
+            </span>
           </span>
-          <span style={sx('display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700')}>
-            <Radio on accent={accent} /> Generate key for me
-          </span>
-        </span>
-      </Field>
-  </div>
+        </Field>
+      </Step>
+    </div>
   );
 }
 
@@ -383,15 +432,24 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
   const accent = accentOf(venue);
 
   return (
-    <figure style={sx('margin:0;border:1px solid var(--line);border-radius:13px;background:var(--surface);overflow:hidden')}>
-      {!venue.formStepBody && (
-      <figcaption style={sx('padding:11px 16px;border-bottom:1px solid var(--line);background:var(--surface-3);font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>
-        This is {venue.name}&apos;s form, filled in. Make yours look like this —{' '}
-        <span style={sx('color:var(--ink-faint)')}>nothing below is live, the boxes are a picture.</span>
+    <figure style={sx('margin:0;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);overflow:hidden')}>
+      {/* A window, not a form: a title bar saying whose page this is and that
+          it is a picture, then their panel on its own card. The backdrop
+          either side of the card is the page around their panel — it reads as
+          a screenshot, where a full-width box with a narrow column in it read
+          as a broken form with empty space. */}
+      <figcaption style={sx('display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--surface-3)')}>
+        <span aria-hidden style={sx('display:flex;gap:5px;flex:none')}>
+          {[0, 1, 2].map((i) => <span key={i} style={sx('width:8px;height:8px;border-radius:50%;background:var(--line-strong)')} />)}
+        </span>
+        <span style={sx('min-width:0;font-size:12px;font-weight:600;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>
+          {venue.name} · {venue.formTitle ?? 'New API key'}
+        </span>
+        <span style={sx('margin-left:auto;flex:none;font-size:11px;color:var(--ink-faint)')}>Picture only</span>
       </figcaption>
-      )}
 
-      <div style={sx('padding:18px 16px 16px')}>
+      <div style={sx('padding:clamp(12px,3vw,26px) clamp(10px,3vw,26px)')}>
+      <div style={sx('max-width:520px;margin:0 auto;padding:clamp(16px,3vw,24px);border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -12px rgba(15,23,42,.12)')}>
         {venue.family === 'exness' ? (
           <ExnessForm venue={venue} onCopy={onCopy} copiedValue={copiedValue} accent={accent} />
         ) : venue.family === 'blofin' ? (
@@ -529,8 +587,8 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
         )}
 
         {venue.submitLabel && (
-          <>
-          {venue.family === 'exness' && <Num n={8} />}
+          <span style={sx('display:flex;align-items:center;gap:12px;margin-top:4px')}>
+          {venue.family === 'exness' && <Num n={8} gutter />}
           {venue.family === 'blofin' && <Num n={6} />}
           <span
             aria-hidden
@@ -542,7 +600,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
           >
             {venue.submitLabel}
           </span>
-          </>
+          </span>
         )}
 
         {venue.otpNote && (
@@ -554,6 +612,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
             {venue.otpNote}
           </span>
         )}
+      </div>
       </div>
 
       <div style={sx('padding:11px 16px;border-top:1px solid var(--line);background:var(--surface-3);font-size:11.5px;line-height:1.55;color:var(--ink-3)')}>
