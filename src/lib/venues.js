@@ -482,8 +482,8 @@ const VENUES = {
       {
         name: 'accountId',
         label: 'Account ID',
-        hint: 'The number of the Exness account you made the key for (Personal Area → My accounts).',
-        placeholder: 'e.g. 12345678',
+        hint: 'The number of the Exness account you made the key for. If it starts with #, copy it with the # — we read it either way.',
+        placeholder: 'e.g. #21000088861',
         required: true,
         inputMode: 'numeric',
         pattern: /^\d{1,20}$/,
