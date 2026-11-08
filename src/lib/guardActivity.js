@@ -70,7 +70,15 @@ export function whyOf(status, trade, { currency = 'USD' } = {}) {
       return status.breach?.breachType === 'missing_stop_loss'
         ? 'It was open without a stop-loss past your alert window. You got an alert; nothing was closed.'
         : 'Its stop risked more than your limit. Your rule is set to alert only, so nothing was closed.';
-    case 'notEnforced':
+    case 'notBlocked': {
+      const m = trade?.metadata ?? {};
+      const reason = m.notBlockedReason ?? c.notBlockedReason ?? c.reason;
+      if (reason === 'key_rejected') return 'You opened this while the account was locked. It could not be closed because your API key had been removed or revoked at the exchange, so it ran as a normal trade and counts.';
+      if (reason === 'plan_inactive' || reason === 'unentitled') return 'You opened this while the account was locked, but your plan was not active, so nothing closed it. It counts as a trade.';
+      if (reason === 'key_cannot_trade' || reason === 'incapable') return 'You opened this while the account was locked, but your API key cannot place trades, so it could not be closed. It counts as a trade.';
+      return 'You opened this while the account was locked, but the exchange refused the close. It ran as a normal trade and counts.';
+    }
+    case 'notClosed':
       return 'A rule was reached, but nothing could act on it.';
     default:
       return isClosed(trade) ? 'No rule fired on this trade.' : 'Open now. No rule has fired on it.';

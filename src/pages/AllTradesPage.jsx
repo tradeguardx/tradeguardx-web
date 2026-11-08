@@ -330,6 +330,9 @@ export default function AllTradesPage() {
                     {status.all.length > 1 ? ` +${status.all.length - 1}` : ''}
                   </span>
                 )}
+                {status?.detail && (
+                  <span style={sx('flex-basis:100%;font-size:11px;line-height:1.35;color:var(--ink-3)')}>{status.detail}</span>
+                )}
               </span>
               <span data-c="pnl" style={sx('text-align:right;font-weight:600', { color: !closed ? 'var(--ink-3)' : pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink)' })}>{closed && Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : 'open'}</span>
               <span data-c="share" style={sx('display:flex;justify-content:flex-end')}>

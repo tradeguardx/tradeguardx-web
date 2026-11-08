@@ -58,8 +58,51 @@ describe('tradeStatusOf', () => {
     expect(tradeStatusOf(t(), [b({ breachType: 'daily_target_reached' })], { pnl: 6 }).key).toBe('target');
   });
 
-  it('keeps the existing not-enforced tag', () => {
-    expect(tradeStatusOf(t(), [], { pnl: -1, unenforced: true }).key).toBe('notEnforced');
+  it('a rule that could not act is "Not closed"', () => {
+    expect(tradeStatusOf(t(), [], { pnl: -1, unenforced: true }).key).toBe('notClosed');
+    const s = tradeStatusOf(t(), [b({ tradeUid: 'u1', breachType: 'enforcement_unavailable', ruleSlug: 'risk-per-trade', context: { reason: 'unentitled' } })], { pnl: -1 });
+    expect(s.label).toBe('Not closed');
+    expect(s.detail).toBe('Risk per trade · Plan not active');
+  });
+});
+
+/*
+ * 7 Nov 2026: the key was deleted 31 s after a kill switch, and every trade the
+ * user then ran themselves read "Blocked by lock". Blocked means closed.
+ */
+describe('tradeStatusOf: the lock, honestly', () => {
+  it('blocked names the lock and when it ends', () => {
+    const s = tradeStatusOf(t({ metadata: { blocked: true, lockReason: 'daily_loss', lockUntil: '2026-11-08T00:00:00Z' } }), [], { pnl: 0.02 });
+    expect(s.label).toBe('Blocked by lock');
+    expect(s.detail).toMatch(/^Daily loss limit · until \d\d:\d\d$/);
+  });
+
+  it('a lock that could not close it is "Not blocked", with the reason', () => {
+    const s = tradeStatusOf(t({ metadata: { notBlocked: true, notBlockedReason: 'key_rejected', lockReason: 'daily_loss' } }), [], { pnl: -13.51 });
+    expect(s.key).toBe('notBlocked');
+    expect(s.label).toBe('Not blocked');
+    expect(s.detail).toBe('Daily loss limit · API key removed');
+    expect(isEventful(s)).toBe(true);
+  });
+
+  it('the trade_not_blocked breach wins over a stale blocked tag', () => {
+    const s = tradeStatusOf(t({ metadata: { blocked: true } }), [
+      b({ tradeUid: 'u1', breachType: 'trade_not_blocked', context: { lockReason: 'manual_lock', notBlockedReason: 'exchange_refused' } }),
+    ], { pnl: -1 });
+    expect(s.key).toBe('notBlocked');
+    expect(s.all.map((x) => x.key)).not.toContain('blocked');
+    expect(s.detail).toBe('Your lock · Exchange refused the close');
+  });
+
+  it('a lock with no plan or a read-only key is "Not blocked", not "Not closed"', () => {
+    const s = tradeStatusOf(t(), [b({ tradeUid: 'u1', breachType: 'enforcement_unavailable', ruleSlug: 'cooldown-block', context: { reason: 'incapable' } })], { pnl: 1 });
+    expect(s.key).toBe('notBlocked');
+    expect(s.detail).toBe("Lock · Key can't trade");
+  });
+
+  it('a waiting lock is the user\'s own', () => {
+    const s = tradeStatusOf(t({ metadata: { blocked: true } }), [b({ tradeUid: 'u1', breachType: 'trade_blocked_cooldown', context: { pendingLock: true } })], { pnl: 0 });
+    expect(s.detail).toBe('Your lock');
   });
 
   it('counts anything but clean as eventful', () => {

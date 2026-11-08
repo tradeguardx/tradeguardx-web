@@ -94,11 +94,23 @@ export default function BreachToast() {
    * sending them there led to a locked page. A warning is amber, not a hit.
    */
   const notEnforced = isUnenforced(breach);
-  const warning = !notEnforced && String(breach.severity).toLowerCase() === 'warning';
-  const tone = notEnforced || warning ? 'amber' : 'red';
-  const kicker = notEnforced ? 'Not enforced' : warning ? 'Warning' : 'Limit hit';
+  /*
+   * The guard could NOT act: a trade opened under a lock that was not closed,
+   * or the key dying while a lock was on. Red, said plainly, and never offered
+   * as a "save" to share — on 7 Nov 2026 these read "Cooldown block fired".
+   */
+  const notBlocked = breach.breachType === 'trade_not_blocked';
+  const lockOff = /_key_invalid$/.test(String(breach.breachType || '')) && breach.context?.lockBypassed === true;
+  const failed = notBlocked || lockOff;
+  const warning = !notEnforced && !failed && String(breach.severity).toLowerCase() === 'warning';
+  const tone = failed ? 'red' : notEnforced || warning ? 'amber' : 'red';
+  const kicker = notBlocked ? 'Not blocked' : lockOff ? 'Lock not enforced' : notEnforced ? 'Not enforced' : warning ? 'Warning' : 'Limit hit';
   const name = notEnforced ? ruleNameOf(breach.ruleSlug) : String(breach.ruleSlug || breach.breachType || 'Rule').replace(/[_-]+/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
-  const headline = notEnforced ? `${name} reached on ${breachAccountName}` : `${name} fired on ${breachAccountName}`;
+  const headline = notBlocked
+    ? `Trade not blocked on ${breachAccountName}`
+    : lockOff
+      ? `Your lock is no longer enforced on ${breachAccountName}`
+      : notEnforced ? `${name} reached on ${breachAccountName}` : `${name} fired on ${breachAccountName}`;
   const go = notEnforced && breach.context?.reason === 'unentitled'
     ? { label: 'See plans', to: '/dashboard/account/billing' }
     : { label: 'See what happened', to: '/dashboard/live' };
@@ -118,7 +130,7 @@ export default function BreachToast() {
           <div style={sx('margin-top:6px;font-size:13.5px;font-weight:600;line-height:1.4')}>{headline}</div>
           <p style={sx('margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>{symbolsInText(breach.message)}</p>
           <div style={sx('display:flex;gap:8px;margin-top:11px;flex-wrap:wrap')}>
-            {canShare && !notEnforced && <button
+            {canShare && !notEnforced && !failed && <button
               type="button"
               onClick={share}
               style={sx('display:flex;align-items:center;gap:6px;padding:7px 12px;border:0;border-radius:8px;background:var(--mint-solid);color:var(--on-mint);font-size:12px;font-weight:700')}

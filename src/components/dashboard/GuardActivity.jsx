@@ -22,7 +22,8 @@ const KIND = {
   triggered: { fg: 'var(--red)', bg: 'var(--red-tint)', ring: 'var(--red-tint)', icon: 'down' },
   risk: { fg: 'var(--amber)', bg: 'var(--amber-tint)', ring: 'var(--amber-tint)', icon: 'gauge' },
   target: { fg: 'var(--mint)', bg: 'var(--mint-tint)', ring: 'var(--mint-tint)', icon: 'flag' },
-  notEnforced: { fg: 'var(--amber)', bg: 'var(--amber-tint)', ring: 'var(--amber-tint)', icon: 'alert' },
+  notBlocked: { fg: 'var(--amber)', bg: 'var(--amber-tint)', ring: 'var(--amber-tint)', icon: 'alert' },
+  notClosed: { fg: 'var(--amber)', bg: 'var(--amber-tint)', ring: 'var(--amber-tint)', icon: 'alert' },
   alert: { fg: 'var(--amber)', bg: 'var(--surface-3)', ring: 'var(--surface-3)', icon: 'bell' },
   clean: { fg: 'var(--ink-3)', bg: 'var(--surface-3)', ring: 'var(--surface-3)', icon: 'check' },
 };
@@ -177,6 +178,7 @@ function Timeline({ items, currency, keyLive, onNavigate }) {
                     </span>
                   </div>
                   <span style={sx('display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px', CHIP[it.status.tone] ?? CHIP.neutral)}>{it.status.label}</span>
+                  {it.status.detail && <span style={sx('display:inline-block;margin:8px 0 0 8px;font-size:11.5px;color:var(--ink-3)')}>{it.status.detail}</span>}
                   <p style={sx('margin:7px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-3)')}>{it.why}</p>
                 </button>
               )}

@@ -11,6 +11,13 @@
  *
  * When several apply, the most consequential wins (PRIORITY below); `all`
  * keeps every match for the tooltip.
+ *
+ * Every action has two faces with the same word: "Blocked by lock" / "Not
+ * blocked", "Closed by kill switch" / "Not closed". `detail` is the short line
+ * under the chip: which lock or rule, and — when the guard could not act — why.
+ * A trade is "blocked" only when the engine confirmed the close; until 8 Nov
+ * 2026 the engine tagged it before closing, so a deleted key left a day of
+ * trades the user ran themselves reading "Blocked by lock".
  */
 
 export const STATUS = {
@@ -18,6 +25,11 @@ export const STATUS = {
     label: 'Blocked by lock',
     tone: 'red',
     hint: 'Opened during a lockout and closed on sight. It does not count as a trade.',
+  },
+  notBlocked: {
+    label: 'Not blocked',
+    tone: 'amber',
+    hint: 'Opened during a lockout, but TradeGuardX could not close it. It counts as a trade.',
   },
   kill: {
     label: 'Closed by kill switch',
@@ -39,10 +51,10 @@ export const STATUS = {
     tone: 'mint',
     hint: 'This trade reached your daily profit target and locked the day in.',
   },
-  notEnforced: {
-    label: 'Not enforced',
+  notClosed: {
+    label: 'Not closed',
     tone: 'amber',
-    hint: 'A rule was reached, but nothing could act on it.',
+    hint: 'A rule should have closed this, but nothing could act on it.',
   },
   alert: {
     label: 'Alert',
@@ -56,7 +68,7 @@ export const STATUS = {
   },
 };
 
-const PRIORITY = ['blocked', 'kill', 'risk', 'triggered', 'target', 'notEnforced', 'alert', 'clean'];
+const PRIORITY = ['blocked', 'notBlocked', 'kill', 'notClosed', 'risk', 'triggered', 'target', 'alert', 'clean'];
 
 const KILL_REASON = {
   daily_loss_exceeded: 'Your daily loss limit was hit while this trade was open, so the engine closed it.',
@@ -76,7 +88,52 @@ const ms = (v) => {
   return Number.isFinite(t) ? t : null;
 };
 const uidOf = (b) => b?.tradeUid ?? b?.context?.tradeUid ?? null;
-const isBlocked = (t) => t?.metadata?.blocked === true || t?.metadata?.blocked === 'true';
+const truthy = (v) => v === true || v === 'true';
+const isBlocked = (t) => truthy(t?.metadata?.blocked) && !truthy(t?.metadata?.notBlocked);
+const isNotBlocked = (t) => truthy(t?.metadata?.notBlocked);
+
+/** Which lock, in the words the user set it up with. */
+const LOCK_NAME = {
+  daily_loss: 'Daily loss limit',
+  consecutive_losses: 'Losing streak',
+  max_trades_day: 'Max trades reached',
+  daily_target: 'Profit target',
+  manual_lock: 'Your lock',
+  manual: 'Your lock',
+};
+/** Why the guard could not act — short enough for the line under a chip. */
+const NOT_ACTED = {
+  key_rejected: 'API key removed',
+  exchange_refused: 'Exchange refused the close',
+  key_cannot_trade: "Key can't trade",
+  plan_inactive: 'Plan not active',
+  unentitled: 'Plan not active',
+  incapable: "Key can't trade",
+};
+const KILL_SOURCE = {
+  daily_loss_exceeded: 'Daily loss limit',
+  consecutive_losses_exceeded: 'Losing streak',
+};
+
+function hhmm(v) {
+  const t = ms(v);
+  if (t == null) return null;
+  return new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+/** "Daily loss limit · until 05:30" / "Your lock · API key removed". */
+function lockDetail(trade, breach, failed) {
+  const m = trade?.metadata ?? {};
+  const c = breach?.context ?? {};
+  const pending = truthy(c.pendingLock);
+  const source = pending ? 'Your lock' : LOCK_NAME[m.lockReason ?? c.lockReason] ?? 'Lock';
+  if (failed) {
+    const why = NOT_ACTED[m.notBlockedReason ?? c.notBlockedReason ?? c.reason] ?? null;
+    return why ? `${source} · ${why}` : source;
+  }
+  const until = hhmm(m.lockUntil ?? c.cooldownUntil);
+  return until ? `${source} · until ${until}` : source;
+}
 
 /**
  * @param trade  a journal trade ({ tradeUid, openedAt, closedAt, pnl, metadata })
@@ -88,7 +145,7 @@ export function tradeStatusOf(trade, breaches = [], { pnl = null, unenforced = f
   const found = new Map(); // key → { text, breach } (text overrides the label/hint)
 
   if (isBlocked(trade)) found.set('blocked', {});
-  if (unenforced) found.set('notEnforced', {});
+  if (isNotBlocked(trade)) found.set('notBlocked', {});
 
   const uid = trade?.tradeUid ?? null;
   const opened = ms(trade?.openedAt);
@@ -100,7 +157,20 @@ export function tradeStatusOf(trade, breaches = [], { pnl = null, unenforced = f
 
     // Per-trade breaches name the trade.
     if (uid && uidOf(b) === uid) {
-      if (type === 'risk_per_trade_exceeded') {
+      if (type === 'trade_blocked_cooldown') {
+        if (found.has('blocked')) found.set('blocked', { breach: b });
+      } else if (type === 'trade_not_blocked') {
+        found.delete('blocked');
+        found.set('notBlocked', { breach: b });
+      } else if (type === 'enforcement_unavailable') {
+        // A lock that could not close it is "not blocked"; any other rule "not closed".
+        if (b?.ruleSlug === 'cooldown-block') {
+          found.delete('blocked');
+          found.set('notBlocked', { breach: b });
+        } else {
+          found.set('notClosed', { breach: b });
+        }
+      } else if (type === 'risk_per_trade_exceeded') {
         if (String(b?.context?.onBreach ?? 'close') === 'alert') found.set('alert', { text: ALERT_REASON[type], breach: b });
         else found.set('risk', { breach: b });
       } else if (type === 'missing_stop_loss') {
@@ -127,15 +197,42 @@ export function tradeStatusOf(trade, breaches = [], { pnl = null, unenforced = f
     }
   }
 
+  // Older callers pass the "not enforced" flag without the breach itself.
+  if (unenforced && !found.has('notBlocked') && !found.has('notClosed')) found.set('notClosed', {});
+
   if (found.size === 0) found.set('clean', {});
-  const all = PRIORITY.filter((k) => found.has(k)).map((k) => ({
-    key: k,
-    ...STATUS[k],
-    label: k === 'alert' && found.get(k).text ? found.get(k).text : STATUS[k].label,
-    hint: k === 'kill' && found.get(k).text ? found.get(k).text : STATUS[k].hint,
-    breach: found.get(k).breach ?? null,
-  }));
+  const all = PRIORITY.filter((k) => found.has(k)).map((k) => {
+    const breach = found.get(k).breach ?? null;
+    return {
+      key: k,
+      ...STATUS[k],
+      label: k === 'alert' && found.get(k).text ? found.get(k).text : STATUS[k].label,
+      hint: k === 'kill' && found.get(k).text ? found.get(k).text : STATUS[k].hint,
+      detail: detailOf(k, trade, breach),
+      breach,
+    };
+  });
   return { ...all[0], all };
+}
+
+function detailOf(key, trade, breach) {
+  switch (key) {
+    case 'blocked':
+      return lockDetail(trade, breach, false);
+    case 'notBlocked':
+      return lockDetail(trade, breach, true);
+    case 'kill':
+      return KILL_SOURCE[breach?.breachType] ?? null;
+    case 'notClosed': {
+      const why = NOT_ACTED[breach?.context?.reason] ?? null;
+      const rule = breach?.ruleSlug === 'risk-per-trade' ? 'Risk per trade' : breach?.ruleSlug === 'daily-loss' ? 'Daily loss limit' : null;
+      return [rule, why].filter(Boolean).join(' · ') || null;
+    }
+    case 'risk':
+      return 'Risk per trade';
+    default:
+      return null;
+  }
 }
 
 /** Anything the guard was involved in — the "With rule events" view and the summary count. */
