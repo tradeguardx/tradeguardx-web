@@ -107,6 +107,17 @@ export function computeRule(slug, cfg, live, balance, fmt) {
       const hard = n(cfg?.hardLossCount) ?? 5;
       const hardHrs = n(cfg?.hardCooldownHours) ?? 12;
       const streak = live.consecutiveLosses ?? 0;
+      if (cfg?.repeatBreaks === true) {
+        // One repeating break: every `soft` losses in a row, the count restarting after each.
+        const toward = streak % soft;
+        const left = soft - toward;
+        return {
+          trigger: `A ${softHrs}h break after every ${soft === 1 ? 'losing trade' : `${soft} losses in a row`}`,
+          status: streak === 0 ? 'No losses in a row right now' : `${toward} of ${soft} toward the next break · ${left} more loss${left === 1 ? '' : 'es'} triggers it`,
+          tone: left === 1 ? 'warn' : 'ok',
+          pips: { filled: toward, total: soft, color: left === 1 ? AMBER : GREEN },
+        };
+      }
       const hitHard = streak >= hard;
       const hitSoft = streak >= soft;
       const moreNeeded = Math.max(soft - streak, 0);

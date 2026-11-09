@@ -163,8 +163,11 @@ const SUMMARY_FORMATTERS = {
     const n = Number(v.maxTrades);
     return `${v.maxTrades} per session${Number.isFinite(n) ? ` · rejects the ${ordinal(n + 1)} order` : ''}`;
   },
+  // No hard-lock field means the venue runs one repeating break (Exness first).
   'close-after-losses': (v) =>
-    `${v.consecutiveLosses} in a row → ${v.cooldownHours}h lock · ${v.hardLossCount} in a row → ${v.hardCooldownHours}h`,
+    v.hardLossCount == null
+      ? `${v.consecutiveLosses} in a row → ${v.cooldownHours}h break, every time`
+      : `${v.consecutiveLosses} in a row → ${v.cooldownHours}h lock · ${v.hardLossCount} in a row → ${v.hardCooldownHours}h`,
   'stop-loss-alert': (v) => `alerts after ${v.alertDelaySeconds}s unprotected`,
   hedging: (v) => (v.enabled ? 'blocks opposite-direction trades' : 'off'),
   stacking: (v) => `max ${v.maxPositions} open positions`,
@@ -182,6 +185,19 @@ function ruleSummaryLine(templateSlug, values, fallback, sym = '$') {
   } catch {
     return fallback;
   }
+}
+
+/** Close after N losses, in the user's own numbers rather than "three … five". */
+function lossStreakPlain(v) {
+  const n = Number(v.consecutiveLosses);
+  const h = Number(v.cooldownHours);
+  if (!(n > 0) || !(h > 0)) return null;
+  const losses = n === 1 ? 'a losing trade' : `${n} losing trades in a row`;
+  if (v.hardLossCount == null) {
+    return `After ${losses}, trading pauses for ${h}h. The count starts again after each break, and a winning trade resets it. It has to stay below your max trades per day, so the break can come before the day's trades run out.`;
+  }
+  const hard = Number(v.hardLossCount);
+  return `After ${losses}, trading pauses for ${h}h${hard > n ? `; ${hard} in a row locks you for ${v.hardCooldownHours}h` : ''}. A winning trade resets the count.`;
 }
 
 /** Live "what this does" for the profit lock, from the numbers being typed. */
@@ -365,7 +381,8 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
   const slug = rule.templateSlug ?? rule.id;
   const accent = ruleAccent(slug);
   const glyph = RULE_GLYPH[slug] ?? ICON.rules;
-  const plain = (slug === 'daily-profit-target' && rule.fields.some((f) => f.key === 'targetAction')
+  const lossPlain = slug === 'close-after-losses' ? lossStreakPlain(values) : null;
+  const plain = lossPlain || (slug === 'daily-profit-target' && rule.fields.some((f) => f.key === 'targetAction')
     ? `Every option locks your account until the daily reset, so a good day stays good. They differ in when it locks and whether we close open trades. ${TARGET_ACTIONS[targetActionOf(values)].note}`
     : null) || REF_PLAIN[slug] || (RULE_DOCS[slug] ? `${RULE_DOCS[slug].summary} ${RULE_DOCS[slug].trigger}` : rule.description);
   const summary = ruleSummaryLine(rule.id, values, rule.description, sym);

@@ -195,7 +195,9 @@ export function ruleExplainers(bundle, { currency = 'USD', equity = null, resetL
       const softH = num(c.cooldownHours) ?? 3;
       const hard = num(c.hardLossCount) ?? 5;
       const hardH = num(c.hardCooldownHours) ?? 12;
-      how = `Counts losing trades in a row. Any loss counts, even a few cents. A win resets the count; a breakeven trade is skipped; trades closed by a lock do not count. ${soft} in a row locks the account for ${softH}h${hard > soft ? `; ${hard} in a row is a hard lock for ${hardH}h, and when that lifts your day starts fresh` : ''}.`;
+      how = c.repeatBreaks === true
+        ? `Counts losing trades in a row. Any loss counts, even a few cents. A win resets the count; a breakeven trade is skipped; trades closed by a lock do not count. Every ${soft === 1 ? 'loss' : `${soft} in a row`} locks the account for ${softH}h, and the count starts again after each break.`
+        : `Counts losing trades in a row. Any loss counts, even a few cents. A win resets the count; a breakeven trade is skipped; trades closed by a lock do not count. ${soft} in a row locks the account for ${softH}h${hard > soft ? `; ${hard} in a row is a hard lock for ${hardH}h, and when that lifts your day starts fresh` : ''}.`;
       example =
         soft === 1
           ? `Trade 1 closes at −${m(0.5)} → 1 loss in a row → locked for ${softH}h. Even a −${m(0.01)} close would do it, so a limit of 1 locks you after any losing trade.`
