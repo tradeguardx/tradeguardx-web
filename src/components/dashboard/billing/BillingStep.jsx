@@ -504,7 +504,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
             </div>
             <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.4vw,28px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.03em', textWrap: 'pretty' }}>
               {charged
-                ? 'For traders who are serious about their discipline'
+                ? 'Don’t buy this unless you’re a serious trader'
                 : (
                   /* Lead with what they get, not the chore: a trial, not "billing". */
                   <>
@@ -720,6 +720,9 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   </div>
                 )}
 
+                {/* Not for the Trial Plan: one payment and an end date need no
+                    timeline, and the note under the button says both (owner). */}
+                {!isPass && (
                 <div style={{ marginTop: 20, padding: 16, borderRadius: 16, background: 'var(--surface-2)', boxShadow: 'inset 0 0 0 1px var(--line)' }}>
                   <div style={{ font: "600 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.16em', color: 'var(--ink-faint)' }}>WHAT HAPPENS NEXT</div>
                   <div style={{ marginTop: 14, display: 'grid' }}>
@@ -737,6 +740,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                     ))}
                   </div>
                 </div>
+                )}
 
                 {/*
                   * A coupon field, hidden until asked for.
