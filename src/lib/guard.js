@@ -186,7 +186,7 @@ export function gapsOf({ account, connection, rules, notifications, entitled = t
             key: 'billing',
             short: 'guard not switched on',
             title: 'Your guard is not switched on',
-            body: 'Rules are written down but nothing enforces them until the guard is on. Choose Pro, or try everything for 3 days with a Tester pass.',
+            body: 'Rules are written down but nothing enforces them until the guard is on. Choose Pro, or try everything for 3 days with a Trial Plan.',
             cta: 'Choose a plan',
             to: '/dashboard/activate',
           },

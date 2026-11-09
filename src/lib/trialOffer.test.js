@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { trialDaysOnOffer, trialOfferLine, firstChargeDate } from './trialOffer';
 
 describe('trialDaysOnOffer', () => {
-  it('offers no free days to someone who has not started (Tester pass instead, 9 Nov 2026)', () => {
+  it('offers no free days to someone who has not started (Trial Plan instead, 9 Nov 2026)', () => {
     expect(trialDaysOnOffer({ needsMandate: true })).toBe(0);
   });
 

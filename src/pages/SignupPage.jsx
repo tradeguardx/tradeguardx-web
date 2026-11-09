@@ -19,7 +19,7 @@ const planMeta = {
 export default function SignupPage() {
   useSEO({
     title: 'Sign Up',
-    description: 'Create your TradeGuardX account. Try everything for 3 days with a one-time Tester pass, no AutoPay, or start Pro straight away.',
+    description: 'Create your TradeGuardX account. Try everything for 3 days with a one-time Trial Plan, no AutoPay, or start Pro straight away.',
     url: 'https://tradeguardx.com/signup',
   });
   const [searchParams] = useSearchParams();
@@ -124,7 +124,7 @@ export default function SignupPage() {
           <p className="text-slate-400 text-[16px]">Try everything for 3 days, or start Pro.</p>
           {/* Said here, before the account exists, so the payment step in setup
               is something they were told about rather than a surprise. */}
-          <p className="text-slate-500 text-[13px] mt-1.5">You pick in step 4 · Tester pass is paid once and never renews</p>
+          <p className="text-slate-500 text-[13px] mt-1.5">You pick in step 4 · Trial Plan is paid once and never renews</p>
           {plan !== 'free' && (
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold border mt-3 ${pm.cls}`}>
               {pm.label} plan
@@ -242,7 +242,7 @@ export default function SignupPage() {
         </p>
 
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8">
-          {['Trade-only API key', 'No withdrawal access', 'Tester pass never renews'].map((t) => (
+          {['Trade-only API key', 'No withdrawal access', 'Trial Plan never renews'].map((t) => (
             <span key={t} className="flex items-center gap-1.5 whitespace-nowrap text-[11px] text-slate-600">
               <span className="w-1 h-1 rounded-full bg-accent/50" />
               {t}

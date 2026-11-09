@@ -222,10 +222,10 @@ describe('gapsOf — asked for billing, not blocked', () => {
 describe('gapsOf — the trial that has already been used', () => {
   const base = { account, connection: readOnly, rules, notifications: alerts, entitled: false, mandate: false };
 
-  it('offers a plan or the Tester pass to someone who never started — nothing free', () => {
+  it('offers a plan or the Trial Plan to someone who never started — nothing free', () => {
     const billing = gapsOf({ ...base, trialSpent: false }).find((g) => g.key === 'billing');
     expect(billing.title).toBe('Your guard is not switched on');
-    expect(billing.body).toMatch(/Tester pass/);
+    expect(billing.body).toMatch(/Trial Plan/);
     expect(billing.body).not.toMatch(/free|nothing is charged/);
   });
 

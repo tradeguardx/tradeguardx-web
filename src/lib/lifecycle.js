@@ -190,18 +190,18 @@ export function lifecycleView(id, ctx = {}) {
         pill: 'Guard off',
         tone: 'amber',
         plan: 'Setup · step 5 of 5',
-        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Choose Pro or a 3-day Tester pass to switch it on.', cta: 'Choose a plan', to: ONBOARDING },
+        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Choose Pro or a 3-day Trial Plan to switch it on.', cta: 'Choose a plan', to: ONBOARDING },
         /* Never paid: everything but setup, the revenge report (the reason
            to start), rules as drafts, and the account pages waits for the
            trial. */
         locks: ['live', 'journal', 'trades', 'tax', 'overview'],
         lock: {
           title: 'Starts with your plan',
-          body: 'Your key is connected and history is filling in. This switches on the moment your plan or Tester pass starts.',
+          body: 'Your key is connected and history is filling in. This switches on the moment your plan starts.',
           cta: 'Choose a plan',
           to: ONBOARDING,
         },
-        ks: { enabled: false, tip: 'Starts with your plan or Tester pass' },
+        ks: { enabled: false, tip: 'Starts with your plan' },
         rulesBadge: 'DRAFT',
         facts: [['Rules', 'Draft', 'Nothing enforced yet'], ['Key', 'Connected', 'Needed to act on trades'], ['Guard', 'Off', 'Switches on with your trial']],
         dial: { label: 'guard off · finish setup' },
@@ -317,24 +317,24 @@ export function lifecycleView(id, ctx = {}) {
         toast: until ? `Pro cancelled. You’re protected until ${until}.` : 'Pro cancelled. You’re protected until your plan ends.',
         accountSuffix: until ? `until ${until}` : null,
       };
-    /* ── Tester pass: paid once, 3 days, nothing renews (9 Nov 2026) ─── */
+    /* ── Trial Plan: paid once, 3 days, nothing renews (9 Nov 2026) ─── */
     case 'xp':
       return {
         ...base,
         pill: until ? `Protected · until ${until}` : 'Protected',
-        plan: until ? `Tester · ends ${until}` : 'Tester pass',
+        plan: until ? `Trial Plan · ends ${until}` : 'Trial Plan',
         band: until
           ? {
               tone: 'neutral',
               dismissible: true,
               dismissDays: 1,
-              title: `Your Tester pass ends ${until}.`,
+              title: `Your Trial Plan ends ${until}.`,
               body: 'Nothing renews. Choose a plan to keep your guard on after that.',
               cta: 'Choose a plan',
               to: BILLING,
             }
           : null,
-        toast: until ? `Tester pass on. You’re protected until ${until}.` : 'Tester pass on. You’re protected.',
+        toast: until ? `Trial Plan on. You’re protected until ${until}.` : 'Trial Plan on. You’re protected.',
         accountSuffix: until ? `until ${until}` : null,
       };
     case 'ac':
@@ -381,7 +381,7 @@ export function lifecycleView(id, ctx = {}) {
         band: {
           tone: 'red',
           title: 'Your free trial has ended.',
-          body: 'Nothing is protecting your accounts. Your rules are saved. Choose a plan, or try 3 more days with a Tester pass.',
+          body: 'Nothing is protecting your accounts. Your rules are saved. Choose a plan, or try 3 more days with a Trial Plan.',
           cta: 'Subscribe',
           to: BILLING,
         },
@@ -390,10 +390,10 @@ export function lifecycleView(id, ctx = {}) {
       const on = day(ctx.periodEnd);
       return {
         ...ended(base, 'pass'),
-        plan: on ? `No plan · Tester ended ${on}` : 'No plan · Tester ended',
+        plan: on ? `No plan · Trial Plan ended ${on}` : 'No plan · Trial Plan ended',
         band: {
           tone: 'red',
-          title: 'Your Tester pass has ended.',
+          title: 'Your Trial Plan has ended.',
           body: 'Nothing is protecting your accounts. Your rules are saved. Choose a plan to switch the guard back on.',
           cta: 'Choose a plan',
           to: BILLING,
@@ -487,7 +487,7 @@ function ended(base, endedFrom) {
     lossBudgetNote: failed ? 'Not enforced: payment failed' : 'Not enforced: no active plan',
     accountLabel: failed ? 'Not protected · payment failed' : 'Not protected · rules saved',
     /** "Guard switched off: …", the first Activity row. */
-    offReason: failed ? 'payment failed' : endedFrom === 'unpaid' ? 'all retries failed' : endedFrom === 'trial' ? 'trial ended' : endedFrom === 'pass' ? 'Tester pass ended' : 'plan ended',
+    offReason: failed ? 'payment failed' : endedFrom === 'unpaid' ? 'all retries failed' : endedFrom === 'trial' ? 'trial ended' : endedFrom === 'pass' ? 'Trial Plan ended' : 'plan ended',
     plainEnglish:
       'Your plan has ended, so we are not watching or closing anything. Subscribe and your saved rules and kill switch work again straight away.',
   };

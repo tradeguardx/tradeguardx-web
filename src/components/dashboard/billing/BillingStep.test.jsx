@@ -484,14 +484,15 @@ describe('billing step — the free window it promises', () => {
   });
 
   /* 9 Nov 2026: nothing is free. The pass is one payment, no coupon, no mandate. */
-  it('offers the Tester pass as one payment, with no coupon and no AutoPay', async () => {
+  it('offers the Trial Plan as one payment, with no coupon and no AutoPay', async () => {
     eligibility = { trialDays: 0, fullTrialDays: 0 };
     await show();
     fireEvent.click(document.querySelector('[data-tester-row]'));
-    expect(await screen.findByText(/Buy Tester pass · ₹299/)).toBeTruthy();
+    expect(await screen.findByText(/Buy Trial Plan · ₹299/)).toBeTruthy();
     expect(screen.getByText(/No AutoPay and nothing renews/)).toBeTruthy();
-    expect(screen.queryByText('Have a coupon?')?.closest('div')?.style.display).toBe('none');
-    fireEvent.click(screen.getByText(/Buy Tester pass · ₹299/));
+    fireEvent.click(screen.getByText('Have a coupon?'));
+    expect(screen.getByText(/Codes apply to Monthly, Quarterly and Yearly — not the Trial Plan/)).toBeTruthy();
+    fireEvent.click(screen.getByText(/Buy Trial Plan · ₹299/));
     await waitFor(() => expect(checkout).toHaveBeenCalledWith(expect.objectContaining({ planSlug: 'tester' })));
     expect(checkout.mock.calls.at(-1)[0].couponCode).toBeUndefined();
   });

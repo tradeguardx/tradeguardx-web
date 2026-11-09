@@ -116,7 +116,7 @@ export function UpgradeWall() {
         </span>
         <h2 className="mt-5 font-display text-2xl font-bold" style={{ color: 'var(--dash-text-primary)' }}>Switch your guard on</h2>
         <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-          Choose Pro, or try everything for three days with a one-time Tester pass. Nothing renews unless you choose a plan.
+          Choose Pro, or try everything for three days with a one-time Trial Plan. Nothing renews unless you choose a plan.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
@@ -128,7 +128,7 @@ export function UpgradeWall() {
           </Link>
         </div>
         <p className="mt-4 text-xs" style={{ color: 'var(--dash-text-faint)' }}>
-          Pro renews until you cancel. A Tester pass is one payment and simply ends.
+          Pro renews until you cancel. A Trial Plan is one payment and simply ends.
         </p>
       </div>
     );

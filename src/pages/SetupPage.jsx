@@ -66,7 +66,7 @@ const STEPS = [
   /* The reward for connecting the key: their own last month read back to
      them. Ticked the moment the key connects — it informs, never blocks. */
   { key: 'report', label: 'Your revenge score', h: 'Your revenge score', p: 'Key connected. Before anything else, here is how you have been trading after a loss — read from your own trades.' },
-  { key: 'billing', label: 'Switch guard on', h: 'Switch your guard on', p: 'Choose Pro, or try everything for 3 days with a Tester pass. The guard only runs once this is done.' },
+  { key: 'billing', label: 'Switch guard on', h: 'Switch your guard on', p: 'Choose Pro, or try everything for 3 days with a Trial Plan. The guard only runs once this is done.' },
 ];
 
 function Rail({ at, done, labels }) {

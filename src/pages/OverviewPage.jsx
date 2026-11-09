@@ -225,7 +225,7 @@ export default function OverviewPage() {
           accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.plan,
           to: '/dashboard/activate', cta: 'See plans',
         }
-      : { title: 'Switch your guard on', body: 'Choose Pro, or try everything for 3 days with a Tester pass. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Choose a plan' };
+      : { title: 'Switch your guard on', body: 'Choose Pro, or try everything for 3 days with a Trial Plan. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Choose a plan' };
 
   const steps = [
     { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'color-mix(in srgb, var(--blue) 12%, transparent)', d: ICON.bank, to: '/dashboard/setup', cta: 'Add an account' },

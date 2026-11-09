@@ -36,7 +36,7 @@ export const faqs = [
   },
   {
     q: 'Is there a free plan?',
-    a: 'No — there is one plan, Pro, with everything included, priced for your country. To try it first, buy a 3-day Tester pass: everything Pro has, paid once, no AutoPay, nothing renews. When it ends, you choose a plan.',
+    a: 'No — there is one plan, Pro, with everything included, priced for your country. To try it first, buy a 3-day Trial Plan: everything Pro has, paid once, no AutoPay, nothing renews. When it ends, you choose a plan.',
   },
 ];
 

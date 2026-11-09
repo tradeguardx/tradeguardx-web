@@ -11,7 +11,7 @@
  *
  * These vars control ONLY the marketing UI.
  *
- * There is no free trial since 9 Nov 2026 (the 3-day Tester pass is paid), so
+ * There is no free trial since 9 Nov 2026 (the 3-day Trial Plan is paid), so
  * trialDays is always 0 and the promo never says "free for N days" — even if
  * an old VITE_FOUNDING_MEMBER_TRIAL_DAYS is still set in the deploy env, which
  * would otherwise promise access that signup does not deliver.

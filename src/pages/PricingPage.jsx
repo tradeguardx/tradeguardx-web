@@ -46,7 +46,7 @@ const PLAN_THEME = {
     badgeBg: 'rgba(100,116,139,0.10)',
     badgeBorder: 'rgba(100,116,139,0.22)',
     badgeText: '#94a3b8',
-    tagline: 'Start with a 3-day Tester pass, then choose a plan.',
+    tagline: 'Start with a 3-day Trial Plan, then choose a plan.',
     ctaBg: 'rgba(255,255,255,0.06)',
     ctaBorder: 'rgba(255,255,255,0.08)',
     ctaText: '#e2e8f0',
@@ -267,7 +267,7 @@ const TRUST_BADGES = [
 export default function PricingPage() {
   useSEO({
     title: 'Pricing: One Plan for Every Exchange',
-    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly, in your local price. Try everything for 3 days with a one-time Tester pass.',
+    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly, in your local price. Try everything for 3 days with a one-time Trial Plan.',
     url: 'https://tradeguardx.com/pricing',
   });
   const [plans, setPlans] = useState([]);
@@ -277,7 +277,7 @@ export default function PricingPage() {
   const money = (n) => formatMoney(n, currency);
   const isInr = currency === 'INR';
   const taxNote = isInr ? 'incl. 18% GST' : 'incl. tax';
-  /* The Tester pass price for this visitor's band (lib/priceBands). */
+  /* The Trial Plan price for this visitor's band (lib/priceBands). */
   const passBand = isInr ? 'in' : plans[0]?.band ?? (bandSync() === 'in' ? 'a' : bandSync());
   const testerPrice = testerPriceFor(passBand).price;
   const [isLoading, setIsLoading] = useState(true);
@@ -358,7 +358,7 @@ export default function PricingPage() {
     }
   }
 
-  /* The Tester pass: one payment, 3 days, nothing renews. No codes apply. */
+  /* The Trial Plan: one payment, 3 days, nothing renews. No codes apply. */
   async function handleTesterCta() {
     if (!session?.access_token) { navigate('/signup?plan=tester'); return; }
     setCheckoutKey('tester');
@@ -992,7 +992,7 @@ export default function PricingPage() {
         {plans.length > 0 && (
           <div data-tester-strip className="max-w-5xl mx-auto mt-8 rounded-2xl px-5 py-5 md:px-7 flex flex-col md:flex-row md:items-center gap-4" style={{ border: '1px solid rgba(0,212,170,0.22)', backgroundColor: 'rgba(0,212,170,0.05)' }}>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color: '#00d4aa' }}>Tester pass</p>
+              <p className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color: '#00d4aa' }}>Trial Plan</p>
               <p className="mt-1.5 font-display text-xl font-bold text-white tracking-tight">
                 {money(testerPrice)} for {TESTER_DAYS} days of everything
               </p>
@@ -1014,7 +1014,7 @@ export default function PricingPage() {
 
         {plans.length > 0 && (
           <p className="mx-auto mb-12 mt-8 max-w-xl text-center text-[12.5px] leading-relaxed" style={{ color: '#64748b' }}>
-            Payments are non-refundable, so try {TESTER_DAYS} days with a Tester pass first if you are unsure.{' '}
+            Payments are non-refundable, so try {TESTER_DAYS} days with a Trial Plan first if you are unsure.{' '}
             <Link to="/refund" className="underline underline-offset-2 hover:text-slate-300">Refund policy</Link>
           </p>
         )}

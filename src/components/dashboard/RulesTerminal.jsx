@@ -785,7 +785,7 @@ function setupGateCopy(lifeId, keyState) {
       ? { step: 3, title: 'Reconnect your key to use these rules', body: 'Your key is disconnected, so no rule can act on your trades. Reconnect it, then choose a plan.', cta: 'Reconnect key' }
       : { step: 3, title: 'Connect your exchange key to use these rules', body: 'Rules act through your key — closing positions and locking the account when a limit is hit. Two minutes, then choose a plan.', cta: 'Connect key' };
   }
-  return { step: 5, title: 'Your rules switch on with your plan', body: 'Your key is connected. Choose Pro or a 3-day Tester pass, then switch on the rules you want and set your limits.', cta: 'Choose a plan' };
+  return { step: 5, title: 'Your rules switch on with your plan', body: 'Your key is connected. Choose Pro or a 3-day Trial Plan, then switch on the rules you want and set your limits.', cta: 'Choose a plan' };
 }
 
 const SetupGate = forwardRef(function SetupGate({ lifeId, keyState, pulse, onGo }, ref) {

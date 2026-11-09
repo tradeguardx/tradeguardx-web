@@ -58,8 +58,8 @@ const sections = [
     ],
   },
   {
-    title: '7. Tester Pass, Subscription and Payment',
-    content: 'You can try the Service with a Tester pass: full Pro access for 3 days, for a single payment at the price displayed when you buy it. A Tester pass sets up no recurring mandate and does not renew; buying another adds 3 more days. When it ends you may choose a paid plan, and access to paid features stops until you do. A Pro subscription is charged in full when you start it, at the price displayed when you confirm, and you authorise a recurring mandate (AutoPay) for renewals. Paid plans renew for successive periods until cancelled; you can cancel at any time and retain access through the end of the current billing period. Free trials started before November 9, 2026 continue to their end date under the terms that applied when they began. Fees are non-refundable except as stated in our Refund Policy. We may change pricing with reasonable notice; continued use after a price change constitutes acceptance.',
+    title: '7. Trial Plan, Subscription and Payment',
+    content: 'You can try the Service with a Trial Plan: full Pro access for 3 days, for a single payment at the price displayed when you buy it. A Trial Plan sets up no recurring mandate and does not renew; buying another adds 3 more days. When it ends you may choose a paid plan, and access to paid features stops until you do. A Pro subscription is charged in full when you start it, at the price displayed when you confirm, and you authorise a recurring mandate (AutoPay) for renewals. Paid plans renew for successive periods until cancelled; you can cancel at any time and retain access through the end of the current billing period. Free trials started before November 9, 2026 continue to their end date under the terms that applied when they began. Fees are non-refundable except as stated in our Refund Policy. We may change pricing with reasonable notice; continued use after a price change constitutes acceptance.',
   },
   {
     title: '8. Disclaimer of Warranties',

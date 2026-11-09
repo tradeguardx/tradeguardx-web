@@ -144,7 +144,7 @@ export default function RevengeSetupStep({ accessToken, tradingAccountId, accoun
                 cta={{
                   label: continueLabel || 'Switch on the guard →',
                   onClick: onContinue,
-                  note: continueLabel ? null : '3-day Tester pass or Pro · you set each limit on the Rules page',
+                  note: continueLabel ? null : '3-day Trial Plan or Pro · you set each limit on the Rules page',
                   trial: !continueLabel,
                 }}
               />

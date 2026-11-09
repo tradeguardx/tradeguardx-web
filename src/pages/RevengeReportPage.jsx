@@ -189,7 +189,7 @@ export default function RevengeReportPage() {
               reveal={reveal}
               onShare={() => setSharing(true)}
               cta={planOff
-                ? { label: 'Switch on the guard →', to: '/dashboard/account/billing', note: '3-day Tester pass or Pro · you set each limit on the Rules page', trial: true }
+                ? { label: 'Switch on the guard →', to: '/dashboard/account/billing', note: '3-day Trial Plan or Pro · you set each limit on the Rules page', trial: true }
                 : { label: 'Set up these rules →', to: '/dashboard/rules' }}
             />
           </div>

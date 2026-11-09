@@ -99,7 +99,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
    * who signed up today, and a year preselected reads as the choice being
    * made for them. The saving is on screen for anyone who wants it.
    */
-  /* Monthly is selected; the Tester pass sits above it as the cheaper way in. */
+  /* Monthly is selected; the Trial Plan sits above it as the cheaper way in. */
   const [plan, setPlan] = useState('monthly');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -178,7 +178,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   }, [proPlan]);
 
   const cur = options.find((o) => o.id === plan) ?? options[0];
-  /* The Tester pass (9 Nov 2026): one payment, 3 days, nothing renews. Kept
+  /* The Trial Plan (9 Nov 2026): one payment, 3 days, nothing renews. Kept
      out of `options` so coupons, offers and savings stay about Pro alone. */
   const isPass = plan === 'tester';
   const testerPrice = testerPriceFor(bandOfPlan(proPlan)).price;
@@ -439,7 +439,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
       {passUntil && (
         <div style={{ maxWidth: 1220, margin: '0 auto', paddingTop: 22 }}>
           <NoticeCard
-            title={`Your Tester pass runs until ${fmtDay(new Date(passUntil))}.`}
+            title={`Your Trial Plan runs until ${fmtDay(new Date(passUntil))}.`}
             body="Nothing renews. Choose a plan below to keep your guard on after that, or add 3 more days with another pass."
           />
         </div>
@@ -504,7 +504,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
             </div>
             <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.4vw,28px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.03em', textWrap: 'pretty' }}>
               {charged
-                ? 'Don’t purchase if you’re not serious about trading'
+                ? 'For traders who are serious about their discipline'
                 : (
                   /* Lead with what they get, not the chore: a trial, not "billing". */
                   <>
@@ -524,7 +524,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
               {charged ? (
                 <>
                   Try everything for {TESTER_DAYS} days with a{' '}
-                  <b style={{ color: 'var(--ink)' }}>{money(testerPrice)} Tester pass</b>, or start Pro. Nothing renews unless you choose a plan.
+                  <b style={{ color: 'var(--ink)' }}>{money(testerPrice)} Trial Plan</b>, or start Pro. Nothing renews unless you choose a plan.
                 </>
               ) : (
                 <>
@@ -647,7 +647,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                     </span>
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 14, fontWeight: 700 }}>Tester</span>
+                        <span style={{ fontSize: 14, fontWeight: 700 }}>Trial Plan</span>
                         <span style={{ font: "700 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', padding: '4px 6px', borderRadius: 5, background: 'var(--surface-3)', color: 'var(--ink-2)' }}>{`${TESTER_DAYS} DAYS`}</span>
                       </span>
                       <span style={{ display: 'block', marginTop: 3, fontSize: 12, color: 'var(--ink-faint)' }}>One payment · nothing renews</span>
@@ -751,9 +751,15 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   * worked is the checkout page, where they will see the
                   * amount.
                   */}
-                {/* No codes on a pass: a discount on the cheap way in would be
-                    the free trial again by another name (payments refuses them). */}
-                <div style={{ marginTop: 14, display: isPass ? 'none' : undefined }}>
+                {/* Codes are offered on every option but only ever reach a paid
+                    plan: a discount on the Trial Plan would be the free trial
+                    again by another name (payments refuses them too). */}
+                <div style={{ marginTop: 14 }}>
+                  {isPass && (couponOpen || coupon) && (
+                    <p data-pass-coupon-note style={{ margin: '0 0 8px', fontSize: 11.5, lineHeight: 1.45, color: 'var(--ink-faint)' }}>
+                      Codes apply to Monthly, Quarterly and Yearly — not the Trial Plan.
+                    </p>
+                  )}
                   {couponOpen || coupon ? (
                     <div>
                       <label htmlFor="bs-coupon" style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-faint)', marginBottom: 6 }}>Coupon code</label>
@@ -778,7 +784,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                         </button>
                       </div>
 
-                      {!typed ? (
+                      {isPass ? null : !typed ? (
                         <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--ink-faint)' }}>
                           {offerApplied
                             ? `A code you enter here replaces the ${offerLabel(offer).toLowerCase()}.`
@@ -831,7 +837,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                     : busy
                     ? (charged ? 'Opening checkout…' : 'Starting your trial…')
                     : isPass
-                      ? `Buy Tester pass · ${money(testerPrice)}`
+                      ? `Buy Trial Plan · ${money(testerPrice)}`
                       : charged
                       ? `Subscribe · ${cur.name}`
                       : `Start ${freeDays == null ? 'free trial' : `${freeDays} day${freeDays === 1 ? '' : 's'} free`} · ${cur.name}`}

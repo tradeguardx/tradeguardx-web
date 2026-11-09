@@ -42,7 +42,7 @@ export default function RulePlan({ report, cta, enterProps = {} }) {
   if (!rules.length) return null;
   const n = rules.length;
   const switches = Boolean(cta?.trial);
-  /* Honest: a Tester pass or Pro switches the guard on; each rule is still set
+  /* Honest: a Trial Plan or Pro switches the guard on; each rule is still set
      on the Rules page. Nothing here says paying creates them. */
   const label = switches ? 'Switch on the guard →' : cta?.label;
   const lead = !calm && report.revengeTrades > 0

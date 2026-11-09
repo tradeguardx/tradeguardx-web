@@ -397,7 +397,7 @@ export default function BillingPage() {
    */
   if (plans === null && state !== 'setup' && state !== 'setupEarly' && state !== 'pass') return <DashboardSkeleton />;
 
-  /* A Tester pass has nothing to manage — no card, no renewal, no cancel.
+  /* A Trial Plan has nothing to manage — no card, no renewal, no cancel.
      What they need is the plan picker, told when the pass runs out. */
   if (state === 'setup' || state === 'setupEarly' || state === 'pass') {
     return (
@@ -455,8 +455,8 @@ export default function BillingPage() {
               : carrying
               ? `Your free trial has ${left} day${left === 1 ? '' : 's'} left and no payment method attached, so your guard stops when it ends. Add one and you keep all ${left} — nothing is charged today.`
               : spent
-                ? `Your free trial ended${endedOn ? ` on ${endedOn}` : ''}, so nothing is enforcing your rules. Choose a plan to switch the guard back on${cur ? ` — ${inr(cur.price)} ${PER[interval]}` : ''}, or try 3 more days with a Tester pass.`
-                : 'You don’t have a plan yet. Choose Pro, or try everything for 3 days with a Tester pass — either switches your guard on.'}
+                ? `Your free trial ended${endedOn ? ` on ${endedOn}` : ''}, so nothing is enforcing your rules. Choose a plan to switch the guard back on${cur ? ` — ${inr(cur.price)} ${PER[interval]}` : ''}, or try 3 more days with a Trial Plan.`
+                : 'You don’t have a plan yet. Choose Pro, or try everything for 3 days with a Trial Plan — either switches your guard on.'}
           </p>
           <button type="button" onClick={() => navigate('/dashboard/activate')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800')}>
             {settling ? 'Subscribe' : carrying ? `Set up billing · keep your ${left} days` : 'Choose a plan'}

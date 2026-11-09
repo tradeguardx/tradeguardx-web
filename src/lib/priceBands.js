@@ -88,7 +88,7 @@ export function planForBand(plan, band) {
 }
 
 /**
- * THE TESTER PASS (9 Nov 2026): no free trial; trying TradeGuardX is a
+ * THE TRIAL PLAN (9 Nov 2026): no free trial; trying TradeGuardX is a
  * one-time pass, everything for 3 days, nothing renews. Checkout charges the
  * band's own product (payments-service config/testerPass.ts); this is what
  * pages show.
