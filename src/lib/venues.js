@@ -386,7 +386,8 @@ const VENUES = {
     secretPlaceholder: 'Paste the Secret Key',
     /** Under the name in the venue picker, where someone decides if this venue is theirs. */
     pickerNote: 'USDT perpetual futures',
-    /** Shown on the connect forms, before anyone makes a key. */
+    /** Shown on the connect forms, before anyone makes a key. Indices: Exness
+     *  answers every index close with 4000 MARKET_INSTRUMENT_NOT_FOUND (9 Nov 2026). */
     platformNoteLead: 'USDT perpetual futures only.',
     platformNote: 'Make the key on your real BloFin account, not in Demo Trading. Demo keys only work on BloFin\u2019s demo servers, so they cannot connect here.',
     formStepBody: 'Fill BloFin\u2019s Create API Key form to match the picture below, top to bottom, then press Next. The picture is not a live form.',
@@ -465,9 +466,11 @@ const VENUES = {
     submitLabel: 'Create API key',
     noWithdrawNote: 'Leave Transfers off. A Trading key reads the account and opens or closes trades on it — it cannot withdraw or move money.',
     /** Under the name in the venue picker, where someone decides if this venue is theirs. */
-    pickerNote: 'Exness platform only — not MT4/MT5',
-    /** Shown on the connect forms, before anyone makes a key. */
-    platformNote: 'Exness platform accounts only (Exness Terminal / web terminal). MT4 and MT5 accounts are not supported — their keys cannot see those trades.',
+    pickerNote: 'Exness platform only — not MT4/MT5 or indices',
+    platformNoteLead: 'Not for MT4, MT5 or indices.',
+    /** Shown on the connect forms, before anyone makes a key. Indices: Exness
+     *  answers every index close with 4000 MARKET_INSTRUMENT_NOT_FOUND (9 Nov 2026). */
+    platformNote: 'Exness platform accounts only (Exness Terminal / web terminal). MT4 and MT5 accounts are not supported — their keys cannot see those trades. Indices (US Tech, S&P 500, Dow, DAX and the rest) are not supported either: Exness refuses to close them through its API, so a lock or kill switch cannot stop an index trade. Forex, metals and crypto work.',
     /* Exness's own name for it on the Key Management screen (checked 24 Oct 2026):
        "API Key" and "Secret Key", each with a copy button. One line, masked. */
     secretLabel: 'Secret Key',

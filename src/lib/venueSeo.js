@@ -157,6 +157,7 @@ const VENUE_PAGES = {
         p: [
           'Exness has no single "close everything" call, so the kill switch works through your account one position and one pending order at a time, and confirms each close before it moves on. A rule firing on a busy account takes a few extra seconds; it does not skip anything.',
           'Forex and CFD markets close. If a rule fires while an instrument\'s market is shut, that close is held and retried the moment the market reopens, and the account stays locked in the meantime. Crypto venues never close, so this is the one place it matters.',
+          'Indices are the exception. Exness refuses to close an index position (US Tech, S&P 500, Dow, DAX and the rest) through its API, so a lock or kill switch cannot stop an index trade. We still see the trade and count it toward your limits, and if one opens while you are locked we alert you to close it yourself. Forex, metals and crypto close normally.',
           'Your limits are in your Exness account\'s own currency, the figure your Exness statement shows. The daily reset happens early in the morning in your own timezone, so a session never straddles two days.',
         ],
       },
@@ -187,6 +188,10 @@ const VENUE_PAGES = {
       {
         q: 'Does TradeGuardX work with Exness MT4 or MT5?',
         a: 'No. Exness only issues API keys for accounts on the Exness platform (Exness Terminal and web terminal); MT4 and MT5 accounts cannot have a key, so we cannot see or close their trades. If you want the kill switch, trade from an Exness-platform account and connect that.',
+      },
+      {
+        q: 'Can TradeGuardX close Exness index trades like US Tech or S&P 500?',
+        a: 'No. Exness refuses to close index positions through its API, so a lock or kill switch cannot stop an index trade. We still see it and count it toward your limits, and if one opens while you are locked we alert you to close it yourself. Forex, metals and crypto close normally.',
       },
       {
         q: 'Why can\'t I find API management in my Exness Personal Area?',
