@@ -504,7 +504,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
             </div>
             <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.4vw,28px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.03em', textWrap: 'pretty' }}>
               {charged
-                ? 'Switch your guard on'
+                ? 'Don’t purchase if you’re not serious about trading'
                 : (
                   /* Lead with what they get, not the chore: a trial, not "billing". */
                   <>
