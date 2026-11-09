@@ -353,11 +353,11 @@ function ExnessForm({ venue, onCopy, copiedValue, accent }) {
  * BLOFIN'S "CREATE API KEY" FORM, in the order BloFin's docs and the key
  * guides other platforms publish describe it (1 Nov 2026):
  *
- *   API Key Usage: [ ] Connect to Third-Party Applications   ← stays off
- *   Name
- *   Permissions: [✓] Read  [✓] Trade  [ ] Transfer
+ *   API Key Usage: ( ) Third-Party  (•) API Transaction  ( ) Tax Report  ( ) BloFin MCP
+ *   API Key Name
+ *   Permissions: [✓] Read  [✓] Trade  [ ] Withdraw  [ ] Transfer
  *   Passphrase
- *   IP address
+ *   IP (Optional)
  *   [Next] → email code (+ 2FA) → Submit → API Key / Secret Key → Confirm
  *
  * PLACEHOLDER UNTIL SCREENSHOTS: this has not been checked against a live
@@ -371,12 +371,16 @@ function BloFinForm({ venue, onCopy, copiedValue, accent }) {
   return (
     <div style={sx('max-width:420px')}>
       <Field label={<><Num n={1} />{venue.usageField}</>} hint={venue.usageNote}>
-        <span style={sx(FIELD, 'gap:10px')}>
-          <span aria-hidden style={sx('flex:none;position:relative;width:30px;height:18px;border-radius:999px;border:1.5px solid var(--line-strong);background:var(--surface-3)')}>
-            <span style={sx('position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:var(--ink-faint)')} />
-          </span>
-          <span style={sx('font-size:13px;font-weight:600;color:var(--ink-3)')}>{venue.usageOffOption}</span>
-          <span style={sx('margin-left:auto;flex:none;font-size:11.5px;color:var(--ink-faint)')}>Off</span>
+        <span style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:8px 14px')}>
+          {venue.usageOptions.map((o) => {
+            const on = o === venue.usageChoice;
+            return (
+              <span key={o} style={sx('display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:13px', on ? 'font-weight:700' : 'font-weight:600;color:var(--ink-3)')}>
+                <Radio on={on} accent={accent} /> <span>{o}</span>
+                {on && <Tag accent={accent} pick>Pick this</Tag>}
+              </span>
+            );
+          })}
         </span>
       </Field>
 

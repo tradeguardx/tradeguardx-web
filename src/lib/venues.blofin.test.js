@@ -31,9 +31,9 @@ describe('BloFin venue', () => {
   it('grants Read and Trade, and draws Transfer as off', () => {
     expect(blofin.scopeLabel).toBe('Trade');
     expect(blofin.readScopeLabel).toBe('Read');
-    expect(blofin.offScopes.map((o) => o.label)).toEqual(['Transfer']);
+    expect(blofin.offScopes.map((o) => o.label)).toEqual(['Withdraw', 'Transfer']);
     const steps = blofin.createSteps.map((s) => `${s.title} ${s.body}`).join(' | ');
-    expect(steps).toMatch(/never tick Transfer/i);
+    expect(steps).toMatch(/never tick Withdraw or Transfer/i);
   });
 
   it('tells people to bind our IP, and why (90-day expiry)', () => {
@@ -51,9 +51,11 @@ describe('BloFin venue', () => {
     expect(blofin.createSteps.map((s) => s.body).join(' ')).toMatch(/not Demo Trading/);
   });
 
-  it('keeps BloFin\'s third-party switch off, and names its own buttons and fields', () => {
+  it('picks API Transaction as the key usage, and names its own buttons and fields', () => {
     expect(blofin.usageField).toBe('API Key Usage');
-    expect(blofin.usageOffOption).toBe('Connect to Third-Party Applications');
+    expect(blofin.usageChoice).toBe('API Transaction');
+    expect(blofin.usageOptions).toEqual(['Connect to Third-Party Applications', 'API Transaction', 'Tax Report API', 'BloFin MCP']);
+    expect(blofin.offScopes.map((o) => o.label)).toEqual(['Withdraw', 'Transfer']);
     expect(blofin.submitLabel).toBe('Next');
     expect(blofin.otpNote).toMatch(/Submit/);
     expect(blofin.secretLabel).toBe('Secret Key');

@@ -354,26 +354,31 @@ const VENUES = {
     longName: 'BloFin',
     keysUrl: () => 'https://blofin.com/account/apis',
     /**
-     * BloFin's "API Key Usage" choice. Its third-party option binds the key to
-     * an app on BloFin's own list, and TradeGuardX is not on it — so it stays
-     * off and the key is a plain one. Drawn so nobody switches it on.
+     * BloFin's "API Key Usage" is a choice of four (seen on the live form,
+     * 9 Nov 2026). API Transaction is the plain trading key we need; the
+     * third-party option binds the key to an app on BloFin's list, which we
+     * are not on, and MCP and Tax Report keys cannot trade.
      */
     usageField: 'API Key Usage',
-    usageOffOption: 'Connect to Third-Party Applications',
-    usageNote: 'Leave this off. TradeGuardX is not on BloFin\u2019s app list, and a plain key is what we need.',
-    keyNameField: 'Name',
+    usageOptions: ['Connect to Third-Party Applications', 'API Transaction', 'Tax Report API', 'BloFin MCP'],
+    usageChoice: 'API Transaction',
+    usageNote: 'Pick API Transaction. Not BloFin MCP, Tax Report or Third-Party Applications \u2014 those keys cannot be used here.',
+    keyNameField: 'API Key Name',
     keyNameHint: 'Any name you will recognise later.',
-    ipField: 'IP address',
+    ipField: 'IP (Optional)',
     ipRequired: false,
-    ipHint: 'Add our IP. Without one, BloFin expires the key after 90 days and the guard stops with it.',
+    ipHint: 'Add our IP, even though BloFin calls it optional. Without one, BloFin expires the key after 90 days and the guard stops with it.',
     readScopeLabel: 'Read',
     readScopeNote: 'Leave it on. We need to see positions and orders.',
     readScopeSelectable: true,
     scopeLabel: 'Trade',
     scopeNote: 'Lets us close a position when a rule fires. A Read-only key is refused.',
     /** Permissions that must stay unticked, drawn so nobody ticks them. */
-    offScopes: [{ label: 'Transfer', note: 'Leave this off. We never move money, and the key does not need it.' }],
-    noWithdrawNote: 'Read and Trade only. Leave Transfer off. BloFin has no withdrawal permission on API keys, so the key can read your account and place or close trades, and nothing that moves money.',
+    offScopes: [
+      { label: 'Withdraw', note: 'Leave this off. We never move money.' },
+      { label: 'Transfer', note: 'Leave this off. The key does not need it.' },
+    ],
+    noWithdrawNote: 'Read and Trade only. Leave Withdraw and Transfer off, so the key can read your account and place or close trades, and nothing that moves money.',
     /** BloFin keys carry a passphrase the user sets; the connect form asks for it. */
     hasPassphrase: true,
     passphraseField: 'Passphrase',
@@ -405,10 +410,10 @@ const VENUES = {
     suggestsKeyName: true,
     createSteps: [
       { title: 'Profile icon → API → Create API Key', body: 'Log in to your real BloFin account (not Demo Trading), open the profile menu top right, choose API, and press Create API Key.' },
-      { title: 'Leave "Connect to Third-Party Applications" off, and name the key', body: 'TradeGuardX is not on BloFin\u2019s app list, so the key is a plain one. Any name you will recognise later.' },
-      { title: 'Permissions: Read and Trade only', body: 'Tick Read and Trade. Never tick Transfer. We do not need it, and a key without it cannot move your money. A Read-only key is refused.' },
+      { title: 'Pick "API Transaction", and name the key', body: 'Under API Key Usage, choose API Transaction \u2014 not BloFin MCP, Tax Report API or Connect to Third-Party Applications. Then any name you will recognise later.' },
+      { title: 'Permissions: Read and Trade only', body: 'Tick Read and Trade. Never tick Withdraw or Transfer. We do not need them, and a key without them cannot move your money. A Read-only key is refused.' },
       { title: 'Set a passphrase', body: 'You choose it. Keep it somewhere safe: you paste it into TradeGuardX as well, and BloFin will not show it again.' },
-      { title: 'Add our IP, then Next', body: 'Paste our IP into the IP address field. BloFin expires a key with no IP after 90 days, and from then on the guard cannot act. Press Next and enter the code BloFin emails you (and your 2FA code), then Submit.' },
+      { title: 'Add our IP, then Next', body: 'Paste our IP into the IP (Optional) field. BloFin expires a key with no IP after 90 days, and from then on the guard cannot act. Press Next and enter the code BloFin emails you (and your 2FA code), then Submit.' },
       { title: 'Copy the API Key and Secret Key', body: 'The Secret Key is shown once. Copy both, press Confirm, then paste the key, the secret and your passphrase here.' },
     ],
     /** Tax centre is for Indian venues; BloFin is not part of it. */

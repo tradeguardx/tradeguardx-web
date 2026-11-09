@@ -258,7 +258,7 @@ const VENUE_PAGES = {
       },
       sharedWithdrawSection(
         'BloFin',
-        'We only ask for Read and Trade, which let us see the account, cancel an order and close a position. BloFin\'s key form also offers Transfer; it stays off. BloFin API keys have no withdrawal permission at all.',
+        'We only ask for Read and Trade, which let us see the account, cancel an order and close a position. BloFin\'s key form also offers Withdraw and Transfer; both stay off, so the key cannot move money.',
       ),
     ],
     faq: [
@@ -268,7 +268,7 @@ const VENUE_PAGES = {
       },
       {
         q: 'Which permissions does the BloFin API key need?',
-        a: `Read and Trade. Leave Transfer off. A Read-only key can never close a position, so the kill switch would do nothing; we check for it and refuse it when you connect. Add our IP (${DELTA_EGRESS_IP}) to the key, because BloFin expires keys with no IP after 90 days.`,
+        a: `Read and Trade, on an "API Transaction" key. Leave Withdraw and Transfer off. A Read-only key can never close a position, so the kill switch would do nothing; we check for it and refuse it when you connect. Add our IP (${DELTA_EGRESS_IP}) to the key, because BloFin expires keys with no IP after 90 days.`,
       },
       {
         q: 'Why does TradeGuardX ask for my BloFin passphrase?',

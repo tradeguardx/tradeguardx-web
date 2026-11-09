@@ -84,7 +84,8 @@ describe('connect a BloFin key', () => {
     renderFlow();
     fireEvent.click(screen.getByText('Fill it in and create the key'));
     expect(screen.getByText('Transfer')).toBeInTheDocument();
-    expect(screen.getByText(/Leave Transfer off/)).toBeInTheDocument();
+    expect(screen.getByText('Withdraw')).toBeInTheDocument();
+    expect(screen.getByText(/Leave Withdraw and Transfer off/)).toBeInTheDocument();
     expect(screen.getByText('13.205.214.83')).toBeInTheDocument();
   });
 
@@ -94,7 +95,9 @@ describe('connect a BloFin key', () => {
     fireEvent.click(screen.getByText('Fill it in and create the key'));
     expect(screen.getByText(/Fill BloFin.s Create API Key form to match the picture below/)).toBeInTheDocument();
     expect(screen.getByText('API Key Usage')).toBeInTheDocument();
-    expect(screen.getByText('Connect to Third-Party Applications')).toBeInTheDocument();
+    expect(screen.getByText('API Transaction')).toBeInTheDocument();
+    expect(screen.getByText('BloFin MCP')).toBeInTheDocument();
+    expect(screen.getByText('Pick this')).toBeInTheDocument();
     expect(screen.getByText('Read')).toBeInTheDocument();
     expect(screen.getByText('Trade')).toBeInTheDocument();
     expect(screen.getByText('Next')).toBeInTheDocument();
