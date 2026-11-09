@@ -140,10 +140,11 @@ describe('setup states carry the spec’s own pill and band', () => {
     expect(v.lock.title).toBe('Connect your key to see this');
   });
 
-  it('s3 offers the trial with ₹0 today', () => {
+  it('s3 offers a plan or the Tester pass, nothing free', () => {
     const v = lifecycleView('s3');
     expect(v.pill).toBe('Guard off');
-    expect(v.band.body).toMatch(/₹0 today/);
+    expect(v.band.body).toMatch(/Tester pass/);
+    expect(v.band.body).not.toMatch(/₹0|free/);
   });
 });
 

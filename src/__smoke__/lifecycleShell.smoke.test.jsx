@@ -139,9 +139,9 @@ describe('key connected, never started a trial (s3)', () => {
     for (const sw of screen.getAllByRole('switch')) expect(sw.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('locks All trades until the trial starts', async () => {
+  it('locks All trades until a plan starts', async () => {
     mount('/dashboard/trades');
-    await waitFor(() => expect(screen.getAllByText('Starts with your free trial').length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByText('Starts with your plan').length).toBeGreaterThan(0));
   });
 });
 
