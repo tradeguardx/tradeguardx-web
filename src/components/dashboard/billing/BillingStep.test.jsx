@@ -65,6 +65,15 @@ beforeEach(() => {
   siteOffer.value = null;
 });
 
+/* What the panel says is charged today (the timeline box is gone, 9 Nov 2026). */
+const dueToday = () => {
+  const now = screen.getByText('Due today').nextElementSibling?.textContent;
+  if (now !== '₹0') return now;
+  /* Free days still on offer: the first charge is the "· ₹1,299 on 12 Nov" line. */
+  const later = document.body.textContent.match(/(₹[\d,]+) on \d/);
+  return later ? later[1] : now;
+};
+
 describe('billing step', () => {
   it('says what the step is and what it costs', async () => {
     render(<BillingStep />);
@@ -145,7 +154,7 @@ describe('billing step', () => {
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('radio', { name: /Monthly/ }));
     expect(screen.getByRole('button', { name: /Start 7 days free · Monthly/ })).toBeTruthy();
-    expect(screen.getByText(/First charge of ₹1,299, then every month until you cancel\./)).toBeTruthy();
+    expect(dueToday()).toBe('₹1,299');
   });
 
   it('says ₹0 is due today while there are free days', async () => {
@@ -285,7 +294,7 @@ describe('billing step', () => {
     expect(screen.getByText(/Press Apply to see the new price/i)).toBeTruthy();
     expect(screen.queryByText(/% off applied/)).toBeNull();
     // The full price still stands until something is actually applied.
-    expect(screen.getByText(/First charge of ₹1,299/)).toBeTruthy();
+    expect(dueToday()).toBe('₹1,299');
   });
 
   it('prices the selected plan after Apply, and the timeline with it', async () => {
@@ -296,7 +305,7 @@ describe('billing step', () => {
     await screen.findByText(/15% off applied/);
     // Monthly ₹1,299 less 15% = ₹1,104, on the plan row and in the timeline.
     expect(screen.getAllByText('₹1,104').length).toBeGreaterThan(0);
-    expect(screen.getByText(/First charge of ₹1,104/)).toBeTruthy();
+    expect(dueToday()).toBe('₹1,104');
     /* And the rows above, because a code checked only against the selected
        plan leaves the other two showing a price nobody verified. */
     expect(screen.getByText('₹2,804')).toBeTruthy();
@@ -320,7 +329,7 @@ describe('billing step', () => {
     await screen.findByText(/15% off applied/);
     fireEvent.click(screen.getByRole('radio', { name: /Yearly/ }));
     expect(screen.getByText(/15% off applied/)).toBeTruthy();
-    expect(screen.getByText(/First charge of ₹7,649/)).toBeTruthy();
+    expect(dueToday()).toBe('₹7,649');
   });
 
   /*
@@ -475,7 +484,7 @@ describe('billing step — the free window it promises', () => {
   it('tells a lapsed trialist they are charged today, not that it is free', async () => {
     eligibility = { trialDays: 0, fullTrialDays: 7 };
     await show();
-    expect(await screen.findByText(/first charge of .* today/i)).toBeTruthy();
+    await waitFor(() => expect(dueToday()).toMatch(/₹[1-9]/));
     expect(screen.queryByText(/days free/)).toBeNull();
     expect(screen.queryByText(/₹0 charged/)).toBeNull();
     expect(screen.queryByText(/Pay ₹0 today/)).toBeNull();
@@ -526,7 +535,7 @@ describe('billing step — the site offer, auto-applied', () => {
     expect(screen.getByText('₹2,309')).toBeTruthy();
     expect(screen.getByText('₹6,299')).toBeTruthy();
     // A first-payment code: the timeline says what comes after it.
-    expect(screen.getByText(/First charge of ₹909, then ₹1,299 every month/)).toBeTruthy();
+    expect(dueToday()).toBe('₹909');
     // Applied to everything alike, so the savings badges hold.
     expect(screen.getByText('SAVE 42%')).toBeTruthy();
   });
@@ -555,7 +564,7 @@ describe('billing step — the site offer, auto-applied', () => {
     validate.mockResolvedValue({ valid: false, reason: 'EXPIRED' });
     render(<BillingStep />);
     await vi.waitFor(() => expect(validate).toHaveBeenCalledTimes(3));
-    await screen.findByText(/First charge of ₹1,299/);
+    await waitFor(() => expect(dueToday()).toBe('₹1,299'));
     expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
     expect(screen.queryByText('₹909')).toBeNull();
     // and a refused code is not passed on to checkout

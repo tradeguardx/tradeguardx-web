@@ -329,63 +329,6 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   const freeDays = trialDays;
   const charged = isPass || freeDays === 0;
   const chargeOn = new Date(today.getTime() + (freeDays ?? TRIAL_DAYS) * 86400000);
-  const passEnds = new Date(today.getTime() + TESTER_DAYS * 86400000);
-  const timeline = isPass
-    ? [
-        {
-          when: `Today · ${fmtDay(today)}`,
-          what: `Your guard switches on. ${money(testerPrice)} charged once.`,
-          dot: 'var(--mint-solid)',
-          glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)',
-          line: true,
-        },
-        {
-          when: fmtDay(passEnds),
-          what: 'Your pass ends and the guard switches off. Nothing renews — choose a plan to keep it on.',
-          dot: 'var(--ink-faint)',
-          glow: 'none',
-          line: false,
-        },
-      ]
-    : charged
-    ? [
-        /* Their free window is spent. "₹0 charged" here and then taking the
-           money is the worst thing this screen could say. */
-        {
-          when: `Today · ${fmtDay(today)}`,
-          what: `Your guard switches on straight away. First charge of ${money(payable)} today.`,
-          dot: 'var(--mint-solid)',
-          glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)',
-          line: true,
-        },
-        {
-          when: `Then ${cur.next}`,
-          /* A first-payment discount (the Diwali offer) ends after today's
-             charge; the renewal line says so, or ₹909 reads like the price. */
-          what: discount && discount.cycles === 1
-            ? `Renews at ${money(cur.price)} ${cur.next} until you cancel.`
-            : 'Renews automatically until you cancel.',
-          dot: 'var(--ink-faint)',
-          glow: 'none',
-          line: false,
-        },
-      ]
-    : [
-    { when: `Today · ${fmtDay(today)}`, what: `Your guard switches on. All five protections start working. ${money(0)} charged.`, dot: 'var(--mint-solid)', glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)', line: true },
-    {
-      when: fmtDay(chargeOn),
-      /* The discounted figure, when one has been checked — the timeline is
-         where someone looks to find out what they will actually be charged,
-         and a full price here beside a "15% off" above it is the screen
-         contradicting itself. */
-      what: `First charge of ${money(payable)}${
-        discount && discount.cycles === 1 ? `, then ${money(cur.price)} ${cur.next}` : `, then ${cur.next}`
-      } until you cancel.`,
-      dot: 'var(--ink-faint)',
-      glow: 'none',
-      line: false,
-    },
-      ];
 
   const pick = (id) => {
     setPlan(id);
@@ -720,27 +663,9 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   </div>
                 )}
 
-                {/* Not for the Trial Plan: one payment and an end date need no
-                    timeline, and the note under the button says both (owner). */}
-                {!isPass && (
-                <div style={{ marginTop: 20, padding: 16, borderRadius: 16, background: 'var(--surface-2)', boxShadow: 'inset 0 0 0 1px var(--line)' }}>
-                  <div style={{ font: "600 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.16em', color: 'var(--ink-faint)' }}>WHAT HAPPENS NEXT</div>
-                  <div style={{ marginTop: 14, display: 'grid' }}>
-                    {timeline.map((t) => (
-                      <div key={t.when} style={{ display: 'flex', gap: 12 }}>
-                        <span aria-hidden style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <span style={{ width: 11, height: 11, borderRadius: '50%', background: t.dot, boxShadow: t.glow }} />
-                          {t.line && <span style={{ flex: 1, width: 2, minHeight: 18, background: 'var(--line-strong)' }} />}
-                        </span>
-                        <span style={{ paddingBottom: 14, marginTop: -3 }}>
-                          <span style={{ display: 'block', fontSize: 13, fontWeight: 700 }}>{t.when}</span>
-                          <span style={{ display: 'block', marginTop: 3, fontSize: 12, lineHeight: 1.5, color: 'var(--ink-2)' }}>{t.what}</span>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                )}
+                {/* No "what happens next" box on any option (owner, 9 Nov 2026):
+                    the price, the note under the button and the coupon line
+                    already say what is charged and when. */}
 
                 {/*
                   * A coupon field, hidden until asked for.
