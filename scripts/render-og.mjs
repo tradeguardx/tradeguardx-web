@@ -56,14 +56,14 @@ const IMAGES = [
     line1: 'The kill switch for',
     line2: 'your trading day.',
     sub: SUB,
-    venues: ['Delta', 'Exness', 'CoinDCX', 'Shark', 'BloFin'],
+    venues: ['Delta', 'Exness', 'CoinDCX', 'Shark'],
   },
   {
     out: 'public/og/crypto-kill-switch.png',
     line1: 'The crypto kill',
     line2: 'switch for futures.',
     sub: SUB,
-    venues: ['Delta', 'CoinDCX', 'Shark', 'BloFin'],
+    venues: ['Delta', 'CoinDCX', 'Shark'],
   },
 ];
 

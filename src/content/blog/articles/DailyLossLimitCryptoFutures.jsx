@@ -275,9 +275,8 @@ export default function DailyLossLimitCryptoFutures() {
         flat, and locks the account until your next reset, in your own timezone and reset hour. It runs on our servers,
         so it works whether you trade from the website, the phone app or a bot. It works on{' '}
         <Link to="/exchanges/delta" className="text-accent hover:underline">Delta Exchange</Link>,{' '}
-        <Link to="/exchanges/coindcx" className="text-accent hover:underline">CoinDCX</Link>,{' '}
-        <Link to="/exchanges/shark" className="text-accent hover:underline">Shark Exchange</Link> and{' '}
-        <Link to="/exchanges/blofin" className="text-accent hover:underline">BloFin</Link>. On Delta, you start by{' '}
+        <Link to="/exchanges/coindcx" className="text-accent hover:underline">CoinDCX</Link> and{' '}
+        <Link to="/exchanges/shark" className="text-accent hover:underline">Shark Exchange</Link>. On Delta, you start by{' '}
         <Link to="/exchanges/delta/api-key" className="text-accent hover:underline">creating an API key</Link>.
         <span className="mt-2 block text-slate-400">
           What it can’t do: stop an order reaching the exchange. No exchange gives a third party that power. Anything

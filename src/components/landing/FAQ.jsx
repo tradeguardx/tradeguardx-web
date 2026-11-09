@@ -32,7 +32,7 @@ export const faqs = [
   },
   {
     q: 'Which exchanges are supported?',
-    a: 'Delta Exchange (India and Global), Exness, CoinDCX futures, BloFin and Shark Exchange are live today. One plan covers every exchange you connect.',
+    a: 'Delta Exchange (India and Global), Exness, CoinDCX futures and Shark Exchange are live today. One plan covers every exchange you connect.',
   },
   {
     q: 'Is there a free plan?',

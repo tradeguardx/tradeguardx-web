@@ -57,7 +57,7 @@ export const PROTECTIONS = [
   {
     id: 'accounts',
     pain: "You trade on more than one exchange, or scalp in one account and swing in another — and one set of rules can't fit them all.",
-    detail: 'Delta, CoinDCX, Shark and Exness (and BloFin outside India), all on the one plan. Give each account its own limits — a tight daily loss for scalping, a wider one for swings, a hard trade cap on the account you overtrade. Nothing is shared between them, so a lockout on one leaves the others trading.',
+    detail: 'Delta, CoinDCX, Shark and Exness, all on the one plan. Give each account its own limits — a tight daily loss for scalping, a wider one for swings, a hard trade cap on the account you overtrade. Nothing is shared between them, so a lockout on one leaves the others trading.',
     n: '04',
     title: 'One plan, every exchange, unlimited accounts',
     body: 'Connect every exchange we support on one Pro plan — as many accounts as you trade, each with its own rules and guard.',

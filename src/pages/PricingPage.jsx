@@ -188,7 +188,7 @@ const INCLUDED = [
     group: 'Tax & accounts',
     items: [
       ['Indian tax centre', 'Your financial year rebuilt from exchange fills, with the F&O and VDA readings side by side.'],
-      ['Unlimited trading accounts', 'Delta Exchange, CoinDCX, Shark, BloFin and Exness. One subscription covers them all.'],
+      ['Unlimited trading accounts', 'Delta Exchange, CoinDCX, Shark and Exness. One subscription covers them all.'],
       ['3 financial years of history', 'The current year and the two before, for your journal and your tax.'],
       ['Priority support', 'Replies from the people who build it.'],
     ],

@@ -21,8 +21,6 @@ const links = {
     { label: 'Exness', to: '/exchanges/exness' },
     { label: 'CoinDCX', to: '/exchanges/coindcx' },
     { label: 'Shark Exchange', to: '/exchanges/shark' },
-    // Not on India pages: BloFin is for traders outside India (FIU-IND).
-    { label: 'BloFin', to: '/exchanges/blofin', globalOnly: true },
   ],
   resources: [
     // "Install for Chrome" removed — the crypto/Delta product enforces

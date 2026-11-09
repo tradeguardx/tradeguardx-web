@@ -514,7 +514,7 @@ const VENUE_PAGES = {
  *
  * Re-adding one is a revert of this commit plus its route in publicRoutes.js.
  */
-export const VENUE_ORDER = ['delta', 'exness', 'coindcx', 'shark', 'blofin'];
+export const VENUE_ORDER = ['delta', 'exness', 'coindcx', 'shark'];
 
 export const VENUE_PAGE_LIST = VENUE_ORDER.map((slug) => VENUE_PAGES[slug]);
 

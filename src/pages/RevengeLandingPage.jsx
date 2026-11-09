@@ -24,10 +24,6 @@ const EXCHANGES = [
   { slug: 'delta_india', name: 'Delta Exchange', cur: 'USDT' },
   { slug: 'coindcx', name: 'CoinDCX', cur: 'USDT' },
   { slug: 'shark', name: 'Shark Exchange', cur: 'INR' },
-  // BloFin: back for the global go-live (reverses 175b2af). This page is public
-  // and cannot read the prop_firms row (that list needs a login), so this line
-  // IS the switch: ship it together with the row flipped to 'active'.
-  { slug: 'blofin', name: 'BloFin', cur: 'USDT' },
 ];
 
 // The example's figures, per currency. Illustrative, and the card says so.
@@ -54,7 +50,7 @@ const FAQ = [
   ['Can TradeGuardX trade or withdraw with my key?', 'The report only reads your past trades. TradeGuardX never needs withdrawal permission — create your key without it and your funds cannot be moved with it.'],
   ['How far back does the report look?', 'The last month by default, and up to three months. If a month is too quiet to judge, it looks further back on its own.'],
   ['What counts as a revenge trade in the report?', 'A trade opened within 15 minutes of a loss that also sizes up, goes straight back into the same coin, or comes after two losses in a row.'],
-  ['Which exchanges does it work with?', 'Delta Exchange (India and global), CoinDCX futures, Shark Exchange and BloFin (USDT perpetuals).'],
+  ['Which exchanges does it work with?', 'Delta Exchange (India and global), CoinDCX futures and Shark Exchange.'],
 ];
 
 const PAGE_URL = 'https://tradeguardx.com/revenge-report';
