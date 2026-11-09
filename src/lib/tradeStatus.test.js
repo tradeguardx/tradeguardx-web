@@ -85,6 +85,14 @@ describe('tradeStatusOf: the lock, honestly', () => {
     expect(isEventful(s)).toBe(true);
   });
 
+  it('an Exness index the lock could not close says why, and its open alert shows when no lock ran', () => {
+    const locked = tradeStatusOf(t({ metadata: { notBlocked: true, notBlockedReason: 'instrument_not_closable', lockReason: 'manual_lock' } }), [], { pnl: -3 });
+    expect(locked.detail).toBe("Your lock · Index can't be closed");
+    const open = tradeStatusOf(t(), [b({ tradeUid: 'u1', breachType: 'instrument_not_closable', severity: 'warning' })], { pnl: 2 });
+    expect(open.key).toBe('alert');
+    expect(open.label).toBe("Alert: can't be closed");
+  });
+
   it('the trade_not_blocked breach wins over a stale blocked tag', () => {
     const s = tradeStatusOf(t({ metadata: { blocked: true } }), [
       b({ tradeUid: 'u1', breachType: 'trade_not_blocked', context: { lockReason: 'manual_lock', notBlockedReason: 'exchange_refused' } }),

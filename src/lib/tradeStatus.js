@@ -82,6 +82,7 @@ const KILL_REASON = {
 const ALERT_REASON = {
   missing_stop_loss: 'Alert: no stop-loss',
   risk_per_trade_exceeded: 'Alert: risk over limit',
+  instrument_not_closable: "Alert: can't be closed",
 };
 
 /** How far apart a trade's close and a breach can be and still be the same moment. */
@@ -114,6 +115,7 @@ const LOCK_NAME = {
 const NOT_ACTED = {
   key_rejected: 'API key removed',
   exchange_refused: 'Exchange refused the close',
+  instrument_not_closable: "Index can't be closed",
   key_cannot_trade: "Key can't trade",
   plan_inactive: 'Plan not active',
   unentitled: 'Plan not active',
@@ -183,7 +185,8 @@ export function tradeStatusOf(trade, breaches = [], { pnl = null, unenforced = f
       } else if (type === 'risk_per_trade_exceeded') {
         if (String(b?.context?.onBreach ?? 'close') === 'alert') found.set('alert', { text: ALERT_REASON[type], breach: b });
         else found.set('risk', { breach: b });
-      } else if (type === 'missing_stop_loss') {
+      } else if (type === 'missing_stop_loss' || type === 'instrument_not_closable') {
+        // Exness will not close an index through its API: said once, when it opened.
         if (!found.has('alert')) found.set('alert', { text: ALERT_REASON[type], breach: b });
       }
       continue;
