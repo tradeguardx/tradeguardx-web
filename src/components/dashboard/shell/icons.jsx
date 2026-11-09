@@ -56,7 +56,6 @@ export const ICON = {
 export const RULE_GLYPH = {
   'daily-loss': ['M3 6l6 7 4-4 7 8', 'M21 17v-4h-4'],
   'daily-profit-target': ['M12 21a9 9 0 100-18 9 9 0 000 18z', 'M12 16a4 4 0 100-8 4 4 0 000 8z'],
-  'profit-lock': ['M6 11V8a6 6 0 0112 0v3', 'M5 11h14v10H5z', 'M12 15v2'],
   'stop-loss-alert': ['M12 4a5 5 0 00-5 5c0 5-2 6-2 6h14s-2-1-2-6a5 5 0 00-5-5z', 'M10 18a2 2 0 004 0'],
   'risk-per-trade': ['M12 3v18', 'M8 8h8v8H8z'],
   'max-total-loss': ['M3 4v16h18', 'M6 8h3v3h3v3h3v3'],
@@ -68,7 +67,6 @@ export const RULE_GLYPH = {
 export const RULE_ACCENT = {
   'daily-loss': { color: 'var(--mint)', tint: 'var(--mint-tint)' },
   'daily-profit-target': { color: 'var(--mint)', tint: 'var(--mint-tint)' },
-  'profit-lock': { color: 'var(--mint)', tint: 'var(--mint-tint)' },
   'stop-loss-alert': { color: 'var(--amber)', tint: 'var(--amber-tint)' },
   'risk-per-trade': { color: 'var(--blue)', tint: 'color-mix(in srgb, var(--blue) 12%, transparent)' },
   'max-total-loss': { color: 'var(--violet)', tint: 'color-mix(in srgb, var(--violet) 12%, transparent)' },

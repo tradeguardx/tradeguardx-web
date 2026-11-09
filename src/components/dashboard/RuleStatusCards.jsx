@@ -5,7 +5,7 @@ import { fetchTradingAccounts } from '../../api/tradingAccountsApi';
 import { fetchRulesBundle } from '../../api/rulesApi';
 import { supabase } from '../../lib/supabaseClient';
 import { staggerContainer, staggerItem } from './dashboardMotion';
-import { profitLockFloor, profitLockSettings } from '../../lib/profitLock';
+import { targetActionOf } from '../../lib/profitLock';
 
 const FALLBACK_POLL_MS = 30000;
 
@@ -18,7 +18,6 @@ const ACCENT = 'var(--mint-solid)';
 const RULE_META = {
   'daily-loss': { tint: 'var(--red)', icon: 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z' },
   'daily-profit-target': { tint: 'var(--mint)', icon: 'M2.25 18 9 11.25l3 3L21.75 6M21.75 6h-4.5m4.5 0v4.5' },
-  'profit-lock': { tint: 'var(--mint)', icon: 'M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25z' },
   'max-trades-day': { tint: 'var(--mint)', icon: 'M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5' },
   'close-after-losses': { tint: 'color-mix(in srgb, var(--red) 55%, var(--violet))', icon: 'M15.75 5.25v13.5m-7.5-13.5v13.5' },
   'risk-per-trade': { tint: 'var(--blue)', icon: 'M9 14.25 15 8.25M9.75 9a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm6 6a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' },
@@ -77,25 +76,15 @@ export function computeRule(slug, cfg, live, balance, fmt) {
       const pct = Math.min((profit / target) * 100, 100);
       const hit = profit >= target;
       return {
-        trigger: `Locks the day once you book ${fmt(target)} — winners run first`,
+        trigger:
+          targetActionOf(cfg ?? {}) === 'close_at_target'
+            ? `Closes and locks the day the moment you are up ${fmt(target)}`
+            : targetActionOf(cfg ?? {}) === 'trail'
+              ? `From ${fmt(target)} up, locks in profit and trails it — falling back closes the day`
+              : `Locks the day once you book ${fmt(target)} — winners run first`,
         status: pnl == null ? 'Waiting for live equity' : `${fmt(profit)} of ${fmt(target)}`,
         tone: hit ? 'target' : 'ok',
         bar: { pct, color: GREEN },
-      };
-    }
-    case 'profit-lock': {
-      const check = profitLockSettings(cfg ?? {});
-      if (check.error) return { trigger: 'Set, but the amounts do not add up yet.', tone: 'muted' };
-      const p = check.params;
-      const profit = pnl != null && pnl > 0 ? pnl : 0;
-      // Only today's P&L is known here, not the day's best, so the lock the
-      // engine holds can be higher than this. "At least" says exactly that.
-      const floor = profitLockFloor(p, profit);
-      return {
-        trigger: `Locks ${fmt(p.initial)} once you are up ${fmt(p.trigger)}, then rises with profit`,
-        status: pnl == null ? 'Waiting for live equity' : floor == null ? `${fmt(profit)} of ${fmt(p.trigger)} to switch on` : `On — at least ${fmt(floor)} locked in`,
-        tone: floor == null ? 'ok' : 'target',
-        bar: { pct: Math.min((profit / p.trigger) * 100, 100), color: GREEN },
       };
     }
     case 'max-trades-day': {

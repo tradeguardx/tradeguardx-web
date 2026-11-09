@@ -14,7 +14,7 @@ import { sx } from './shell/sx';
 import DailyResetLine from './DailyResetLine';
 import NoticeCard from './shell/NoticeCard';
 import { currencySymbol } from '../../lib/session';
-import { profitLockExamples, profitLockSettings } from '../../lib/profitLock';
+import { profitLockExamples, profitLockSettings, TARGET_ACTIONS, targetActionOf } from '../../lib/profitLock';
 
 /**
  * Rules — transcribed from the reference (lines 1010–1176) and the Rules &
@@ -29,7 +29,6 @@ import { profitLockExamples, profitLockSettings } from '../../lib/profitLock';
 const REF_PLAIN = {
   'daily-loss': 'We watch realised plus unrealised loss on the day. At the warning number you get a ping; at the hard number we cancel orders, close positions and lock the account until tomorrow.',
   'daily-profit-target': 'The opposite job: once you are properly up, we close the day so you stop handing it back. The account locks until the next reset and the gain is kept.',
-  'profit-lock': 'Keeps part of a good day. Once today’s profit reaches your trigger we lock in an amount, and the lock rises as profit grows. If profit falls back to it, we close your positions and lock the account until the next reset.',
   'stop-loss-alert': 'A position with no stop is the single most expensive habit there is. We give you a short grace period to add one, then alert.',
   'risk-per-trade': 'Measured from entry to your stop. Without a stop we cannot size the risk, so this rule leans on stop loss protection being on.',
   'max-total-loss': 'Peak-to-trough across the whole account, not just today. This one is not finished — right now it alerts rather than closes, and we would rather say so.',
@@ -64,22 +63,13 @@ const RULE_DOCS = {
     trigger: 'The kill switch fires — it cancels open orders, market-closes all positions, and locks the account until the next reset.',
   },
   'daily-profit-target': {
-    summary: 'Locks in a winning day once you’ve booked your target, so you stop while you’re ahead instead of giving it back. This is a soft lock — it never force-closes an open winner.',
+    summary: 'Keeps a winning day a winning day. You choose what happens when the target is reached: lock once the trade closes, close at the target, or trail a lock that rises with profit.',
     how: [
-      'Measured on realized (booked) profit only — an open trade keeps running, so you book on your own terms.',
-      'Deposits are ignored, so adding funds can never look like profit.',
-      'The lock only arms once your booked profit clears the target AND the account is flat (no open position).',
+      'Lock after the trade closes: counts booked profit only, and locks once you are flat — an open winner keeps running.',
+      'Close at target and trail: count today’s booked plus open profit, and close positions when they fire.',
+      'Deposits and fees are ignored, so adding funds can never look like profit.',
     ],
-    trigger: 'New trades are locked until the next daily reset. Any position you already have open is left alone to run.',
-  },
-  'profit-lock': {
-    summary: 'A floor under today’s profit that only moves up. Once you are well up, part of the gain is protected; if the market takes it back to that floor, the day ends there.',
-    how: [
-      'Measured on today’s trading P&L — booked plus open — since the daily reset. Fees and deposits do not count.',
-      'Nothing happens until profit reaches your trigger. Then the first lock is set, and every further step of profit raises it.',
-      'The lock never comes down, even if profit drops back without touching it.',
-    ],
-    trigger: 'When profit falls back to the lock, the kill switch cancels orders, closes positions and locks the account until the next reset.',
+    trigger: 'The account locks until the next daily reset. Close at target and trail also close your open positions.',
   },
   'max-total-loss': {
     summary: 'A hard floor on total account drawdown across the whole account life — the last line of defence beneath your daily limit.',
@@ -157,12 +147,16 @@ const SUMMARY_FORMATTERS = {
     v.mode === 'amount'
       ? `${sym}${v.dailyLossAmount} · warns at ${sym}${v.warningAmount} · flattens and locks`
       : `${v.dailyLossPct}% · warns at ${v.warningPct}% · flattens and locks`,
-  'daily-profit-target': (v, sym = '$') =>
-    v.mode === 'amount'
-      ? `${sym}${v.dailyTargetAmount} target · locks in the win`
-      : `${v.dailyTargetPct}% target · locks in the win`,
-  'profit-lock': (v, sym = '$') =>
-    `from ${sym}${v.profitLockTrigger} profit · locks ${sym}${v.profitLockInitial}${Number(v.profitLockStep) > 0 && Number(v.profitLockRaise) > 0 ? ` · +${sym}${v.profitLockRaise} per ${sym}${v.profitLockStep}` : ''}`,
+  'daily-profit-target': (v, sym = '$') => {
+    const target = v.mode === 'amount' ? `${sym}${v.dailyTargetAmount}` : `${v.dailyTargetPct}%`;
+    const action = targetActionOf(v);
+    if (action === 'close_at_target') return `${target} target · closes at target`;
+    if (action === 'trail') {
+      const stepping = Number(v.profitLockStep) > 0 && Number(v.profitLockRaise) > 0;
+      return `${target} target · locks ${sym}${v.profitLockInitial}${stepping ? ` · +${sym}${v.profitLockRaise} per ${sym}${v.profitLockStep}` : ''}`;
+    }
+    return `${target} target · locks in the win`;
+  },
   'max-total-loss': (v) => `${v.maxDrawdownPct}% max drawdown`,
   'risk-per-trade': (v) => `${v.maxRiskPct}% of equity · rejects oversized orders`,
   'max-trades-day': (v) => {
@@ -339,7 +333,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
   const handleSave = async () => {
     if (!accessToken || !tradingAccountId || busy) return;
     // The engine ignores a profit lock it cannot use, so refuse to save one.
-    if ((rule.templateSlug ?? rule.id) === 'profit-lock') {
+    if ((rule.templateSlug ?? rule.id) === 'daily-profit-target' && targetActionOf(values) === 'trail') {
       const check = profitLockSettings(configFromValues());
       if (check.error) { toast.error('Check the amounts', check.error); return; }
     }
@@ -370,7 +364,9 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
   const slug = rule.templateSlug ?? rule.id;
   const accent = ruleAccent(slug);
   const glyph = RULE_GLYPH[slug] ?? ICON.rules;
-  const plain = REF_PLAIN[slug] || (RULE_DOCS[slug] ? `${RULE_DOCS[slug].summary} ${RULE_DOCS[slug].trigger}` : rule.description);
+  const plain = (slug === 'daily-profit-target' && rule.fields.some((f) => f.key === 'targetAction')
+    ? `The day locks once you are properly up, so you stop handing it back. ${TARGET_ACTIONS[targetActionOf(values)].note}`
+    : null) || REF_PLAIN[slug] || (RULE_DOCS[slug] ? `${RULE_DOCS[slug].summary} ${RULE_DOCS[slug].trigger}` : rule.description);
   const summary = ruleSummaryLine(rule.id, values, rule.description, sym);
 
   return (
@@ -427,10 +423,25 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
 
           <div style={sx('display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px')}>
             {visibleFields.map((field) => (
-              <div key={field.key} style={sx('min-width:132px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)', editing ? { minWidth: 180 } : {})}>
+              <div key={field.key} style={sx('min-width:132px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)', editing ? { minWidth: 180 } : {}, field.key === 'targetAction' ? { flexBasis: '100%' } : {})}>
                 <div style={sx('font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);font-weight:600')}>{field.label}</div>
                 {!editing ? (
                   <div style={sx("margin-top:5px;font:600 15px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums")}>{fieldDisplay(field, values[field.key], sym)}</div>
+                ) : field.key === 'targetAction' ? (
+                  /* Three ways to act on the target: a list, not a button row,
+                     so each says what it does and it fits a phone. */
+                  <div role="radiogroup" aria-label={field.label} style={sx('margin-top:8px;display:grid;gap:6px')}>
+                    {(field.options || []).map((opt) => {
+                      const on = targetActionOf(values) === opt.value;
+                      return (
+                        <button key={opt.value} type="button" role="radio" aria-checked={on} onClick={() => setValues((v) => ({ ...v, [field.key]: opt.value }))}
+                          style={sx('display:block;width:100%;text-align:left;padding:9px 11px;border-radius:9px', { border: `1px solid ${on ? 'var(--ink)' : 'var(--line)'}`, background: on ? 'var(--surface)' : 'transparent' })}>
+                          <span style={sx('display:block;font-size:13px;font-weight:700;color:var(--ink)')}>{opt.label}</span>
+                          <span style={sx('display:block;margin-top:2px;font-size:12px;line-height:1.45;color:var(--ink-3)')}>{TARGET_ACTIONS[opt.value]?.note}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : field.type === 'select' ? (
                   <div style={sx('margin-top:6px;display:flex;gap:4px')}>
                     {(field.options || []).map((opt) => {
@@ -457,7 +468,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
             ))}
           </div>
 
-          {slug === 'profit-lock' && <ProfitLockPreview values={values} sym={sym} />}
+          {slug === 'daily-profit-target' && targetActionOf(values) === 'trail' && <ProfitLockPreview values={values} sym={sym} />}
 
           <div style={sx('display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3);margin-bottom:14px')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" style={{ color: 'var(--ink-faint)' }}><circle cx="12" cy="12" r="9" /><path d="M12 8v4l3 2" /></svg>

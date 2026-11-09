@@ -523,7 +523,6 @@ const RULE_NAMES = {
   'max-total-loss': 'Max total loss',
   'daily-target': 'Daily target',
   'daily-profit-target': 'Daily target',
-  'profit-lock': 'Profit lock',
   'close-after-losses': 'Losing streak',
   'stop-loss-alert': 'Stop-loss alert',
   'cooldown-block': 'Cooldown',

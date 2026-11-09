@@ -54,6 +54,7 @@ export const GUARD_CLOSE_TYPES = new Set([
   'daily_loss_exceeded',
   'daily_target_reached',
   'profit_lock_hit',
+  'daily_target_closed',
   'max_total_loss_exceeded',
   'consecutive_losses_exceeded',
 ]);
@@ -291,7 +292,6 @@ export function ruleName(breach) {
 const RULE_LABEL = {
   'daily-loss': 'Loss limit',
   'daily-profit-target': 'Daily target',
-  'profit-lock': 'Profit lock',
   'max-total-loss': 'Max drawdown',
   'max-trades-day': 'Trade cap',
   'close-after-losses': 'Loss streak',
@@ -299,6 +299,7 @@ const RULE_LABEL = {
   daily_loss_exceeded: 'Loss limit',
   daily_target_reached: 'Daily target',
   profit_lock_hit: 'Profit lock',
+  daily_target_closed: 'Daily target',
   max_total_loss_exceeded: 'Max drawdown',
   consecutive_losses_exceeded: 'Loss streak',
 };

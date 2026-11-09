@@ -22,6 +22,7 @@ const LOCK_TYPES = new Set([
   'max_trades_day_lockout',
   'daily_target_reached',
   'profit_lock_hit',
+  'daily_target_closed',
   'manual_lock_started',
   'manual_lock_closing',
 ]);
@@ -108,6 +109,8 @@ export function lockLine(b) {
       return { title: 'Trade limit reached — account locked until your reset', detail: b.message, until };
     case 'daily_target_reached':
       return { title: 'Profit target hit — the day is locked in', detail: b.message };
+    case 'daily_target_closed':
+      return { title: 'Profit target hit — positions closed, day locked in', detail: b.message };
     case 'profit_lock_hit':
       return { title: 'Profit fell back to your lock — positions closed, day locked', detail: b.message };
     case 'manual_lock_started':
