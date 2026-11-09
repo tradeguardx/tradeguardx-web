@@ -65,8 +65,8 @@ const RULE_DOCS = {
   'daily-profit-target': {
     summary: 'Keeps a winning day a winning day. You choose what happens when the target is reached: lock once the trade closes, close at the target, or trail a lock that rises with profit.',
     how: [
-      'Lock after the trade closes: counts booked profit only, and locks once you are flat — an open winner keeps running.',
-      'Close at target and trail: count today’s booked plus open profit, and close positions when they fire.',
+      'Lock once you are flat: counts booked profit only, and locks as soon as you have no open trade — it never closes a trade.',
+      'Close and lock at the target, and trail: count today’s booked plus open profit, close your open trades and lock.',
       'Deposits and fees are ignored, so adding funds can never look like profit.',
     ],
     trigger: 'The account locks until the next daily reset. Close at target and trail also close your open positions.',
@@ -150,12 +150,12 @@ const SUMMARY_FORMATTERS = {
   'daily-profit-target': (v, sym = '$') => {
     const target = v.mode === 'amount' ? `${sym}${v.dailyTargetAmount}` : `${v.dailyTargetPct}%`;
     const action = targetActionOf(v);
-    if (action === 'close_at_target') return `${target} target · closes at target`;
+    if (action === 'close_at_target') return `${target} target · closes and locks at the target`;
     if (action === 'trail') {
       const stepping = Number(v.profitLockStep) > 0 && Number(v.profitLockRaise) > 0;
-      return `${target} target · locks ${sym}${v.profitLockInitial}${stepping ? ` · +${sym}${v.profitLockRaise} per ${sym}${v.profitLockStep}` : ''}`;
+      return `${target} target · protects ${sym}${v.profitLockInitial}${stepping ? `, +${sym}${v.profitLockRaise} per ${sym}${v.profitLockStep}` : ''} · then closes and locks`;
     }
-    return `${target} target · locks in the win`;
+    return `${target} target · locks once you are flat`;
   },
   'max-total-loss': (v) => `${v.maxDrawdownPct}% max drawdown`,
   'risk-per-trade': (v) => `${v.maxRiskPct}% of equity · rejects oversized orders`,
@@ -252,6 +252,7 @@ const BTN_GHOST = 'padding:9px 14px;border:1px solid var(--line-strong);border-r
 const INPUT = "width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font:600 14px/1.2 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums";
 
 function fieldDisplay(field, value, sym = '$') {
+  if (field.key === 'targetAction') return TARGET_ACTIONS[targetActionOf({ targetAction: value })].label;
   if (field.type === 'select') return (field.options || []).find((o) => o.value === value)?.label ?? String(value ?? '—');
   if (field.type === 'toggle') return value ? 'On' : 'Off';
   if (value === '' || value == null) return '—';
@@ -365,7 +366,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
   const accent = ruleAccent(slug);
   const glyph = RULE_GLYPH[slug] ?? ICON.rules;
   const plain = (slug === 'daily-profit-target' && rule.fields.some((f) => f.key === 'targetAction')
-    ? `The day locks once you are properly up, so you stop handing it back. ${TARGET_ACTIONS[targetActionOf(values)].note}`
+    ? `Every option locks your account until the daily reset, so a good day stays good. They differ in when it locks and whether we close open trades. ${TARGET_ACTIONS[targetActionOf(values)].note}`
     : null) || REF_PLAIN[slug] || (RULE_DOCS[slug] ? `${RULE_DOCS[slug].summary} ${RULE_DOCS[slug].trigger}` : rule.description);
   const summary = ruleSummaryLine(rule.id, values, rule.description, sym);
 
@@ -436,7 +437,7 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
                       return (
                         <button key={opt.value} type="button" role="radio" aria-checked={on} onClick={() => setValues((v) => ({ ...v, [field.key]: opt.value }))}
                           style={sx('display:block;width:100%;text-align:left;padding:9px 11px;border-radius:9px', { border: `1px solid ${on ? 'var(--ink)' : 'var(--line)'}`, background: on ? 'var(--surface)' : 'transparent' })}>
-                          <span style={sx('display:block;font-size:13px;font-weight:700;color:var(--ink)')}>{opt.label}</span>
+                          <span style={sx('display:block;font-size:13px;font-weight:700;color:var(--ink)')}>{TARGET_ACTIONS[opt.value]?.label ?? opt.label}</span>
                           <span style={sx('display:block;margin-top:2px;font-size:12px;line-height:1.45;color:var(--ink-3)')}>{TARGET_ACTIONS[opt.value]?.note}</span>
                         </button>
                       );

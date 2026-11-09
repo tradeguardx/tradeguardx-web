@@ -9,16 +9,16 @@
 
 export const TARGET_ACTIONS = {
   after_close: {
-    label: 'Lock after the trade closes',
-    note: 'Once your booked profit reaches the target and you are flat, the day locks. An open winner keeps running.',
+    label: 'Lock once you are flat',
+    note: 'When your booked profit reaches the target, the day locks as soon as you have no open trade. We never close a trade for you.',
   },
   close_at_target: {
-    label: 'Close at target',
-    note: 'The moment today’s profit touches the target, we close your positions and lock the day.',
+    label: 'Close and lock at the target',
+    note: 'The moment today’s profit, booked plus open, touches the target, we close your open trades and lock the day.',
   },
   trail: {
-    label: 'Trail a profit lock',
-    note: 'Reaching the target locks in part of the profit, and the lock rises as profit grows. If profit falls back to it, we close your positions and lock the day.',
+    label: 'Trail, then close and lock',
+    note: 'At the target we protect part of the profit and raise it as profit grows. If profit falls back to that level, we close your open trades and lock the day.',
   },
 };
 
