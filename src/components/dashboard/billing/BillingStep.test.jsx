@@ -219,7 +219,7 @@ describe('billing step', () => {
      chevrons were not worth pressing. */
   it('reveals something the summary does not already say', async () => {
     render(<BillingStep />);
-    const row = await screen.findByRole('button', { name: /Unlimited trading accounts/ });
+    const row = await screen.findByRole('button', { name: /One plan, every exchange, unlimited accounts/ });
     const summary = row.textContent;
     fireEvent.click(row);
     const detail = screen.getByText(/Nothing is shared between them/);
