@@ -190,18 +190,18 @@ export function lifecycleView(id, ctx = {}) {
         pill: 'Guard off',
         tone: 'amber',
         plan: 'Setup · step 5 of 5',
-        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Start your 3-day free trial to switch it on. ₹0 today.', cta: 'Start free trial', to: ONBOARDING },
+        band: { tone: 'amber', title: 'Key connected. Guard is off.', body: 'Choose Pro or a 3-day Tester pass to switch it on.', cta: 'Choose a plan', to: ONBOARDING },
         /* Never paid: everything but setup, the revenge report (the reason
            to start), rules as drafts, and the account pages waits for the
            trial. */
         locks: ['live', 'journal', 'trades', 'tax', 'overview'],
         lock: {
-          title: 'Starts with your free trial',
-          body: 'Your key is connected and history is filling in. This switches on the moment the trial starts.',
-          cta: 'Start free trial',
+          title: 'Starts with your plan',
+          body: 'Your key is connected and history is filling in. This switches on the moment your plan or Tester pass starts.',
+          cta: 'Choose a plan',
           to: ONBOARDING,
         },
-        ks: { enabled: false, tip: 'Starts with your free trial' },
+        ks: { enabled: false, tip: 'Starts with your plan or Tester pass' },
         rulesBadge: 'DRAFT',
         facts: [['Rules', 'Draft', 'Nothing enforced yet'], ['Key', 'Connected', 'Needed to act on trades'], ['Guard', 'Off', 'Switches on with your trial']],
         dial: { label: 'guard off · finish setup' },

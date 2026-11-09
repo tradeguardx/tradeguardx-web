@@ -46,7 +46,7 @@ const PLAN_THEME = {
     badgeBg: 'rgba(100,116,139,0.10)',
     badgeBorder: 'rgba(100,116,139,0.22)',
     badgeText: '#94a3b8',
-    tagline: 'Full access, free for 3 days. Nothing charged until day 4.',
+    tagline: 'Start with a 3-day Tester pass, then choose a plan.',
     ctaBg: 'rgba(255,255,255,0.06)',
     ctaBorder: 'rgba(255,255,255,0.08)',
     ctaText: '#e2e8f0',
@@ -252,7 +252,7 @@ const TRUST_BADGES = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    label: 'Cancel before day 4, pay nothing',
+    label: 'Cancel any time',
   },
   {
     icon: (
@@ -1054,7 +1054,7 @@ export default function PricingPage() {
               <p className="text-base mb-10 max-w-md mx-auto" style={{ color: '#475569' }}>
                 {session?.access_token && !subscriptionLoading && isPaidPlan(user?.billingPlan)
                   ? 'You are on a paid plan. Manage billing anytime from your account.'
-                  : `3 days free · ${money(0)} today · cancel before day 4 and pay nothing.`}
+                  : `Try everything for ${TESTER_DAYS} days for ${money(testerPrice)} — one payment, nothing renews.`}
               </p>
               <motion.div
                 className="inline-block"
@@ -1069,7 +1069,7 @@ export default function PricingPage() {
                     boxShadow: '0 4px 24px rgba(0,212,170,0.30)',
                   }}
                 >
-                  {session?.access_token ? 'Open dashboard' : 'Start 3 days free'}
+                  {session?.access_token ? 'Open dashboard' : 'Get started'}
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>

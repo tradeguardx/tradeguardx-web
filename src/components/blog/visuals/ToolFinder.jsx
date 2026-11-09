@@ -38,7 +38,7 @@ function answerFor(a) {
   }
   return {
     tone: 'mid',
-    title: 'Start free. Watch yourself for a month.',
+    title: 'Start with a notebook. Watch yourself for a month.',
     body: 'Trading most days with a clean record is great. Write your daily limit down and track every day you hit it. The first day you trade past it is the day to automate it.',
   };
 }
