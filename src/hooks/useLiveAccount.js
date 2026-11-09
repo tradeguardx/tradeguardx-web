@@ -50,6 +50,8 @@ function normalise(row) {
   if (!row) return null;
   return {
     dailyPnl: n(row.daily_pnl ?? row.dailyPnl),
+    /** Live P&L per open position, keyed by product symbol — null until the venue's engine writes it. */
+    openPnl: row.open_pnl ?? row.openPnl ?? null,
     dailyStartingEquity: n(row.daily_starting_equity ?? row.dailyStartingEquity),
     currentEquity: n(row.current_equity ?? row.currentEquity),
     equityUpdatedAt: row.equity_updated_at ?? row.equityUpdatedAt ?? null,
