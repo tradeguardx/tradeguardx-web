@@ -80,7 +80,7 @@ export default function VerifyEmailPage() {
           <h1 className="mb-2 font-display text-[28px] font-bold text-white">Confirm your email</h1>
           <p className="text-[15px] leading-relaxed text-slate-500">
             We sent a link to <span className="font-medium text-slate-300">{email}</span>. Click it and
-            your account is live — trial included.
+            your account is live.
           </p>
         </div>
 

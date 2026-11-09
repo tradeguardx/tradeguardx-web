@@ -11,6 +11,8 @@
  *   tc pc        cancelled
  *   te pe pg lf  ended       with endedFrom trial | pro | unpaid
  *   ac           comp
+ *   xp           pass        a Tester pass running: the plan picker, with its end
+ *   xe           setup       a Tester pass ended: the plan picker
  *   nr           unknown
  *
  * Null when the case is unknown (older API): the page falls back to its own
@@ -56,6 +58,10 @@ export function billingPageOf(life, { autoRenews = false, planState = null } = {
       return { page: 'ended', endedFrom: 'pro' };
     case 'pg':
       return { page: 'ended', endedFrom: 'unpaid' };
+    case 'xp':
+      return { page: 'pass' };
+    case 'xe':
+      return { page: 'setup' };
     case 'ac':
       return { page: 'comp' };
     case 'nr':

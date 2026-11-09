@@ -132,7 +132,7 @@ export default function ExchangeHubPage() {
                 to="/signup"
                 className="rounded-xl bg-accent px-6 py-3.5 text-[15px] font-bold text-surface-950 transition-transform hover:scale-[1.02]"
               >
-                Try free for 3 days
+                Get a 3-day pass
               </Link>
               {guides.length > 0 && (
                 <Link

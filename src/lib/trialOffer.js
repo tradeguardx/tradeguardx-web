@@ -13,7 +13,9 @@
  * the only direction this is allowed to be wrong in.
  */
 
-export const FULL_TRIAL_DAYS = 3; // new customers, since 13 Oct 2026 (was 7)
+/** New customers: no free days since 9 Nov 2026 (a paid 3-day Tester pass instead;
+ *  was 3 days from 13 Oct 2026, 7 before). */
+export const FULL_TRIAL_DAYS = 0;
 /** The old no-card trial was 7 days; someone still in one keeps what is left
  *  (mirrors payments LEGACY_TRIAL_DAYS — the server decides, this only says it). */
 export const LEGACY_TRIAL_DAYS = 7;

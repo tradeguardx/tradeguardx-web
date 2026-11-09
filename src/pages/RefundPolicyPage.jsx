@@ -8,18 +8,19 @@ import { useSEO } from '../hooks/useSEO';
  * could never tell when the terms actually changed. Bump this by hand, only
  * when the text above it changes.
  */
-const LAST_UPDATED = 'November 6, 2026';
+const LAST_UPDATED = 'November 9, 2026';
 
 const sections = [
   {
     title: '1. Overview',
-    content: 'TradeGuardX offers a paid Pro subscription, billed monthly, quarterly or yearly. New accounts get a 3-day free trial with full access, so you can try the whole product before you pay anything. Because of that, we do not offer refunds once a payment has been taken.',
+    content: 'TradeGuardX offers a paid Pro subscription, billed monthly, quarterly or yearly, and a 3-day Tester pass: everything Pro has for 3 days, paid once, with nothing that renews. The Tester pass is how to try the whole product before you commit to a plan. Because of that, we do not offer refunds once a payment has been taken.',
   },
   {
     title: '2. No Refunds',
     content: 'All subscription payments are final and non-refundable. This includes:',
     list: [
-      'Your first payment after the free trial',
+      'A Tester pass, including one that is only partly used',
+      'Your first Pro payment, which is taken in full on the day you start',
       'Renewals, on any billing interval',
       'Unused time left in a billing period',
       'A change of mind, or not using the service',
@@ -28,8 +29,8 @@ const sections = [
     ],
   },
   {
-    title: '3. Free Trial and Cancellation',
-    content: 'You pay nothing if you cancel before your free trial ends. We show you the date of your first payment before you confirm, and again in your billing settings. After that, you can cancel at any time from your account. Cancelling stops future charges, and you keep access until the end of the period you have paid for.',
+    title: '3. Tester Pass and Cancellation',
+    content: 'A Tester pass is a single payment. It has no AutoPay and never renews, so there is nothing to cancel: when its 3 days end, you choose a paid plan or your access stops. Pro is charged in full on the day you start, then renews by AutoPay. You can cancel Pro at any time from your account. Cancelling stops future charges, and you keep access until the end of the period you have paid for. If you started a free trial before November 9, 2026, it runs to its end date on the terms you signed up under.',
   },
   {
     title: '4. Billing Errors',
@@ -59,7 +60,7 @@ const sections = [
 export default function RefundPolicyPage() {
   useSEO({
     title: 'Refund Policy',
-    description: 'TradeGuardX includes a 3-day free trial, so payments are non-refundable. How cancelling works, and what happens if there is a billing error.',
+    description: 'Try TradeGuardX with a 3-day Tester pass before you commit, so payments are non-refundable. How cancelling works, and what happens if there is a billing error.',
     url: 'https://tradeguardx.com/refund',
   });
 

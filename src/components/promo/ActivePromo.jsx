@@ -270,8 +270,8 @@ function useFeaturedPlan(planName) {
 /**
  * Founding-member AND a discount code, in one strip.
  *
- * This is the offer as it actually works: since 1 Nov 2026 there is no free
- * trial (trialDays defaults to 0), so the strip leads with the founding spot
+ * This is the offer as it actually works: since 9 Nov 2026 there is no free
+ * trial (trialDays is always 0), so the strip leads with the founding spot
  * and the coupon on the FIRST PAID month. Only if free days are configured
  * does it say "free for N days" first. Showing them
  * separately (as the two original modes did) split one offer into two

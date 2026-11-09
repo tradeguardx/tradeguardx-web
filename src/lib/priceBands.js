@@ -81,8 +81,33 @@ export function planForBand(plan, band) {
       const n = months[iv.interval] ?? 1;
       return { ...iv, price, perMonth: Math.round((price / n) * 100) / 100, savingsPct: Math.max(0, Math.round((1 - price / (t.monthly * n)) * 100)) };
     });
-    return { ...plan, priceMonthly: t.monthly, intervals, currency: t.currency };
+    return { ...plan, priceMonthly: t.monthly, intervals, currency: t.currency, band };
   }
   const monthly = b.intervals.find((iv) => iv.interval === 'monthly');
-  return { ...plan, priceMonthly: monthly?.price ?? plan.priceMonthly, intervals: b.intervals, currency: b.currency };
+  return { ...plan, priceMonthly: monthly?.price ?? plan.priceMonthly, intervals: b.intervals, currency: b.currency, band };
+}
+
+/**
+ * THE TESTER PASS (9 Nov 2026): no free trial; trying TradeGuardX is a
+ * one-time pass, everything for 3 days, nothing renews. Checkout charges the
+ * band's own product (payments-service config/testerPass.ts); this is what
+ * pages show.
+ */
+export const TESTER_DAYS = 3;
+export const TESTER_PRICES = {
+  in: { currency: 'INR', price: 299 },
+  a: { currency: 'USD', price: 5 },
+  b: { currency: 'USD', price: 3 },
+};
+
+/** The pass price for a band ("in" | "a" | "b"); unknown → India's. */
+export function testerPriceFor(band) {
+  return TESTER_PRICES[band] ?? TESTER_PRICES.in;
+}
+
+/** The band a re-priced plan was priced for. */
+export function bandOfPlan(plan) {
+  if (!plan || (plan.currency ?? 'INR') === 'INR') return 'in';
+  if (plan.band === 'a' || plan.band === 'b') return plan.band;
+  return Number(plan.priceMonthly) === BAND_PRICES.b.monthly ? 'b' : 'a';
 }

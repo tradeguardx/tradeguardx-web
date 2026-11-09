@@ -475,12 +475,25 @@ describe('billing step — the free window it promises', () => {
   it('tells a lapsed trialist they are charged today, not that it is free', async () => {
     eligibility = { trialDays: 0, fullTrialDays: 7 };
     await show();
-    expect(await screen.findByText(/first charge of .* is today/i)).toBeTruthy();
+    expect(await screen.findByText(/first charge of .* today/i)).toBeTruthy();
     expect(screen.queryByText(/days free/)).toBeNull();
     expect(screen.queryByText(/₹0 charged/)).toBeNull();
     expect(screen.queryByText(/Pay ₹0 today/)).toBeNull();
     expect(screen.queryByText(/Nothing is charged today/)).toBeNull();
-    expect(screen.getByText(/is charged today/)).toBeTruthy();
+    expect(screen.getAllByText(/Subscribe · Monthly/).length).toBeGreaterThan(0);
+  });
+
+  /* 9 Nov 2026: nothing is free. The pass is one payment, no coupon, no mandate. */
+  it('offers the Tester pass as one payment, with no coupon and no AutoPay', async () => {
+    eligibility = { trialDays: 0, fullTrialDays: 0 };
+    await show();
+    fireEvent.click(document.querySelector('[data-tester-row]'));
+    expect(await screen.findByText(/Buy Tester pass · ₹299/)).toBeTruthy();
+    expect(screen.getByText(/No AutoPay and nothing renews/)).toBeTruthy();
+    expect(screen.queryByText('Have a coupon?')?.closest('div')?.style.display).toBe('none');
+    fireEvent.click(screen.getByText(/Buy Tester pass · ₹299/));
+    await waitFor(() => expect(checkout).toHaveBeenCalledWith(expect.objectContaining({ planSlug: 'tester' })));
+    expect(checkout.mock.calls.at(-1)[0].couponCode).toBeUndefined();
   });
 
   /* A number is a promise about money; silence beats a guess. */

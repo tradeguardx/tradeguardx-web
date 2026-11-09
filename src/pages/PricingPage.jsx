@@ -7,7 +7,7 @@ import { getPricingPlans } from '../api/pricingApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/ToastProvider';
 import { createCheckoutSession } from '../api/paymentsApi';
-import { trialDaysOnOffer, trialOfferLine, firstChargeDate, FULL_TRIAL_DAYS } from '../lib/trialOffer';
+import { trialDaysOnOffer, trialOfferLine, firstChargeDate } from '../lib/trialOffer';
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch, getPendingCheckoutInterval, normalizeInterval, BILLING_INTERVALS } from '../lib/checkoutIntent';
 import { trackCheckoutStarted } from '../lib/analytics';
 import { checkoutCouponCode } from '../lib/checkoutCoupon';
@@ -15,7 +15,7 @@ import { getStoredReferralCode } from '../lib/referralCode';
 import { getLinkPromoCode } from '../lib/promoLink';
 import { useActiveOffer } from '../hooks/useActiveOffer';
 import { offerCoversInterval, offerLabel, offerPrice, firstPeriodLabel, discountWording } from '../lib/siteOffer';
-import { bandSync, currencyForBand, formatMoney } from '../lib/priceBands';
+import { bandSync, currencyForBand, formatMoney, testerPriceFor, TESTER_DAYS } from '../lib/priceBands';
 import { paidCheckoutEligibility, isPaidPlan } from '../lib/planLimits';
 
 /**
@@ -147,6 +147,7 @@ function normalizePlan(raw, index) {
     intervals,
     // INR in India, USD elsewhere — set by pricingApi for the visitor's band.
     currency: raw.currency || 'INR',
+    band: raw.band || (raw.currency && raw.currency !== 'INR' ? null : 'in'),
     refundDays: Number(raw.features?.refundDays) || 7,
     cta: raw.features?.cta || (key === 'free' ? 'Get Started Free' : `Start ${name} Plan`),
     ctaLink,
@@ -266,7 +267,7 @@ const TRUST_BADGES = [
 export default function PricingPage() {
   useSEO({
     title: 'Pricing: One Plan for Every Exchange',
-    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly, in your local price. 3 days free, cancel before day 4 and pay nothing.',
+    description: 'One plan with every rule, every exchange and unlimited accounts: pay monthly, quarterly or yearly, in your local price. Try everything for 3 days with a one-time Tester pass.',
     url: 'https://tradeguardx.com/pricing',
   });
   const [plans, setPlans] = useState([]);
@@ -276,6 +277,9 @@ export default function PricingPage() {
   const money = (n) => formatMoney(n, currency);
   const isInr = currency === 'INR';
   const taxNote = isInr ? 'incl. 18% GST' : 'incl. tax';
+  /* The Tester pass price for this visitor's band (lib/priceBands). */
+  const passBand = isInr ? 'in' : plans[0]?.band ?? (bandSync() === 'in' ? 'a' : bandSync());
+  const testerPrice = testerPriceFor(passBand).price;
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [checkoutKey, setCheckoutKey] = useState(null);
@@ -354,6 +358,22 @@ export default function PricingPage() {
     }
   }
 
+  /* The Tester pass: one payment, 3 days, nothing renews. No codes apply. */
+  async function handleTesterCta() {
+    if (!session?.access_token) { navigate('/signup?plan=tester'); return; }
+    setCheckoutKey('tester');
+    try {
+      const res = await createCheckoutSession({ accessToken: session.access_token, planSlug: 'tester' });
+      const url = res?.checkoutUrl;
+      if (url) { trackCheckoutStarted('tester'); window.location.href = url; return; }
+      throw new Error('No checkout URL returned');
+    } catch (err) {
+      toast.error('Checkout failed', err?.message || 'Please try again.');
+    } finally {
+      setCheckoutKey(null);
+    }
+  }
+
   const resumeCheckoutRef = useRef(false);
   /* Read through a ref: the offer usually lands while this resume is in
      flight, and as an effect dependency it would cancel the redirect. If it
@@ -366,6 +386,13 @@ export default function PricingPage() {
     if (subscriptionLoading) return;
     const pending = getPendingCheckoutPlan();
     if (!pending || pending === 'free') return;
+    if (pending === 'tester') {
+      if (resumeCheckoutRef.current) return;
+      resumeCheckoutRef.current = true;
+      clearPendingCheckoutPlan();
+      void handleTesterCta();
+      return;
+    }
     const pendingN = normalizePlanSlugForMatch(pending);
     const plan = plans.find((p) => normalizePlanSlugForMatch(p.key) === pendingN);
     if (!plan) { clearPendingCheckoutPlan(); return; }
@@ -521,14 +548,12 @@ export default function PricingPage() {
     // the signed-in branch does — the price and date before the click.
     const line = priceFor(plan, iv);
     const amount = typeof line?.price === 'number' && line.price > 0 ? money(offerPriceFor(line.interval, line.price) ?? line.price) : null;
-    const startsOn = firstChargeDate(FULL_TRIAL_DAYS)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).replace(' ', '\u00a0') ?? null;
-    const offer = amount ? trialOfferLine(FULL_TRIAL_DAYS, amount, startsOn, money(0)) : null;
     return (
       <>
         <Link to={signupLink(plan, iv)} className={`block text-center ${baseClass}`} style={isPrimary ? primaryStyle : secondaryStyle}>
-          {amount ? `Start ${FULL_TRIAL_DAYS} days free` : plan.cta}
+          {plan.cta}
         </Link>
-        {offer ? <OfferLine text={offer} color="rgba(226,232,240,0.6)" /> : null}
+        {amount ? <OfferLine text={`${amount} today · renews until you cancel`} color="rgba(226,232,240,0.6)" /> : null}
       </>
     );
   }
@@ -573,8 +598,8 @@ export default function PricingPage() {
 
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-7">
             {isInr
-              ? `Everything is included: the kill switch, every rule, every exchange we support, unlimited accounts and the tax centre. Start with ${FULL_TRIAL_DAYS} days free; cancel before day ${FULL_TRIAL_DAYS + 1} and you pay nothing.`
-              : `Everything is included: the kill switch, every rule, every exchange we support and unlimited accounts. Start with ${FULL_TRIAL_DAYS} days free; cancel before day ${FULL_TRIAL_DAYS + 1} and you pay nothing. Prices are in US dollars, tax included.`}
+              ? `Everything is included: the kill switch, every rule, every exchange we support, unlimited accounts and the tax centre. Not sure yet? Try it all for ${TESTER_DAYS} days for ${money(testerPrice)}.`
+              : `Everything is included: the kill switch, every rule, every exchange we support and unlimited accounts. Not sure yet? Try it all for ${TESTER_DAYS} days for ${money(testerPrice)}. Prices are in US dollars, tax included.`}
           </p>
 
 
@@ -965,8 +990,31 @@ export default function PricingPage() {
         )}
 
         {plans.length > 0 && (
+          <div data-tester-strip className="max-w-5xl mx-auto mt-8 rounded-2xl px-5 py-5 md:px-7 flex flex-col md:flex-row md:items-center gap-4" style={{ border: '1px solid rgba(0,212,170,0.22)', backgroundColor: 'rgba(0,212,170,0.05)' }}>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color: '#00d4aa' }}>Tester pass</p>
+              <p className="mt-1.5 font-display text-xl font-bold text-white tracking-tight">
+                {money(testerPrice)} for {TESTER_DAYS} days of everything
+              </p>
+              <p className="mt-1 text-[13px] leading-relaxed" style={{ color: '#94a3b8' }}>
+                One payment, no AutoPay, nothing renews. When it ends, choose a plan — your rules carry over.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleTesterCta}
+              disabled={checkoutKey === 'tester'}
+              className="shrink-0 rounded-xl px-6 py-3 text-sm font-bold disabled:opacity-60"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.12)' }}
+            >
+              {checkoutKey === 'tester' ? 'Redirecting…' : `Try ${TESTER_DAYS} days · ${money(testerPrice)}`}
+            </button>
+          </div>
+        )}
+
+        {plans.length > 0 && (
           <p className="mx-auto mb-12 mt-8 max-w-xl text-center text-[12.5px] leading-relaxed" style={{ color: '#64748b' }}>
-            Cancel before your free trial ends and you pay nothing. Payments are non-refundable after that.{' '}
+            Payments are non-refundable, so try {TESTER_DAYS} days with a Tester pass first if you are unsure.{' '}
             <Link to="/refund" className="underline underline-offset-2 hover:text-slate-300">Refund policy</Link>
           </p>
         )}

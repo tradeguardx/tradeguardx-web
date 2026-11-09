@@ -395,11 +395,14 @@ export default function BillingPage() {
    * onboarding ends with. Before a key is verified (s0, s2) a trial cannot
    * start, so its button says "Continue setup" and goes back to onboarding.
    */
-  if (plans === null && state !== 'setup' && state !== 'setupEarly') return <DashboardSkeleton />;
+  if (plans === null && state !== 'setup' && state !== 'setupEarly' && state !== 'pass') return <DashboardSkeleton />;
 
-  if (state === 'setup' || state === 'setupEarly') {
+  /* A Tester pass has nothing to manage — no card, no renewal, no cancel.
+     What they need is the plan picker, told when the pass runs out. */
+  if (state === 'setup' || state === 'setupEarly' || state === 'pass') {
     return (
       <BillingStep
+        passUntil={state === 'pass' ? me?.subscription?.currentPeriodEnd ?? life?.endsAt ?? null : null}
         setupCta={state === 'setupEarly' ? { label: 'Continue setup', to: '/dashboard/setup' } : undefined}
         // s0: nothing set up yet · s2: exchange and account done, key not
         stepsDone={life?.id === 's0' ? 0 : life?.id === 's2' ? 2 : 4}
@@ -452,11 +455,11 @@ export default function BillingPage() {
               : carrying
               ? `Your free trial has ${left} day${left === 1 ? '' : 's'} left and no payment method attached, so your guard stops when it ends. Add one and you keep all ${left} — nothing is charged today.`
               : spent
-                ? `Your free trial ended${endedOn ? ` on ${endedOn}` : ''}, so nothing is enforcing your rules. Subscribe to switch the guard back on${cur ? ` — ${inr(cur.price)} ${PER[interval]}` : ''}. Your free trial is already used, so the first charge is today.`
-                : 'You don’t have a plan yet. Setting one up switches your guard on — the first 3 days are free and nothing is charged today.'}
+                ? `Your free trial ended${endedOn ? ` on ${endedOn}` : ''}, so nothing is enforcing your rules. Choose a plan to switch the guard back on${cur ? ` — ${inr(cur.price)} ${PER[interval]}` : ''}, or try 3 more days with a Tester pass.`
+                : 'You don’t have a plan yet. Choose Pro, or try everything for 3 days with a Tester pass — either switches your guard on.'}
           </p>
           <button type="button" onClick={() => navigate('/dashboard/activate')} style={sxw('min-height:44px;padding:11px 18px;border:0;border-radius:11px;background:var(--mint-solid);color:var(--on-mint);font-size:13.5px;font-weight:800')}>
-            {settling ? 'Subscribe' : carrying ? `Set up billing · keep your ${left} days` : spent ? 'Subscribe' : 'Start 3 days free'}
+            {settling ? 'Subscribe' : carrying ? `Set up billing · keep your ${left} days` : 'Choose a plan'}
           </button>
         </section>
       </div>

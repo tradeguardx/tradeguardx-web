@@ -25,10 +25,10 @@
 import { getUserZone } from './userZone';
 
 /** The engine is enforcing in these. Mirrors lifecycleState.ts PROTECTED. */
-export const PROTECTED_STATES = ['t1', 't6', 'tc', 'tx', 'p', 'pc', 'ac', 'nr'];
+export const PROTECTED_STATES = ['t1', 't6', 'tc', 'tx', 'p', 'pc', 'ac', 'nr', 'xp'];
 
 /** A key exists and nothing is enforced: the red, non-dismissible states. */
-export const UNPROTECTED_STATES = ['pf', 'te', 'pe', 'pg', 'lf'];
+export const UNPROTECTED_STATES = ['pf', 'te', 'pe', 'pg', 'lf', 'xe'];
 
 export const SETUP_STATES = ['s0', 's2', 's3'];
 
@@ -317,6 +317,26 @@ export function lifecycleView(id, ctx = {}) {
         toast: until ? `Pro cancelled. You’re protected until ${until}.` : 'Pro cancelled. You’re protected until your plan ends.',
         accountSuffix: until ? `until ${until}` : null,
       };
+    /* ── Tester pass: paid once, 3 days, nothing renews (9 Nov 2026) ─── */
+    case 'xp':
+      return {
+        ...base,
+        pill: until ? `Protected · until ${until}` : 'Protected',
+        plan: until ? `Tester · ends ${until}` : 'Tester pass',
+        band: until
+          ? {
+              tone: 'neutral',
+              dismissible: true,
+              dismissDays: 1,
+              title: `Your Tester pass ends ${until}.`,
+              body: 'Nothing renews. Choose a plan to keep your guard on after that.',
+              cta: 'Choose a plan',
+              to: BILLING,
+            }
+          : null,
+        toast: until ? `Tester pass on. You’re protected until ${until}.` : 'Tester pass on. You’re protected.',
+        accountSuffix: until ? `until ${until}` : null,
+      };
     case 'ac':
       return { ...base, plan: 'Pro · complimentary' };
     case 'nr':
@@ -361,11 +381,25 @@ export function lifecycleView(id, ctx = {}) {
         band: {
           tone: 'red',
           title: 'Your free trial has ended.',
-          body: 'Nothing is protecting your accounts. Your rules are saved.',
+          body: 'Nothing is protecting your accounts. Your rules are saved. Choose a plan, or try 3 more days with a Tester pass.',
           cta: 'Subscribe',
           to: BILLING,
         },
       };
+    case 'xe': {
+      const on = day(ctx.periodEnd);
+      return {
+        ...ended(base, 'pass'),
+        plan: on ? `No plan · Tester ended ${on}` : 'No plan · Tester ended',
+        band: {
+          tone: 'red',
+          title: 'Your Tester pass has ended.',
+          body: 'Nothing is protecting your accounts. Your rules are saved. Choose a plan to switch the guard back on.',
+          cta: 'Choose a plan',
+          to: BILLING,
+        },
+      };
+    }
     case 'pe': {
       const on = day(ctx.periodEnd);
       return {
@@ -453,7 +487,7 @@ function ended(base, endedFrom) {
     lossBudgetNote: failed ? 'Not enforced: payment failed' : 'Not enforced: no active plan',
     accountLabel: failed ? 'Not protected · payment failed' : 'Not protected · rules saved',
     /** "Guard switched off: …", the first Activity row. */
-    offReason: failed ? 'payment failed' : endedFrom === 'unpaid' ? 'all retries failed' : endedFrom === 'trial' ? 'trial ended' : 'plan ended',
+    offReason: failed ? 'payment failed' : endedFrom === 'unpaid' ? 'all retries failed' : endedFrom === 'trial' ? 'trial ended' : endedFrom === 'pass' ? 'Tester pass ended' : 'plan ended',
     plainEnglish:
       'Your plan has ended, so we are not watching or closing anything. Subscribe and your saved rules and kill switch work again straight away.',
   };

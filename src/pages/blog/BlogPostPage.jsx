@@ -152,7 +152,7 @@ function PostView({ post, mod }) {
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link to="/signup" className="rounded-xl bg-accent px-6 py-3.5 text-[15px] font-bold text-surface-950 transition-transform hover:scale-[1.02]">
-                Try free for 3 days
+                Get a 3-day pass
               </Link>
               <Link to="/crypto-kill-switch" className="rounded-xl border border-white/10 px-6 py-3.5 text-[15px] font-semibold text-slate-200 transition-colors hover:border-white/20">
                 How the kill switch works

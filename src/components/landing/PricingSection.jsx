@@ -13,8 +13,9 @@ const Check = () => (
  * /pricing renders the same numbers straight from the database.
  *
  * The free tier is deliberately NOT a card here. Leading a pricing section
- * with ₹0 sells the wrong thing: the reason to be here is enforcement, and
- * the trial already gives that away for a week without a card.
+ * with ₹0 sells the wrong thing: the reason to be here is enforcement. The
+ * way to try it is the 3-day Tester pass (₹299, paid once, never renews),
+ * offered under the cards. There is no free trial since 9 Nov 2026.
  */
 const PLANS = [
   {
@@ -132,10 +133,17 @@ export default function PricingSection() {
         </div>
 
         <div className="mx-auto mt-10 max-w-xl text-center">
-          <p className="text-sm leading-relaxed text-slate-400">
-            Free for 3 days — you set up payment first and nothing is charged until day 4.
-            Cancel any time before then and you pay nothing. Payments are non-refundable after
-            that.{' '}
+          <Link
+            to="/pricing"
+            className="inline-flex items-center justify-center rounded-xl border border-accent/40 bg-accent/10 px-6 py-3 text-sm font-semibold text-accent transition hover:bg-accent/15"
+          >
+            Try 3 days for ₹299
+          </Link>
+          <p className="mt-2 text-[13px] text-slate-500">or start Pro above</p>
+          <p className="mt-5 text-sm leading-relaxed text-slate-400">
+            The Tester pass is everything Pro has for 3 days, paid once. No AutoPay, nothing
+            renews. Pro is charged in full on day one, with AutoPay. Payments are
+            non-refundable.{' '}
             <Link to="/pricing" className="text-accent hover:underline">See full plan comparison →</Link>
           </p>
         </div>

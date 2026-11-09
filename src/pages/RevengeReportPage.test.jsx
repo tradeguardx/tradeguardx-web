@@ -92,7 +92,7 @@ describe('revenge report page', () => {
     expect(await screen.findByText(/Your rule plan/)).toBeTruthy();
     expect(screen.getByText('Close after N losses')).toBeTruthy();
     expect(screen.getByText('Problem', { selector: '.rv-rule span' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /Start my 3-day free trial/ }).getAttribute('href')).toBe('/dashboard/account/billing');
+    expect(screen.getByRole('link', { name: /Switch on the guard/ }).getAttribute('href')).toBe('/dashboard/account/billing');
     expect(screen.getByText(/you set each limit on the Rules page/)).toBeTruthy();
     expect(screen.getByText('of your losses, you traded again within 15 minutes')).toBeTruthy(); // their own number, on the rule's card
     expect(screen.getByRole('img', { name: 'Not running — your guard is off' })).toBeTruthy();
@@ -102,7 +102,7 @@ describe('revenge report page', () => {
     guard.life = {};
     mount();
     expect((await screen.findByRole('link', { name: /Set up these rules/ })).getAttribute('href')).toBe('/dashboard/rules');
-    expect(screen.queryByRole('link', { name: /free trial/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Switch on the guard/ })).toBeNull();
   });
 
   it('still shows the report under React StrictMode (dev double mount)', async () => {

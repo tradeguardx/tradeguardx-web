@@ -93,7 +93,7 @@ export default function ToolFinder() {
           <p className="mt-2 text-[14px] leading-relaxed text-slate-300">{result.body}</p>
           {result.cta && (
             <Link to="/signup" className="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline">
-              Try TradeGuardX free for 3 days →
+              Try TradeGuardX for 3 days →
             </Link>
           )}
         </div>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { createCheckoutSession, validateCoupon, fetchTrialEligibility } from '../../../api/paymentsApi';
 import { getPricingPlans } from '../../../api/pricingApi';
-import { bandSync, formatMoney, planForBand } from '../../../lib/priceBands';
+import { bandOfPlan, bandSync, formatMoney, planForBand, testerPriceFor, TESTER_DAYS } from '../../../lib/priceBands';
 import { trackBilling } from '../../../lib/analytics';
 import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
 import { getStoredReferralCode } from '../../../lib/referralCode';
@@ -47,7 +47,7 @@ function Glyph({ d, size = 15, width = 2 }) {
   );
 }
 
-const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Your revenge score', 'Start free trial'];
+const STEP_NAMES = ['Choose exchange', 'Name account', 'Connect key', 'Your revenge score', 'Switch guard on'];
 const LAST = STEP_NAMES.length - 1;
 
 /* Fallback only, when the pricing endpoint fails: the rupee plan, re-priced
@@ -87,7 +87,7 @@ const fmtDay = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'sh
  * score itself: the reason for the trial, one tap from the button that
  * starts it. Without it (skipped, too few trades), a plain back link.
  */
-export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onBack, revenge }) {
+export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onBack, revenge, passUntil = null }) {
   const navigate = useNavigate();
   const { user, session } = useAuth();
   const [plans, setPlans] = useState([]);
@@ -99,6 +99,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
    * who signed up today, and a year preselected reads as the choice being
    * made for them. The saving is on screen for anyone who wants it.
    */
+  /* Monthly is selected; the Tester pass sits above it as the cheaper way in. */
   const [plan, setPlan] = useState('monthly');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -177,6 +178,10 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   }, [proPlan]);
 
   const cur = options.find((o) => o.id === plan) ?? options[0];
+  /* The Tester pass (9 Nov 2026): one payment, 3 days, nothing renews. Kept
+     out of `options` so coupons, offers and savings stay about Pro alone. */
+  const isPass = plan === 'tester';
+  const testerPrice = testerPriceFor(bandOfPlan(proPlan)).price;
 
   /*
    * A code they typed beats the one we carry for them.
@@ -322,15 +327,33 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   /* The free window this user actually gets. Unknown until the server
      answers; zero for a trial that has already run out. */
   const freeDays = trialDays;
-  const charged = freeDays === 0;
+  const charged = isPass || freeDays === 0;
   const chargeOn = new Date(today.getTime() + (freeDays ?? TRIAL_DAYS) * 86400000);
-  const timeline = charged
+  const passEnds = new Date(today.getTime() + TESTER_DAYS * 86400000);
+  const timeline = isPass
+    ? [
+        {
+          when: `Today · ${fmtDay(today)}`,
+          what: `Your guard switches on. ${money(testerPrice)} charged once.`,
+          dot: 'var(--mint-solid)',
+          glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)',
+          line: true,
+        },
+        {
+          when: fmtDay(passEnds),
+          what: 'Your pass ends and the guard switches off. Nothing renews — choose a plan to keep it on.',
+          dot: 'var(--ink-faint)',
+          glow: 'none',
+          line: false,
+        },
+      ]
+    : charged
     ? [
         /* Their free window is spent. "₹0 charged" here and then taking the
            money is the worst thing this screen could say. */
         {
           when: `Today · ${fmtDay(today)}`,
-          what: `Your free trial has ended, so your first charge of ${money(payable)} is today. Your guard switches on straight away.`,
+          what: `Your guard switches on straight away. First charge of ${money(payable)} today.`,
           dot: 'var(--mint-solid)',
           glow: '0 0 0 4px color-mix(in srgb, var(--mint-solid) 20%, transparent)',
           line: true,
@@ -384,17 +407,20 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
     if (busy) return;
     setBusy(true);
     setError('');
-    trackBilling('billing_trial_start_clicked', { plan: cur.id, coupon: effectiveCoupon ?? null });
+    const chosen = isPass ? 'tester' : cur.id;
+    trackBilling('billing_trial_start_clicked', { plan: chosen, coupon: isPass ? null : effectiveCoupon ?? null });
     try {
-      const res = await createCheckoutSession({
-        accessToken: session?.access_token,
-        planSlug: 'pro',
-        interval: cur.id,
-        couponCode: effectiveCoupon,
-      });
+      const res = await createCheckoutSession(isPass
+        ? { accessToken: session?.access_token, planSlug: 'tester' }
+        : {
+          accessToken: session?.access_token,
+          planSlug: 'pro',
+          interval: cur.id,
+          couponCode: effectiveCoupon,
+        });
       if (!res?.checkoutUrl) throw new Error('Could not open checkout. Please try again.');
-      trackBilling('billing_trial_started', { plan: cur.id });
-      onStarted?.(cur.id);
+      trackBilling('billing_trial_started', { plan: chosen });
+      onStarted?.(chosen);
       window.location.href = res.checkoutUrl;
     } catch (e) {
       const reason = e?.message || 'Could not open checkout. Please try again.';
@@ -410,6 +436,14 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
     <div style={{ color: 'var(--ink)', fontSize: 14 }}>
       {/* ONE status band, and no button on it: the panel's button is the only
           action on this page. */}
+      {passUntil && (
+        <div style={{ maxWidth: 1220, margin: '0 auto', paddingTop: 22 }}>
+          <NoticeCard
+            title={`Your Tester pass runs until ${fmtDay(new Date(passUntil))}.`}
+            body="Nothing renews. Choose a plan below to keep your guard on after that, or add 3 more days with another pass."
+          />
+        </div>
+      )}
       {guardOff && (
         <div style={{ maxWidth: 1220, margin: '0 auto', paddingTop: 22 }}>
           <NoticeCard
@@ -417,8 +451,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
             body={stepsDone >= 3
               ? 'Your key is connected, but nothing is enforced until you finish this step.'
               : stepsDone === 0
-                ? 'Add an account and connect its key first, then set up billing to switch it on.'
-                : 'Connect your key first, then set up billing to switch it on.'}
+                ? 'Add an account and connect its key first, then choose a plan to switch it on.'
+                : 'Connect your key first, then choose a plan to switch it on.'}
           />
         </div>
       )}
@@ -470,7 +504,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
             </div>
             <h1 style={{ margin: '10px 0 0', font: "600 clamp(24px,2.4vw,28px)/1.14 'Space Grotesk',sans-serif", letterSpacing: '-.03em', textWrap: 'pretty' }}>
               {charged
-                ? 'Subscribe to switch your guard on'
+                ? 'Switch your guard on'
                 : (
                   /* Lead with what they get, not the chore: a trial, not "billing". */
                   <>
@@ -488,7 +522,10 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 appears once the server has said how many days are free. */}
             <p style={{ margin: '10px 0 0', fontSize: 14, lineHeight: 1.55, color: 'var(--ink-2)', textWrap: 'pretty' }}>
               {charged ? (
-                <>Your free trial is already used, so <b style={{ color: 'var(--ink)' }}>{money(payable)} is charged today</b>. Cancel any time.</>
+                <>
+                  Try everything for {TESTER_DAYS} days with a{' '}
+                  <b style={{ color: 'var(--ink)' }}>{money(testerPrice)} Tester pass</b>, or start Pro. Nothing renews unless you choose a plan.
+                </>
               ) : (
                 <>
                   <b style={{ color: 'var(--mint)' }}>Pay {money(0)} today</b>
@@ -593,11 +630,35 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
               <div aria-hidden style={{ position: 'absolute', width: 360, height: 360, left: -140, top: -200, borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb, var(--mint-solid) 18%, transparent),transparent 66%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative' }}>
                 <h2 style={{ margin: 0, font: "600 20px/1.2 'Space Grotesk',sans-serif", letterSpacing: '-.02em' }}>Choose how you pay</h2>
-                <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--ink-2)' }}>Same protection on every plan.</p>
+                <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--ink-2)' }}>Same protection on every option.</p>
 
-                <div role="radiogroup" aria-label="Billing interval" style={{ marginTop: 16, display: 'grid', gap: 9 }}>
+                <div role="radiogroup" aria-label="How you pay" style={{ marginTop: 16, display: 'grid', gap: 9 }}>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={isPass}
+                    tabIndex={isPass ? 0 : -1}
+                    onClick={() => pick('tester')}
+                    data-tester-row
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, minHeight: 68, padding: '13px 15px', border: 0, borderRadius: 15, background: isPass ? 'color-mix(in srgb, var(--mint-solid) 8%, transparent)' : 'var(--surface-2)', boxShadow: isPass ? 'inset 0 0 0 1.5px var(--mint-solid)' : 'inset 0 0 0 1px var(--line-strong)', color: 'var(--ink)', textAlign: 'left', transition: 'background .15s ease' }}
+                  >
+                    <span aria-hidden style={{ flex: 'none', width: 20, height: 20, borderRadius: '50%', boxShadow: isPass ? 'inset 0 0 0 2px var(--mint-solid)' : 'inset 0 0 0 2px var(--line-strong)', display: 'grid', placeItems: 'center' }}>
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: isPass ? 'var(--mint-solid)' : 'transparent' }} />
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 14, fontWeight: 700 }}>Tester</span>
+                        <span style={{ font: "700 9.5px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', padding: '4px 6px', borderRadius: 5, background: 'var(--surface-3)', color: 'var(--ink-2)' }}>{`${TESTER_DAYS} DAYS`}</span>
+                      </span>
+                      <span style={{ display: 'block', marginTop: 3, fontSize: 12, color: 'var(--ink-faint)' }}>One payment · nothing renews</span>
+                    </span>
+                    <span style={{ flex: 'none', textAlign: 'right' }}>
+                      <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>{money(testerPrice)}</span>
+                      <span style={{ display: 'block', marginTop: 4, fontSize: 11, color: 'var(--ink-faint)' }}>once</span>
+                    </span>
+                  </button>
                   {options.map((o, i) => {
-                    const on = cur.id === o.id;
+                    const on = !isPass && cur.id === o.id;
                     return (
                       <button
                         key={o.id}
@@ -646,7 +707,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 {/* Only once the server has confirmed the offer for the plan
                     that is selected. Before that, and for a code it refuses,
                     there is no chip and the rows show list price. */}
-                {offerApplied && (
+                {offerApplied && !isPass && (
                   <div
                     data-offer-chip
                     style={{ marginTop: 12, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: '9px 12px', borderRadius: 12, background: 'var(--mint-tint)', boxShadow: 'inset 0 0 0 1px var(--mint-line)', color: 'var(--mint)', fontSize: 12.5, fontWeight: 700, lineHeight: 1.35 }}
@@ -690,7 +751,9 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   * worked is the checkout page, where they will see the
                   * amount.
                   */}
-                <div style={{ marginTop: 14 }}>
+                {/* No codes on a pass: a discount on the cheap way in would be
+                    the free trial again by another name (payments refuses them). */}
+                <div style={{ marginTop: 14, display: isPass ? 'none' : undefined }}>
                   {couponOpen || coupon ? (
                     <div>
                       <label htmlFor="bs-coupon" style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-faint)', marginBottom: 6 }}>Coupon code</label>
@@ -753,7 +816,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>Due today</span>
                   {/* Not a constant: someone whose free week is used is charged
                       in full today, and this line said ₹0 to them too. */}
-                  <span style={{ font: "700 30px/1 'Space Grotesk',sans-serif", letterSpacing: '-.03em', color: charged ? 'var(--ink)' : 'var(--mint)' }}>{charged ? money(payable) : money(0)}</span>
+                  <span style={{ font: "700 30px/1 'Space Grotesk',sans-serif", letterSpacing: '-.03em', color: charged ? 'var(--ink)' : 'var(--mint)' }}>{isPass ? money(testerPrice) : charged ? money(payable) : money(0)}</span>
                 </div>
 
                 <button
@@ -766,8 +829,10 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   {setupCta
                     ? setupCta.label
                     : busy
-                    ? (charged ? 'Starting…' : 'Starting your trial…')
-                    : charged
+                    ? (charged ? 'Opening checkout…' : 'Starting your trial…')
+                    : isPass
+                      ? `Buy Tester pass · ${money(testerPrice)}`
+                      : charged
                       ? `Subscribe · ${cur.name}`
                       : `Start ${freeDays == null ? 'free trial' : `${freeDays} day${freeDays === 1 ? '' : 's'} free`} · ${cur.name}`}
                 </button>
@@ -781,6 +846,10 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 {setupCta ? (
                   <p style={{ margin: '11px 0 0', fontSize: 12, lineHeight: 1.5, color: 'var(--ink-faint)', textAlign: 'center' }}>
                     Cancel any time in Plan &amp; billing.
+                  </p>
+                ) : isPass ? (
+                  <p data-pass-note="1" style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.55, color: 'var(--ink-2)', textAlign: 'left' }}>
+                    One payment{isInr ? '' : ' in US dollars'}. No AutoPay and nothing renews. When the {TESTER_DAYS} days end, choose a plan to keep your guard on — your rules carry over.
                   </p>
                 ) : (
                   /*

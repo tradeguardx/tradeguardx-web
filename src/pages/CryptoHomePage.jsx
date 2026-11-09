@@ -11,7 +11,7 @@ import rawBodyA from '../landing/tgx-body-a.html?raw';
 import rawBodyB from '../landing/tgx-body-b.html?raw';
 
 // Split the landing body right after the hero (before the trust strip) so the
-// Talk-to-founder banner sits between the hero and the "7 rules / trial /
+// Talk-to-founder banner sits between the hero and the "7 rules / pricing /
 // <120ms" strip. The two halves each get their own ref, both registered with the
 // reveal/animation effect below.
 const SPLIT_MARKER = '<!-- POST HERO';

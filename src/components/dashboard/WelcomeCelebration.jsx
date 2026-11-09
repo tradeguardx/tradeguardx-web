@@ -26,9 +26,9 @@ export default function WelcomeCelebration() {
     setParams(next, { replace: true });
   }, [params, setParams]);
 
-  // A new signup is on the free trial: full access, but they've paid nothing.
-  // Don't congratulate them on a purchase they didn't make — tell them the
-  // clock is running and what to do next.
+  // isTrial: a time-limited pass (an old free trial started before 9 Nov 2026,
+  // or a short paid pass if the API flags it the same way). Neutral wording
+  // that is true for both — say the clock is running and what to do next.
   const isTrial = Boolean(user?.isTrial);
   const trialDaysLeft = user?.trialDaysLeft ?? null;
   const tier = user?.billingPlan || 'free';
@@ -42,7 +42,7 @@ export default function WelcomeCelebration() {
       kicker={isPaid ? 'Founding member' : null}
       headline={
         isTrial
-          ? 'Welcome — your free trial has started'
+          ? 'Welcome — your access has started'
           : isPaid
             ? "Welcome — you're all set"
             : 'Welcome to TradeGuardX'

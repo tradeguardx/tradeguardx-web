@@ -114,9 +114,9 @@ export function UpgradeWall() {
         <span className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: 'var(--mint-tint)', border: '1px solid var(--mint-line)' }}>
           <svg className="h-7 w-7" style={{ color: 'var(--mint)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 3L4 14h7l-1 7 9-11h-7z" /></svg>
         </span>
-        <h2 className="mt-5 font-display text-2xl font-bold" style={{ color: 'var(--dash-text-primary)' }}>Start your 3 days free</h2>
+        <h2 className="mt-5 font-display text-2xl font-bold" style={{ color: 'var(--dash-text-primary)' }}>Switch your guard on</h2>
         <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
-          Set up payment to switch your guardrails on. You won&rsquo;t be charged for three days, we&rsquo;ll tell you the exact date your first payment lands, and you can cancel any time before it.
+          Choose Pro, or try everything for three days with a one-time Tester pass. Nothing renews unless you choose a plan.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
@@ -124,11 +124,11 @@ export function UpgradeWall() {
             className="rounded-xl px-5 py-2.5 text-sm font-bold transition-transform hover:scale-[1.02]"
             style={{ backgroundColor: 'var(--mint-solid)', color: 'var(--on-mint)' }}
           >
-            Start free trial
+            Choose a plan
           </Link>
         </div>
         <p className="mt-4 text-xs" style={{ color: 'var(--dash-text-faint)' }}>
-          Cancel in one click from Billing. Nothing is charged until day 4.
+          Pro renews until you cancel. A Tester pass is one payment and simply ends.
         </p>
       </div>
     );

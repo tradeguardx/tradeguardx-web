@@ -8,7 +8,7 @@ import { useSEO } from '../hooks/useSEO';
  * could never tell when the terms actually changed. Bump this by hand, only
  * when the text above it changes.
  */
-const LAST_UPDATED = 'November 6, 2026';
+const LAST_UPDATED = 'November 9, 2026';
 
 const sections = [
   {
@@ -58,8 +58,8 @@ const sections = [
     ],
   },
   {
-    title: '7. Free Trial, Subscription and Payment',
-    content: 'New accounts include a 3-day free trial with full access. To start the trial you set up a payment method and authorise a recurring mandate; no payment is collected during the trial itself. Unless you cancel before the trial ends, the subscription converts automatically and the first payment is taken on the day after the trial period closes, at the price displayed when you signed up. We show you that date before you confirm and again in your billing settings, and you can cancel at any time before it at no charge. Paid plans renew for successive periods until cancelled; you can cancel at any time and retain access through the end of the current billing period. Fees are non-refundable except as stated in our Refund Policy. We may change pricing with reasonable notice; continued use after a price change constitutes acceptance.',
+    title: '7. Tester Pass, Subscription and Payment',
+    content: 'You can try the Service with a Tester pass: full Pro access for 3 days, for a single payment at the price displayed when you buy it. A Tester pass sets up no recurring mandate and does not renew; buying another adds 3 more days. When it ends you may choose a paid plan, and access to paid features stops until you do. A Pro subscription is charged in full when you start it, at the price displayed when you confirm, and you authorise a recurring mandate (AutoPay) for renewals. Paid plans renew for successive periods until cancelled; you can cancel at any time and retain access through the end of the current billing period. Free trials started before November 9, 2026 continue to their end date under the terms that applied when they began. Fees are non-refundable except as stated in our Refund Policy. We may change pricing with reasonable notice; continued use after a price change constitutes acceptance.',
   },
   {
     title: '8. Disclaimer of Warranties',

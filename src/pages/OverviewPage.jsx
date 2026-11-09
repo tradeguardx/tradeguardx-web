@@ -221,11 +221,11 @@ export default function OverviewPage() {
           /* The free week is gone. Offering it again is a promise checkout
              will not keep — `trialDaysForUser` gives a spent trial 0 days. */
           title: 'Subscribe',
-          body: 'Your free trial has ended, so nothing is enforcing your rules. Subscribe to switch the guard back on — the first charge is today.',
+          body: 'Your plan has ended, so nothing is enforcing your rules. Choose a plan to switch the guard back on.',
           accent: 'var(--amber)', tint: 'var(--amber-tint)', d: ICON.plan,
           to: '/dashboard/activate', cta: 'See plans',
         }
-      : { title: 'Start your free trial', body: 'Free for 3 days, nothing charged today. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Start 3 days free' };
+      : { title: 'Switch your guard on', body: 'Choose Pro, or try everything for 3 days with a Tester pass. Until this is done your rules are written down but nothing enforces them.', accent: 'var(--mint)', tint: 'var(--mint-tint)', d: ICON.plan, to: '/dashboard/activate', cta: 'Choose a plan' };
 
   const steps = [
     { title: 'Create a trading account', body: 'Tell us which exchange you trade and how the balance is tracked.', accent: 'var(--blue)', tint: 'color-mix(in srgb, var(--blue) 12%, transparent)', d: ICON.bank, to: '/dashboard/setup', cta: 'Add an account' },

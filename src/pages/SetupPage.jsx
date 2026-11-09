@@ -66,7 +66,7 @@ const STEPS = [
   /* The reward for connecting the key: their own last month read back to
      them. Ticked the moment the key connects — it informs, never blocks. */
   { key: 'report', label: 'Your revenge score', h: 'Your revenge score', p: 'Key connected. Before anything else, here is how you have been trading after a loss — read from your own trades.' },
-  { key: 'billing', label: 'Start free trial', h: 'Start your free trial', p: 'Free for 3 days and nothing is charged today. The guard only runs once this is done.' },
+  { key: 'billing', label: 'Switch guard on', h: 'Switch your guard on', p: 'Choose Pro, or try everything for 3 days with a Tester pass. The guard only runs once this is done.' },
 ];
 
 function Rail({ at, done, labels }) {
@@ -218,7 +218,7 @@ export default function SetupPage() {
    * though a trial had been started for them; it names what they actually have.
    */
   const billingLabel = !done[4]
-    ? 'Start free trial'
+    ? 'Switch guard on'
     : planOff
       ? 'Plan inactive'
       : user?.access === 'active'
@@ -310,7 +310,7 @@ export default function SetupPage() {
           onBack={() => go(3)}
           revenge={revengeHere?.report?.enoughData ? { ...revengeHere.report, months: revengeHere.months } : null}
         />
-        <div style={sx('max-width:1220px;margin:-48px auto 40px')}><FounderHelp step="Start free trial" /></div>
+        <div style={sx('max-width:1220px;margin:-48px auto 40px')}><FounderHelp step="Switch guard on" /></div>
       </>
     );
   }

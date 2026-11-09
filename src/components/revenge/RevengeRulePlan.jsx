@@ -33,7 +33,7 @@ export function RuleChips({ report }) {
  * Kept short — a headline, one compact card per rule carrying the trader's
  * own number, and the ask on one row. It stands out by the accent (tinted
  * panel, accent border, glow), in the page's own theme, so it reads as the
- * offer on both light and dark. When the ask is the trial (`cta.trial`),
+ * offer on both light and dark. When the ask is the paid guard (`cta.trial`),
  * hovering its button slides every rule's switch on.
  * `cta` — { label, onClick } or { label, to }, `note`, `trial`.
  */
@@ -42,9 +42,9 @@ export default function RulePlan({ report, cta, enterProps = {} }) {
   if (!rules.length) return null;
   const n = rules.length;
   const switches = Boolean(cta?.trial);
-  /* Honest: the trial switches the guard on; each rule is still set on the
-     Rules page. Nothing here says the trial creates them. */
-  const label = switches ? 'Start my 3-day free trial →' : cta?.label;
+  /* Honest: a Tester pass or Pro switches the guard on; each rule is still set
+     on the Rules page. Nothing here says paying creates them. */
+  const label = switches ? 'Switch on the guard →' : cta?.label;
   const lead = !calm && report.revengeTrades > 0
     ? <><span style={sx('color:var(--red)')}>{report.revengeTrades} revenge trade{report.revengeTrades === 1 ? '' : 's'}.</span> {n === 1 ? 'One rule' : `${n} rules`} stop them.</>
     : calm ? 'Keep it this way with two rules' : `${n === 1 ? 'One rule' : `${n} rules`} that stop this`;
