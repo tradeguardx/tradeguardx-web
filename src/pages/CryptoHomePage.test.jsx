@@ -84,15 +84,15 @@ describe('homepage variants', () => {
   it('lists only the live venues in the hero, untagged', () => {
     const { container } = renderPage();
     const chips = [...container.querySelector('.xbanner-lockup').children].map((c) => c.textContent.trim());
-    expect(chips).toEqual(['Delta', 'CoinDCX', 'Shark', 'Exness']);
-    expect(container.querySelector('.xbanner-lockup').textContent).not.toMatch(/Bybit|Bitget|BloFin|Soon|Live/i);
+    expect(chips).toEqual(['Delta', 'CoinDCX', 'Shark', 'Exness', 'Bybit']);
+    expect(container.querySelector('.xbanner-lockup').textContent).not.toMatch(/Bitget|BloFin|Soon|Live/i);
     expect(container.querySelector('.xbanner-marquee')).toBeNull();
   });
 
-  it('keeps BloFin out of the /india page source entirely', () => {
+  it('keeps Bybit and BloFin out of the /india page source entirely', () => {
     const { container } = renderPage('india');
     const chips = [...container.querySelector('.xbanner-lockup').children].map((c) => c.textContent.trim());
     expect(chips).toEqual(['Delta', 'CoinDCX', 'Shark', 'Exness']);
-    expect(container.innerHTML).not.toMatch(/blofin/i);
+    expect(container.innerHTML).not.toMatch(/blofin|bybit/i);
   });
 });

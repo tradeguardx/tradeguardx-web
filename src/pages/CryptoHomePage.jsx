@@ -86,7 +86,8 @@ const RawHtml = memo(function RawHtml({ html, innerRef, className, region, varia
   return <div className={className} data-region={region} data-variant={variant} ref={innerRef} dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
-/* The FAQ answers, as the page shows them. */
+/* The FAQ answers, as the page shows them. "Which exchanges" differs by page:
+   Bybit is listed on "/" only (see bodyForVariant). */
 const faqLd = (variant) => ({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -95,7 +96,9 @@ const faqLd = (variant) => ({
     ['Will TradeGuardX have access to my funds?', 'No. We only ask for an API key that can read your account and place trades, never one that can withdraw, and your funds never leave your own exchange account. During a cooldown we cancel orders, close positions, and block new trades until the lock lifts.'],
     ['Does this work if I trade from the exchange’s mobile app?', 'Yes, and it is the reason we run on our own servers instead of in your browser. We hold a live connection to the account itself, so it makes no difference whether the order came from the exchange website, its phone app, or a script you wrote. A breach is checked and acted on within seconds. Alerts go to Telegram or email.'],
     ['Can I disable the rules when I want to trade more?', 'Before your first trade of the day, yes — changes apply straight away. From your first trade until the daily reset your rules are locked, so you cannot loosen one or switch it off in the heat of a bad session. You can still switch on a rule that is off.'],
-    ['Which exchanges can I connect?', 'Delta Exchange (India and Global), Exness, CoinDCX futures and Shark Exchange are live. One subscription covers every one — connect any or all.'],
+    ['Which exchanges can I connect?', variant === 'india'
+      ? 'Delta Exchange (India and Global), Exness, CoinDCX futures and Shark Exchange are live. One subscription covers every one — connect any or all.'
+      : 'Delta Exchange (India and Global), Exness, CoinDCX futures, Bybit and Shark Exchange are live. One subscription covers every one — connect any or all.'],
   ].map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 });
 const FAQ_LD = { global: faqLd('global'), india: faqLd('india') };

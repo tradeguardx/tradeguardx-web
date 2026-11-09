@@ -21,6 +21,8 @@ const links = {
     { label: 'Exness', to: '/exchanges/exness' },
     { label: 'CoinDCX', to: '/exchanges/coindcx' },
     { label: 'Shark Exchange', to: '/exchanges/shark' },
+    // Not on India pages: Bybit is for traders outside India.
+    { label: 'Bybit', to: '/exchanges/bybit', globalOnly: true },
   ],
   resources: [
     // "Install for Chrome" removed — the crypto/Delta product enforces

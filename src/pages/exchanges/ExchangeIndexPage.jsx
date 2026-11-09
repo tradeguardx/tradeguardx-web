@@ -27,7 +27,7 @@ export default function ExchangeIndexPage() {
     title: 'Supported Exchanges & Brokers — TradeGuardX Kill Switch',
     rawTitle: true,
     description:
-      'TradeGuardX enforces your daily loss limit on Delta Exchange, Exness, CoinDCX futures and Shark Exchange. Pick your venue for setup steps and exactly which rules it enforces.',
+      'TradeGuardX enforces your daily loss limit on Delta Exchange, Exness, CoinDCX futures, Shark Exchange and Bybit. Pick your venue for setup steps and exactly which rules it enforces.',
     url,
     image: ogImageFor('/exchanges'),
     imageAlt: 'Exchanges supported by TradeGuardX',
@@ -72,7 +72,7 @@ export default function ExchangeIndexPage() {
           </h1>
           <p className="mt-5 text-lg leading-relaxed text-slate-400">
             {live.length} venues are live today: crypto futures on Delta Exchange, CoinDCX and Shark,
-            and forex and CFDs on Exness. You connect an API key scoped to trade — never to withdraw — and
+            Bybit for traders outside India, and forex and CFDs on Exness. You connect an API key scoped to trade — never to withdraw — and
             enforcement runs from our servers, so it applies whether the order came from the website,
             the phone app, or a script you wrote.
           </p>

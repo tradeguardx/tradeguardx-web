@@ -280,6 +280,7 @@
   }
   .tgx-home .xb-logo{ height: 22px; width: auto; display: block; }
   .tgx-home .xb-bybit b{ color: #f7a600; font-weight: 800; }
+  .tgx-home .xb-bybit-word{ color: #f7a600; }
   .tgx-home .xb-wordmark{
     font-family: var(--sans); font-weight: 800; letter-spacing: -0.01em;
     font-size: clamp(15px, 0.7vw + 11px, 19px); color: var(--text-2);
@@ -362,6 +363,9 @@
          row so they land two-up. */
       max-width: 250px; margin-left: auto; margin-right: auto;
     }
+    /* "/" also lists Bybit: five venues, which two-up leaves one alone.
+       A wider cap lands them three over two. /india keeps four, two-up. */
+    .tgx-home:not([data-variant="india"]) .xbanner-lockup{ max-width: 262px; }
     .tgx-home .xb-brand,
     .tgx-home .xb-partner,
     .tgx-home .xb-next{

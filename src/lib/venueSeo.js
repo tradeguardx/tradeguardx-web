@@ -575,8 +575,8 @@ const VENUE_PAGES = {
 /**
  * Display order on /exchanges and in the cross-links.
  *
- * Bybit and Bitget had pages here saying the integration was built but not
- * deployed. They are gone: a page whose whole content is "not yet" competes
+ * Bybit is back as a live venue (go-live, Nov 2026). Before that, Bybit and
+ * Bitget had pages here saying the integration was built but not deployed. They are gone: a page whose whole content is "not yet" competes
  * for the venue's name while having nothing to say to whoever arrives, and it
  * put two of the five entries on the index in the position of advertising
  * something nobody can buy. They were live for less than a day, so vercel.json
@@ -585,7 +585,7 @@ const VENUE_PAGES = {
  *
  * Re-adding one is a revert of this commit plus its route in publicRoutes.js.
  */
-export const VENUE_ORDER = ['delta', 'exness', 'coindcx', 'shark'];
+export const VENUE_ORDER = ['delta', 'exness', 'coindcx', 'shark', 'bybit'];
 
 export const VENUE_PAGE_LIST = VENUE_ORDER.map((slug) => VENUE_PAGES[slug]);
 

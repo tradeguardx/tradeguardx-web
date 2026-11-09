@@ -65,6 +65,10 @@ export const PUBLIC_ROUTES = [
   { path: '/exchanges/coindcx/margin', priority: '0.6', changefreq: 'monthly', og: null },
   { path: '/exchanges/shark', priority: '0.9', changefreq: 'weekly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/killswitch-for-shark-exchange.png' },
   { path: '/exchanges/shark/api-key', priority: '0.7', changefreq: 'monthly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/og-guide-shark.png' },
+  // Bybit: global go-live. These two lines (with vercel.json and the
+  // VENUE_ORDER entry in venueSeo.js) are what put Bybit's pages online.
+  { path: '/exchanges/bybit', priority: '0.9', changefreq: 'weekly', og: null },
+  { path: '/exchanges/bybit/api-key', priority: '0.7', changefreq: 'monthly', og: null },
   // BloFin: paused 9 Nov 2026 (owner). Its pages 301 to /exchanges in
   // vercel.json; restoring it is these two routes, VENUE_ORDER in venueSeo.js
   // and the prop_firms row back to 'active'.

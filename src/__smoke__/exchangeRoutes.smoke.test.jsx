@@ -75,7 +75,7 @@ describe('unknown URLs 404 instead of quietly redirecting', () => {
   it.each([
     ['an unknown venue', '/exchanges/binance'],
     ['an unknown guide', '/exchanges/delta/withdrawals'],
-    ['a removed venue', '/exchanges/bybit'],
+    ['a removed venue', '/exchanges/bitget'],
     ['a paused venue', '/exchanges/blofin'],
     ['a removed venue\'s guide', '/exchanges/bitget/api-key'],
     ['an unknown help slug', '/help/getting-started'],
