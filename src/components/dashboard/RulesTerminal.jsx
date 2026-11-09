@@ -14,6 +14,7 @@ import { sx } from './shell/sx';
 import DailyResetLine from './DailyResetLine';
 import NoticeCard from './shell/NoticeCard';
 import { currencySymbol } from '../../lib/session';
+import { profitLockExamples, profitLockSettings } from '../../lib/profitLock';
 
 /**
  * Rules — transcribed from the reference (lines 1010–1176) and the Rules &
@@ -28,6 +29,7 @@ import { currencySymbol } from '../../lib/session';
 const REF_PLAIN = {
   'daily-loss': 'We watch realised plus unrealised loss on the day. At the warning number you get a ping; at the hard number we cancel orders, close positions and lock the account until tomorrow.',
   'daily-profit-target': 'The opposite job: once you are properly up, we close the day so you stop handing it back. The account locks until the next reset and the gain is kept.',
+  'profit-lock': 'Keeps part of a good day. Once today’s profit reaches your trigger we lock in an amount, and the lock rises as profit grows. If profit falls back to it, we close your positions and lock the account until the next reset.',
   'stop-loss-alert': 'A position with no stop is the single most expensive habit there is. We give you a short grace period to add one, then alert.',
   'risk-per-trade': 'Measured from entry to your stop. Without a stop we cannot size the risk, so this rule leans on stop loss protection being on.',
   'max-total-loss': 'Peak-to-trough across the whole account, not just today. This one is not finished — right now it alerts rather than closes, and we would rather say so.',
@@ -69,6 +71,15 @@ const RULE_DOCS = {
       'The lock only arms once your booked profit clears the target AND the account is flat (no open position).',
     ],
     trigger: 'New trades are locked until the next daily reset. Any position you already have open is left alone to run.',
+  },
+  'profit-lock': {
+    summary: 'A floor under today’s profit that only moves up. Once you are well up, part of the gain is protected; if the market takes it back to that floor, the day ends there.',
+    how: [
+      'Measured on today’s trading P&L — booked plus open — since the daily reset. Fees and deposits do not count.',
+      'Nothing happens until profit reaches your trigger. Then the first lock is set, and every further step of profit raises it.',
+      'The lock never comes down, even if profit drops back without touching it.',
+    ],
+    trigger: 'When profit falls back to the lock, the kill switch cancels orders, closes positions and locks the account until the next reset.',
   },
   'max-total-loss': {
     summary: 'A hard floor on total account drawdown across the whole account life — the last line of defence beneath your daily limit.',
@@ -150,6 +161,8 @@ const SUMMARY_FORMATTERS = {
     v.mode === 'amount'
       ? `${sym}${v.dailyTargetAmount} target · locks in the win`
       : `${v.dailyTargetPct}% target · locks in the win`,
+  'profit-lock': (v, sym = '$') =>
+    `from ${sym}${v.profitLockTrigger} profit · locks ${sym}${v.profitLockInitial}${Number(v.profitLockStep) > 0 && Number(v.profitLockRaise) > 0 ? ` · +${sym}${v.profitLockRaise} per ${sym}${v.profitLockStep}` : ''}`,
   'max-total-loss': (v) => `${v.maxDrawdownPct}% max drawdown`,
   'risk-per-trade': (v) => `${v.maxRiskPct}% of equity · rejects oversized orders`,
   'max-trades-day': (v) => {
@@ -175,6 +188,31 @@ function ruleSummaryLine(templateSlug, values, fallback, sym = '$') {
   } catch {
     return fallback;
   }
+}
+
+/** Live "what this does" for the profit lock, from the numbers being typed. */
+function ProfitLockPreview({ values, sym }) {
+  const check = profitLockSettings(values);
+  const m = (n) => `${sym}${Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  return (
+    <div data-profit-lock-preview="1" style={sx('margin-bottom:15px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:82ch')}>
+      {check.error ? (
+        <span style={sx('color:var(--amber)')}>{check.error}</span>
+      ) : (
+        <>
+          <div style={sx('display:grid;gap:3px')}>
+            {profitLockExamples(check.params).map(([peak, floor]) => (
+              <span key={peak}>Profit reaches <strong>{m(peak)}</strong> → <strong>{m(floor)}</strong> is locked in</span>
+            ))}
+          </div>
+          <span style={sx('display:block;margin-top:6px;color:var(--ink-3)')}>
+            If profit then falls back to the locked amount, we close your positions and lock the day.
+            {check.params.step == null ? ' Without a step, the lock stays at the first amount.' : ' The lock only ever goes up.'}
+          </span>
+        </>
+      )}
+    </div>
+  );
 }
 
 function fmtLockDate(iso) {
@@ -300,6 +338,11 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
 
   const handleSave = async () => {
     if (!accessToken || !tradingAccountId || busy) return;
+    // The engine ignores a profit lock it cannot use, so refuse to save one.
+    if ((rule.templateSlug ?? rule.id) === 'profit-lock') {
+      const check = profitLockSettings(configFromValues());
+      if (check.error) { toast.error('Check the amounts', check.error); return; }
+    }
     setBusy(true);
     try {
       const res = await saveRuleInstance({ accessToken, tradingAccountId, templateSlug: rule.id, config: configFromValues(), enabled: rule.enabled !== false });
@@ -413,6 +456,8 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
               </div>
             ))}
           </div>
+
+          {slug === 'profit-lock' && <ProfitLockPreview values={values} sym={sym} />}
 
           <div style={sx('display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3);margin-bottom:14px')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" style={{ color: 'var(--ink-faint)' }}><circle cx="12" cy="12" r="9" /><path d="M12 8v4l3 2" /></svg>

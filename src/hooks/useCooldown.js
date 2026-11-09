@@ -85,6 +85,7 @@ export function formatCountdown(ms) {
 export const COOLDOWN_REASON_LABEL = {
   daily_loss: 'Daily loss limit hit',
   daily_target: 'Daily profit target reached',
+  profit_lock: 'Profit fell back to your lock',
   consecutive_losses: 'Too many losses in a row',
   max_trades_day: 'Daily trade limit reached',
   manual: 'Manually locked',

@@ -58,6 +58,7 @@ export function initialsOf(name, email) {
 const LOCK_REASON = {
   daily_loss: 'Daily loss limit',
   daily_target: 'Daily profit target',
+  profit_lock: 'Profit lock',
   consecutive_losses: 'Close after N losses',
   max_trades_day: 'Max trades per day',
   manual: 'Kill switch',

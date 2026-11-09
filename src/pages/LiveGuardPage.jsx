@@ -177,6 +177,7 @@ export default function LiveGuardPage() {
     max_trades_day: { name: 'Max trades per day', why: 'You used the day\u2019s trades. Not a fixed penalty — the rest of the day.', daily: true },
     daily_loss: { name: 'Daily loss protection', why: 'You hit the day\u2019s loss limit. Not a fixed penalty — the rest of the day.', daily: true },
     daily_target: { name: 'Daily profit target', why: 'Target booked and flat, so the day locks to keep the gain.', daily: true },
+    profit_lock: { name: 'Profit lock', why: 'Profit fell back to the amount you locked in, so the day ends there.', daily: true },
     consecutive_losses: { name: 'Close after N losses', why: 'A losing streak tripped the cooldown. This one is a fixed window.', daily: false },
   };
   const lockInfo = manual ? null : LOCK_REASON[g.lockReason] ?? null;

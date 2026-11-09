@@ -78,6 +78,7 @@ const PRIORITY = ['blocked', 'notBlocked', 'untracked', 'kill', 'notClosed', 'ri
 const KILL_REASON = {
   daily_loss_exceeded: 'Your daily loss limit was hit while this trade was open, so the engine closed it.',
   consecutive_losses_exceeded: 'Your losing-streak lock fired while this trade was open, so the engine closed it.',
+  profit_lock_hit: 'Profit fell back to your profit lock while this trade was open, so the engine closed it.',
 };
 const ALERT_REASON = {
   missing_stop_loss: 'Alert: no stop-loss',
@@ -108,6 +109,7 @@ const LOCK_NAME = {
   consecutive_losses: 'Losing streak',
   max_trades_day: 'Max trades reached',
   daily_target: 'Profit target',
+  profit_lock: 'Profit lock',
   manual_lock: 'Your lock',
   manual: 'Your lock',
 };
@@ -197,7 +199,7 @@ export function tradeStatusOf(trade, breaches = [], { pnl = null, unenforced = f
     const at = ms(b?.createdAt);
     if (at == null || closed == null) continue;
 
-    if (type === 'daily_loss_exceeded' || type === 'consecutive_losses_exceeded') {
+    if (type === 'daily_loss_exceeded' || type === 'consecutive_losses_exceeded' || type === 'profit_lock_hit') {
       const openAtBreach = opened != null && opened <= at && closed >= at - 2_000 && closed <= at + AFTER_MS;
       const closedJustBefore = closed <= at + 2_000 && closed >= at - BEFORE_MS;
       if (type === 'consecutive_losses_exceeded' && closedJustBefore && pnl != null && pnl < 0) {
