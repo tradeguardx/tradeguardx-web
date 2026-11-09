@@ -245,19 +245,17 @@ describe('billing step', () => {
     expect(screen.getByText(/stop clicking/)).toBeTruthy();
   });
 
-  /* An empty "promo code" box on a checkout is a standing hint that somebody
-     else is paying less, and people leave to go looking for one. */
-  it('keeps the coupon field behind a link', async () => {
+  /* Owner, 9 Nov 2026: the coupon field is always open, no link to find. */
+  it('shows the coupon field without a link', async () => {
     render(<BillingStep />);
-    expect(await screen.findByRole('button', { name: /Have a coupon/ })).toBeTruthy();
-    expect(screen.queryByPlaceholderText('Enter code')).toBeNull();
+    expect(await screen.findByPlaceholderText('Enter code')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Have a coupon/ })).toBeNull();
   });
 
   it('sends a typed coupon to checkout', async () => {
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: ' save20 ' } });
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'save20' });
   });
@@ -279,9 +277,8 @@ describe('billing step', () => {
   it('lets a typed code beat the one we carried for them', async () => {
     carried.referral = 'REF123';
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'MINE' } });
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'MINE' });
   });
@@ -290,16 +287,14 @@ describe('billing step', () => {
      before we have asked Dodo whether the code is real. */
   it('claims nothing until the code has been checked', async () => {
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     expect(screen.getByText(/Press Apply to see the new price/i)).toBeTruthy();
     expect(screen.queryByText(/% off applied/)).toBeNull();
     // The full price still stands until something is actually applied.
-    expect(dueToday()).toBe('₹1,299');
+    await waitFor(() => expect(dueToday()).toBe('₹1,299'));
   });
 
   it('prices the selected plan after Apply, and the timeline with it', async () => {
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/15% off applied/);
@@ -315,7 +310,6 @@ describe('billing step', () => {
   it('says how long the discount lasts', async () => {
     validate.mockResolvedValue({ valid: true, code: 'FIRST', percentOff: 50, cycles: 1 });
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'first' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     expect(await screen.findByText(/Covers your first payment, then the full price/)).toBeTruthy();
@@ -323,7 +317,6 @@ describe('billing step', () => {
 
   it('keeps the discount when the plan changes, if it is good there too', async () => {
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/15% off applied/);
@@ -343,7 +336,6 @@ describe('billing step', () => {
         : { valid: false, reason: 'WRONG_PLAN' },
     );
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'monthly10' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/10% off applied/);
@@ -364,7 +356,6 @@ describe('billing step', () => {
   ])('explains a refused code (%s)', async (reason, text) => {
     validate.mockResolvedValue({ valid: false, reason });
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'nope' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     expect(await screen.findByText(text)).toBeTruthy();
@@ -375,7 +366,6 @@ describe('billing step', () => {
   it('blames itself, not the code, when the check fails', async () => {
     validate.mockRejectedValue(new Error('network'));
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     expect(await screen.findByText(/still be applied at checkout/)).toBeTruthy();
@@ -395,7 +385,6 @@ describe('billing step', () => {
 
   it('reads a coupon verdict straight off the api result', async () => {
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     // Enveloped, this said "We don't recognise that code" for a valid one.
@@ -408,7 +397,6 @@ describe('billing step', () => {
   it('leaves the savings badges alone when the coupon applies to everything', async () => {
     render(<BillingStep />);
     expect(await screen.findByText('SAVE 42%')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/15% off applied/);
@@ -428,7 +416,6 @@ describe('billing step', () => {
         : { valid: false, reason: 'WRONG_PLAN' },
     );
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'monthly10' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/10% off applied/);
@@ -499,7 +486,6 @@ describe('billing step — the free window it promises', () => {
     fireEvent.click(document.querySelector('[data-tester-row]'));
     expect(await screen.findByText(/Buy Trial Plan · ₹299/)).toBeTruthy();
     expect(screen.getByText(/No AutoPay and nothing renews/)).toBeTruthy();
-    fireEvent.click(screen.getByText('Have a coupon?'));
     expect(screen.getByText(/Codes apply to Monthly, Quarterly and Yearly — not the Trial Plan/)).toBeTruthy();
     fireEvent.click(screen.getByText(/Buy Trial Plan · ₹299/));
     await waitFor(() => expect(checkout).toHaveBeenCalledWith(expect.objectContaining({ planSlug: 'tester' })));
@@ -545,7 +531,7 @@ describe('billing step — the site offer, auto-applied', () => {
     validate.mockResolvedValue(DIWALI_OK);
     render(<BillingStep />);
     await screen.findByText(/Diwali offer applied/);
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'DIWALI30', interval: 'monthly' });
   });
@@ -568,7 +554,7 @@ describe('billing step — the site offer, auto-applied', () => {
     expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
     expect(screen.queryByText('₹909')).toBeNull();
     // and a refused code is not passed on to checkout
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
   });
@@ -579,7 +565,6 @@ describe('billing step — the site offer, auto-applied', () => {
       code === 'DIWALI30' ? DIWALI_OK : { valid: true, code: 'SAVE15', percentOff: 15, cycles: null });
     render(<BillingStep />);
     await screen.findByText(/Diwali offer applied/);
-    fireEvent.click(screen.getByRole('button', { name: /Have a coupon/ }));
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'save15' } });
     // Typing drops the offer at once: no chip, no unverified price.
     expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
@@ -587,7 +572,7 @@ describe('billing step — the site offer, auto-applied', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     await screen.findByText(/15% off applied/);
     expect(screen.getAllByText('₹1,104').length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'save15' });
   });
@@ -599,7 +584,7 @@ describe('billing step — the site offer, auto-applied', () => {
     await screen.findByText('Due today');
     expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
     expect(validate).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'REF123' });
   });
@@ -616,7 +601,7 @@ describe('billing step — the site offer, auto-applied', () => {
     // Yearly selected: no chip there, and no code sent for it.
     fireEvent.click(screen.getByRole('radio', { name: /Yearly/ }));
     expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Start 7 days free/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
     expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
   });

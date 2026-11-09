@@ -105,7 +105,6 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   const [error, setError] = useState('');
   const rowRefs = useRef([]);
   const [openRows, setOpenRows] = useState([]);
-  const [couponOpen, setCouponOpen] = useState(false);
   const [coupon, setCoupon] = useState('');
   /* null = not asked yet. Cleared whenever the code or the plan changes, so
      a discount can never be shown against a price it was not checked for. */
@@ -684,12 +683,12 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                     plan: a discount on the Trial Plan would be the free trial
                     again by another name (payments refuses them too). */}
                 <div style={{ marginTop: 14 }}>
-                  {isPass && (couponOpen || coupon) && (
+                  {isPass && (
                     <p data-pass-coupon-note style={{ margin: '0 0 8px', fontSize: 11.5, lineHeight: 1.45, color: 'var(--ink-faint)' }}>
                       Codes apply to Monthly, Quarterly and Yearly — not the Trial Plan.
                     </p>
                   )}
-                  {couponOpen || coupon ? (
+                  {/* Always open (owner, 9 Nov 2026): no "Have a coupon?" link to find. */}
                     <div>
                       <label htmlFor="bs-coupon" style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-faint)', marginBottom: 6 }}>Coupon code</label>
                       <div style={{ display: 'flex', gap: 8 }}>
@@ -736,15 +735,6 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                         </p>
                       )}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setCouponOpen(true)}
-                      style={{ padding: 0, border: 0, background: 'none', color: 'var(--ink-faint)', fontSize: 12, fontWeight: 600, textDecoration: 'underline' }}
-                    >
-                      Have a coupon?
-                    </button>
-                  )}
                 </div>
 
                 <div style={{ marginTop: 18, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
