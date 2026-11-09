@@ -267,6 +267,54 @@ const BLOFIN_STEPS = [
   },
 ];
 
+/*
+ * Bybit's key flow, from Bybit's help centre ("How to create your API key",
+ * 25 Nov 2025) and its V5 key-info docs; form labels from integration guides.
+ * Not yet checked against our own screenshots: correct the labels here and in
+ * venues.js together when the owner sends them.
+ */
+const BYBIT_STEPS = [
+  {
+    title: 'Create your TradeGuardX account',
+    body: 'Sign up at tradeguardx.com/signup with email or Google.',
+  },
+  {
+    title: 'Start adding your Bybit account',
+    body: 'In the dashboard, open Accounts → "Add trading account" and choose Bybit.',
+    sub: [
+      'Keep this form open. It shows the IP you need to add to the key, and it is where you paste the key at the end.',
+    ],
+  },
+  {
+    title: 'Create the API key on Bybit',
+    body: 'On the Bybit website (the app cannot create keys), log in to your real account, open the profile menu top right, choose API, and press Create New Key.',
+    sub: [
+      'Key type: System-generated API Keys.',
+      'API Key Usage: API Transaction.',
+      'Name: anything you will recognise. We suggest "tradeguardx".',
+      'API Key Permissions: Read-Write. A Read-Only key is refused.',
+      `IP restriction: choose "Only IPs with permissions granted are allowed to access the OpenAPI" and add ${DELTA_EGRESS_IP}. Bybit deletes a key with no IP after 90 days, so we refuse one.`,
+      'Contract (Unified Trading on a Unified Trading Account): tick Orders and Positions.',
+      'Leave Withdrawal off. A key that can withdraw is refused.',
+      'Press Submit, enter your Google Authenticator code, then copy the API Key and the Secret Key. The secret is shown only once.',
+    ],
+    note:
+      'Orders and Positions are the permissions that matter. Without them we can watch the account but never close a position, so we check for them when you connect and refuse the key.',
+  },
+  {
+    title: 'Connect the key in TradeGuardX',
+    body: 'On the Add-account form, paste the API Key and the Secret Key.',
+    sub: [
+      'We check the key with Bybit straight away: that it can trade contracts, that our IP is on it and that it cannot withdraw.',
+      'Your Secret Key is encrypted before storage and never shown again.',
+    ],
+  },
+  {
+    title: 'Set your guardrails',
+    body: 'Open Rules and set the protections you want: daily loss limit, max trades per day, loss-streak pause, risk per trade and more. Limits are in USDT.',
+  },
+];
+
 /**
  * Guides keyed by venue slug, then by guide slug. The guide slug is the second
  * path segment — /exchanges/coindcx/api-key — and nesting stops there.
@@ -345,6 +393,45 @@ export const VENUE_GUIDES = {
           heading: 'Set up BloFin — step by step',
           body: 'Follow these in order. The only part done outside TradeGuardX is creating the key on BloFin.',
           steps: BLOFIN_STEPS,
+        },
+      ],
+    },
+  },
+
+  bybit: {
+    'api-key': {
+      slug: 'api-key',
+      navLabel: 'Connect a key',
+      title: 'How to create a Bybit API key for TradeGuardX',
+      seoTitle: 'Bybit API Key Setup (Read-Write, IP) — TradeGuardX',
+      description:
+        'Step by step: create a Bybit API key with Read-Write and Contract Orders and Positions, add our IP, leave Withdrawal off, and connect it to TradeGuardX.',
+      intro:
+        'Connect your Bybit futures account and be protected in about five minutes. You create one API key on the Bybit website, add our IP to it, and paste the key and the secret into TradeGuardX.',
+      imagesFrom: null,
+      sections: [
+        {
+          heading: 'Before you start',
+          body: 'Three things about Bybit keys that are easy to miss.',
+          list: [
+            {
+              bold: 'Website only:',
+              text: 'Bybit creates API keys on its website, not in the app.',
+            },
+            {
+              bold: 'Our IP is required:',
+              text: 'Bybit deletes a key with no IP after 90 days, and your protection would stop with it. We refuse a key without one.',
+            },
+            {
+              bold: 'Withdrawal stays off:',
+              text: 'We never need it, and we refuse a key that can withdraw.',
+            },
+          ],
+        },
+        {
+          heading: 'Set up Bybit — step by step',
+          body: 'Follow these in order. The only part done outside TradeGuardX is creating the key on Bybit.',
+          steps: BYBIT_STEPS,
         },
       ],
     },

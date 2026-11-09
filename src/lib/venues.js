@@ -423,6 +423,94 @@ const VENUES = {
     beta: false,
   },
   /*
+   * Bybit — the second global venue: USDT and USDC perpetuals only (Bybit's
+   * "linear" category). Inverse contracts settle in coin while our limits are
+   * in USD, so engine and sync both exclude them in v1. Not offered on
+   * Indian pages; Delta, CoinDCX and Shark are the India venues.
+   *
+   * WHERE THE FORM COMES FROM. Bybit's help centre ("How to create your API
+   * key", updated 25 Nov 2025: website only, not the app; human icon → API →
+   * Create New Key; 2FA code, then Next Step) and Bybit's V5 docs
+   * (/v5/user/query-api: readOnly, ips, permissions.ContractTrade =
+   * Order + Position, Wallet → Withdraw), plus integration guides that name
+   * the form's labels (System-generated API Keys; API Transaction; Read-Write;
+   * "Only IPs with permissions granted are allowed to access the OpenAPI";
+   * Contract → Orders, Positions; Submit). NOT yet checked against a
+   * screenshot of our own: the permission block's section names move between
+   * Bybit releases ("Contract" on a classic account, "Unified Trading" on
+   * UTA). BybitForm in VenueFormReplica draws this order; correct the strings
+   * here first when the owner sends screenshots.
+   *
+   * user-service refuses three keys (9 Nov 2026), so the copy says all three:
+   *   - Read-only, or no contract trading permission → KEY_READ_ONLY
+   *   - no IP on the key (Bybit deletes it after 90 days) → KEY_IP_NOT_WHITELISTED
+   *   - Withdrawal ticked → KEY_WITHDRAW_ENABLED
+   * So the IP is REQUIRED here, unlike BloFin's.
+   */
+  bybit: {
+    family: 'bybit',
+    name: 'Bybit',
+    longName: 'Bybit',
+    keysUrl: () => 'https://www.bybit.com/app/user/api-management',
+    formTitle: 'Create New Key',
+    /** Bybit asks for the key type before the form opens. */
+    keyTypeOptions: ['System-generated API Keys', 'Self-generated API Keys'],
+    keyTypeChoice: 'System-generated API Keys',
+    usageField: 'API Key Usage',
+    usageOptions: ['API Transaction', 'Connect to Third-Party Applications'],
+    usageChoice: 'API Transaction',
+    usageNote: 'Pick API Transaction. The third-party option binds the key to an app on Bybit’s list, and we are not on it.',
+    keyNameField: 'Name for the API key',
+    keyNameHint: 'Any name you will recognise later.',
+    accessField: 'API Key Permissions',
+    accessOptions: ['Read-Write', 'Read-Only'],
+    accessChoice: 'Read-Write',
+    ipField: 'IP restriction',
+    ipChoice: 'Only IPs with permissions granted are allowed to access the OpenAPI',
+    ipOther: 'No IP restriction',
+    ipRequired: true,
+    ipHint: 'Required. Bybit deletes a key with no IP after 90 days, and the guard stops with it, so we refuse a key without one.',
+    scopeGroup: 'Contract',
+    scopeGroupNote: 'Called Unified Trading on a Unified Trading Account. The two boxes are the same either way.',
+    scopeLabel: 'Orders and Positions',
+    scopeTicks: ['Orders', 'Positions'],
+    scopeNote: 'What lets us cancel an order and close a position. A key without them is refused.',
+    offScopes: [
+      { label: 'Withdrawal', note: 'Under Assets. Leave it off: we refuse a key that can withdraw.' },
+    ],
+    noWithdrawNote: 'Read-Write with Contract Orders and Positions only. Leave Withdrawal off: a key that can move money is refused when you connect.',
+    submitLabel: 'Submit',
+    otpNote: 'Bybit then asks for your Google Authenticator code. The next screen shows the API Key and the Secret Key. Copy both before you close it: the secret is not shown again.',
+    secretLabel: 'Secret Key',
+    secretPlaceholder: 'Paste the Secret Key',
+    pickerNote: 'USDT and USDC perpetuals',
+    platformNoteLead: 'USDT and USDC perpetuals. Inverse contracts, spot and options are not covered.',
+    platformNote: 'Make the key on the Bybit website, not the app (the app cannot create one), and on your real account, not Testnet or Demo Trading.',
+    formStepBody: 'Fill Bybit’s Create New Key form to match the picture below, top to bottom, then press Submit. The picture is not a live form.',
+    openStepTitle: 'Open API Management on Bybit',
+    openStepBody: 'The button opens Bybit’s API Management page directly. Or on the Bybit website: profile icon → API → Create New Key. Keep this tab open; you come back to paste.',
+    openButton: 'Open Bybit API Management',
+    pasteStep: {
+      title: 'Paste the API Key and Secret Key here',
+      body: 'Copy both from the screen Bybit shows after Submit.',
+    },
+    desktopOnly: true,
+    desktopOnlyNote: 'Bybit creates API keys only on its website. The Bybit app has no create-key screen.',
+    mobilePath: null,
+    navPath: ['Profile icon', 'API', 'Create New Key'],
+    suggestsKeyName: true,
+    createSteps: [
+      { title: 'Profile icon → API → Create New Key', body: 'On the Bybit website (the app cannot make keys), on your real account, open the profile menu top right, choose API, and press Create New Key. Pick System-generated API Keys.' },
+      { title: 'API Transaction, a name, Read-Write', body: 'Under API Key Usage choose API Transaction, give the key any name, and set API Key Permissions to Read-Write. A Read-Only key is refused.' },
+      { title: 'IP restriction: ours', body: 'Choose "Only IPs with permissions granted are allowed to access the OpenAPI" and add our IP. Bybit deletes a key with no IP after 90 days, so we refuse one.' },
+      { title: 'Tick Contract → Orders and Positions', body: 'On a Unified Trading Account the section is called Unified Trading. Leave Withdrawal (under Assets) off: a key that can withdraw is refused.' },
+      { title: 'Submit, then your 2FA code', body: 'Enter your Google Authenticator code. Copy the API Key and the Secret Key from the next screen; the secret is shown only once.' },
+    ],
+    /** Tax centre is for Indian venues; Bybit is not part of it. */
+    taxCentre: false,
+    beta: false,
+  },
+  /*
    * Exness — the first forex/CFD venue (FX pairs, metals, indices, energies,
    * crypto CFDs), and only accounts on Exness's OWN platform (Exness Terminal
    * / web terminal). The Exness Trader API cannot see MT4 or MT5 accounts, so
@@ -534,6 +622,7 @@ export function venueFor(exchangeSlug) {
   if (exchangeSlug.startsWith('coindcx')) return VENUES.coindcx;
   if (exchangeSlug.startsWith('shark')) return VENUES.shark;
   if (exchangeSlug.startsWith('blofin')) return VENUES.blofin;
+  if (exchangeSlug.startsWith('bybit')) return VENUES.bybit;
   if (exchangeSlug.startsWith('exness')) return VENUES.exness;
   return null;
 }

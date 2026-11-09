@@ -289,6 +289,77 @@ const VENUE_PAGES = {
     ],
   },
 
+  // ── Bybit: USDT and USDC perpetuals (no inverse), for traders outside India.
+  // Not linked from any India page; Delta, CoinDCX and Shark serve India.
+  bybit: {
+    slug: 'bybit',
+    name: 'Bybit',
+    longName: 'Bybit',
+    status: 'live',
+    beta: false,
+    title: 'Bybit Daily Loss Limit & Kill Switch | TradeGuardX',
+    description:
+      'Set a daily loss limit on your Bybit futures account and have it enforced: TradeGuardX cancels orders, closes positions and locks the account from our servers.',
+    h1: 'Daily loss limit and kill switch for Bybit',
+    lede:
+      'Bybit gives you a stop-loss on each position, but nothing that ends the trading day. Connect a Bybit API key, set your daily loss limit once, and our engine enforces it: orders cancelled, positions closed, account locked until your next daily reset.',
+    sections: [
+      sharedBreachSection('Bybit'),
+      {
+        h: 'What is different about Bybit',
+        p: [
+          'We cover Bybit\'s USDT and USDC perpetuals. Inverse contracts, spot and options are not covered. Limits are in USDT, and the daily reset happens early in the morning in your own timezone.',
+          'The kill switch cancels your open orders, including take-profit, stop-loss and conditional orders, then closes each position at market and confirms it.',
+          'Bybit deletes an API key that has no IP address after 90 days. So we only accept a key with our IP on it: a key that quietly expires would switch your protection off without warning.',
+        ],
+      },
+      {
+        h: 'Which Bybit rules can TradeGuardX enforce?',
+        rulesTable: true,
+        p: [
+          'All seven, with the same behaviour as on every other venue. It is one engine behind all of them, so a daily loss limit means the same thing on Bybit as it does anywhere else.',
+        ],
+      },
+      {
+        h: 'How do I connect my Bybit account?',
+        p: [
+          'One key on Bybit, one paste into TradeGuardX. On the Bybit website you open API from the profile menu, create a Read-Write key with Contract Orders and Positions, and add our IP. Then you paste the API Key and the Secret Key. About five minutes.',
+        ],
+        guideLink: 'api-key',
+      },
+      sharedWithdrawSection(
+        'Bybit',
+        'We ask for Read-Write with Contract Orders and Positions, which let us see the account, cancel an order and close a position. Bybit\'s form also offers Withdrawal; it stays off, and we refuse a key that has it.',
+      ),
+    ],
+    faq: [
+      {
+        q: 'Does Bybit have a daily loss limit?',
+        a: 'Not an account-wide one that locks you out. Bybit gives you stop-loss and take-profit on each position, and those protect one trade at a time. Nothing stops you opening the next trade after a bad run. TradeGuardX adds that: a daily loss limit across the whole account that closes positions and locks trading when it is hit.',
+      },
+      {
+        q: 'Which permissions does the Bybit API key need?',
+        a: `Read-Write, with Contract → Orders and Positions ticked (the section is called Unified Trading on a Unified Trading Account). Leave Withdrawal off. Add our IP (${DELTA_EGRESS_IP}) under IP restriction. We check all three when you connect and refuse a key that is Read-Only, has no IP or can withdraw.`,
+      },
+      {
+        q: 'Why does TradeGuardX insist on an IP restriction?',
+        a: 'Bybit deletes keys with no IP after 90 days. If that happened to the key we hold, your daily loss limit would stop working on that day with no warning. With our IP on it, the key works until you delete it, and only from our servers.',
+      },
+      {
+        q: 'Can I connect a Bybit Testnet or demo trading key?',
+        a: 'No. We watch real accounts, and Testnet and demo keys only work on Bybit\'s test servers. Make the key on your real Bybit account.',
+      },
+      {
+        q: 'Is the Bybit kill switch for traders in India?',
+        a: 'No. We list Bybit for traders outside India. If you trade crypto futures from India, connect Delta Exchange, CoinDCX or Shark Exchange instead; all three are live.',
+      },
+      {
+        q: 'Does the kill switch still work if I trade from the Bybit app?',
+        a: 'Yes. We hold a live connection to the account itself from our servers, so it makes no difference whether a trade came from the Bybit app, the website or a bot. If it reaches your account, we see it and act if it breaks a rule.',
+      },
+    ],
+  },
+
   // ── Shark: live and connectable, and until now with no documentation at all.
   shark: {
     slug: 'shark',
@@ -518,8 +589,13 @@ export const VENUE_ORDER = ['delta', 'exness', 'coindcx', 'shark'];
 
 export const VENUE_PAGE_LIST = VENUE_ORDER.map((slug) => VENUE_PAGES[slug]);
 
+/**
+ * Only a venue in VENUE_ORDER has a page. VENUE_PAGES can hold a venue that is
+ * built but not public (Bybit before its go-live, BloFin while paused); inside
+ * the app its URL must 404 the same way vercel.json makes it 301 outside it.
+ */
 export function venuePageFor(slug) {
-  return VENUE_PAGES[slug] ?? null;
+  return VENUE_ORDER.includes(slug) ? VENUE_PAGES[slug] ?? null : null;
 }
 
 export function venueUrl(slug) {
