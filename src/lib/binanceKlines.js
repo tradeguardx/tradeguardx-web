@@ -32,6 +32,8 @@ const BINANCE_PAIRS = {
   SHIBUSD: 'SHIBUSDT', SHIBUSDT: 'SHIBUSDT',
   PEPE: 'PEPEUSDT', PEPEUSD: 'PEPEUSDT',
   NEARUSD: 'NEARUSDT', NEARUSDT: 'NEARUSDT',
+  // Exness's weekend gold contract; Binance lists gold as a perpetual.
+  XAUUSD247: 'XAUUSDT',
 };
 
 export function resolveBinancePair(symbol) {

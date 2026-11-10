@@ -46,5 +46,6 @@ describe('replay chart price sources', () => {
   it('reads CoinDCX futures symbols', () => {
     expect(resolveBinancePair('B-XRP_USDT@INR')).toBe('XRPUSDT');
     expect(resolveBinancePair('B-BTC_USDT')).toBe('BTCUSDT');
+    expect(resolveBinancePair('XAUUSD247#short~46077811')).toBe('XAUUSDT');
   });
 });
