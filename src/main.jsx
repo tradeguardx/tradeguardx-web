@@ -4,10 +4,11 @@ import './index.css';
 import App from './App.jsx';
 import { initSentry } from './sentry.js';
 import { applyDefaultUpgradesOnce } from './lib/prefs.js';
-import { installStaleBundleReload } from './lib/staleBundle.js';
+import { installDeployWatch, installStaleBundleReload } from './lib/staleBundle.js';
 
 initSentry();
 installStaleBundleReload();
+installDeployWatch();
 
 // Before render: both the prefs and the dashboard theme read localStorage in a
 // useState initialiser, so anything that rewrites those values has to happen

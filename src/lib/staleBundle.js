@@ -31,3 +31,51 @@ export function installStaleBundleReload() {
     if (reloadForStaleBundle()) e.preventDefault();
   });
 }
+
+const CHECK_EVERY_MS = 5 * 60_000;
+
+/** The entry script's hashed name in a page of HTML, e.g. "main-qASmwEv_.js". */
+export function entryScriptOf(html) {
+  return /\/assets\/(main-[\w-]+\.js)/.exec(String(html ?? ''))?.[1] ?? null;
+}
+
+/**
+ * A tab opened before a deploy keeps running the old code for as long as it
+ * stays open: navigation inside the app never reloads it, so a fix that has
+ * shipped stays invisible (the replay chart kept saying "Binance 400" in a tab
+ * from before its fix). Every few minutes, and when the tab comes back into
+ * view, ask the server which entry script it serves now. If that changed, the
+ * next in-app navigation becomes a real page load. Never mid-page, so nothing
+ * half-typed is lost.
+ */
+export function installDeployWatch({ fetchHtml = () => fetch('/', { cache: 'no-store' }).then((r) => r.text()) } = {}) {
+  const running = entryScriptOf(document.querySelector('script[type="module"][src*="/assets/main-"]')?.outerHTML);
+  if (!running) return; // dev server, tests
+  let deployed = false;
+  let lastCheck = 0;
+
+  const check = () => {
+    if (deployed || Date.now() - lastCheck < CHECK_EVERY_MS) return;
+    lastCheck = Date.now();
+    fetchHtml()
+      .then((html) => {
+        const served = entryScriptOf(html);
+        if (served && served !== running) deployed = true;
+      })
+      .catch(() => {});
+  };
+
+  const pushState = window.history.pushState.bind(window.history);
+  window.history.pushState = (state, title, url) => {
+    if (deployed && url != null) {
+      window.location.assign(url);
+      return;
+    }
+    pushState(state, title, url);
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') check();
+  });
+  setInterval(check, CHECK_EVERY_MS);
+}

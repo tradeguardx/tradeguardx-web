@@ -18,3 +18,11 @@ describe('stale bundle', () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('entryScriptOf', () => {
+  it('finds the hashed entry script a page of HTML loads', async () => {
+    const { entryScriptOf } = await import('./staleBundle');
+    expect(entryScriptOf('<script type="module" crossorigin src="/assets/main-qASmwEv_.js"></script>')).toBe('main-qASmwEv_.js');
+    expect(entryScriptOf('<html></html>')).toBeNull();
+  });
+});
