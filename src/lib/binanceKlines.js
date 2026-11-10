@@ -93,7 +93,10 @@ const KLINE_URLS = {
 
 async function pageKlines(market, symbol, interval, startMs, endMs, signal) {
   const out = [];
-  let cursor = startMs;
+  // Futures rejects a fractional timestamp (-1102) where spot shrugs it off,
+  // and callers pad windows by fractions of a trade's length.
+  let cursor = Math.floor(startMs);
+  endMs = Math.floor(endMs);
 
   while (cursor < endMs) {
     const url = `${KLINE_URLS[market]}?symbol=${encodeURIComponent(symbol)}&interval=${interval}&startTime=${cursor}&endTime=${endMs}&limit=1000`;

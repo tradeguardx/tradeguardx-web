@@ -48,4 +48,10 @@ describe('replay chart price sources', () => {
     expect(resolveBinancePair('B-BTC_USDT')).toBe('BTCUSDT');
     expect(resolveBinancePair('XAUUSD247#short~46077811')).toBe('XAUUSDT');
   });
+
+  it('sends whole-millisecond times, which futures insists on', async () => {
+    const calls = stubFetch((u) => (u.includes('fapi.binance.com') ? [200, [kline(60_000)]] : [400, {}]));
+    await fetchKlines('XAUUSDT', '5m', 0.6, 120_000.4);
+    expect(calls.at(-1)).toContain('startTime=0&endTime=120000&');
+  });
 });
