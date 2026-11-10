@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo, useCallback, forwardRef } from 'react';
-import { fetchKlines, resolveBinancePair } from '../../lib/binanceKlines';
+import { fetchTradeCandles, resolveBinancePair } from '../../lib/binanceKlines';
 import {
   createChart, CrosshairMode,
   CandlestickSeries, HistogramSeries, LineSeries,
@@ -602,6 +602,8 @@ export default function RealReplayChart({ trade, isDark }) {
   const exitLineRef = useRef(null);
 
   const [interval, setInterval_] = useState('5m');
+  const [feed, setFeed] = useState({ provider: '', pair: '' });
+  const [unavailable, setUnavailable] = useState(false);
   const [allCandles, setAllCandles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -918,6 +920,7 @@ export default function RealReplayChart({ trade, isDark }) {
     if (!binancePair || !openMs) return;
     setLoading(true);
     setError('');
+    setUnavailable(false);
     setPlayIdx(-1);
     setPlaying(false);
     tradeZoomKeyAppliedRef.current = null;
@@ -925,16 +928,19 @@ export default function RealReplayChart({ trade, isDark }) {
     try {
       const startMs = openMs - prePad(duration);
       const endMs   = (closeMs || openMs + duration) + postPad(duration);
-      const data    = await fetchKlines(binancePair, interval, startMs, endMs);
+      const { candles: data, provider, pair } = await fetchTradeCandles(trade, interval, startMs, endMs);
       if (!data.length) throw new Error('No candle data returned');
+      setFeed({ provider, pair });
       setAllCandles(data);
     } catch (e) {
-      setError(e?.message || 'Failed to fetch chart data');
+      if (e?.name === 'ChartUnavailableError') setUnavailable(true);
+      setError(e?.name === 'ChartUnavailableError' ? '' : (e?.message || 'Failed to fetch chart data'));
       setAllCandles([]);
     } finally {
       setLoading(false);
     }
-  }, [binancePair, interval, openMs, closeMs, duration]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- trade's symbol/source are what matter, and binancePair tracks the symbol
+  }, [binancePair, trade?.source, interval, openMs, closeMs, duration]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -1291,7 +1297,7 @@ export default function RealReplayChart({ trade, isDark }) {
   const isReplaying = playIdx >= 0;
 
   // ─── No pair available ─────────────────────────────────────────────────
-  if (!binancePair) {
+  if (!binancePair || unavailable) {
     return (
       <div className="flex h-64 flex-col items-center justify-center rounded-2xl border text-center"
         style={{ borderColor: 'var(--dash-border)', backgroundColor: 'var(--dash-bg-card)', color: 'var(--dash-text-faint)' }}>
@@ -1299,7 +1305,7 @@ export default function RealReplayChart({ trade, isDark }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <p className="text-sm font-semibold" style={{ color: 'var(--dash-text-muted)' }}>Chart unavailable for {symbolLabel(trade?.symbol) || 'this symbol'}</p>
-        <p className="mt-1 text-xs">Real-time charts are available for crypto pairs (BTC, ETH, SOL, etc.)</p>
+        <p className="mt-1 text-xs">There is no public price history for this market, so it can't be replayed. Crypto, gold and Delta options all can.</p>
       </div>
     );
   }
@@ -1323,10 +1329,10 @@ export default function RealReplayChart({ trade, isDark }) {
           </div>
           <div>
             <h3 className="text-sm font-bold" style={{ color: 'var(--dash-text-primary)' }}>
-              {symbolLabel(trade.symbol)} · {binancePair}
+              {symbolLabel(trade.symbol)} · {feed.pair || binancePair}
             </h3>
             <p className="text-[10px]" style={{ color: 'var(--dash-text-faint)' }}>
-              Binance · Real Market Data
+              {feed.provider || 'Binance'} · Real Market Data
               {isReplaying && ` · ${progress}% · ${playIdx + 1}/${allCandles.length}`}
             </p>
           </div>
@@ -1561,7 +1567,7 @@ export default function RealReplayChart({ trade, isDark }) {
               <div className="flex flex-col items-center gap-3">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
                 <p className="text-xs font-semibold" style={{ color: 'var(--dash-text-muted)' }}>
-                  Loading {binancePair} {interval} candles…
+                  Loading {feed.pair || binancePair} {interval} candles…
                 </p>
               </div>
             </div>

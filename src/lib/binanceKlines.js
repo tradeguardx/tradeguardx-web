@@ -36,7 +36,9 @@ const BINANCE_PAIRS = {
 
 export function resolveBinancePair(symbol) {
   if (!symbol) return null;
-  const upper = String(instrumentOf(symbol)).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  // CoinDCX futures carry a "B-" prefix and a margin currency: B-XRP_USDT@INR.
+  const bare = String(instrumentOf(symbol)).replace(/^B-/i, '').replace(/@.*$/, '');
+  const upper = bare.toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (BINANCE_PAIRS[upper]) return BINANCE_PAIRS[upper];
   if (!upper.endsWith('USDT') && !upper.endsWith('USD')) {
     if (BINANCE_PAIRS[`${upper}USDT`]) return BINANCE_PAIRS[`${upper}USDT`];
@@ -53,13 +55,48 @@ export function resolveBinancePair(symbol) {
  * failure that returned it would silently become "the price never moved".
  */
 export async function fetchKlines(symbol, interval, startMs, endMs, { signal } = {}) {
+  // Gold, oil-linked tokens and most new coins (XAUUSDT, AINUSDT…) are listed
+  // only as Binance perpetuals, so spot answers 400 for them. Remember which
+  // market had the pair so paging and later intervals go straight there.
+  const market = futuresPairs.has(symbol) ? 'futures' : 'spot';
+  try {
+    return await pageKlines(market, symbol, interval, startMs, endMs, signal);
+  } catch (e) {
+    if (market !== 'spot' || e?.status !== 400) throw e;
+  }
+  try {
+    const rows = await pageKlines('futures', symbol, interval, startMs, endMs, signal);
+    futuresPairs.add(symbol);
+    return rows;
+  } catch (e) {
+    if (e?.status === 400) throw new ChartUnavailableError(symbol);
+    throw e;
+  }
+}
+
+const futuresPairs = new Set();
+
+/** Neither Binance market lists the pair — indices, oil, options. Not a retryable failure. */
+export class ChartUnavailableError extends Error {
+  constructor(symbol) {
+    super(`No price history for ${symbol}`);
+    this.name = 'ChartUnavailableError';
+  }
+}
+
+const KLINE_URLS = {
+  spot: 'https://api.binance.com/api/v3/klines',
+  futures: 'https://fapi.binance.com/fapi/v1/klines',
+};
+
+async function pageKlines(market, symbol, interval, startMs, endMs, signal) {
   const out = [];
   let cursor = startMs;
 
   while (cursor < endMs) {
-    const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=${interval}&startTime=${cursor}&endTime=${endMs}&limit=1000`;
+    const url = `${KLINE_URLS[market]}?symbol=${encodeURIComponent(symbol)}&interval=${interval}&startTime=${cursor}&endTime=${endMs}&limit=1000`;
     const res = await fetch(url, { signal });
-    if (!res.ok) throw new Error(`Binance ${res.status}`);
+    if (!res.ok) throw Object.assign(new Error(`Binance ${res.status}`), { status: res.status });
     const rows = await res.json();
     if (!rows.length) break;
 
@@ -90,4 +127,59 @@ export function intervalFor(spanMs) {
   if (spanMs <= 10 * 86_400_000) return '15m';
   if (spanMs <= 40 * 86_400_000) return '1h';
   return '4h';
+}
+
+/**
+ * Candles from Delta Exchange itself, for trades placed there.
+ *
+ * Delta lists products Binance never will — options (C-BTC-76200-071126),
+ * gold (XAUTUSD), new perps — and keeps their history after expiry. Its own
+ * prices are also the ones the user's fills happened at, so a Delta trade's
+ * entry and exit markers sit on its candles rather than near them.
+ *
+ * Delta returns at most 4000 rows, newest first, so this pages backwards.
+ */
+export async function fetchDeltaCandles(symbol, interval, startMs, endMs, { signal } = {}) {
+  const start = Math.floor(startMs / 1000);
+  const out = [];
+  let end = Math.floor(endMs / 1000);
+
+  for (let page = 0; page < 10 && end > start; page++) {
+    const url = `https://api.india.delta.exchange/v2/history/candles?resolution=${interval}&symbol=${encodeURIComponent(symbol)}&start=${start}&end=${end}`;
+    const res = await fetch(url, { signal });
+    if (!res.ok) throw new Error(`Delta ${res.status}`);
+    const rows = (await res.json())?.result ?? [];
+    if (!rows.length) break;
+
+    for (const k of rows) {
+      out.push({ time: k.time, open: +k.open, high: +k.high, low: +k.low, close: +k.close, volume: +(k.volume ?? 0) });
+    }
+    const oldest = Math.min(...rows.map((k) => k.time));
+    if (rows.length < 4000) break;
+    end = oldest - 1;
+  }
+
+  out.sort((a, b) => a.time - b.time);
+  return out.filter((c, i) => i === 0 || c.time !== out[i - 1].time);
+}
+
+/**
+ * The replay chart's price history for a trade: the venue's own candles where
+ * the venue publishes them, Binance otherwise.
+ *
+ * Returns { candles, provider, pair }. A Delta trade whose product Delta has
+ * no history for still gets Binance's chart of the same coin if one exists.
+ */
+export async function fetchTradeCandles(trade, interval, startMs, endMs, { signal } = {}) {
+  const pair = resolveBinancePair(trade?.symbol);
+  if (trade?.source === 'delta' && trade?.symbol) {
+    try {
+      const candles = await fetchDeltaCandles(instrumentOf(trade.symbol), interval, startMs, endMs, { signal });
+      if (candles.length) return { candles, provider: 'Delta Exchange', pair: instrumentOf(trade.symbol) };
+    } catch (e) {
+      if (e?.name === 'AbortError') throw e;
+    }
+  }
+  const candles = await fetchKlines(pair, interval, startMs, endMs, { signal });
+  return { candles, provider: futuresPairs.has(pair) ? 'Binance Futures' : 'Binance', pair };
 }
