@@ -538,6 +538,8 @@ describe('billing step — the site offer, to apply', () => {
     expect(screen.getByText('₹6,299')).toBeTruthy();
     expect(dueToday()).toBe('₹909');
     expect(screen.getByText('SAVE 42%')).toBeTruthy();
+    // A confetti burst plays from the button, then clears itself.
+    expect(document.querySelectorAll('.bs-confetti i').length).toBeGreaterThan(20);
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(screen.queryByText(/Diwali offer applied/)).toBeNull();
     expect(screen.getByText('Diwali offer available')).toBeTruthy();

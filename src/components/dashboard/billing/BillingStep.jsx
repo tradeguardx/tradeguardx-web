@@ -15,6 +15,7 @@ import { offerCoversInterval, offerLabel, discountWording, offerPrice } from '..
 const MONTHS = { monthly: 1, quarterly: 3, yearly: 12 };
 import { PROTECTIONS, GLYPH, COUPON_REFUSAL } from './billingContent';
 import NoticeCard from '../shell/NoticeCard';
+import ConfettiBurst from './ConfettiBurst';
 import StepsBar from '../shell/StepsBar';
 import { Chip, ScoreRing } from '../../revenge/RevengeParts';
 import { GRADE, PERIODS } from '../../revenge/revengeFormat';
@@ -118,6 +119,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
      replays each time it goes on. */
   const [offerOn, setOfferOn] = useState(false);
   const [offerRun, setOfferRun] = useState(0);
+  /* Where the confetti bursts from: the Apply offer button, while it plays. */
+  const [burstAt, setBurstAt] = useState(null);
 
   const toggleRow = (id) =>
     setOpenRows((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -241,7 +244,9 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
      what the card describes. */
   const offerAvailable = Boolean(offerVerified && Object.values(offerVerified).some((v) => v?.valid));
   const offerUsable = offerVerified?.[cur.id]?.valid ? offerVerified[cur.id] : null;
-  const applyOffer = () => {
+  const applyOffer = (e) => {
+    const r = e?.currentTarget?.getBoundingClientRect?.();
+    if (r) setBurstAt({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
     setOfferOn(true);
     setOfferRun((n) => n + 1);
     trackBilling('billing_offer_applied', { code: offerCode, plan: cur.id });
@@ -713,6 +718,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                     </button>
                   </div>
                 )}
+                {burstAt && <ConfettiBurst key={`burst${offerRun}`} at={burstAt} onDone={() => setBurstAt(null)} />}
                 {offerApplied && !isPass && (
                   <div
                     key={`chip${offerRun}`}

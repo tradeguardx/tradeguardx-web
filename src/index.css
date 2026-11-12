@@ -1871,3 +1871,19 @@
   .bs-offer-pop, .bs-offer-tick, .bs-price-drop, .bs-offer-tag { animation: none; }
   .bs-offer-burst { display: none; }
 }
+
+/* Confetti for "Apply offer" (ConfettiBurst.jsx): each paper flies out along
+   its own (--dx, --dy), tumbles, then drops and fades. */
+.bs-confetti { position: fixed; width: 0; height: 0; z-index: 9999; pointer-events: none; }
+.bs-confetti i {
+  position: absolute; left: 0; top: 0; display: block; opacity: 0;
+  animation-name: bs-confetti; animation-timing-function: cubic-bezier(.15, .7, .3, 1); animation-fill-mode: both;
+}
+@keyframes bs-confetti {
+  0% { opacity: 1; transform: translate(-50%, -50%) rotate(0) rotateX(0); }
+  35% { opacity: 1; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(calc(var(--spin) * .4)) rotateX(calc(var(--flip) * .4)); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx) * 1.3), calc(-50% + var(--dy) + var(--fall))) rotate(var(--spin)) rotateX(var(--flip)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-confetti { display: none; }
+}
