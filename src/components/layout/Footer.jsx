@@ -148,6 +148,28 @@ export default function Footer() {
               </span>
               <span className="text-[11px] font-semibold text-emerald-300">All systems operational</span>
             </div>
+            {/*
+              * Product Hunt (owner, 13 Nov 2026). Social proof for visitors,
+              * and a link from our own site to the listing helps it rank for
+              * our brand name — one more result we own on "TradeGuardX"
+              * searches. The same URL is in the Organization sameAs (index.html).
+              */}
+            <a
+              href="https://www.producthunt.com/products/tradeguardx"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="TradeGuardX on Product Hunt"
+              className="mt-3 flex w-fit items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] py-2 pl-2 pr-3.5 transition hover:border-[#FF6154]/40 hover:bg-[#FF6154]/[0.06]"
+            >
+              <svg viewBox="0 0 40 40" className="h-7 w-7 flex-none" aria-hidden="true">
+                <circle cx="20" cy="20" r="20" fill="#FF6154" />
+                <path fill="#fff" d="M22.67 20H17v-6h5.67a3 3 0 0 1 0 6Zm0-10H13v20h4v-6h5.67a7 7 0 0 0 0-14Z" />
+              </svg>
+              <span className="leading-tight">
+                <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">Find us on</span>
+                <span className="block text-sm font-bold text-white">Product Hunt</span>
+              </span>
+            </a>
           </motion.div>
 
           {/* Link columns */}
