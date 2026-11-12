@@ -14,7 +14,7 @@ const Check = () => (
  *
  * The free tier is deliberately NOT a card here. Leading a pricing section
  * with ₹0 sells the wrong thing: the reason to be here is enforcement. The
- * way to try it is the 3-day Trial Plan (₹299, paid once, never renews),
+ * way to try it is the 3-day Trial Plan (₹199, paid once, never renews),
  * offered under the cards. There is no free trial since 9 Nov 2026.
  */
 const PLANS = [
@@ -137,7 +137,7 @@ export default function PricingSection() {
             to="/pricing"
             className="inline-flex items-center justify-center rounded-xl border border-accent/40 bg-accent/10 px-6 py-3 text-sm font-semibold text-accent transition hover:bg-accent/15"
           >
-            Try 3 days for ₹299
+            Try 3 days for ₹199
           </Link>
           <p className="mt-2 text-[13px] text-slate-500">or start Pro above</p>
           <p className="mt-5 text-sm leading-relaxed text-slate-400">

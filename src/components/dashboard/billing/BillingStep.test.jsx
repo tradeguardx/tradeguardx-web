@@ -484,10 +484,10 @@ describe('billing step — the free window it promises', () => {
     eligibility = { trialDays: 0, fullTrialDays: 0 };
     await show();
     fireEvent.click(document.querySelector('[data-tester-row]'));
-    expect(await screen.findByText(/Buy Trial Plan · ₹299/)).toBeTruthy();
+    expect(await screen.findByText(/Buy Trial Plan · ₹199/)).toBeTruthy();
     expect(screen.getByText(/No AutoPay and nothing renews/)).toBeTruthy();
     expect(screen.getByText(/Codes apply to Monthly, Quarterly and Yearly — not the Trial Plan/)).toBeTruthy();
-    fireEvent.click(screen.getByText(/Buy Trial Plan · ₹299/));
+    fireEvent.click(screen.getByText(/Buy Trial Plan · ₹199/));
     await waitFor(() => expect(checkout).toHaveBeenCalledWith(expect.objectContaining({ planSlug: 'tester' })));
     expect(checkout.mock.calls.at(-1)[0].couponCode).toBeUndefined();
   });

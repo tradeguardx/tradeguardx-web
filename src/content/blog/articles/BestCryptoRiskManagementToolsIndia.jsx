@@ -187,7 +187,7 @@ export default function BestCryptoRiskManagementToolsIndia() {
         us
         name="TradeGuardX"
         tag="The parent who takes you home."
-        cost="Paid, with a 3-day ₹299 Trial Plan"
+        cost="Paid, with a 3-day ₹199 Trial Plan"
         good="Watching your whole crypto futures account from our servers, all the time. You set a daily loss limit, a max number of trades, a loss-streak pause and a few more rules. When one is hit, it cancels your orders, closes your positions and locks the account until your reset time. It works whether you trade from the website, the phone app or a bot."
         stops="It can’t stop an order from reaching the exchange. It closes it right after. For Indian crypto it’s futures only, on Delta Exchange, CoinDCX and Shark Exchange. And it costs money, which the tools above don’t."
       />

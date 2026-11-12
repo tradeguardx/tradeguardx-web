@@ -15,7 +15,7 @@ export const TOOLS = [
   { id: 'screen', name: 'Phone screen-time limit', cost: 'Free, built into iPhone and Android' },
   { id: 'algo', name: 'Algo platform (e.g. Tradetron)', cost: 'Paid plans for live trading' },
   { id: 'journal', name: 'Trading journal', cost: 'Free (spreadsheet) to paid' },
-  { id: 'tgx', name: 'TradeGuardX', cost: 'Paid, ₹299 3-day pass', us: true },
+  { id: 'tgx', name: 'TradeGuardX', cost: 'Paid, ₹199 3-day pass', us: true },
 ];
 
 export const MOMENTS = [

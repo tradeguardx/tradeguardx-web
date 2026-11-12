@@ -95,7 +95,7 @@ export function planForBand(plan, band) {
  */
 export const TESTER_DAYS = 3;
 export const TESTER_PRICES = {
-  in: { currency: 'INR', price: 299 },
+  in: { currency: 'INR', price: 199 },
   a: { currency: 'USD', price: 5 },
   b: { currency: 'USD', price: 3 },
 };
