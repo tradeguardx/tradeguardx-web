@@ -110,6 +110,11 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
      a discount can never be shown against a price it was not checked for. */
   const [applied, setApplied] = useState(null);
   const [couponBusy, setCouponBusy] = useState(false);
+  /* The site offer is shown, not applied: it goes on when they press Apply
+     (owner, 12 Nov 2026). `offerRun` counts presses so the applied animation
+     replays each time it goes on. */
+  const [offerOn, setOfferOn] = useState(false);
+  const [offerRun, setOfferRun] = useState(0);
 
   const toggleRow = (id) =>
     setOpenRows((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -194,13 +199,15 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   const typed = coupon.trim().toUpperCase();
 
   /*
-   * THE SITE OFFER, APPLIED FOR THEM — AND CHECKED BEFORE IT IS SHOWN.
+   * THE SITE OFFER, OFFERED — AND CHECKED BEFORE IT IS SHOWN.
    *
    * When an offer is live for this visitor (useActiveOffer: loaded, in its
    * audience, not ended) and nothing else would be sent — no typed code, no
    * referral, no promo-link code — its code is validated for every interval,
-   * the same calls Apply makes. Only what the server confirms is priced: a
-   * code it refuses shows full price and no chip, rather than a promise.
+   * the same calls Apply makes. A confirmed offer is shown as a card with its
+   * own Apply button; prices change only once they press it (owner, 12 Nov
+   * 2026 — it used to go on by itself). A code the server refuses is never
+   * shown at all.
    */
   const { offer } = useActiveOffer();
   const ownCode = useMemo(() => Boolean(getStoredReferralCode() || getLinkPromoCode()), []);
@@ -227,14 +234,30 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
     return () => { alive = false; };
   }, [offerCode, intervalKey, token]);
   const offerVerified = offerCode && offerCheck?.code === offerCode ? offerCheck.byInterval : null;
+  /* Good for at least one plan: worth showing. Good for the selected plan:
+     what the card describes. */
+  const offerAvailable = Boolean(offerVerified && Object.values(offerVerified).some((v) => v?.valid));
+  const offerUsable = offerVerified?.[cur.id]?.valid ? offerVerified[cur.id] : null;
+  const applyOffer = () => {
+    setOfferOn(true);
+    setOfferRun((n) => n + 1);
+    trackBilling('billing_offer_applied', { code: offerCode, plan: cur.id });
+  };
+  const removeOffer = () => {
+    setOfferOn(false);
+    trackBilling('billing_offer_removed', { code: offerCode });
+  };
 
   /* The offer is sent where it covers the plan, unless the server has
      already said no for this interval — a refused code is not passed on. */
   const offerVerdict = offerVerified?.[cur.id];
   const offerRefused = Boolean(offerVerdict && !offerVerdict.valid && offerVerdict.reason !== 'LOOKUP' && offerVerdict.reason !== 'UNSUPPORTED');
   const carried = checkoutCouponCode({ interval: cur.id, multiInterval: options.length > 1, offer });
-  const autoCoupon = offerRefused && carried === offer?.code ? undefined : carried;
+  const autoCoupon = carried === offer?.code && (offerRefused || !offerOn) ? undefined : carried;
   const effectiveCoupon = coupon.trim() || autoCoupon || undefined;
+  /* Checkout applies a live offer by itself when no code is sent. Someone who
+     left it off saw list price, so tell it not to (payments: skipOffer). */
+  const skipOffer = !effectiveCoupon && !offerOn;
 
   /*
    * CHECKED AGAINST EVERY INTERVAL, NOT JUST THE SELECTED ONE.
@@ -250,7 +273,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
    */
   const verified = typed
     ? (applied && applied.code === typed ? applied.byInterval : null)
-    : offerVerified;
+    : offerOn ? offerVerified : null;
   const priceOf = (option) => {
     const v = verified?.[option.id];
     return v?.valid ? Math.round(option.price * (1 - v.percentOff / 100)) : option.price;
@@ -287,7 +310,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
      the other two rows instead of hunting for a typo. */
   const refusal = verified?.[cur.id] && !verified[cur.id].valid ? verified[cur.id].reason : null;
   /* The chip: the offer, verified for the selected plan, and nothing typed. */
-  const offerApplied = !typed && offerVerified?.[cur.id]?.valid ? offerVerified[cur.id] : null;
+  const offerApplied = !typed && offerOn && offerUsable ? offerUsable : null;
 
   const apply = async () => {
     const code = coupon.trim().toUpperCase();
@@ -359,6 +382,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
           planSlug: 'pro',
           interval: cur.id,
           couponCode: effectiveCoupon,
+          skipOffer,
         });
       if (!res?.checkoutUrl) throw new Error('Could not open checkout. Please try again.');
       trackBilling('billing_trial_started', { plan: chosen });
@@ -632,7 +656,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                               code that is real for monthly and not for yearly
                               shows exactly that. */}
                           {verified?.[o.id]?.valid ? (
-                            <span style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>
+                            <span key={`p${offerRun}`} className={!typed ? 'bs-price-drop' : undefined} style={{ display: 'block', font: "700 18px/1 'Space Grotesk',sans-serif", letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}>
                               <span style={{ marginRight: 7, fontSize: 13, fontWeight: 600, color: 'var(--ink-faint)', textDecoration: 'line-through' }}>{money(o.price)}</span>
                               <span style={{ color: 'var(--mint)' }}>{money(priceOf(o))}</span>
                             </span>
@@ -646,19 +670,68 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   })}
                 </div>
 
-                {/* Only once the server has confirmed the offer for the plan
-                    that is selected. Before that, and for a code it refuses,
-                    there is no chip and the rows show list price. */}
+                {/*
+                  * THE OFFER, TO APPLY (owner, 12 Nov 2026).
+                  *
+                  * Shown only once the server has confirmed it for at least
+                  * one plan, and never on the Trial Plan. Before Apply the
+                  * rows show list price and checkout is told to leave the
+                  * offer off; after it, the rows reprice and the card turns
+                  * into the applied chip, with a way back out.
+                  */}
+                {offerAvailable && !isPass && !typed && !offerApplied && (
+                  <div
+                    data-offer-card
+                    style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 11, padding: '11px 12px', borderRadius: 14, background: 'color-mix(in srgb, var(--mint-solid) 6%, var(--surface-2))', boxShadow: 'inset 0 0 0 1px var(--mint-line)', border: '1px dashed var(--mint-line)' }}
+                  >
+                    <span aria-hidden className="bs-offer-tag" style={{ flex: 'none', width: 32, height: 32, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'var(--mint-tint)', color: 'var(--mint)' }}>
+                      <Glyph d={['M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L2 12V2h10l8.6 8.6a2 2 0 010 2.8z', 'M7 7h.01']} size={16} width={2.2} />
+                    </span>
+                    <span style={{ flex: '1 1 auto', minWidth: 0 }}>
+                      <span style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{`${offerLabel(offer)} available`}</span>
+                      <span style={{ display: 'block', marginTop: 2, fontSize: 12, color: 'var(--ink-2)' }}>
+                        {offerUsable ? discountWording(offerUsable) : 'Not on this plan — pick another to use it'}
+                        {' · '}
+                        <span style={{ font: "700 11px/1 'JetBrains Mono',monospace", letterSpacing: '.08em', color: 'var(--mint)' }}>{offerCode}</span>
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={applyOffer}
+                      disabled={!offerUsable}
+                      data-offer-apply
+                      style={{ flex: 'none', minHeight: 38, padding: '0 14px', border: 0, borderRadius: 11, background: 'var(--mint-solid)', color: 'var(--on-mint)', fontSize: 13, fontWeight: 800, opacity: offerUsable ? 1 : 0.45 }}
+                    >
+                      Apply offer
+                    </button>
+                  </div>
+                )}
                 {offerApplied && !isPass && (
                   <div
+                    key={`chip${offerRun}`}
                     data-offer-chip
-                    style={{ marginTop: 12, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: '9px 12px', borderRadius: 12, background: 'var(--mint-tint)', boxShadow: 'inset 0 0 0 1px var(--mint-line)', color: 'var(--mint)', fontSize: 12.5, fontWeight: 700, lineHeight: 1.35 }}
+                    className="bs-offer-pop"
+                    role="status"
+                    style={{ position: 'relative', marginTop: 12, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: '9px 12px', borderRadius: 12, background: 'var(--mint-tint)', boxShadow: 'inset 0 0 0 1px var(--mint-line)', color: 'var(--mint)', fontSize: 12.5, fontWeight: 700, lineHeight: 1.35 }}
                   >
-                    <Glyph d={['M5 13l4 4L19 7']} size={14} width={2.6} />
+                    {/* A short burst from the tick: decoration only. */}
+                    <span aria-hidden className="bs-offer-burst">
+                      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => <i key={i} style={{ '--a': `${i * 45}deg` }} />)}
+                    </span>
+                    <span className="bs-offer-tick" style={{ display: 'grid', placeItems: 'center' }}>
+                      <Glyph d={['M5 13l4 4L19 7']} size={14} width={2.6} />
+                    </span>
                     <span style={{ flex: '1 1 auto', minWidth: 0 }}>
                       {`${offerLabel(offer)} applied · ${discountWording(offerApplied)}`}
                     </span>
                     <span style={{ font: "700 11px/1 'JetBrains Mono',monospace", letterSpacing: '.08em', padding: '4px 7px', borderRadius: 6, background: 'color-mix(in srgb, var(--mint-solid) 14%, transparent)' }}>{offerCode}</span>
+                    <button
+                      type="button"
+                      onClick={removeOffer}
+                      style={{ flex: 'none', padding: '2px 0', border: 0, background: 'none', color: 'var(--ink-3)', fontSize: 12, fontWeight: 600, textDecoration: 'underline' }}
+                    >
+                      Remove
+                    </button>
                   </div>
                 )}
 
@@ -716,7 +789,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                         <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--ink-faint)' }}>
                           {offerApplied
                             ? `A code you enter here replaces the ${offerLabel(offer).toLowerCase()}.`
-                            : 'Press Apply to see the new price. It is applied at checkout either way.'}
+                            : 'Have a code? Press Apply to see the new price.'}
                         </p>
                       ) : discount ? (
                         <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--mint)' }}>

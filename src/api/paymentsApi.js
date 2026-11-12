@@ -87,7 +87,7 @@ export async function updateSubscriptionPaymentMethod({ accessToken }, options =
  * (see `lib/referralCode.js`). The backend validates it against `influencer_profiles`
  * and silently drops it if it doesn't match — checkout always proceeds either way.
  */
-export async function createCheckoutSession({ accessToken, planSlug, couponCode, interval = 'monthly' }, options = {}) {
+export async function createCheckoutSession({ accessToken, planSlug, couponCode, interval = 'monthly', skipOffer = false }, options = {}) {
   if (!accessToken) {
     throw new Error('Missing access token for checkout');
   }
@@ -99,7 +99,7 @@ export async function createCheckoutSession({ accessToken, planSlug, couponCode,
    * returned to tradeguardx.com after paying.
    */
   const returnOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
-  const body = { planSlug, interval, ...(couponCode ? { couponCode } : {}), ...(returnOrigin ? { returnOrigin } : {}), ...(await geoFields()) };
+  const body = { planSlug, interval, ...(couponCode ? { couponCode } : {}), ...(skipOffer ? { skipOffer: true } : {}), ...(returnOrigin ? { returnOrigin } : {}), ...(await geoFields()) };
   return unwrap(await apiPost(
     '/checkout/session',
     body,
