@@ -9,7 +9,10 @@ import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
 import { getStoredReferralCode } from '../../../lib/referralCode';
 import { getLinkPromoCode } from '../../../lib/promoLink';
 import { useActiveOffer } from '../../../hooks/useActiveOffer';
-import { offerCoversInterval, offerLabel, discountWording } from '../../../lib/siteOffer';
+import { offerCoversInterval, offerLabel, discountWording, offerPrice } from '../../../lib/siteOffer';
+
+/* Months each payment covers, to spread a flat amount off into a per-month figure. */
+const MONTHS = { monthly: 1, quarterly: 3, yearly: 12 };
 import { PROTECTIONS, GLYPH, COUPON_REFUSAL } from './billingContent';
 import NoticeCard from '../shell/NoticeCard';
 import StepsBar from '../shell/StepsBar';
@@ -276,7 +279,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
     : offerOn ? offerVerified : null;
   const priceOf = (option) => {
     const v = verified?.[option.id];
-    return v?.valid ? Math.round(option.price * (1 - v.percentOff / 100)) : option.price;
+    return v?.valid ? offerPrice(option.price, v) ?? option.price : option.price;
   };
 
   /*
@@ -292,7 +295,11 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   const perMonthOf = (option) => {
     const v = verified?.[option.id];
     const base = option.perMonth ?? option.price;
-    return v?.valid ? base * (1 - v.percentOff / 100) : base;
+    if (!v?.valid) return base;
+    /* A flat amount comes off each payment, so per month it is spread over
+       the months that payment covers. */
+    if (v.amountOff) return base - v.amountOff / (MONTHS[option.id] ?? 1);
+    return base * (1 - v.percentOff / 100);
   };
   const monthlyBaseline = perMonthOf(options.find((o) => o.id === 'monthly') ?? options[0]);
   const savingOf = (option) => {
@@ -793,7 +800,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                         </p>
                       ) : discount ? (
                         <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--mint)' }}>
-                          {discount.percentOff}% off applied.{' '}
+                          {discount.amountOff ? `₹${discount.amountOff.toLocaleString('en-IN')} off` : `${discount.percentOff}% off`} applied.{' '}
                           {discount.cycles
                             ? `Covers your first ${discount.cycles === 1 ? 'payment' : `${discount.cycles} payments`}, then the full price.`
                             : 'Applies to every renewal.'}

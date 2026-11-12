@@ -56,7 +56,7 @@ export function offerHeadline(offer) {
   if (!offer) return '';
   if (offer.title) return offer.title;
   const scope = offerScope(offer);
-  const lead = offer.discountPct === 50 ? 'Half price on' : `${offer.discountPct}% off`;
+  const lead = offer.amountOff ? `Flat ${inr(offer.amountOff)} off` : offer.discountPct === 50 ? 'Half price on' : `${offer.discountPct}% off`;
   return `${lead} ${scope}${planSuffix(offer)}`;
 }
 
@@ -68,16 +68,27 @@ export function offerLabel(offer) {
   return lower[0].toUpperCase() + lower.slice(1);
 }
 
+/** "₹299" — flat amounts are rupees only (payments refuses flat outside India). */
+function inr(n) {
+  return `₹${Number(n).toLocaleString('en-IN')}`;
+}
+
 /**
- * Price after a percentage discount, for DISPLAY. Rounded, never floored:
- * Dodo computes the charge itself, and advertising a rupee under what is
- * billed is the one direction of error worth avoiding.
+ * Price after a discount, for DISPLAY. `d` is an offer ({ discountPct } or
+ * { amountOff }), a verified coupon ({ percentOff } or { amountOff }), or a
+ * bare percentage. Rounded, never floored: Dodo computes the charge itself,
+ * and advertising a rupee under what is billed is the one direction of error
+ * worth avoiding. A flat amount that would take the price to zero or below is
+ * not shown at all.
  */
-export function offerPrice(price, pct) {
-  if (price == null || pct == null) return null;
+export function offerPrice(price, d) {
+  if (price == null || d == null) return null;
   const m = Number(price);
-  const p = Number(pct);
-  if (!Number.isFinite(m) || m <= 0 || !Number.isFinite(p) || p <= 0 || p >= 100) return null;
+  if (!Number.isFinite(m) || m <= 0) return null;
+  const flat = typeof d === 'object' ? Number(d.amountOff) : NaN;
+  if (Number.isFinite(flat) && flat > 0) return flat < m ? Math.round(m - flat) : null;
+  const p = Number(typeof d === 'object' ? d.percentOff ?? d.discountPct : d);
+  if (!Number.isFinite(p) || p <= 0 || p >= 100) return null;
   return Math.round(m * (1 - p / 100));
 }
 
@@ -94,7 +105,7 @@ export function firstPeriodLabel(offer, interval) {
  */
 export function offerPriceLine(offer, { planName = 'Pro', monthly, format }) {
   if (!offer || !offerCoversInterval(offer, 'monthly')) return null;
-  const after = offerPrice(monthly, offer.discountPct);
+  const after = offerPrice(monthly, offer);
   if (after == null) return null;
   const amt = format(after);
   if (offer.cycles === 1) return `${planName} from ${amt} for your first month`;
@@ -102,8 +113,8 @@ export function offerPriceLine(offer, { planName = 'Pro', monthly, format }) {
   return `${planName} from ${amt}/mo`;
 }
 
-/** "30% off your first payment" — from a verified coupon result, or an offer. */
-export function discountWording({ percentOff, cycles }) {
+/** "30% off your first payment" / "₹299 off every payment" — from a verified coupon result, or an offer. */
+export function discountWording({ percentOff, discountPct, amountOff, cycles }) {
   const scope = cycles === 1 ? 'your first payment' : cycles > 1 ? `your first ${cycles} payments` : 'every payment';
-  return `${percentOff}% off ${scope}`;
+  return amountOff ? `${inr(amountOff)} off ${scope}` : `${percentOff ?? discountPct}% off ${scope}`;
 }

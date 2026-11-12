@@ -91,3 +91,33 @@ describe('small labels', () => {
     expect(discountWording({ percentOff: 30, cycles: null })).toBe('30% off every payment');
   });
 });
+
+/* Flat ₹299 off every payment, all plans, India (owner, 12 Nov 2026). */
+describe('a flat amount off', () => {
+  const FLAT = { code: 'FLAT299', amountOff: 299, discountPct: null, cycles: null, intervals: ['monthly', 'quarterly', 'yearly'], audience: 'in', headline: 'FLAT ₹299 OFF', endsAt: Date.now() + 86400000 };
+
+  it('takes the same rupees off every plan', () => {
+    expect(offerPrice(1299, FLAT)).toBe(1000);
+    expect(offerPrice(3299, FLAT)).toBe(3000);
+    expect(offerPrice(8999, FLAT)).toBe(8700);
+    expect(offerPrice(1299, { amountOff: 299, percentOff: null })).toBe(1000);
+  });
+
+  it('shows no price when the amount would take it to zero', () => {
+    expect(offerPrice(299, FLAT)).toBeNull();
+    expect(offerPrice(199, FLAT)).toBeNull();
+  });
+
+  it('still prices percentages, from an offer, a coupon or a number', () => {
+    expect(offerPrice(1299, { discountPct: 30 })).toBe(909);
+    expect(offerPrice(1299, { percentOff: 30, amountOff: null })).toBe(909);
+    expect(offerPrice(1299, 30)).toBe(909);
+  });
+
+  it('words it in rupees', () => {
+    expect(offerHeadline(FLAT)).toBe('Flat ₹299 off every payment — any plan');
+    expect(discountWording(FLAT)).toBe('₹299 off every payment');
+    expect(discountWording({ amountOff: 299, percentOff: null, cycles: 1 })).toBe('₹299 off your first payment');
+    expect(offerPriceLine(FLAT, { monthly: 1299, format: formatInr })).toBe('Pro from ₹1,000/mo');
+  });
+});

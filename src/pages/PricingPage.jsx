@@ -300,7 +300,7 @@ export default function PricingPage() {
   const activePromo = offer && !hasOwnCode && (offer.audience === 'all' || currency === 'INR') ? offer : null;
   /** The offer price for one interval, or null when the offer does not cover it. */
   const offerPriceFor = (iv, price) =>
-    activePromo && offerCoversInterval(activePromo, iv) && price > 0 ? offerPrice(price, activePromo.discountPct) : null;
+    activePromo && offerCoversInterval(activePromo, iv) && price > 0 ? offerPrice(price, activePromo) : null;
   const { session, user, subscription, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -697,7 +697,7 @@ export default function PricingPage() {
                         </div>
                         {promoPrice != null && (
                           <p data-offer-note className="text-[12px] font-semibold leading-relaxed" style={{ color: '#fbbf24' }}>
-                            {offerLabel(activePromo)}: {discountWording({ percentOff: activePromo.discountPct, cycles: activePromo.cycles })}. {activePromo.code} applied at checkout.
+                            {offerLabel(activePromo)}: {discountWording(activePromo)}. {activePromo.code} applied at checkout.
                           </p>
                         )}
                         <p className="text-[12.5px] leading-relaxed min-h-[20px]" style={{ color: '#94a3b8' }}>

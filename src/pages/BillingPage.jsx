@@ -20,6 +20,7 @@ import { formatMoney } from '../lib/priceBands';
 import { journalPeriodBadgeLabel, maxTradingAccountsForPlan } from '../lib/planLimits';
 import { billingStateOf, daysUntil, gstInside, savingVsMonthly } from '../lib/billingState';
 import { trackBilling } from '../lib/analytics';
+import { offerPrice } from '../lib/siteOffer';
 import { sx } from '../components/dashboard/shell/sx';
 import CelebrationOverlay from '../components/dashboard/CelebrationOverlay';
 import { debitMayBeInFlight, MANDATE_NOTE, IN_FLIGHT_NOTE } from '../lib/mandateWindow';
@@ -189,7 +190,7 @@ export default function BillingPage() {
   const discount = useSubscribeDiscount({ enabled: buying, intervals: intervalIds, token: accessToken });
   const payable = (o) => {
     const d = buying && o ? discount.discountFor(o.id) : null;
-    return d ? Math.round(o.price * (1 - d.percentOff / 100)) : o?.price;
+    return d ? offerPrice(o.price, d) ?? o.price : o?.price;
   };
 
   /* Trial ends on trialEndsAt; a paid period ends on currentPeriodEnd. Both

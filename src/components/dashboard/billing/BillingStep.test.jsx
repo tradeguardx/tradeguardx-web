@@ -635,6 +635,21 @@ describe('billing step — the site offer, to apply', () => {
     expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
   });
 
+  it('prices a flat ₹299 off every plan once applied', async () => {
+    siteOffer.value = { ...DIWALI, code: 'FLAT299', discountPct: null, amountOff: 299, cycles: null, headline: 'FLAT ₹299 OFF' };
+    validate.mockResolvedValue({ valid: true, code: 'FLAT299', percentOff: null, amountOff: 299, cycles: null });
+    render(<BillingStep />);
+    const card = (await screen.findByText('Flat ₹299 off available')).closest('[data-offer-card]');
+    expect(card).toHaveTextContent('₹299 off every payment');
+    await applyOffer();
+    await screen.findByText('Flat ₹299 off applied · ₹299 off every payment');
+    expect(screen.getAllByText('₹1,000').length).toBeGreaterThan(0);
+    expect(screen.getByText('₹3,000')).toBeTruthy();
+    expect(screen.getByText('₹8,700')).toBeTruthy();
+    expect(screen.getByText(/₹725\/mo/)).toBeTruthy();
+    expect(dueToday()).toBe('₹1,000');
+  });
+
   it('does nothing without an applicable offer', async () => {
     render(<BillingStep />);
     await screen.findByText('Due today');

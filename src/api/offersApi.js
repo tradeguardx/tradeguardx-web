@@ -23,8 +23,12 @@ export function normalizeOffer(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const code = String(raw.code ?? '').trim().toUpperCase();
   if (!CODE.test(code)) return null;
-  const discountPct = Number(raw.discountPct);
-  if (!Number.isInteger(discountPct) || discountPct < 1 || discountPct > 90) return null;
+  /* A percentage, or a flat rupee amount off (12 Nov 2026) — exactly one. */
+  const amountOff = raw.amountOff == null ? null : Number(raw.amountOff);
+  const discountPct = raw.discountPct == null ? null : Number(raw.discountPct);
+  if (amountOff != null) {
+    if (!Number.isInteger(amountOff) || amountOff < 1 || discountPct != null) return null;
+  } else if (!Number.isInteger(discountPct) || discountPct < 1 || discountPct > 90) return null;
   const endsAt = Date.parse(raw.endsAt);
   if (!Number.isFinite(endsAt)) return null;
   const startsAt = raw.startsAt ? Date.parse(raw.startsAt) : NaN;
@@ -39,6 +43,7 @@ export function normalizeOffer(raw) {
   return {
     code,
     discountPct,
+    amountOff,
     cycles,
     intervals,
     audience,

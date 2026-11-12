@@ -66,6 +66,12 @@ describe('normalizeOffer fails closed', () => {
     expect(normalizeOffer({ ...DIWALI, cycles: null }).cycles).toBeNull();
   });
 
+  it('accepts a flat rupee amount in place of a percentage', () => {
+    expect(normalizeOffer({ ...DIWALI, discountPct: null, amountOff: 299 })).toMatchObject({ amountOff: 299, discountPct: null });
+    expect(normalizeOffer({ ...DIWALI, amountOff: 299 })).toBeNull(); // both set
+    expect(normalizeOffer({ ...DIWALI, discountPct: null, amountOff: 0 })).toBeNull();
+  });
+
   it('treats an unknown audience as India-only, the narrower one', () => {
     expect(normalizeOffer({ ...DIWALI, audience: 'mars' }).audience).toBe('in');
   });
