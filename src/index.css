@@ -1888,12 +1888,17 @@
   .bs-confetti { display: none; }
 }
 
+/* A hideable video strip: keep the Watch button clear of the corner × on
+   wide screens (the phone rule below puts it on its own row instead). */
+.setup-video-help.has-hide > .svh-watch { margin-right: 32px; }
+
 /* Setup help strips (FounderHelp, SetupVideoHelp) on phones: once the button
    wraps under the text it reads as a stray pill, so it takes the full width
    instead — one clear tap target under each strip (owner, 13 Nov 2026). */
 @media (max-width: 560px) {
   .founder-help > a,
-  .setup-video-help > button {
+  .setup-video-help.has-hide > .svh-watch { margin-right: 0 !important; }
+  .setup-video-help > .svh-watch {
     flex: 1 1 100% !important;
     justify-content: center;
     min-height: 48px !important;

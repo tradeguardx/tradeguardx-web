@@ -13,6 +13,7 @@ import { fetchBreaches } from '../api/breachesApi';
 import { brokerLabel, instrumentOf, symbolsInText } from '../lib/labels';
 import { ICON } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
+import SetupVideoHelp from '../components/dashboard/SetupVideoHelp';
 import { heroOf, pillOf } from '../components/dashboard/shell/lifecycleShell';
 import { isUnenforced, unenforcedLabel } from '../lib/lifecycle';
 import { formatRemaining } from '../components/dashboard/shell/format';
@@ -436,6 +437,9 @@ export default function OverviewPage() {
   return (
     <div>
       {showSetup && <SetupCard steps={steps} doneCount={doneCount} navigate={navigate} />}
+
+      {/* The walkthrough, above Overview too (owner, 13 Nov 2026); hideable. */}
+      <SetupVideoHelp top={0} bottom={18} hideKey="tgx_overview_video_hidden" />
 
       <div style={sx('margin-bottom:18px')}>
         <h1 style={sx("margin:0;font:600 29px/1.08 'Space Grotesk',sans-serif;letter-spacing:-.035em")}>Overview</h1>
