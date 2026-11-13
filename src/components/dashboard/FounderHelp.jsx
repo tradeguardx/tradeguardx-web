@@ -11,13 +11,13 @@ import { sx } from './shell/sx';
  * configured), with a first line already typed that says where they are, so
  * the reply can start with the answer instead of "which step are you on?".
  */
-export default function FounderHelp({ step }) {
+export default function FounderHelp({ step, top = 26 }) {
   const prefill = `Hi! I'm setting up TradeGuardX${step ? ` (step: ${step})` : ''} and I have a question: `;
   const wa = founderWhatsAppUrl(prefill);
   const href = wa ?? founderTelegramUrl(prefill);
 
   return (
-    <aside className="founder-help" style={sx('margin-top:26px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2)')}>
+    <aside className="founder-help" style={sx(`margin-top:${top}px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2)`)}>
       <span aria-hidden style={sx('flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--mint-tint);color:var(--mint)')}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a8.5 8.5 0 01-12.5 7.5L3 21l1.5-5.2A8.5 8.5 0 1121 12z" /><path d="M8.5 11h.01M12 11h.01M15.5 11h.01" /></svg>
       </span>

@@ -60,19 +60,6 @@ export default function WatchDemoCard({
     setOpen(true);
   };
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (e) => {
-      if (e.key === 'Escape') close();
-    };
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [open, close]);
 
   return (
     <>
@@ -115,11 +102,37 @@ export default function WatchDemoCard({
         </span>
       </button>
 
-      {open && (
+      {open && <VideoLightbox video={{ ...video, id: vid }} title={heading} onClose={close} />}
+    </>
+  );
+}
+
+/**
+ * The in-page player: a lightbox with the YouTube embed, closed by Escape, the
+ * backdrop or the button. The iframe exists only while it is open, so nobody
+ * pays for the player or its cookies without pressing play.
+ */
+export function VideoLightbox({ video, title, onClose }) {
+  const vid = video?.id ?? DEMO_VIDEO_ID;
+  const heading = title ?? video?.title ?? DEMO_VIDEO.title;
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return (
         <div
           className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-8"
           style={{ background: 'rgba(3,5,9,0.86)', backdropFilter: 'blur(6px)' }}
-          onClick={close}
+          onClick={onClose}
           role="dialog"
           aria-modal="true"
           aria-label={heading}
@@ -143,7 +156,7 @@ export default function WatchDemoCard({
 
           <button
             type="button"
-            onClick={close}
+            onClick={onClose}
             aria-label="Close video"
             className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border text-white transition-colors hover:bg-white/10 sm:right-8 sm:top-8"
             style={{ borderColor: 'rgba(255,255,255,0.16)', background: 'rgba(255,255,255,0.06)' }}
@@ -153,8 +166,6 @@ export default function WatchDemoCard({
             </svg>
           </button>
         </div>
-      )}
-    </>
   );
 }
 
