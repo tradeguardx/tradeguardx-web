@@ -34,7 +34,14 @@ export default function WatchDemoCard({
   subtitle,
   source = 'guides_demo_video',
   className = '',
+  /**
+   * 'site' (default) for the dark marketing pages. 'app' takes the dashboard's
+   * theme tokens instead, so the card reads in both light and dark — setup
+   * runs inside the dashboard shell, where white text vanishes on light.
+   */
+  tone = 'site',
 }) {
+  const app = tone === 'app';
   const vid = video?.id ?? DEMO_VIDEO_ID;
   const heading = title ?? video?.title ?? DEMO_VIDEO.title;
   const sub = subtitle ?? video?.subtitle ?? DEMO_VIDEO.subtitle;
@@ -73,7 +80,9 @@ export default function WatchDemoCard({
         type="button"
         onClick={play}
         className={`group flex w-full items-center gap-4 rounded-2xl border p-3 text-left transition-colors sm:gap-5 sm:p-4 ${className}`}
-        style={{ borderColor: 'rgba(0,212,170,0.20)', background: 'rgba(0,212,170,0.04)' }}
+        style={app
+          ? { borderColor: 'var(--mint-line)', background: 'var(--surface-2)', cursor: 'pointer' }
+          : { borderColor: 'rgba(0,212,170,0.20)', background: 'rgba(0,212,170,0.04)' }}
       >
         <span className="relative block w-[132px] flex-shrink-0 overflow-hidden rounded-xl sm:w-[180px]">
           <span className="block aspect-video w-full bg-black">
@@ -96,13 +105,13 @@ export default function WatchDemoCard({
         </span>
 
         <span className="min-w-0">
-          <span className="block text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--accent, #00d4aa)' }}>
+          <span className="block text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: app ? 'var(--mint)' : 'var(--accent, #00d4aa)' }}>
             {/* The language belongs here, not inside the lightbox. Someone who
                 does not speak it should find out before they commit a click. */}
             {video?.lang ? `Video guide · ${video.lang}` : 'Video guide'}
           </span>
-          <span className="mt-1 block text-[15px] font-bold leading-snug text-white">{heading}</span>
-          <span className="mt-1 hidden text-[13px] leading-relaxed text-slate-400 sm:block">{sub}</span>
+          <span className={`mt-1 block text-[15px] font-bold leading-snug ${app ? '' : 'text-white'}`} style={app ? { color: 'var(--ink)' } : undefined}>{heading}</span>
+          <span className={`mt-1 hidden text-[13px] leading-relaxed sm:block ${app ? '' : 'text-slate-400'}`} style={app ? { color: 'var(--ink-3)' } : undefined}>{sub}</span>
         </span>
       </button>
 

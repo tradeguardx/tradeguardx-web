@@ -12,6 +12,8 @@ import VenuePicker from '../components/dashboard/VenuePicker';
 import VenueMark from '../components/dashboard/VenueMark';
 import StepsBar from '../components/dashboard/shell/StepsBar';
 import FounderHelp from '../components/dashboard/FounderHelp';
+import WatchDemoCard from '../components/common/WatchDemoCard';
+import { HOW_TO_USE_VIDEO } from '../lib/demoVideo';
 import { venueFor } from '../lib/venues';
 import { sx } from '../components/dashboard/shell/sx';
 import { useToast } from '../components/common/ToastProvider';
@@ -362,6 +364,13 @@ export default function SetupPage() {
             go(1);
           }}
         />
+      )}
+      {/* New here: the whole product in one video before choosing anything
+          (owner, 13 Nov 2026). Plays in a lightbox; nothing loads until play. */}
+      {at === 0 && (
+        <div style={sx('margin-top:22px')}>
+          <WatchDemoCard video={HOW_TO_USE_VIDEO} tone="app" source="setup_how_to_video" />
+        </div>
       )}
 
       {at === 1 && namedAlready && (

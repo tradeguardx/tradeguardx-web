@@ -46,6 +46,17 @@ export const DEMO_VIDEO = {
   subtitle: 'The whole flow — API key, rules, and the kill switch firing — in about three minutes.',
 };
 
+/**
+ * "How to use TradeGuardX" — the full setup across Delta, Shark and Exness
+ * (owner, 13 Nov 2026). Shown on the first setup step, where someone is about
+ * to choose an exchange and has not yet seen how any of it works.
+ */
+export const HOW_TO_USE_VIDEO = {
+  id: 'TR8aCHD_YCs',
+  title: 'How to use TradeGuardX',
+  subtitle: 'Full setup on Delta, Shark and Exness — connect the key, set your rules, and see the kill switch work.',
+};
+
 /** The video a venue's guides should play, or the general walkthrough. */
 export function videoFor(venueSlug) {
   return VENUE_VIDEOS[String(venueSlug ?? '').toLowerCase()] ?? DEMO_VIDEO;
