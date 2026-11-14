@@ -17,6 +17,7 @@ export function exchangeFromBrokerSlug(slug) {
   if (slug === 'shark') return 'shark';
   if (slug === 'blofin') return 'blofin';
   if (slug === 'bybit') return 'bybit';
+  if (slug === 'binance') return 'binance';
   if (slug === 'exness') return 'exness';
   return null;
 }

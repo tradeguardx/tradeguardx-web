@@ -511,6 +511,96 @@ const VENUES = {
     beta: false,
   },
   /*
+   * Binance — USDⓈ-M futures only (USDT- and USDC-margined). COIN-M settles
+   * in coin while our limits are in USD, spot is never covered, and options
+   * are a later phase. Global only, like Bybit: not offered on Indian pages
+   * and no tax centre.
+   *
+   * HIDDEN UNTIL GO-LIVE. This entry powers the connect flow for an account
+   * that already has propFirmSlug 'binance'; setup lists Binance only once its
+   * prop_firms row is active, and venueSeo.js keeps it out of VENUE_ORDER, so
+   * there is no public page.
+   *
+   * WHERE THE FORM COMES FROM. Binance's own "How to create API keys" FAQ
+   * (Profile → API Management → Create API → System generated → label →
+   * security check; the secret is shown once) and the apiRestrictions fields
+   * (enableReading, enableFutures, enableWithdrawals, ipRestrict) that
+   * user-service checks. Binance's key form comes in TWO screens: the key is
+   * created first, with no permission or IP control at all, and the futures
+   * permission and the IP are set afterwards under Edit restrictions. NOT yet
+   * checked against a screenshot of our own; BinanceForm in
+   * VenueFormReplica draws this order, so correct the strings here first.
+   *
+   * user-service refuses (spec, 14 Nov 2026):
+   *   - Enable Futures off → KEY_READ_ONLY
+   *   - no IP restriction (Binance also drops futures permission after 90
+   *     days on a key without one) → KEY_IP_NOT_WHITELISTED
+   *   - Enable Withdrawals on → KEY_WITHDRAW_ENABLED
+   *   - a Portfolio Margin account → BINANCE_PORTFOLIO_MARGIN
+   * So the IP is REQUIRED here.
+   */
+  binance: {
+    family: 'binance',
+    name: 'Binance',
+    longName: 'Binance USDⓈ-M Futures',
+    keysUrl: () => 'https://www.binance.com/en/my/settings/api-management',
+    formTitle: 'Create API',
+    keyTypeField: 'Choose API Key type',
+    keyTypeOptions: ['System generated', 'Self-generated'],
+    keyTypeChoice: 'System generated',
+    keyTypeNote: 'Self-generated keys use your own RSA or Ed25519 key pair. We accept system-generated keys only.',
+    keyNameField: 'Label API Key',
+    keyNameHint: 'Any label you will recognise later.',
+    createNote: 'Press Next and pass Binance’s security check. The next screen shows the API Key and the Secret Key. Copy both now: Binance shows the secret only once.',
+    editTitle: 'Edit restrictions',
+    editNote: 'On the new key, press Edit restrictions. This is where the key gets its futures permission and our IP.',
+    readScopeLabel: 'Enable Reading',
+    readScopeNote: 'On by default. Keep it.',
+    scopeLabel: 'Enable Futures',
+    scopeNote: 'What lets us cancel an order and close a position. A key without it is refused. You only see this box once you have opened a Binance Futures account.',
+    offScopes: [
+      { label: 'Enable Withdrawals', note: 'Leave it off: we refuse a key that can withdraw.' },
+      { label: 'Everything else', note: 'Spot & Margin, Margin Loan, Universal Transfer, Options and the rest. We never need them.' },
+    ],
+    ipField: 'IP access restrictions',
+    ipChoice: 'Restrict access to trusted IPs only',
+    ipOther: 'Unrestricted (Less Secure)',
+    ipRequired: true,
+    ipHint: 'Required. A key with no IP loses its futures permission after 90 days on Binance, and the guard stops with it, so we refuse a key without one.',
+    ipAddButton: 'Confirm',
+    noWithdrawNote: 'Enable Reading and Enable Futures only. Leave Enable Withdrawals off: a key that can move money is refused when you connect.',
+    submitLabel: 'Save',
+    otpNote: 'Binance asks for its security check again before it saves. If the secret is gone by now, delete the key and make a new one: Binance never shows a secret twice.',
+    secretLabel: 'Secret Key',
+    secretPlaceholder: 'Paste the Secret Key',
+    pickerNote: 'USDⓈ-M futures',
+    platformNoteLead: 'USDⓈ-M futures only. COIN-M futures, spot and options are not covered.',
+    platformNote: 'Open a Binance Futures account first, then make the key on binance.com on your real account: not Binance.US, not the futures testnet or demo trading. Portfolio Margin accounts are not supported yet.',
+    formStepBody: 'Binance makes the key first and sets its permissions after, on a second screen. The picture shows both, top to bottom: fill them in to match, then press Save. The picture is not a live form.',
+    openStepTitle: 'Open API Management on Binance',
+    openStepBody: 'The button opens Binance’s API Management page directly. Or on binance.com: profile icon → API Management → Create API. Keep this tab open; you come back to paste.',
+    openButton: 'Open Binance API Management',
+    pasteStep: {
+      title: 'Paste the API Key and Secret Key here',
+      body: 'Copy both from the screen Binance shows after you create the key.',
+    },
+    desktopOnly: true,
+    desktopOnlyNote: 'The steps here follow the Binance website. The app lays out Edit restrictions differently, and the IP and futures settings are easier to check on a bigger screen.',
+    mobilePath: null,
+    navPath: ['Profile', 'API Management', 'Create API'],
+    suggestsKeyName: true,
+    createSteps: [
+      { title: 'Profile → API Management → Create API', body: 'On binance.com, on your real account, open the profile menu, choose API Management and press Create API. You need a Binance Futures account opened first.' },
+      { title: 'System generated, then a label', body: 'Choose System generated, give the key a label such as TradeGuardX, press Next and pass the security check. Self-generated (RSA or Ed25519) keys are refused.' },
+      { title: 'Copy the API Key and Secret Key now', body: 'Binance shows the Secret Key once, on this screen. Copy both before you move on.' },
+      { title: 'Edit restrictions: Reading and Futures', body: 'Press Edit restrictions on the new key. Keep Enable Reading on and tick Enable Futures. Leave Enable Withdrawals off: a key that can withdraw is refused.' },
+      { title: 'Restrict access to trusted IPs only: ours', body: 'Choose "Restrict access to trusted IPs only", add our IP and press Confirm, then Save. A key with no IP loses its futures permission after 90 days, so we refuse one.' },
+    ],
+    /** Tax centre is for Indian venues; Binance is not part of it. */
+    taxCentre: false,
+    beta: false,
+  },
+  /*
    * Exness — the first forex/CFD venue (FX pairs, metals, indices, energies,
    * crypto CFDs), and only accounts on Exness's OWN platform (Exness Terminal
    * / web terminal). The Exness Trader API cannot see MT4 or MT5 accounts, so
@@ -623,6 +713,7 @@ export function venueFor(exchangeSlug) {
   if (exchangeSlug.startsWith('shark')) return VENUES.shark;
   if (exchangeSlug.startsWith('blofin')) return VENUES.blofin;
   if (exchangeSlug.startsWith('bybit')) return VENUES.bybit;
+  if (exchangeSlug.startsWith('binance')) return VENUES.binance;
   if (exchangeSlug.startsWith('exness')) return VENUES.exness;
   return null;
 }

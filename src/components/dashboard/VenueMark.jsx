@@ -19,6 +19,8 @@ const VENUES = {
   coindcx: { logo: null, accent: '#EF7A18', short: 'CD' },
   bitget: { logo: '/brokers/bitget.svg', accent: '#00F0FF', short: 'BG' },
   bybit: { logo: null, accent: '#F7A600', short: 'BY' },
+  // A plain text mark in a neutral slate: no Binance logo or brand yellow.
+  binance: { logo: null, accent: '#64748B', short: 'BN' },
   shark: { logo: null, accent: '#4DB8E8', short: 'SK' },
   blofin: { logo: null, accent: '#FF8C1A', short: 'BF' },
   exness: { logo: null, accent: '#E6B800', short: 'EX' },
@@ -29,6 +31,7 @@ function familyOf(slug) {
   if (s.startsWith('delta')) return 'delta';
   if (s.startsWith('coindcx')) return 'coindcx';
   if (s.startsWith('bybit')) return 'bybit';
+  if (s.startsWith('binance')) return 'binance';
   if (s.startsWith('bitget')) return 'bitget';
   if (s.startsWith('shark')) return 'shark';
   if (s.startsWith('blofin')) return 'blofin';

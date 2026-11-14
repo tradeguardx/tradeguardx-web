@@ -15,12 +15,13 @@ const BROKER_LABELS = {
   shark: 'Shark Exchange',
   blofin: 'BloFin',
   bybit: 'Bybit',
+  binance: 'Binance USDⓈ-M Futures',
   exness: 'Exness',
 };
 
 const EQUITY_MODE_LABELS = { funded: 'Managed', live: 'Live', demo: 'Demo' };
 
-const SOURCE_LABELS = { delta: 'Delta Exchange', coindcx: 'CoinDCX', shark: 'Shark', blofin: 'BloFin', bybit: 'Bybit', exness: 'Exness', manual: 'Manual' };
+const SOURCE_LABELS = { delta: 'Delta Exchange', coindcx: 'CoinDCX', shark: 'Shark', blofin: 'BloFin', bybit: 'Bybit', binance: 'Binance', exness: 'Exness', manual: 'Manual' };
 
 /** Fallback: snake/kebab → Title Case, so an unmapped value still reads like English. */
 function titleize(value) {

@@ -360,6 +360,75 @@ const VENUE_PAGES = {
     ],
   },
 
+  // ── Binance: USDⓈ-M futures only, for traders outside India. HIDDEN: not in
+  // VENUE_ORDER, so venuePageFor('binance') is null and there is no page,
+  // route, sitemap entry or link until the go-live commit adds it there.
+  binance: {
+    slug: 'binance',
+    name: 'Binance',
+    longName: 'Binance USDⓈ-M Futures',
+    status: 'live',
+    beta: false,
+    title: 'Binance Futures Daily Loss Limit & Kill Switch | TradeGuardX',
+    description:
+      'Set a daily loss limit on your Binance USDⓈ-M futures account and have it enforced: TradeGuardX cancels orders, closes positions and locks the account from our servers.',
+    h1: 'Daily loss limit and kill switch for Binance Futures',
+    lede:
+      'Binance gives you a stop-loss on each position, but nothing that ends the trading day. Connect a Binance API key, set your daily loss limit once, and our engine enforces it: orders cancelled, positions closed, account locked until your next daily reset.',
+    sections: [
+      sharedBreachSection('Binance'),
+      {
+        h: 'What is different about Binance',
+        p: [
+          'We cover Binance USDⓈ-M futures: the USDT- and USDC-margined contracts. COIN-M futures, spot and options are not covered. Limits are in USDT, and the daily reset happens early in the morning in your own timezone.',
+          'The kill switch cancels your open orders, including stop-loss and take-profit orders, then closes each position at market and confirms it.',
+          'Binance drops the futures permission from an API key with no IP address after 90 days. So we only accept a key with our IP on it: a key that quietly loses its permission would switch your protection off without warning.',
+          'Portfolio Margin accounts are not supported yet.',
+        ],
+      },
+      {
+        h: 'Which Binance rules can TradeGuardX enforce?',
+        rulesTable: true,
+        p: [
+          'All seven, with the same behaviour as on every other venue. It is one engine behind all of them, so a daily loss limit means the same thing on Binance as it does anywhere else.',
+        ],
+      },
+      {
+        h: 'How do I connect my Binance account?',
+        p: [
+          'One key on Binance, one paste into TradeGuardX. On binance.com you open API Management, create a system-generated key, then use Edit restrictions to tick Enable Futures and add our IP. Then you paste the API Key and the Secret Key. About five minutes.',
+        ],
+        guideLink: 'api-key',
+      },
+      sharedWithdrawSection(
+        'Binance',
+        'We ask for Enable Reading and Enable Futures, which let us see the account, cancel an order and close a position. Binance\'s form also offers Enable Withdrawals; it stays off, and we refuse a key that has it.',
+      ),
+    ],
+    faq: [
+      {
+        q: 'Does Binance Futures have a daily loss limit?',
+        a: 'Not an account-wide one that locks you out. Binance gives you stop-loss and take-profit on each position, and those protect one trade at a time. Nothing stops you opening the next trade after a bad run. TradeGuardX adds that: a daily loss limit across the whole account that closes positions and locks trading when it is hit.',
+      },
+      {
+        q: 'Which permissions does the Binance API key need?',
+        a: `Enable Reading and Enable Futures. Leave Enable Withdrawals off. Under IP access restrictions choose "Restrict access to trusted IPs only" and add our IP (${DELTA_EGRESS_IP}). We check all of this when you connect and refuse a key without futures permission, with no IP or that can withdraw.`,
+      },
+      {
+        q: 'Can I connect a Binance.US, testnet or demo key?',
+        a: 'No. Binance.US does not offer futures, and testnet and demo keys only work on Binance\'s test servers. Make the key on your real binance.com account.',
+      },
+      {
+        q: 'Is the Binance kill switch for traders in India?',
+        a: 'No. We list Binance for traders outside India. If you trade crypto futures from India, connect Delta Exchange, CoinDCX or Shark Exchange instead; all three are live.',
+      },
+      {
+        q: 'Does the kill switch still work if I trade from the Binance app?',
+        a: 'Yes. We hold a live connection to the account itself from our servers, so it makes no difference whether a trade came from the Binance app, the website or a bot. If it reaches your account, we see it and act if it breaks a rule.',
+      },
+    ],
+  },
+
   // ── Shark: live and connectable, and until now with no documentation at all.
   shark: {
     slug: 'shark',
@@ -591,7 +660,7 @@ export const VENUE_PAGE_LIST = VENUE_ORDER.map((slug) => VENUE_PAGES[slug]);
 
 /**
  * Only a venue in VENUE_ORDER has a page. VENUE_PAGES can hold a venue that is
- * built but not public (Bybit before its go-live, BloFin while paused); inside
+ * built but not public (Binance before its go-live, BloFin while paused); inside
  * the app its URL must 404 the same way vercel.json makes it 301 outside it.
  */
 export function venuePageFor(slug) {

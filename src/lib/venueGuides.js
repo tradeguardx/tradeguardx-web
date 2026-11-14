@@ -315,6 +315,60 @@ const BYBIT_STEPS = [
   },
 ];
 
+/*
+ * Binance's key flow, from Binance's "How to create API keys" FAQ: create the
+ * key first, then set its futures permission and IP under Edit restrictions.
+ * Not yet checked against our own screenshots: correct the labels here and in
+ * venues.js together when the owner sends them.
+ */
+const BINANCE_STEPS = [
+  {
+    title: 'Create your TradeGuardX account',
+    body: 'Sign up at tradeguardx.com/signup with email or Google.',
+  },
+  {
+    title: 'Start adding your Binance account',
+    body: 'In the dashboard, open Accounts → "Add trading account" and choose Binance.',
+    sub: [
+      'Keep this form open. It shows the IP you need to add to the key, and it is where you paste the key at the end.',
+    ],
+  },
+  {
+    title: 'Create the API key on Binance',
+    body: 'On binance.com, log in to your real account (you need a Binance Futures account opened first), open the profile menu, choose API Management and press Create API.',
+    sub: [
+      'Key type: System generated. Self-generated (RSA or Ed25519) keys are refused.',
+      'Label: anything you will recognise. We suggest "TradeGuardX".',
+      'Press Next and pass the security check.',
+      'Copy the API Key and the Secret Key straight away. Binance shows the secret only once.',
+    ],
+  },
+  {
+    title: 'Edit the key’s restrictions',
+    body: 'A new Binance key can only read. Press Edit restrictions on it.',
+    sub: [
+      'Keep Enable Reading on and tick Enable Futures.',
+      'Leave Enable Withdrawals off. A key that can withdraw is refused.',
+      `Under IP access restrictions choose "Restrict access to trusted IPs only", add ${DELTA_EGRESS_IP} and press Confirm. Binance drops the futures permission from a key with no IP after 90 days, so we refuse one.`,
+      'Press Save and pass the security check again.',
+    ],
+    note:
+      'Enable Futures is the permission that matters. Without it we can watch the account but never close a position, so we check for it when you connect and refuse the key.',
+  },
+  {
+    title: 'Connect the key in TradeGuardX',
+    body: 'On the Add-account form, paste the API Key and the Secret Key.',
+    sub: [
+      'We check the key with Binance straight away: that Enable Futures is on, that our IP is on it and that it cannot withdraw.',
+      'Your Secret Key is encrypted before storage and never shown again.',
+    ],
+  },
+  {
+    title: 'Set your guardrails',
+    body: 'Open Rules and set the protections you want: daily loss limit, max trades per day, loss-streak pause, risk per trade and more. Limits are in USDT.',
+  },
+];
+
 /**
  * Guides keyed by venue slug, then by guide slug. The guide slug is the second
  * path segment — /exchanges/coindcx/api-key — and nesting stops there.
@@ -432,6 +486,49 @@ export const VENUE_GUIDES = {
           heading: 'Set up Bybit — step by step',
           body: 'Follow these in order. The only part done outside TradeGuardX is creating the key on Bybit.',
           steps: BYBIT_STEPS,
+        },
+      ],
+    },
+  },
+
+  binance: {
+    'api-key': {
+      slug: 'api-key',
+      navLabel: 'Connect a key',
+      title: 'How to create a Binance API key for TradeGuardX',
+      seoTitle: 'Binance Futures API Key Setup (Enable Futures, IP) — TradeGuardX',
+      description:
+        'Step by step: create a system-generated Binance API key, tick Enable Futures, restrict it to our IP, leave Enable Withdrawals off, and connect it to TradeGuardX.',
+      intro:
+        'Connect your Binance USDⓈ-M futures account and be protected in about five minutes. You create one API key on binance.com, give it futures permission and our IP, and paste the key and the secret into TradeGuardX.',
+      imagesFrom: null,
+      sections: [
+        {
+          heading: 'Before you start',
+          body: 'Four things about Binance keys that are easy to miss.',
+          list: [
+            {
+              bold: 'Futures account first:',
+              text: 'Enable Futures only appears once you have opened a Binance Futures account. Only USDⓈ-M futures are protected; COIN-M, spot and options are not.',
+            },
+            {
+              bold: 'Copy the secret at once:',
+              text: 'Binance shows the Secret Key only on the screen right after you create the key.',
+            },
+            {
+              bold: 'Our IP is required:',
+              text: 'Binance drops the futures permission from a key with no IP after 90 days, and your protection would stop with it. We refuse a key without one.',
+            },
+            {
+              bold: 'Withdrawals stay off:',
+              text: 'We never need them, and we refuse a key that can withdraw.',
+            },
+          ],
+        },
+        {
+          heading: 'Set up Binance — step by step',
+          body: 'Follow these in order. The only part done outside TradeGuardX is creating the key on Binance.',
+          steps: BINANCE_STEPS,
         },
       ],
     },

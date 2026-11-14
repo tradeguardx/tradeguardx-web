@@ -533,6 +533,104 @@ function BybitForm({ venue, onCopy, copiedValue, accent }) {
   );
 }
 
+/**
+ * BINANCE'S KEY FORM, which is two screens, drawn top to bottom (from
+ * Binance's "How to create API keys" FAQ and the apiRestrictions fields
+ * user-service checks; not yet against a screenshot of our own):
+ *
+ *   Create API: (•) System generated  ( ) Self-generated
+ *   Label API Key → Next → security check → API Key / Secret Key (shown once)
+ *   ── Edit restrictions ──
+ *   [✓] Enable Reading  [✓] Enable Futures  [ ] Enable Withdrawals  [ ] the rest
+ *   IP access restrictions: ( ) Unrestricted  (•) Restrict access to trusted
+ *   IPs only → [our IP] Confirm
+ *   [Save] → security check again
+ *
+ * The key is born with no futures permission and no IP, so a user who stops
+ * after copying the secret has a key we refuse. The rule between the two
+ * halves is the warning that the job is not finished at Create.
+ */
+function BinanceForm({ venue, onCopy, copiedValue, accent }) {
+  return (
+    <div style={sx('max-width:440px')}>
+      <Field label={<><Num n={1} />{venue.keyTypeField}</>} hint={venue.keyTypeNote}>
+        <RadioRow options={venue.keyTypeOptions} choice={venue.keyTypeChoice} accent={accent} />
+      </Field>
+
+      <Field label={<><Num n={2} />{venue.keyNameField}</>} hint={venue.keyNameHint} note={venue.createNote}>
+        <FilledBox value={SUGGESTED_KEY_NAME} onCopy={onCopy} copied={copiedValue === SUGGESTED_KEY_NAME} />
+      </Field>
+
+      <SectionRule>Then: {venue.editTitle}</SectionRule>
+      <span style={sx('display:block;margin:-8px 0 16px;font-size:12px;line-height:1.5;color:var(--ink-3)')}>{venue.editNote}</span>
+
+      <div style={sx('margin-bottom:20px')}>
+        <span style={sx('display:flex;align-items:center;margin-bottom:9px;font-size:12px;color:var(--ink-3)')}><Num n={3} />API restrictions</span>
+        <div style={sx('border:1px solid var(--line-strong);border-radius:11px;overflow:hidden')}>
+          <div style={sx('display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)')}>
+            <Tick on accent={accent} />
+            <span style={sx('min-width:0;flex:1')}>
+              <span style={sx('display:flex;align-items:center;gap:8px')}>
+                <span style={sx('font-size:13.5px;font-weight:700')}>{venue.readScopeLabel}</span>
+                <span style={sx('margin-left:auto;font-size:11.5px;color:var(--ink-faint)')}>Keep on</span>
+              </span>
+              <span style={sx('display:block;margin-top:3px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>{venue.readScopeNote}</span>
+            </span>
+          </div>
+          <div style={sx('display:flex;align-items:flex-start;gap:10px;padding:12px 14px', { background: accent.tint, borderBottom: `1px solid ${accent.line}` })}>
+            <Tick on accent={accent} />
+            <span style={sx('min-width:0;flex:1')}>
+              <span style={sx('display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px')}>
+                <span style={sx('font-size:13.5px;font-weight:700')}>{venue.scopeLabel}</span>
+                <Tag accent={accent} pick>Tick this</Tag>
+              </span>
+              <span style={sx('display:block;margin-top:5px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>{venue.scopeNote}</span>
+            </span>
+          </div>
+          {(venue.offScopes ?? []).map((o, i, all) => (
+            <div key={o.label} style={sx('display:flex;align-items:flex-start;gap:10px;padding:12px 14px', i < all.length - 1 ? { borderBottom: '1px solid var(--line)' } : {})}>
+              <Tick accent={accent} />
+              <span style={sx('min-width:0;flex:1')}>
+                <span style={sx('display:flex;align-items:center;gap:8px')}>
+                  <span style={sx('font-size:13.5px;font-weight:700;color:var(--ink-3)')}>{o.label}</span>
+                  <span style={sx('margin-left:auto;flex:none;font-size:11.5px;color:var(--ink-faint)')}>Leave off</span>
+                </span>
+                {o.note && <span style={sx('display:block;margin-top:3px;font-size:12px;line-height:1.5;color:var(--ink-faint)')}>{o.note}</span>}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Field label={<><Num n={4} />{venue.ipField}</>} hint={venue.ipHint}>
+        <span style={sx('display:grid;gap:10px')}>
+          <span style={sx('display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:13px;font-weight:600;color:var(--ink-3)')}>
+            <Radio accent={accent} /> <span>{venue.ipOther}</span>
+            <Tag accent={accent}>Not this</Tag>
+          </span>
+          <span style={sx('display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px 8px;font-size:13px;font-weight:700;line-height:1.4')}>
+            <Radio on accent={accent} /> <span style={sx('flex:1;min-width:0')}>{venue.ipChoice}</span>
+            <Tag accent={accent} pick>Pick this</Tag>
+          </span>
+          <span style={sx('display:flex;align-items:center;gap:9px;flex-wrap:wrap')}>
+            <FilledBox value={ENGINE_EGRESS_IP} mono onCopy={onCopy} copied={copiedValue === ENGINE_EGRESS_IP} />
+            <span
+              aria-hidden
+              style={sx('flex:none;padding:11px 16px;border-radius:9px;font-size:13px;font-weight:700', {
+                border: `1px solid ${accent.line}`,
+                background: accent.tint,
+                color: accent.text,
+              })}
+            >
+              {venue.ipAddButton}
+            </span>
+          </span>
+        </span>
+      </Field>
+    </div>
+  );
+}
+
 export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
   if (!venue) return null;
   const hasScopeChoice = venue.scopeChoice !== false;
@@ -563,6 +661,8 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
           <BloFinForm venue={venue} onCopy={onCopy} copiedValue={copiedValue} accent={accent} />
         ) : venue.family === 'bybit' ? (
           <BybitForm venue={venue} onCopy={onCopy} copiedValue={copiedValue} accent={accent} />
+        ) : venue.family === 'binance' ? (
+          <BinanceForm venue={venue} onCopy={onCopy} copiedValue={copiedValue} accent={accent} />
         ) : (
         <>
         {venue.accountField && (
@@ -700,6 +800,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
           {venue.family === 'exness' && <Num n={8} gutter />}
           {venue.family === 'blofin' && <Num n={6} />}
           {venue.family === 'bybit' && <Num n={7} />}
+          {venue.family === 'binance' && <Num n={5} />}
           <span
             aria-hidden
             style={sx('display:inline-block;padding:13px 22px;border-radius:10px;font-size:14px;font-weight:700', {

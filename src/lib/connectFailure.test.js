@@ -14,6 +14,16 @@ describe('connectFailureTitle', () => {
     expect(connectFailureTitle(err('BYBIT_AUTH_FAILED'))).toBe('Bybit did not accept this key');
   });
 
+  it.each([
+    ['BINANCE_AUTH_FAILED', 'Binance did not accept this key'],
+    ['BINANCE_US_KEY', 'This is a Binance.US key'],
+    ['BINANCE_DEMO_KEY', 'This is a Binance testnet or demo key'],
+    ['BINANCE_REGION_BLOCKED', 'Binance blocked our connection for your region'],
+    ['BINANCE_PORTFOLIO_MARGIN', "Portfolio Margin accounts aren't supported yet"],
+  ])('names the Binance refusal %s', (code, title) => {
+    expect(connectFailureTitle(err(code))).toBe(title);
+  });
+
   it('leaves every other failure on the generic heading', () => {
     expect(connectFailureTitle(err('DELTA_AUTH_FAILED'))).toBeNull();
     expect(connectFailureTitle(new Error('network'))).toBeNull();

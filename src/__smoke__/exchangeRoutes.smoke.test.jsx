@@ -73,7 +73,8 @@ describe('unknown URLs 404 instead of quietly redirecting', () => {
   // Each of these used to answer 200 with another page's content — a soft 404,
   // which Google keeps and files as a duplicate of the page it landed on.
   it.each([
-    ['an unknown venue', '/exchanges/binance'],
+    ['a hidden venue (built, not live)', '/exchanges/binance'],
+    ['a hidden venue\'s guide', '/exchanges/binance/api-key'],
     ['an unknown guide', '/exchanges/delta/withdrawals'],
     ['a removed venue', '/exchanges/bitget'],
     ['a paused venue', '/exchanges/blofin'],
