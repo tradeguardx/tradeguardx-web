@@ -87,7 +87,7 @@ export default function LiveGuardPage() {
   const s = useMemo(() => sessionOf(live, g.rules), [live, g.rules]);
   const cur = s.currency;
   const [activityOpen, setActivityOpen] = useState(false);
-  const activity = useGuardActivity({ accessToken, tradingAccountId: selectedTradingAccountId, currency: cur });
+  const activity = useGuardActivity({ accessToken, tradingAccountId: selectedTradingAccountId, currency: cur, account: selectedAccount });
   const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });
 
   // ── positions ───────────────────────────────────────────────────────
@@ -450,6 +450,7 @@ export default function LiveGuardPage() {
         onClose={() => setActivityOpen(false)}
         items={activity.items}
         counts={activity.counts}
+        dayStart={activity.dayStart}
         rules={g.rules}
         currency={cur}
         equity={live?.currentEquity ?? null}

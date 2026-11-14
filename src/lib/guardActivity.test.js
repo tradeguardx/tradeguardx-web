@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTimeline, ruleExplainers } from './guardActivity';
+import { buildTimeline, ruleExplainers, tradingDayOf } from './guardActivity';
 
 /*
  * The 27 Oct afternoon from a real account (anonymised): one losing trade that
@@ -86,5 +86,32 @@ describe('ruleExplainers', () => {
   it('never describes Max Drawdown as closing anything', () => {
     const only = ruleExplainers({ templates: [], instances: [{ templateSlug: 'max-total-loss', enabled: true, config: { maxDrawdownPct: 20 } }] });
     expect(only[0].how).toMatch(/alert only: it does not close anything or lock the account/);
+  });
+});
+
+/*
+ * 14 Nov 2026, a real Delta account (anonymised): max 3 trades a day, reset
+ * 05:30 IST (00:00 UTC). One trade last night at 20:05 IST, two today. The
+ * drawer said "Trades 3" beside a "Trades today 2/3" card.
+ */
+describe('tradingDayOf: the day the trade limit counts', () => {
+  const dayStart = Date.parse('2026-11-14T00:00:00Z');
+  const tr = (openedAt, closedAt) => ({ kind: 'trade', t: Date.parse(closedAt), trade: { openedAt, closedAt } });
+
+  it('puts last night\'s trade in the previous day and this morning\'s in today', () => {
+    expect(tradingDayOf(tr('2026-11-13T14:26:14Z', '2026-11-13T14:35:33Z'), dayStart)).toBe('earlier');
+    expect(tradingDayOf(tr('2026-11-14T02:04:31Z', '2026-11-14T02:21:40Z'), dayStart)).toBe('today');
+  });
+
+  it('counts a trade by when it opened, like the engine does', () => {
+    expect(tradingDayOf(tr('2026-11-13T23:50:00Z', '2026-11-14T00:10:00Z'), dayStart)).toBe('earlier');
+  });
+
+  it('dates a lock by when it happened', () => {
+    expect(tradingDayOf({ kind: 'lock', t: Date.parse('2026-11-14T10:07:58Z') }, dayStart)).toBe('today');
+  });
+
+  it('treats everything as today when the reset is unknown', () => {
+    expect(tradingDayOf(tr('2026-11-13T14:26:14Z', '2026-11-13T14:35:33Z'), null)).toBe('today');
   });
 });
