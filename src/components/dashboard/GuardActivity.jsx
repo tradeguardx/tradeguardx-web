@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ruleExplainers } from '../../lib/guardActivity';
+import { ruleExplainers, tradingDayOf } from '../../lib/guardActivity';
 import { fmtMoney } from '../../lib/session';
 import { symbolLabel } from '../../lib/labels';
 import { getUserZone } from '../../lib/userZone';
@@ -53,16 +53,21 @@ function Icon({ name, size = 13 }) {
 
 const zone = () => getUserZone();
 const clock = (t) => new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: zone() });
-const dayKey = (t) => new Date(t).toLocaleDateString('en-CA', { timeZone: zone() });
-function dayLabel(t, now) {
-  const k = dayKey(t);
-  if (k === dayKey(now)) return 'Today';
-  if (k === dayKey(now - 86_400_000)) return 'Yesterday';
-  return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: zone() });
+/*
+ * Day groups follow the TRADING day (since the daily reset), the same day the
+ * trade limit counts — never the calendar day. Last night's 20:05 trade sat
+ * under "Today"-adjacent headings and inside "Trades 3" while the limit said
+ * 2/3, and a trader concluded the limit was wrong (14 Nov 2026).
+ */
+function dayLabel(it, dayStart) {
+  if (dayStart == null) return 'Last 24 hours';
+  return tradingDayOf(it, dayStart) === 'today'
+    ? `Today · since ${clock(dayStart)}`
+    : `Previous day · before ${clock(dayStart)}`;
 }
 
 /** The drawer. Renders nothing while closed. */
-export function ActivityDrawer({ open, onClose, items, counts, rules, currency = 'USD', equity = null, keyLive }) {
+export function ActivityDrawer({ open, onClose, items, counts, dayStart = null, rules, currency = 'USD', equity = null, keyLive }) {
   const [tab, setTab] = useState('activity');
   useEffect(() => {
     if (!open) return undefined;
@@ -86,7 +91,7 @@ export function ActivityDrawer({ open, onClose, items, counts, rules, currency =
           </div>
           {tab === 'activity' && (
             <div style={sx('display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px')}>
-              {[['Trades', counts.trades, 'var(--ink)'], ['Guard acted', counts.acted, counts.acted ? 'var(--amber)' : 'var(--ink)'], ['Locks', counts.locks, counts.locks ? 'var(--red)' : 'var(--ink)']].map(([k, v, fg]) => (
+              {[[dayStart == null ? 'Trades' : 'Trades today', counts.trades, 'var(--ink)'], [dayStart == null ? 'Guard acted' : 'Acted today', counts.acted, counts.acted ? 'var(--amber)' : 'var(--ink)'], [dayStart == null ? 'Locks' : 'Locks today', counts.locks, counts.locks ? 'var(--red)' : 'var(--ink)']].map(([k, v, fg]) => (
                 <div key={k} style={sx('padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2)')}>
                   <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)")}>{k}</div>
                   <div style={sx("margin-top:6px;font:600 20px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums", { color: fg })}>{v}</div>
@@ -103,24 +108,22 @@ export function ActivityDrawer({ open, onClose, items, counts, rules, currency =
           </div>
         </header>
         <div style={sx('flex:1;overflow-y:auto;padding:6px 0 28px')}>
-          {tab === 'activity' ? <Timeline items={items} currency={currency} keyLive={keyLive} onNavigate={onClose} /> : <RulesExplained rules={rules} currency={currency} equity={equity} />}
+          {tab === 'activity' ? <Timeline items={items} dayStart={dayStart} currency={currency} keyLive={keyLive} onNavigate={onClose} /> : <RulesExplained rules={rules} currency={currency} equity={equity} />}
         </div>
       </aside>
     </div>
   );
 }
 
-function Timeline({ items, currency, keyLive, onNavigate }) {
+function Timeline({ items, dayStart = null, currency, keyLive, onNavigate }) {
   const navigate = useNavigate();
-  // Read once per mount: only used to name the day groups ("Today", "Yesterday").
-  const [now] = useState(() => Date.now());
   // Each item with its day label and whether it opens a new day group.
   const rows = useMemo(
     () => (items ?? []).map((it, i, all) => {
-      const day = dayLabel(it.t, now);
-      return { it, day, showDay: i === 0 || dayLabel(all[i - 1].t, now) !== day };
+      const day = dayLabel(it, dayStart);
+      return { it, day, showDay: i === 0 || dayLabel(all[i - 1], dayStart) !== day };
     }),
-    [items, now],
+    [items, dayStart],
   );
   if (items == null) {
     return [0, 1, 2, 3].map((i) => <div key={i} style={sx('height:64px;margin:12px 20px;border-radius:12px;background:var(--surface-2);animation:tgxPulse 1.4s ease-in-out infinite')} />);
@@ -231,7 +234,7 @@ export function ActivityButton({ counts, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      aria-label={`Open activity${n ? `, ${n} guard events in the last 24 hours` : ''}`}
+      aria-label={`Open activity${n ? `, ${n} guard events today` : ''}`}
       style={sx('flex:none;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid var(--line-strong);border-radius:11px;background:var(--surface);color:var(--ink);font-size:13px;font-weight:700;cursor:pointer;box-shadow:var(--shadow-card)')}
     >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 12h4l3-8 4 16 3-8h4" /></svg>

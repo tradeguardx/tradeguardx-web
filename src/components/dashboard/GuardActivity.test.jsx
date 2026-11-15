@@ -56,4 +56,16 @@ describe('ActivityButton', () => {
     render(<ActivityButton counts={counts} onClick={() => {}} />);
     expect(screen.getByRole('button', { name: /3 guard events/ })).toBeTruthy();
   });
+
+  it('groups by trading day and labels the counts as today', () => {
+    const dayStart = Date.now() - 60 * 60_000;
+    const day = buildTimeline([
+      { tradeUid: 'n', symbol: 'BTCUSD', side: 'buy', status: 'CLOSED', openedAt: recent(20), closedAt: recent(10), pnl: 3.68, metadata: {} },
+      { tradeUid: 'y', symbol: 'BTCUSD', side: 'buy', status: 'CLOSED', openedAt: recent(300), closedAt: recent(290), pnl: -1.09, metadata: {} },
+    ], []);
+    render(<MemoryRouter><ActivityDrawer open onClose={vi.fn()} items={day} counts={{ trades: 1, acted: 0, locks: 0 }} dayStart={dayStart} rules={rules} /></MemoryRouter>);
+    expect(screen.getByText('Trades today')).toBeTruthy();
+    expect(screen.getByText(/^Today · since/)).toBeTruthy();
+    expect(screen.getByText(/^Previous day · before/)).toBeTruthy();
+  });
 });

@@ -145,6 +145,19 @@ export function buildTimeline(trades = [], breaches = [], { now = Date.now(), wi
   return items;
 }
 
+/**
+ * Which trading day an item belongs to: 'today' (since the last daily reset)
+ * or 'earlier'. A trade belongs to the day it was OPENED in — that is the day
+ * the engine counts it against the trade limit — so a position opened before
+ * the reset and closed after it still sits with the previous day. With no
+ * reset known, everything is 'today' (the old behaviour).
+ */
+export function tradingDayOf(item, dayStart) {
+  if (dayStart == null) return 'today';
+  const at = item?.kind === 'trade' ? (ms(item.trade?.openedAt) ?? item.t) : item?.t;
+  return at != null && at < dayStart ? 'earlier' : 'today';
+}
+
 /* ─────────────────────────── How your rules work ─────────────────────────── */
 
 const r2 = (v) => Math.round(v * 100) / 100;
