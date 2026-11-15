@@ -69,6 +69,7 @@ import { ToastProvider } from './components/common/ToastProvider';
 import AppErrorBoundary from './components/common/AppErrorBoundary';
 import VercelRouteAnalytics from './components/common/VercelRouteAnalytics';
 import AnalyticsRouteTracker from './components/common/AnalyticsRouteTracker';
+import { SettingsFrame } from './components/dashboard/shell/SettingsTabs';
 
 function App() {
   return (
@@ -164,14 +165,14 @@ function App() {
                   <Route path="tax" element={<TaxPage />} />
                   <Route path="trades/:tradeUid" element={<TradeDetailPage />} />
                   <Route path="account" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
-                  <Route path="account/billing" element={<BillingPage />} />
+                  <Route path="account/billing" element={<SettingsFrame wide><BillingPage /></SettingsFrame>} />
                   <Route path="account/trading" element={<AccountsPage />} />
                   <Route path="account/notifications" element={<RedirectWithSearch to="/dashboard/alerts" />} />
-                  <Route path="account/security" element={<SecuritySettingsPage />} />
+                  <Route path="account/security" element={<SettingsFrame><SecuritySettingsPage /></SettingsFrame>} />
                   <Route path="trading-accounts" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
                   <Route path="billing" element={<RedirectWithSearch to="/dashboard/account/billing" />} />
                   <Route path="connect" element={<ConnectKeyPage />} />
-                  <Route path="alerts" element={<AlertsPage />} />
+                  <Route path="alerts" element={<SettingsFrame><AlertsPage /></SettingsFrame>} />
                   <Route path="support" element={<DashboardSupportPage />} />
                   <Route path="review" element={<MyReviewPage />} />
                   <Route path="preferences" element={<PreferencesPage />} />

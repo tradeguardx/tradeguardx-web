@@ -98,6 +98,19 @@ function mount(path) {
 beforeEach(() => { localStorage.clear(); });
 
 describe('dashboard shell', () => {
+  it('sidebar: Settings replaces Alerts, Plan & billing and Security; Support moves to the footer', async () => {
+    mount('/dashboard/overview');
+    await waitFor(() => expect(screen.getAllByText(/ARMED/i).length).toBeGreaterThan(0));
+    const nav = screen.getByRole('navigation', { name: 'Dashboard' });
+    const labels = [...nav.querySelectorAll('a')].map((a) => a.textContent.replace(/\d+|!|\/|LOCKED|live/gi, '').trim());
+    expect(labels).toContain('Settings');
+    expect(labels).toContain('Economic calendar');
+    for (const gone of ['Alerts', 'Plan & billing', 'Security', 'Support']) expect(labels).not.toContain(gone);
+    expect(nav.querySelector('a[href="/dashboard/alerts"]')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Support' }).getAttribute('href')).toBe('/dashboard/support');
+    expect(screen.queryByText('Market')).toBeNull();
+  });
+
   it('renders Overview armed, with derived counts and no balance figure', async () => {
     mount('/dashboard/overview');
     await waitFor(() => expect(screen.getAllByText(/ARMED/i).length).toBeGreaterThan(0));
@@ -178,10 +191,11 @@ describe('dashboard shell', () => {
     expect(screen.getByText('Runs on our servers, not in your browser')).toBeTruthy();
   });
 
-  it('renders the Economic calendar: Market nav, hero, all time variants, five ACTUAL states, empty day', async () => {
+  it('renders the Economic calendar: in Protect nav, hero, all time variants, five ACTUAL states, empty day', async () => {
     mount('/dashboard/calendar');
     await waitFor(() => expect(screen.getByText('Next high impact')).toBeTruthy());
-    expect(screen.getByText('Market')).toBeTruthy();
+    // 15 Nov 2026: the calendar moved under Protect (the news auto-lock); no Market heading.
+    expect(screen.queryByText('Market')).toBeNull();
     expect(screen.getByText('Economic calendar', { selector: 'span' })).toBeTruthy();
     // time_status variants, no fabricated clock times
     await waitFor(() => expect(screen.getByText('TENTATIVE')).toBeTruthy());
