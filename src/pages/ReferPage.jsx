@@ -209,7 +209,7 @@ function money(bucket) {
 
 /* ─────────────── Journey tracker ─────────────── */
 
-const STEPS = ['Signed up', 'Paid', '3-day wait', 'Voucher'];
+const STEPS = ['Signed up', 'Paid', 'Qualified', 'Voucher'];
 
 /** For each status: how many steps are done, and how the current one looks. */
 function journey(status) {
@@ -246,8 +246,8 @@ function Tracker({ status }) {
 function statusLine(f, hold) {
   switch (f.status) {
     case 'joined': return { top: 'Waiting for their first payment', sub: f.signedUpAt ? `Signed up ${shortDate(f.signedUpAt)}` : '', fg: 'var(--ink)' };
-    case 'waiting': return { top: `In the ${hold}-day wait`, sub: f.dueAt ? `Qualifies ${shortDate(f.dueAt, true)}` : '', fg: 'var(--ink)' };
-    case 'due': return { top: 'Qualified. Voucher on its way', sub: 'We email it to you soon', fg: 'var(--mint)' };
+    case 'waiting': return { top: `In the ${hold}-day wait`, sub: [f.dueAt ? `Qualifies ${shortDate(f.dueAt, true)}` : '', f.payoutOn ? `voucher on ${shortDate(f.payoutOn)}` : ''].filter(Boolean).join(' · '), fg: 'var(--ink)' };
+    case 'due': return { top: f.payoutOn ? `Qualified · voucher on ${shortDate(f.payoutOn)}` : 'Qualified. Voucher on its way', sub: 'Sent in the monthly batch on the 2nd', fg: 'var(--mint)' };
     case 'held': return { top: 'Held: you’ve hit this year’s limit', sub: 'Still tracked. See the note above', fg: 'var(--amber)' };
     case 'sent': return { top: 'Voucher sent', sub: f.sentAt ? `Emailed ${shortDate(f.sentAt)}` : '', fg: 'var(--mint)' };
     case 'void': return { top: 'Not eligible', sub: 'This payment didn’t qualify', fg: 'var(--ink-faint)' };
@@ -395,7 +395,7 @@ export default function ReferPage() {
               Give {pct}%. Get up to {fm(tiers.yearly)}.
             </div>
             <p style={sx('margin:8px 0 0;font-size:13.5px;line-height:1.6;color:var(--ink-2);max-width:52ch')}>
-              Your friend gets <strong style={sx('color:var(--ink)')}>{pct}% off their first Pro payment</strong> — or the current offer if it&rsquo;s bigger. You get an {store} {hold} days after they pay.
+              Your friend gets <strong style={sx('color:var(--ink)')}>{pct}% off their first Pro payment</strong> — or the current offer if it&rsquo;s bigger. You get an {store}: they qualify {hold} days after paying, and vouchers go out on the 2nd of each month.
             </p>
 
             <div style={sx('margin-top:18px;display:flex;align-items:stretch;gap:8px;flex-wrap:wrap')}>
@@ -422,7 +422,7 @@ export default function ReferPage() {
         <div style={sx('margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:16px')}>
           <Step n="1" title="Share your link" body="Send it on WhatsApp, Telegram or anywhere. It works on any page of the site." />
           <Step n="2" title="Your friend joins Pro" body={`They get ${pct}% off their first payment, or the live offer if that saves more.`} />
-          <Step n="3" title="You get a voucher" body={`${hold} days after they pay, we send your ${store}. It shows up below too.`} />
+          <Step n="3" title="You get a voucher" body={`They qualify ${hold} days after paying. We send your ${store} on the 2nd of the next month. It shows up below too.`} />
         </div>
         {isMobile ? <div style={sx(MONO_LABEL, 'margin-top:18px')}>Your voucher, by your friend’s plan</div> : null}
         <div style={sx(`margin-top:${isMobile ? 9 : 18}px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:${isMobile ? 8 : 10}px`)}>
@@ -527,7 +527,7 @@ function referralFaqs({ pct, tiers, hold, cap, fm, cur }) {
     },
     {
       q: 'When do I get my voucher, and how?',
-      a: `${hold} days after your friend’s payment goes through. We email you the gift card code, and it also shows on this page under “Paid out” with a copy button.`,
+      a: `Your friend qualifies ${hold} days after their payment goes through. We send vouchers once a month, on the 2nd: everything that qualified during a month goes out on the 2nd of the next month. For example, a friend who qualifies on 18 November gets you a voucher on 2 December. We email you the gift card code, and it also shows on this page under “Paid out” with a copy button.`,
     },
     {
       q: 'What doesn’t count?',
@@ -555,7 +555,7 @@ function referralFaqs({ pct, tiers, hold, cap, fm, cur }) {
     },
     {
       q: 'What if a payment is reversed?',
-      a: `Payments are final, but if a payment is charged back or reversed before the voucher is sent, there is no voucher for it. That is why we wait ${hold} days.`,
+      a: `Payments are final, but if a payment is charged back or reversed before the voucher is sent, there is no voucher for it. That is why a friend qualifies only ${hold} days after paying.`,
     },
     {
       q: 'What counts as abuse?',

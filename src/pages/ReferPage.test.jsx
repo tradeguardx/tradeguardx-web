@@ -25,7 +25,7 @@ const ME = {
   earnedThisFyInr: 400,
   stats: { joined: 3, paid: 2, qualified: 1, pending: { count: 1, inr: 200 }, due: { count: 0, inr: 0 }, sent: { count: 1, inr: 400 } },
   friends: [
-    { id: 'e2', name: 'Priya S.', initials: 'PS', plan: 'monthly', amountInr: 200, signedUpAt: '2026-11-10T00:00:00Z', paidAt: '2026-11-15T00:00:00Z', dueAt: '2026-11-18T00:00:00Z', status: 'waiting' },
+    { id: 'e2', name: 'Priya S.', initials: 'PS', plan: 'monthly', amountInr: 200, signedUpAt: '2026-11-10T00:00:00Z', paidAt: '2026-11-15T00:00:00Z', dueAt: '2026-11-18T00:00:00Z', status: 'waiting', payoutOn: '2026-12-02' },
     { id: 'joined:abc', name: 'Neha', initials: 'N', plan: null, amountInr: null, signedUpAt: '2026-11-14T00:00:00Z', paidAt: null, dueAt: null, status: 'joined' },
     { id: 'e1', name: 'Rahul M.', initials: 'RM', plan: 'quarterly', amountInr: 400, signedUpAt: '2026-11-01T00:00:00Z', paidAt: '2026-11-02T00:00:00Z', dueAt: '2026-11-05T00:00:00Z', status: 'sent', voucherCode: 'AMZN-1234', sentAt: '2026-11-06T00:00:00Z' },
   ],
@@ -68,6 +68,7 @@ describe('Refer a friend page', () => {
     expect(rows).toHaveLength(2);
     expect(within(rows[0]).getByText('Priya S.')).toBeInTheDocument();
     expect(within(rows[0]).getByText('In the 3-day wait')).toBeInTheDocument();
+    expect(within(rows[0]).getByText(/Qualifies .* · voucher on/)).toBeInTheDocument();
     expect(within(rows[1]).getByText('Waiting for their first payment')).toBeInTheDocument();
     expect(screen.queryByText('AMZN-1234')).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: /Paid out · 1/ }));
