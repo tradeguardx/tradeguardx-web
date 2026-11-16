@@ -274,6 +274,17 @@ describe('billing step', () => {
     expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'REF123' });
   });
 
+  /* The voucher owed to the referrer is tiered by the plan bought, so the
+     longer intervals are the ones that must never lose the code. */
+  it.each([['Quarterly', 'quarterly'], ['Yearly', 'yearly']])('carries a referral code on %s too', async (label, interval) => {
+    carried.referral = 'REF123';
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('radio', { name: new RegExp(label) }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`Start 7 days free · ${label}`) }));
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0]).toMatchObject({ interval, couponCode: 'REF123' });
+  });
+
   it('lets a typed code beat the one we carried for them', async () => {
     carried.referral = 'REF123';
     render(<BillingStep />);

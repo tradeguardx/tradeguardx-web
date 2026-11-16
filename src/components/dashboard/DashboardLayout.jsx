@@ -59,6 +59,8 @@ function Shell() {
   const killBtnRef = useRef(null);
 
   const billingArea = pathname.includes('/account') || pathname.includes('/billing');
+  // Every signed-up user can refer, whatever their plan.
+  const referArea = pathname.startsWith('/dashboard/refer');
   /*
    * Screens that carry their own status band.
    *
@@ -97,7 +99,7 @@ function Shell() {
    * that does not send the lifecycle state yet (life === null).
    */
   const lockedRoute = life ? lockedRouteOf(pathname, life.locks) : null;
-  const legacyLocked = !life && Boolean(user?.isExpired) && !billingArea;
+  const legacyLocked = !life && Boolean(user?.isExpired) && !billingArea && !referArea;
 
   useEffect(() => {
     if (!drawer) return undefined;

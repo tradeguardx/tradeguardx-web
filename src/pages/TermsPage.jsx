@@ -8,7 +8,7 @@ import { useSEO } from '../hooks/useSEO';
  * could never tell when the terms actually changed. Bump this by hand, only
  * when the text above it changes.
  */
-const LAST_UPDATED = 'November 9, 2026';
+const LAST_UPDATED = 'November 16, 2026';
 
 const sections = [
   {
@@ -62,25 +62,40 @@ const sections = [
     content: 'You can try the Service with a Trial Plan: full Pro access for 3 days, for a single payment at the price displayed when you buy it. A Trial Plan sets up no recurring mandate and does not renew; buying another adds 3 more days. When it ends you may choose a paid plan, and access to paid features stops until you do. A Pro subscription is charged in full when you start it, at the price displayed when you confirm, and you authorise a recurring mandate (AutoPay) for renewals. Paid plans renew for successive periods until cancelled; you can cancel at any time and retain access through the end of the current billing period. Free trials started before November 9, 2026 continue to their end date under the terms that applied when they began. Fees are non-refundable except as stated in our Refund Policy. We may change pricing with reasonable notice; continued use after a price change constitutes acceptance.',
   },
   {
-    title: '8. Disclaimer of Warranties',
+    title: '8. Referral Programme',
+    content: 'Every signed-up user can refer friends with their own referral link. In plain terms:',
+    list: [
+      'Your friend gets 10% off their first Pro payment, or the current site offer if that saves them more. Using a referral link never costs more than arriving without one.',
+      'You get an Amazon India gift card (voucher) sized by the Pro plan your friend picks: ₹200 for monthly, ₹400 for quarterly and ₹1,000 for yearly.',
+      'A voucher is earned when your friend pays for Pro and becomes due 3 days after that payment. We send it to you after that.',
+      'The ₹199 3-day pass (Trial Plan) does not earn a reward, and renewals do not earn a reward. One reward per friend, ever.',
+      'Rewards are capped at ₹15,000 per referrer per Indian financial year (April to March). A voucher that would take you over the cap is not paid, and it is not part-paid.',
+      'Referring yourself does not count. A friend who already had a Pro subscription before does not qualify.',
+      'A friend is tied to the first referral link they sign up with; that cannot be changed later.',
+      'We may withhold or cancel rewards where we see abuse, such as fake or duplicate accounts.',
+    ],
+    afterList: 'We may change or end the referral programme with notice on this page.',
+  },
+  {
+    title: '9. Disclaimer of Warranties',
     content: 'THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. WE DO NOT GUARANTEE THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR THAT IT WILL CORRECTLY DETECT OR ENFORCE ALL TRADING RULES. YOU USE THE SERVICE AT YOUR OWN RISK.',
     highlight: true,
   },
   {
-    title: '9. Limitation of Liability',
+    title: '10. Limitation of Liability',
     content: 'TO THE MAXIMUM EXTENT PERMITTED BY LAW, TRADEGUARDX AND ITS AFFILIATES SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, DATA, OR TRADING LOSSES, ARISING FROM YOUR USE OF THE SERVICE. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM.',
     highlight: true,
   },
   {
-    title: '10. Termination',
+    title: '11. Termination',
     content: 'We may suspend or terminate your access to the Service at any time for violation of these Terms or for any other reason. You may stop using the Service at any time. Upon termination, your right to use the Service ceases immediately.',
   },
   {
-    title: '11. Changes',
+    title: '12. Changes',
     content: 'We may modify these Terms from time to time. We will post the updated Terms on this page and update the "Last updated" date. Material changes may be communicated via email or in-product notice. Your continued use of the Service after changes constitutes acceptance of the revised Terms.',
   },
   {
-    title: '12. Contact',
+    title: '13. Contact',
     content: 'For questions about these Terms, contact us at:',
     email: 'support@tradeguardx.com',
   },

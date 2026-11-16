@@ -70,6 +70,7 @@ import AppErrorBoundary from './components/common/AppErrorBoundary';
 import VercelRouteAnalytics from './components/common/VercelRouteAnalytics';
 import AnalyticsRouteTracker from './components/common/AnalyticsRouteTracker';
 import { SettingsFrame } from './components/dashboard/shell/SettingsTabs';
+import ReferPage from './pages/ReferPage';
 
 function App() {
   return (
@@ -175,6 +176,7 @@ function App() {
                   <Route path="alerts" element={<SettingsFrame><AlertsPage /></SettingsFrame>} />
                   <Route path="support" element={<DashboardSupportPage />} />
                   <Route path="review" element={<MyReviewPage />} />
+                  <Route path="refer" element={<ReferPage />} />
                   <Route path="preferences" element={<PreferencesPage />} />
                   {/* Extension-era routes: the product is server-side only now. */}
                   <Route path="install-extension" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
