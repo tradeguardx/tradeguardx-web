@@ -66,10 +66,10 @@ const sections = [
     content: 'Every signed-up user can refer friends with their own referral link. In plain terms:',
     list: [
       'Your friend gets 10% off their first Pro payment, or the current site offer if that saves them more. Using a referral link never costs more than arriving without one.',
-      'You get an Amazon India gift card (voucher) sized by the Pro plan your friend picks: ₹200 for monthly, ₹400 for quarterly and ₹1,000 for yearly.',
+      'You get an Amazon gift card (voucher) sized by the Pro plan your friend picks. Referrers in India get an Amazon India gift card: ₹200 for monthly, ₹400 for quarterly and ₹1,000 for yearly. Referrers outside India get an Amazon gift card in US dollars for their country’s Amazon store: $3, $5 and $12. We set the currency from your account’s timezone; you can change it on the referral page until your first reward.',
       'A voucher is earned when your friend pays for Pro and becomes due 3 days after that payment. We send it to you after that.',
       'The ₹199 3-day pass (Trial Plan) does not earn a reward, and renewals do not earn a reward. One reward per friend, ever.',
-      'Rewards are capped at ₹15,000 per referrer per Indian financial year (April to March). A voucher that would take you over the cap is not paid, and it is not part-paid.',
+      'Rewards are capped at ₹15,000 (or $180 for US-dollar vouchers) per referrer per Indian financial year (April to March). A voucher that would take you over the cap is not paid, and it is not part-paid.',
       'Referring yourself does not count. A friend who already had a Pro subscription before does not qualify.',
       'A friend is tied to the first referral link they sign up with; that cannot be changed later.',
       'We may withhold or cancel rewards where we see abuse, such as fake or duplicate accounts.',

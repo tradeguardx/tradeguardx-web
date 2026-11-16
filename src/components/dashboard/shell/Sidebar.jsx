@@ -92,7 +92,7 @@ export default function Sidebar({ onNavigate }) {
     // own URL (payment returns, toasts and menus link to them), so the item is
     // lit on any of the three and opens the first.
     { id: 'settings', to: SETTINGS_TABS[0].to, label: 'Settings', match: isSettingsPath },
-    { id: 'refer', to: '/dashboard/refer', label: 'Refer a trader' },
+    { id: 'refer', to: '/dashboard/refer', label: 'Refer a friend' },
   ];
 
   /* Lifecycle badges sit on top of the counts above: a locked page says

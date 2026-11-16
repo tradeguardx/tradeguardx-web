@@ -1904,3 +1904,8 @@
     min-height: 48px !important;
   }
 }
+
+/* Refer page rules FAQ: no default marker; chevron turns when open. */
+.tgx-faq summary::-webkit-details-marker { display: none; }
+.tgx-faq[open] .tgx-faq__chev { transform: rotate(180deg); }
+.tgx-faq summary:hover { background: var(--surface-2); }

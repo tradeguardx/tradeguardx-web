@@ -39,3 +39,11 @@ export async function getReferralMe({ accessToken }, options = {}) {
 export async function bindReferral({ accessToken, code }, options = {}) {
   return unwrap(await apiPost('/referral/bind', { code }, authed(accessToken, options)));
 }
+
+/**
+ * POST /payments/referral/currency { currency: 'INR' | 'USD' }: Amazon India (₹)
+ * or Amazon in the referrer's own store ($). Refused (409) once a reward exists.
+ */
+export async function setReferralCurrency({ accessToken, currency }, options = {}) {
+  return unwrap(await apiPost('/referral/currency', { currency }, authed(accessToken, options)));
+}
