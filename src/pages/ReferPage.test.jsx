@@ -53,7 +53,8 @@ describe('Refer a friend page', () => {
     expect(within(stats).getByText('Sent').nextSibling).toHaveTextContent('₹400');
     expect(screen.getByText('10% off their first Pro payment')).toBeInTheDocument();
     expect(screen.getByText(/or the current offer if it.s bigger/)).toBeInTheDocument();
-    expect(screen.getByText('₹200 / ₹400 / ₹1,000')).toBeInTheDocument();
+    for (const v of ['₹200', '₹400', '₹1,000']) expect(screen.getAllByText(v).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Give 10%\. Get up to ₹1,000\./)).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '600');
     expect(screen.getByText(/₹14,400 left/)).toBeInTheDocument();
   });
@@ -100,6 +101,8 @@ describe('Refer a friend page', () => {
     getReferralMe.mockResolvedValue({ ...ME, earnedThisFyInr: 0, stats: { joined: 0, paid: 0 }, rewards: [] });
     renderPage();
     expect(await screen.findByTestId('referral-empty')).toHaveTextContent('No rewards yet');
+    // Nothing has happened yet: no wall of zeros.
+    expect(screen.queryByTestId('referral-stats')).toBeNull();
   });
 
   it('says it failed rather than showing zeros', async () => {
