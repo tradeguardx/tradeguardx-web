@@ -324,6 +324,16 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   /* The chip: the offer, verified for the selected plan, and nothing typed. */
   const offerApplied = !typed && offerOn && offerUsable ? offerUsable : null;
 
+  /* A typed code the server accepted for at least one plan. Locked so the
+     price on screen can't drift from the code it was checked for. */
+  const codeLocked = typed && applied?.code === typed && Object.values(applied.byInterval).some((v) => v?.valid);
+  const removeCode = () => {
+    trackBilling('billing_coupon_removed', { code: typed });
+    setCoupon('');
+    setApplied(null);
+    requestAnimationFrame(() => document.getElementById('bs-coupon')?.focus());
+  };
+
   const apply = async () => {
     const code = coupon.trim().toUpperCase();
     if (!code || couponBusy) return;
@@ -781,6 +791,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                         <input
                           id="bs-coupon"
                           value={coupon}
+                          readOnly={Boolean(codeLocked)}
+                          aria-describedby={codeLocked ? 'bs-coupon-status' : undefined}
                           onChange={(e) => { setCoupon(e.target.value); setApplied(null); }}
                           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); apply(); } }}
                           placeholder="Enter code"
@@ -788,14 +800,27 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                           spellCheck={false}
                           style={{ flex: 1, minWidth: 0, minHeight: 44, padding: '11px 13px', border: 0, borderRadius: 12, background: 'var(--surface-2)', boxShadow: `inset 0 0 0 1px ${discount ? 'var(--mint-line)' : 'var(--line-input)'}`, color: 'var(--ink)', font: "600 13px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', textTransform: 'uppercase' }}
                         />
-                        <button
-                          type="button"
-                          onClick={apply}
-                          disabled={!coupon.trim() || couponBusy}
-                          style={{ flex: 'none', minHeight: 44, padding: '0 14px', border: 0, borderRadius: 12, background: 'var(--surface-3)', boxShadow: 'inset 0 0 0 1px var(--line-strong)', color: 'var(--ink)', fontSize: 13, fontWeight: 700, opacity: !coupon.trim() || couponBusy ? 0.5 : 1 }}
-                        >
-                          {couponBusy ? 'Checking…' : 'Apply'}
-                        </button>
+                        {codeLocked ? (
+                          /* Applied: the field locks and the one action left is
+                             taking it off (owner, 16 Nov 2026). */
+                          <button
+                            type="button"
+                            onClick={removeCode}
+                            aria-label={`Remove code ${typed}`}
+                            style={{ flex: 'none', minHeight: 44, padding: '0 14px', border: 0, borderRadius: 12, background: 'transparent', boxShadow: 'inset 0 0 0 1px var(--line-strong)', color: 'var(--ink-2)', fontSize: 13, fontWeight: 700 }}
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={apply}
+                            disabled={!coupon.trim() || couponBusy}
+                            style={{ flex: 'none', minHeight: 44, padding: '0 14px', border: 0, borderRadius: 12, background: 'var(--surface-3)', boxShadow: 'inset 0 0 0 1px var(--line-strong)', color: 'var(--ink)', fontSize: 13, fontWeight: 700, opacity: !coupon.trim() || couponBusy ? 0.5 : 1 }}
+                          >
+                            {couponBusy ? 'Checking…' : 'Apply'}
+                          </button>
+                        )}
                       </div>
 
                       {isPass ? null : !typed ? (
@@ -805,8 +830,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                             : 'Have a code? Press Apply to see the new price.'}
                         </p>
                       ) : discount ? (
-                        <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--mint)' }}>
-                          {discount.amountOff ? `₹${discount.amountOff.toLocaleString('en-IN')} off` : `${discount.percentOff}% off`} applied.{' '}
+                        <p id="bs-coupon-status" style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--mint)' }}>
+                          <span aria-hidden="true">✓ </span>{discount.amountOff ? `₹${discount.amountOff.toLocaleString('en-IN')} off` : `${discount.percentOff}% off`} applied.{' '}
                           {discount.cycles
                             ? `Covers your first ${discount.cycles === 1 ? 'payment' : `${discount.cycles} payments`}, then the full price.`
                             : 'Applies to every renewal.'}

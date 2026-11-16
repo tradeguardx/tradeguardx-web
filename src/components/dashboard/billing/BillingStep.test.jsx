@@ -318,6 +318,33 @@ describe('billing step', () => {
     expect(screen.getByText('₹7,649')).toBeTruthy();
   });
 
+  it('locks an applied code and offers Remove, which puts the full price back', async () => {
+    render(<BillingStep />);
+    const input = screen.getByPlaceholderText('Enter code');
+    fireEvent.change(input, { target: { value: 'save15' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await screen.findByText(/15% off applied/);
+    expect(input).toHaveAttribute('readonly');
+    expect(screen.queryByRole('button', { name: 'Apply' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove code SAVE15' }));
+    expect(input).toHaveValue('');
+    expect(input).not.toHaveAttribute('readonly');
+    expect(screen.queryByText(/15% off applied/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeTruthy();
+    await waitFor(() => expect(dueToday()).toBe('₹1,299'));
+  });
+
+  it('keeps Apply for a refused code so it can be corrected', async () => {
+    validate.mockResolvedValue({ valid: false, reason: 'UNKNOWN' });
+    render(<BillingStep />);
+    const input = screen.getByPlaceholderText('Enter code');
+    fireEvent.change(input, { target: { value: 'pRASH84RG' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await screen.findByRole('alert');
+    expect(input).not.toHaveAttribute('readonly');
+    expect(screen.queryByRole('button', { name: /Remove code/ })).toBeNull();
+  });
+
   it('says how long the discount lasts', async () => {
     validate.mockResolvedValue({ valid: true, code: 'FIRST', percentOff: 50, cycles: 1 });
     render(<BillingStep />);
