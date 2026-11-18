@@ -94,7 +94,9 @@ describe('billing step', () => {
 
   it('never says the key is connected, or ticks it, before it is (s2)', async () => {
     render(<BillingStep stepsDone={2} />);
-    expect(await screen.findByText(/Connect your key first/)).toBeInTheDocument();
+    expect(await screen.findByText(/Your guard switches on once your key is connected/)).toBeInTheDocument();
+    // and it still sells: no detour back to setup before a key exists
+    expect(screen.queryByRole('button', { name: 'Continue setup' })).toBeNull();
     expect(screen.queryByText(/Your key is connected/)).toBeNull();
     // exchange and account ticked; "Connect key" is the current step, numbered
     const current = document.querySelector('.steps-lg [aria-current="step"]');

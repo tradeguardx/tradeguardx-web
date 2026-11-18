@@ -98,14 +98,16 @@ function mount(path) {
 beforeEach(() => { localStorage.clear(); });
 
 describe('dashboard shell', () => {
-  it('sidebar: Settings replaces Alerts, Plan & billing and Security; Support moves to the footer', async () => {
+  it('sidebar: Plan & billing has its own item; Settings holds Alerts and Security; Support moves to the footer', async () => {
     mount('/dashboard/overview');
     await waitFor(() => expect(screen.getAllByText(/ARMED/i).length).toBeGreaterThan(0));
     const nav = screen.getByRole('navigation', { name: 'Dashboard' });
     const labels = [...nav.querySelectorAll('a')].map((a) => a.textContent.replace(/\d+|!|\/|LOCKED|live/gi, '').trim());
     expect(labels).toContain('Settings');
+    expect(labels).toContain('Plan & billing');
+    expect(nav.querySelector('a[href="/dashboard/account/billing"]')).toBeTruthy();
     expect(labels).toContain('Economic calendar');
-    for (const gone of ['Alerts', 'Plan & billing', 'Security', 'Support']) expect(labels).not.toContain(gone);
+    for (const gone of ['Alerts', 'Security', 'Support']) expect(labels).not.toContain(gone);
     expect(nav.querySelector('a[href="/dashboard/alerts"]')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Support' }).getAttribute('href')).toBe('/dashboard/support');
     expect(screen.queryByText('Market')).toBeNull();

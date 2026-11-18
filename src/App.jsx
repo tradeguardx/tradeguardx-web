@@ -166,7 +166,7 @@ function App() {
                   <Route path="tax" element={<TaxPage />} />
                   <Route path="trades/:tradeUid" element={<TradeDetailPage />} />
                   <Route path="account" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
-                  <Route path="account/billing" element={<SettingsFrame wide><BillingPage /></SettingsFrame>} />
+                  <Route path="account/billing" element={<BillingPage />} />
                   <Route path="account/trading" element={<AccountsPage />} />
                   <Route path="account/notifications" element={<RedirectWithSearch to="/dashboard/alerts" />} />
                   <Route path="account/security" element={<SettingsFrame><SecuritySettingsPage /></SettingsFrame>} />

@@ -13,30 +13,31 @@ function at(path) {
 }
 
 describe('Settings tabs', () => {
-  it('keeps every page on its existing URL', () => {
-    expect(SETTINGS_TABS.map((t) => t.to)).toEqual(['/dashboard/alerts', '/dashboard/account/billing', '/dashboard/account/security']);
+  it('keeps every page on its existing URL; Plan & billing is no longer a tab', () => {
+    expect(SETTINGS_TABS.map((t) => t.to)).toEqual(['/dashboard/alerts', '/dashboard/account/security']);
   });
 
-  it('lights the Settings sidebar item on all three pages and nowhere else', () => {
+  it('lights the Settings sidebar item on its two pages and nowhere else', () => {
     expect(isSettingsPath('/dashboard/alerts')).toBe(true);
-    expect(isSettingsPath('/dashboard/account/billing')).toBe(true);
     expect(isSettingsPath('/dashboard/account/security')).toBe(true);
+    expect(isSettingsPath('/dashboard/account/billing')).toBe(false);
     expect(isSettingsPath('/dashboard/account/trading')).toBe(false);
     expect(isSettingsPath('/dashboard/alertsx')).toBe(false);
   });
 
   it('marks the open tab and keeps its query string', () => {
-    at('/dashboard/account/billing?status=success');
-    const billing = screen.getByRole('link', { name: /Plan & billing/ });
-    expect(billing.getAttribute('aria-current')).toBe('page');
-    expect(billing.getAttribute('href')).toBe('/dashboard/account/billing?status=success');
+    at('/dashboard/account/security?from=menu');
+    const sec = screen.getByRole('link', { name: /Security/ });
+    expect(sec.getAttribute('aria-current')).toBe('page');
+    expect(sec.getAttribute('href')).toBe('/dashboard/account/security?from=menu');
     expect(screen.getByRole('link', { name: 'Alerts' }).getAttribute('aria-current')).toBeNull();
+    expect(screen.queryByRole('link', { name: /Plan & billing/ })).toBeNull();
   });
 
   it('flags the tab that needs a fix', () => {
-    life = { badges: { plan: '!' } };
+    life = { badges: { security: '!' } };
     at('/dashboard/alerts');
-    expect(screen.getByRole('link', { name: /Plan & billing/ }).textContent).toContain('!');
+    expect(screen.getByRole('link', { name: /Security/ }).textContent).toContain('!');
     life = null;
   });
 });

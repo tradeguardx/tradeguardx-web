@@ -88,9 +88,10 @@ export default function Sidebar({ onNavigate }) {
   const setup = [
     { id: 'accounts', to: '/dashboard/account/trading', label: 'Accounts', badge: accounts.length ? String(accounts.length) : '' },
     { id: 'connect', to: '/dashboard/connect', label: 'Connect key', badge: g.loaded && g.account && g.guard !== 'armed' ? '!' : '' },
-    // Alerts, Plan & billing and Security are one page with tabs. Each keeps its
-    // own URL (payment returns, toasts and menus link to them), so the item is
-    // lit on any of the three and opens the first.
+    // Its own item: buying should never be hidden under Settings.
+    { id: 'plan', to: '/dashboard/account/billing', label: 'Plan & billing' },
+    // Alerts and Security are one page with tabs. Each keeps its own URL, so
+    // the item is lit on either and opens the first.
     { id: 'settings', to: SETTINGS_TABS[0].to, label: 'Settings', match: isSettingsPath },
     { id: 'refer', to: '/dashboard/refer', label: 'Refer a friend' },
   ];
@@ -100,7 +101,7 @@ export default function Sidebar({ onNavigate }) {
      problem, Connect key only when the key is what is missing. */
   const decorate = (it) => {
     if (!ready) return { ...it, badge: '' };
-    // A plan problem's "!" now lands on Settings, where Plan & billing lives.
+    // A plan problem's "!" lands on Plan & billing itself (life.badges.plan).
     const mark = it.id === 'settings'
       ? SETTINGS_TABS.map((t) => life?.badges?.[t.id]).find(Boolean)
       : life?.badges?.[it.id];

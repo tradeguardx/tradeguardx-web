@@ -55,9 +55,10 @@ const show = (lifeId, { user = {}, subscription = {}, ctx = {} } = {}) => {
 beforeEach(() => { checkout.mockClear(); validate.mockReset(); siteOffer.value = null; });
 
 describe('Plan & billing, case by case', () => {
-  it('s0 / s2: the billing setup step, saying "Continue setup"', async () => {
+  it('s0 / s2: the billing setup step, and it sells: no "Continue setup" detour before a key exists', async () => {
     show('s2');
-    expect(await screen.findByText('billing setup step · Continue setup')).toBeTruthy();
+    expect(await screen.findByText('billing setup step')).toBeTruthy();
+    expect(screen.queryByText(/Continue setup/)).toBeNull();
   });
 
   it('s3: the billing setup step as it is', async () => {

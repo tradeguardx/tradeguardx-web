@@ -439,8 +439,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
             body={stepsDone >= 3
               ? 'Your key is connected, but nothing is enforced until you finish this step.'
               : stepsDone === 0
-                ? 'Add an account and connect its key first, then choose a plan to switch it on.'
-                : 'Connect your key first, then choose a plan to switch it on.'}
+                ? 'You can choose your plan now. Your guard switches on once you add an account and connect its key.'
+                : 'You can choose your plan now. Your guard switches on once your key is connected.'}
           />
         </div>
       )}
@@ -886,6 +886,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 ) : isPass ? (
                   <p data-pass-note="1" style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.55, color: 'var(--ink-2)', textAlign: 'left' }}>
                     One payment{isInr ? '' : ' in US dollars'}. No AutoPay and nothing renews. When the {TESTER_DAYS} days end, choose a plan to keep your guard on — your rules carry over.
+                    {stepsDone < 3 ? ` The ${TESTER_DAYS} days start when you pay, so connect your key first to get all of them.` : ''}
                   </p>
                 ) : (
                   /*

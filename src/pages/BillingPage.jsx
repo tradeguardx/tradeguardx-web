@@ -393,8 +393,10 @@ export default function BillingPage() {
    * SETUP: THE BILLING SETUP STEP ITSELF.
    *
    * Nothing about a subscription exists yet, so this page is the same step
-   * onboarding ends with. Before a key is verified (s0, s2) a trial cannot
-   * start, so its button says "Continue setup" and goes back to onboarding.
+   * onboarding ends with. Before a key is verified (s0, s2) it used to send
+   * people back to onboarding instead of checkout. That turned away someone
+   * holding their card (owner, 19 Nov 2026): the plan can be bought first,
+   * and the guard switches on once a key is connected. The step says so.
    */
   if (plans === null && state !== 'setup' && state !== 'setupEarly' && state !== 'pass') return <DashboardSkeleton />;
 
@@ -404,7 +406,6 @@ export default function BillingPage() {
     return (
       <BillingStep
         passUntil={state === 'pass' ? me?.subscription?.currentPeriodEnd ?? life?.endsAt ?? null : null}
-        setupCta={state === 'setupEarly' ? { label: 'Continue setup', to: '/dashboard/setup' } : undefined}
         // s0: nothing set up yet · s2: exchange and account done, key not
         stepsDone={life?.id === 's0' ? 0 : life?.id === 's2' ? 2 : 4}
       />
