@@ -40,3 +40,25 @@ describe('feedOf — R2 null / fresh / delayed / dead', () => {
     expect(agoLabel(null)).toBe('');
   });
 });
+
+/*
+ * 20 Nov 2026, Kumud's account in mirror view: the engine wrote every 3 s,
+ * but this browser only got a reading every 30 s (no Realtime push), and the
+ * page said "Delayed · updated 23s ago". Poll-fed, the thresholds stretch by
+ * one poll interval; push-fed, they do not.
+ */
+describe('feedOf — allows for how the browser is fed', () => {
+  it('poll-fed (expectMs 30 s): 23 s and 40 s since a reading are live, not delayed', () => {
+    expect(feedOf(row(23_000, { expectMs: 30_000 }), { now: NOW, positionsOpen: true }).status).toBe(FEED.LIVE);
+    expect(feedOf(row(40_000, { expectMs: 30_000 }), { now: NOW, positionsOpen: true }).status).toBe(FEED.LIVE);
+  });
+
+  it('poll-fed: a reading that really stopped still turns delayed, then reconnecting', () => {
+    expect(feedOf(row(46_000, { expectMs: 30_000 }), { now: NOW, positionsOpen: true }).status).toBe(FEED.DELAYED);
+    expect(feedOf(row(91_000, { expectMs: 30_000 }), { now: NOW, positionsOpen: true }).status).toBe(FEED.RECONNECTING);
+  });
+
+  it('push-fed (expectMs 0) keeps the tight 15 s threshold', () => {
+    expect(feedOf(row(16_000, { expectMs: 0 }), { now: NOW, positionsOpen: true }).status).toBe(FEED.DELAYED);
+  });
+});

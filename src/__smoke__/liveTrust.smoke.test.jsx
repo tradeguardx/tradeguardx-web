@@ -229,7 +229,9 @@ describe('R2 · no verdict before data; a stale feed says so', () => {
 
   it.each([
     ['fresh', -3_000, 'Guard live'],
-    ['delayed', -30_000, 'Delayed'],
+    // Poll-fed here (no push in the test), so the bar is 15 s + one 30 s poll.
+    ['delayed', -50_000, 'Delayed'],
+    ['poll-fed, 30 s since a reading (20 Nov false alarm)', -30_000, 'Guard live'],
     ['dead', -5 * 60_000, 'Reconnecting'],
   ])('a %s feed with a position open reads the right label', async (_name, age, label) => {
     server.rows['acc-1'].equityUpdatedAt = iso(age);

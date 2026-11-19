@@ -58,8 +58,11 @@ export function feedOf(live, { now = Date.now(), positionsOpen = null, changedAt
   if (positionsOpen !== true) return { status: FEED.IDLE, ageMs };
   // An open position and no equity reading at all: unknown, not stale.
   if (ageMs == null) return { status: FEED.LIVE, ageMs };
-  if (ageMs > RECONNECTING_MS) return { status: FEED.RECONNECTING, ageMs };
-  if (ageMs > DELAYED_MS) return { status: FEED.DELAYED, ageMs };
+  // Allow for how this browser is fed: a reading every 30 s by poll is not
+  // a stalled engine (expectMs from useLiveAccount; 0 while pushes arrive).
+  const slack = Number.isFinite(live.expectMs) ? live.expectMs : 0;
+  if (ageMs > RECONNECTING_MS + slack) return { status: FEED.RECONNECTING, ageMs };
+  if (ageMs > DELAYED_MS + slack) return { status: FEED.DELAYED, ageMs };
   return { status: FEED.LIVE, ageMs };
 }
 

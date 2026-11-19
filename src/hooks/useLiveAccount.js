@@ -12,6 +12,12 @@ const FALLBACK_POLL_MS = 30_000;
  */
 const DEGRADED_POLL_MS = 10_000;
 /*
+ * A push in the last 45 s means Realtime is delivering. Without one, the
+ * poll is the real feed even if the channel says SUBSCRIBED (mirror view,
+ * an RLS or publication gap), and the staleness label must allow for it.
+ */
+const PUSH_RECENT_MS = 45_000;
+/*
  * Mirrors PENDING_LOCK_MAX_WAIT_MS in user-service lockoutService.ts. The API
  * hands us `pendingLock.startsBy` already computed; a Realtime row carries
  * only the raw columns, so the one derived field is rebuilt here the same way.
@@ -80,12 +86,22 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
     let cancelled = false;
     let pollMs = FALLBACK_POLL_MS;
     let timer = null;
-    const apply = (row) => {
+    let lastPushAt = 0;
+    const apply = (row, via = 'poll') => {
       if (!row || cancelled) return;
       // A row for any other account is not ours to show (a late response, or
       // a payload Realtime routed to a stale channel).
       if (row.id != null && row.id !== tradingAccountId) return;
       const next = normalise(row, 'server');
+      if (via === 'push') lastPushAt = next.receivedAt;
+      /*
+       * `expectMs`: how long this browser can go between readings with
+       * nothing wrong. ~0 while pushes arrive; one poll interval when the
+       * poll is all we have. lib/liveFeed adds it to its thresholds, so a
+       * healthy engine read every 30 s is never called "Delayed" (owner,
+       * 20 Nov: mirror view showed Delayed with the engine writing every 3 s).
+       */
+      next.expectMs = next.receivedAt - lastPushAt < PUSH_RECENT_MS ? 0 : pollMs;
       /*
        * `changedAt`: THIS browser's clock when equity_updated_at last moved.
        * lib/liveFeed measures staleness from it, so a phone clock that is off
@@ -118,7 +134,7 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
     snapshot();
     const channel = supabase
       .channel(`live-account-${tradingAccountId}-${topic.current}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'trading_accounts', filter: `id=eq.${tradingAccountId}` }, (p) => apply(p.new))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'trading_accounts', filter: `id=eq.${tradingAccountId}` }, (p) => apply(p.new, 'push'))
       .subscribe((status) => {
         if (cancelled) return;
         /*
