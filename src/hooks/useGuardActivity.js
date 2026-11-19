@@ -12,7 +12,13 @@ const POLL_MS = 30_000;
  * and the Activity drawer, so both read the same list.
  */
 export function useGuardActivity({ accessToken, tradingAccountId, currency = 'USD', account = null }) {
-  const [data, setData] = useState({ trades: null, breaches: [] });
+  /* Kept with its account id: after a switch the previous account's trades
+     and breaches must not render under the new one while its fetch runs. */
+  const [dataS, setData] = useState({ id: null, trades: null, breaches: [] });
+  const data = useMemo(
+    () => (dataS.id === tradingAccountId ? dataS : { id: tradingAccountId, trades: null, breaches: [] }),
+    [dataS, tradingAccountId],
+  );
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -26,7 +32,10 @@ export function useGuardActivity({ accessToken, tradingAccountId, currency = 'US
         if (ctrl.signal.aborted) return;
         setNow(Date.now());
         // A failed refresh keeps what we had rather than emptying the list.
-        setData((prev) => ({ trades: Array.isArray(t) ? t : prev.trades ?? [], breaches: Array.isArray(b) ? b : prev.breaches }));
+        setData((prev) => {
+          const mine = prev.id === tradingAccountId ? prev : { trades: null, breaches: [] };
+          return { id: tradingAccountId, trades: Array.isArray(t) ? t : mine.trades ?? [], breaches: Array.isArray(b) ? b : mine.breaches };
+        });
       });
     load();
     const id = setInterval(load, POLL_MS);

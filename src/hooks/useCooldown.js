@@ -16,10 +16,23 @@ const FALLBACK_POLL_MS = 30000;
  * lock lifts in the UI at the same moment it lifts server-side.
  */
 export function useCooldown({ accessToken, tradingAccountId, account }) {
-  const [cd, setCd] = useState(() => ({
-    until: account?.cooldownUntil ?? null,
-    reason: account?.cooldownReason ?? null,
-  }));
+  /*
+   * Stored with the account it belongs to. Plain state kept the previous
+   * account's lock across a switch until the new account's snapshot landed,
+   * so the rules screen could disable (or enable) its controls on the wrong
+   * account's lock. A mismatch adopts the new account's seed in this render.
+   */
+  const seedFor = (id) => ({
+    id: id ?? null,
+    until: account && account.id === id ? account.cooldownUntil ?? null : null,
+    reason: account && account.id === id ? account.cooldownReason ?? null : null,
+  });
+  const [cdState, setCd] = useState(() => seedFor(tradingAccountId));
+  let cd = cdState;
+  if (cdState.id !== (tradingAccountId ?? null)) {
+    cd = seedFor(tradingAccountId);
+    setCd(cd);
+  }
   const [now, setNow] = useState(() => Date.now());
   // Supabase returns the SAME channel object for a duplicate topic, and calling
   // .on() on an already-subscribed channel throws. Two components can legitimately
@@ -32,7 +45,9 @@ export function useCooldown({ accessToken, tradingAccountId, account }) {
     let cancelled = false;
     const apply = (row) => {
       if (!row || cancelled) return;
+      if (row.id != null && row.id !== tradingAccountId) return;
       setCd({
+        id: tradingAccountId,
         until: row.cooldown_until ?? row.cooldownUntil ?? null,
         reason: row.cooldown_reason ?? row.cooldownReason ?? null,
       });

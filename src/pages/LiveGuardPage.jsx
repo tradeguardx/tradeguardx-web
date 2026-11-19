@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
-import { useGuard } from '../context/GuardContext';
+import { useGuard, useSelectedLiveRow } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
-import { useLiveAccount } from '../hooks/useLiveAccount';
+import { FEED, agoLabel, feedOf } from '../lib/liveFeed';
+import { SkeletonValue } from '../components/dashboard/shell/DashboardSkeleton';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { sessionOf, fmtMoney, splitDecimal, ruleConfig } from '../lib/session';
 import { computeRule } from '../components/dashboard/RuleStatusCards';
@@ -71,7 +72,9 @@ export default function LiveGuardPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
-  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount });
+  // The guard's own copy of the live row — the one its lock is read from, so
+  // this page's P&L and its lockout can never come from different moments.
+  const liveRow = useSelectedLiveRow();
   /*
    * NO KEY, NO LIVE NUMBERS.
    *
@@ -85,19 +88,40 @@ export default function LiveGuardPage() {
   const noLiveKey = g.keyLive === false;
   const live = noLiveKey ? null : liveRow;
   const s = useMemo(() => sessionOf(live, g.rules), [live, g.rules]);
-  const cur = s.currency;
+  // sessionOf has no currency without a row; fall back to the account's own,
+  // never to a "$" on a rupee account.
+  const cur = s.currency ?? selectedAccount?.accountCurrency ?? 'USD';
   const [activityOpen, setActivityOpen] = useState(false);
   const activity = useGuardActivity({ accessToken, tradingAccountId: selectedTradingAccountId, currency: cur, account: selectedAccount });
   const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });
 
   // ── positions ───────────────────────────────────────────────────────
-  const [positions, setPositions] = useState(null);
+  /*
+   * POSITIONS BELONG TO ONE ACCOUNT.
+   *
+   * They were plain state, kept across an account switch until the new
+   * account's fetch landed — and `posOpen` decides whether the kill switch
+   * arms directly or asks how to treat the open trade. So for a moment after
+   * switching, the PREVIOUS account's open trade decided what this account's
+   * kill switch offered. A response for the old account could also land late
+   * (the POSITION_OPEN retry below runs without the poll's abort signal) and
+   * write the old list back.
+   *
+   * Stored with the id it was fetched for; a mismatch reads as unknown
+   * (null), exactly as on first load. Unknown arms the same way it always did
+   * on first load — the server still refuses with POSITION_OPEN if a trade is
+   * open, which brings up the choice — so the kill switch behaves as before.
+   */
+  const [posState, setPosState] = useState({ id: null, list: null });
+  const positions = posState.id === selectedTradingAccountId ? posState.list : null;
   const loadPositions = useCallback(async (signal) => {
     if (!accessToken || !selectedTradingAccountId) return;
+    const id = selectedTradingAccountId;
     try {
-      const t = await fetchJournalTrades({ accessToken, tradingAccountId: selectedTradingAccountId, limit: 50, signal });
+      const t = await fetchJournalTrades({ accessToken, tradingAccountId: id, limit: 50, signal });
       const open = (Array.isArray(t) ? t : []).filter((x) => String(pick(x, 'status') || '').toUpperCase() === 'OPEN');
-      setPositions(open);
+      // Late for an account no longer selected: drop it (see above).
+      setPosState((prev) => (signal?.aborted ? prev : { id, list: open }));
     } catch { /* keep last */ }
   }, [accessToken, selectedTradingAccountId]);
   useEffect(() => {
@@ -108,12 +132,36 @@ export default function LiveGuardPage() {
   }, [loadPositions]);
   const posOpen = (positions?.length ?? 0) > 0;
 
+  /*
+   * ── feed freshness (lib/liveFeed) ─────────────────────────────────────
+   * `waiting`: no row from the server yet for this account — every live
+   * figure is a skeleton, never "$0.00" / "Flat so far" / "0 trades".
+   * `stale`: a position is open and the engine has gone quiet (restart,
+   * dropped exchange socket). The figures stay — they are the last we know —
+   * but the strip says "Delayed" / "Reconnecting" instead of "Guard live".
+   * Positions still unknown count as flat: no stale verdict from unloaded data.
+   */
+  const feed = noLiveKey ? null : feedOf(liveRow, { now, positionsOpen: positions == null ? null : posOpen });
+  const waiting = feed?.status === FEED.LOADING;
+  const stale = feed?.status === FEED.DELAYED || feed?.status === FEED.RECONNECTING;
+  // "Updated 8s ago" has to move, and Delayed has to arrive on time: tick the
+  // shared clock while a position is open (the only time age is judged).
+  useEffect(() => (posOpen && !noLiveKey ? subscribeTick() : undefined), [posOpen, noLiveKey, subscribeTick]);
+
   // ── kill switch (inline) ────────────────────────────────────────────
   const [hours, setHours] = useState(3);
   const [rlHelp, setRlHelp] = useState(false);
   const [stage, setStage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  /* A half-finished arm (stage) or a POSITION_OPEN refusal (blocked) was
+     about the account it happened on. Switching starts the next one clean. */
+  const [controlsFor, setControlsFor] = useState(selectedTradingAccountId);
+  if (controlsFor !== selectedTradingAccountId) {
+    setControlsFor(selectedTradingAccountId);
+    setStage(0);
+    setBlocked(false);
+  }
   const isMobile = useIsMobile();
   /**
    * Commitment controls are collapsed on a phone.
@@ -223,7 +271,8 @@ export default function LiveGuardPage() {
   const pnlSign = s.pnl == null ? 0 : Math.sign(s.pnl);
   const fg = pnlSign < 0 ? 'var(--red)' : pnlSign > 0 ? 'var(--mint)' : 'var(--ink)';
   const glow = pnlSign < 0 ? 'var(--red-tint)' : pnlSign > 0 ? 'var(--mint-tint)' : 'transparent';
-  const pnlStr = noLiveKey ? '—' : fmtMoney(s.pnl ?? 0, cur, { sign: true });
+  // A row with no P&L in it is "no reading", not zero.
+  const pnlStr = noLiveKey || s.pnl == null ? '—' : fmtMoney(s.pnl, cur, { sign: true });
   const [pnlMain, pnlDec] = splitDecimal(pnlStr);
   const usedPct = s.budgetPct ?? 0;
   const towardTarget = s.target && s.pnl > 0 ? Math.min(100, (s.pnl / s.target) * 100) : 0;
@@ -233,6 +282,10 @@ export default function LiveGuardPage() {
   const target = s.target ? fmt0(s.target) : '—';
   const summary = noLiveKey
     ? 'No key is connected to this account, so nothing is being watched and there is nothing live to show. Connect a key and today\u2019s P&L, limits and trade count appear here.'
+    : waiting
+    ? 'Reading the latest figures for this account\u2026'
+    : s.pnl == null
+    ? 'No reading for today yet. Your P&L, loss budget and trade count appear here as soon as the engine reports one.'
     : !hasLimits
     ? 'No trades yet, and no limits to show. Your loss limit and daily target appear here once setup is finished.'
     : g.readOnly
@@ -394,6 +447,11 @@ export default function LiveGuardPage() {
       Object.assign(t, TONE.neutral, { v: '—', tag: null, bar: '0%', pips: null, fg: 'var(--ink-3)', note: 'No key connected', noteFg: 'var(--ink-3)' });
     }
     tiles[3].note = 'Rules are set, but no key is connected to act on them';
+  } else if (waiting) {
+    /* Not loaded is not zero: skeletons until the first live row lands. */
+    for (const t of tiles.slice(0, 3)) {
+      Object.assign(t, TONE.neutral, { v: <SkeletonValue w="3.4ch" label={`Loading ${t.k.toLowerCase()}`} />, tag: null, bar: '0%', pips: null, fg: 'var(--ink-3)', note: 'Reading\u2026', noteFg: 'var(--ink-3)' });
+    }
   }
 
 
@@ -408,6 +466,12 @@ export default function LiveGuardPage() {
     ? { label: 'Locked out', meta: g.readOnly ? 'Lockout is a commitment — this key cannot block orders' : 'New orders are rejected on this account', right: `releases ${clockAt(g.lockUntil)}`, tone: 'var(--red)', bg: 'var(--red-tint)' }
     : noLiveKey
       ? { label: 'Not watching', meta: 'No key connected — nothing on this account is being watched', right: '', tone: 'var(--ink-3)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
+    : waiting
+      ? { label: 'Connecting', meta: 'Reading the latest from this account', right: '', tone: 'var(--ink-3)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
+    : stale
+      ? feed.status === FEED.RECONNECTING
+        ? { label: 'Reconnecting', meta: 'The live feed has gone quiet. The figures below are the last we received.', right: `updated ${agoLabel(feed.ageMs)}`, tone: 'var(--amber)', bg: 'var(--amber-tint)', sweep: SWEEP.calm }
+        : { label: 'Delayed', meta: 'No update for a few seconds while a position is open — the figures below may be behind.', right: `updated ${agoLabel(feed.ageMs)}`, tone: 'var(--amber)', bg: 'var(--amber-tint)', sweep: SWEEP.calm }
     : !enforcing
       ? g.readOnly
         ? { label: 'Watching', meta: 'Alerts only — this key cannot close positions', right: 'updates as fills land', tone: 'var(--amber)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
@@ -416,7 +480,7 @@ export default function LiveGuardPage() {
         ? { label: 'Near the limit', meta: atTradeCap ? 'Trade cap reached — the next entry is blocked' : `${Math.round(usedPct)}% of today's loss budget used — the guard is close to closing the day`, right: 'one bad fill from a close', tone: 'var(--red)', bg: 'var(--red-tint)', sweep: SWEEP.danger }
         : band === 'caution'
           ? { label: 'Getting close', meta: nearCap ? 'One trade left before your cap' : `${Math.round(usedPct)}% of today's loss budget used`, right: 'slow down here', tone: 'var(--amber)', bg: 'var(--amber-tint)', sweep: SWEEP.caution }
-          : { label: 'Guard live', meta: `${rulesOn} rules armed · positions closed from our servers`, right: 'updates as fills land', tone: 'var(--mint)', bg: 'var(--surface-2)', sweep: SWEEP.calm };
+          : { label: 'Guard live', meta: `${rulesOn} rules armed · positions closed from our servers`, right: feed?.status === FEED.LIVE && feed.ageMs != null ? `updated ${agoLabel(feed.ageMs)}` : 'updates as fills land', tone: 'var(--mint)', bg: 'var(--surface-2)', sweep: SWEEP.calm };
 
 
   if (!accountsLoading && !selectedAccount) {
@@ -505,7 +569,7 @@ export default function LiveGuardPage() {
 
               <div style={sx('flex:1;min-width:min(250px,100%);padding:18px 19px;border:1px solid var(--line);border-radius:16px;background:var(--surface)')}>
                 <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>Session closed at</div>
-                <div style={sx("margin-top:10px;font:700 34px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: fg })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
+                <div style={sx("margin-top:10px;font:700 34px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: fg })}>{waiting ? <SkeletonValue w="4.5ch" label="Loading today's P&L" /> : <>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</>}</div>
                 <div style={sx('display:flex;flex-direction:column;gap:10px;margin-top:16px')}>
                   {(g.readOnly
                     ? [['!', 'var(--amber)', 'var(--amber-tint)', 'We cannot block new orders with a read-only key']]
@@ -527,7 +591,7 @@ export default function LiveGuardPage() {
             <div style={sx('display:flex;align-items:flex-start;justify-content:space-between;gap:26px;flex-wrap:wrap')}>
               <div style={sx('flex:1;min-width:min(280px,100%)')}>
                 <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>Today · session P&amp;L</div>
-                <div style={sx("margin-top:12px;font:700 62px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.05em", { color: fg, textShadow: `0 0 48px ${glow}` })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
+                <div style={sx("margin-top:12px;font:700 62px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.05em", { color: fg, textShadow: `0 0 48px ${glow}` })}>{waiting ? <SkeletonValue w="4.5ch" label="Loading today's P&L" /> : <>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</>}</div>
                 <div style={sx('margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink-2);max-width:52ch;text-wrap:pretty')}>{summary}</div>
               </div>
 

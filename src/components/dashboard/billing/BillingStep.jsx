@@ -418,7 +418,9 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
     }
   };
 
-  const guardOff = !(user?.isTrial || user?.access === 'active');
+  // Only once access is KNOWN (null until /me answers — AuthContext): an
+  // unanswered or failed /me is not "guard off".
+  const guardOff = user?.access != null && !(user?.isTrial || user?.access === 'active');
 
   return (
     <div style={{ color: 'var(--ink)', fontSize: 14 }}>

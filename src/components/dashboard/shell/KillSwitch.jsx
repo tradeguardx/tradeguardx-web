@@ -74,11 +74,14 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
    * two entry points disagreed about whether the button was usable. Ask the
    * same question Live guard asks, from the same source, before arming.
    */
-  const [openPositions, setOpenPositions] = useState(null);
+  /* Kept with the account they were read for: the previous account's open
+     trade must never decide what this account's kill switch offers. */
+  const [positionsS, setOpenPositions] = useState({ id: null, list: null });
   const cardRef = useRef(null);
   const firstRef = useRef(null);
 
   const { account, guard, gap, lockRemainingMs, lockReason, readOnly, canLockOut, pendingLock } = selected;
+  const openPositions = positionsS.id != null && positionsS.id === account?.id ? positionsS.list : null;
   const armed = guard === 'locked';
   const waiting = !armed && !!pendingLock;
   useEffect(() => (open && armed ? subscribeTick() : undefined), [open, armed, subscribeTick]);
@@ -104,7 +107,8 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
           limit: 50,
           signal: ctrl.signal,
         });
-        setOpenPositions((Array.isArray(rows) ? rows : []).filter((r) => String(r?.status ?? '').toUpperCase() === 'OPEN'));
+        if (ctrl.signal.aborted) return;
+        setOpenPositions({ id: account.id, list: (Array.isArray(rows) ? rows : []).filter((r) => String(r?.status ?? '').toUpperCase() === 'OPEN') });
       } catch {
         // Unknown, not zero. Leaving it null keeps the arm path open and lets
         // the server's 409 be the backstop rather than blocking on a failed

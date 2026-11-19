@@ -110,8 +110,19 @@ export default function BillingPage() {
 
   const accessToken = session?.access_token;
 
+  /*
+   * Back from checkout: the payment webhook can land a few seconds after
+   * the redirect, so one read straight away can still return the old plan.
+   * Read again at 5 s and 15 s — the newest answer always wins (AuthContext
+   * drops a slower, older response).
+   */
   useEffect(() => {
-    if (params.get('checkout') === 'success') { clearPendingCheckoutPlan(); refetchSubscription?.(); }
+    if (params.get('checkout') !== 'success') return undefined;
+    clearPendingCheckoutPlan();
+    refetchSubscription?.();
+    const t1 = setTimeout(() => refetchSubscription?.(), 5_000);
+    const t2 = setTimeout(() => refetchSubscription?.(), 15_000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [params, refetchSubscription]);
   useEffect(() => { getPricingPlans().then(setPlans).catch(() => setPlans([])); }, []);
 

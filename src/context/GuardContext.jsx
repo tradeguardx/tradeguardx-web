@@ -19,6 +19,7 @@ import {
 import { keyStateOf, lifecycleIdOf, lifecycleView } from '../lib/lifecycle';
 import { getPricingPlans } from '../api/pricingApi';
 import { formatMoney } from '../lib/priceBands';
+import { useLiveAccount } from '../hooks/useLiveAccount';
 
 /**
  * Guard state for every account the user has, kept fresh, read everywhere.
@@ -33,10 +34,36 @@ import { formatMoney } from '../lib/priceBands';
  */
 
 const GuardContext = createContext(null);
+/*
+ * The selected account's live row, in its own context so the P&L ticking
+ * every few seconds re-renders only the screens that print it (Overview,
+ * Live guard) — not the whole shell, which reads GuardContext.
+ */
+const LiveRowContext = createContext(undefined);
 const POLL_MS = 20_000;
 /** Longest the dashboard waits for its inputs before rendering regardless. */
 const READY_TIMEOUT_MS = 8_000;
 const TICK_MS = 1_000;
+
+/*
+ * The three lock fields, compared by value. The live row changes every few
+ * seconds while a position is open; the lock almost never does. Writing the
+ * overlay only on a real change keeps the guard context — and so the whole
+ * shell — from re-rendering on every P&L tick.
+ */
+function lockFieldsOf(row) {
+  const f = { cooldownUntil: row?.cooldownUntil ?? null, cooldownReason: row?.cooldownReason ?? null };
+  // undefined = the payload did not carry it; keep whatever we already had.
+  if (row?.pendingLock !== undefined) f.pendingLock = row.pendingLock ?? null;
+  return f;
+}
+function sameLock(a, b) {
+  if (!a || !b) return false;
+  const t = (iso) => (iso ? new Date(iso).getTime() : null);
+  return t(a.cooldownUntil) === t(b.cooldownUntil)
+    && (a.cooldownReason ?? null) === (b.cooldownReason ?? null)
+    && JSON.stringify(a.pendingLock) === JSON.stringify(b.pendingLock);
+}
 
 function settle(p) {
   return p.then((v) => ({ ok: true, v }), () => ({ ok: false, v: null }));
@@ -97,8 +124,75 @@ export function GuardProvider({ children }) {
      offer is real; `expired` means it ran out and checkout will charge them
      today. The two must not be told the same thing. */
   const trialSpent = access === 'expired';
-  const { accounts, accountsLoading, selectedTradingAccountId, refreshTradingAccounts } = useTradingAccounts();
+  const { accounts, accountsLoading, selectedTradingAccountId, selectedAccount, refreshTradingAccounts } = useTradingAccounts();
   const accessToken = session?.access_token;
+
+  /*
+   * ──────────────────────────────────────────────────────────────────────
+   * THE LOCK COMES FROM THE FRESHEST COPY OF THE ROW, NOT THE ACCOUNT LIST.
+   *
+   * `accounts` is fetched once per login token — about hourly — and on an
+   * explicit refresh after the user's own mutation. Every lock surface (the
+   * header kill switch, the guard pill, the Locked out view, the switcher
+   * and mobile dots) read cooldown_until from it, so a lock the ENGINE set
+   * (daily loss, trade cap, loss streak, profit lock, an after_close lock
+   * starting) could stay invisible for up to an hour while the P&L beside it
+   * updated every three seconds from the live row.
+   *
+   * The live row (Realtime + a 30 s snapshot poll) now feeds an overlay of
+   * the three lock fields, per account id. Whichever arrived LAST wins:
+   *   - a live push or snapshot writes its account(s) into the overlay;
+   *   - a new account list (login, or refresh() after arming a lock) clears
+   *     the overlay, because that list was fetched after everything in it.
+   * The snapshot poll already fetches every account's row, so the other
+   * accounts' dots ride along at no extra cost (≤ 30 s fresh).
+   *
+   * Only DISPLAY changes. The engine and user-service decide the lock; this
+   * only decides which copy of their decision is newest.
+   * ──────────────────────────────────────────────────────────────────────
+   */
+  const [now, setNow] = useState(() => Date.now());
+  const [lockOverlay, setLockOverlay] = useState({});
+  const [overlayBase, setOverlayBase] = useState(accounts);
+  if (overlayBase !== accounts) {
+    setOverlayBase(accounts);
+    setLockOverlay({});
+  }
+  /*
+   * Both callbacks fire from the live hook as rows ARRIVE (never from an
+   * effect on the row), and both bring the shared clock up to date: nothing
+   * ticks while nothing is locked, so a lock that just arrived would
+   * otherwise be judged against a clock that stopped minutes ago.
+   *
+   * Compared against a ref of the committed overlay, not inside the state
+   * updater, so the clock is bumped ONLY on a real lock change. Bumping it on
+   * every row would re-render the whole shell every 3 s with an open trade.
+   */
+  const overlayRef = useRef(lockOverlay);
+  useEffect(() => { overlayRef.current = lockOverlay; }, [lockOverlay]);
+  const writeLocks = useCallback((rows) => {
+    const prev = overlayRef.current;
+    let next = prev;
+    for (const row of rows) {
+      if (!row?.id) continue;
+      const merged = { ...prev[row.id], ...lockFieldsOf(row) };
+      if (prev[row.id] && sameLock(prev[row.id], merged)) continue;
+      if (next === prev) next = { ...prev };
+      next[row.id] = merged;
+    }
+    if (next === prev) return;
+    overlayRef.current = next;
+    setLockOverlay(next);
+    setNow(Date.now());
+  }, []);
+  const onLiveList = useCallback((list) => writeLocks(list), [writeLocks]);
+  // Only rows from the server reach this: the seed is the (old) list itself.
+  const onLiveRow = useCallback((row) => writeLocks([row]), [writeLocks]);
+  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount, onList: onLiveList, onRow: onLiveRow });
+  const liveAccounts = useMemo(
+    () => accounts.map((a) => (lockOverlay[a.id] ? { ...a, ...lockOverlay[a.id] } : a)),
+    [accounts, lockOverlay],
+  );
 
   const [perAccount, setPerAccount] = useState({}); // id → { connection, rules, loaded }
   const [notifications, setNotifications] = useState(null);
@@ -107,7 +201,6 @@ export function GuardProvider({ children }) {
   // time for data this context already has.
   const [unreadList, setUnreadList] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
   // Screens with their own countdowns (economic calendar) subscribe to the
   // same clock instead of starting a second interval.
   const [tickSubscribers, setTickSubscribers] = useState(0);
@@ -202,13 +295,25 @@ export function GuardProvider({ children }) {
     };
   }, [load]);
 
-  // One clock for every countdown on screen.
+  /*
+   * One clock for every countdown on screen.
+   *
+   * `anyLock` is read against the shared clock, so the tick that carries a
+   * lock past its end is the same render that clears it — and the next
+   * render stops the interval. It used to be computed inside the effect off
+   * `accounts`, which kept ticking after a lock expired and, worse, only
+   * started ticking when the hourly list happened to carry the lock.
+   *
+   * A lock that just ARRIVED is checked against a clock that may not have
+   * moved for a while (nothing ticks while nothing is locked), so writeLocks
+   * above brings the clock up to date with every arrival.
+   */
+  const anyLock = liveAccounts.some((a) => lockUntilOf(a, now));
   useEffect(() => {
-    const anyLock = accounts.some((a) => lockUntilOf(a));
     if (!anyLock && tickSubscribers === 0) return undefined;
     const id = setInterval(() => setNow(Date.now()), TICK_MS);
     return () => clearInterval(id);
-  }, [accounts, tickSubscribers]);
+  }, [anyLock, tickSubscribers]);
 
   const refresh = useCallback(async () => {
     await refreshTradingAccounts?.();
@@ -217,7 +322,7 @@ export function GuardProvider({ children }) {
 
   const stateFor = useCallback(
     (accountId) => {
-      const account = accounts.find((a) => a.id === accountId) ?? null;
+      const account = liveAccounts.find((a) => a.id === accountId) ?? null;
       const slice = perAccount[accountId] ?? { connection: null, rules: null, loaded: false };
       // `loaded` rides along so nothing downstream mistakes "not fetched yet"
       // for "not connected" — see guard.js.
@@ -260,7 +365,7 @@ export function GuardProvider({ children }) {
         canLockOut: canLockOutOf(input),
       };
     },
-    [accounts, perAccount, notifications, now, loaded, entitled, mandate, trialSpent],
+    [liveAccounts, perAccount, notifications, now, loaded, entitled, mandate, trialSpent],
   );
 
   /*
@@ -372,15 +477,30 @@ export function GuardProvider({ children }) {
       ),
       selected: selectedState,
       stateFor,
-      all: accounts.map((a) => stateFor(a.id)),
+      all: liveAccounts.map((a) => stateFor(a.id)),
       refresh,
       user,
       subscribeTick,
     }),
-    [ready, life, loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedState, accounts, refresh, user, subscribeTick],
+    [ready, life, loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedState, liveAccounts, refresh, user, subscribeTick],
   );
 
-  return <GuardContext.Provider value={value}>{children}</GuardContext.Provider>;
+  return (
+    <GuardContext.Provider value={value}>
+      <LiveRowContext.Provider value={liveRow}>{children}</LiveRowContext.Provider>
+    </GuardContext.Provider>
+  );
+}
+
+/**
+ * The selected account's live row (see useLiveAccount) — the same copy the
+ * guard reads its lock from, so a screen's P&L and its lock can never come
+ * from two different moments. Null until the account has a row.
+ */
+export function useSelectedLiveRow() {
+  const row = useContext(LiveRowContext);
+  if (row === undefined) throw new Error('useSelectedLiveRow must be used within GuardProvider');
+  return row;
 }
 
 export function useGuard() {

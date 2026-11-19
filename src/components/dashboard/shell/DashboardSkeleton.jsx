@@ -25,6 +25,28 @@ function Block({ h, w = '100%', r = 12, style }) {
   );
 }
 
+/**
+ * One figure that has not arrived yet — the inline stand-in for a number.
+ *
+ * "No verdict before data": a live screen used to print "$0.00", "Flat so
+ * far" or "0 trades" before the first live row landed, which is a
+ * measurement nobody took (and a dollar sign on a rupee account). This is
+ * the same sweep as the page skeleton, sized to the figure it replaces, with
+ * a screen-reader label so it is not silent.
+ */
+export function SkeletonValue({ w = '5ch', h = '0.8em', label = 'Loading' }) {
+  return (
+    <span
+      className="tgx-skel"
+      role="status"
+      aria-label={label}
+      style={sx('position:relative;display:inline-block;overflow:hidden;vertical-align:middle;max-width:100%;background:var(--surface-3)', { width: w, height: h, borderRadius: 8 })}
+    >
+      <span className="tgx-skel__sweep" />
+    </span>
+  );
+}
+
 const CARD = 'border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-card)';
 
 export default function DashboardSkeleton() {

@@ -21,6 +21,11 @@ function profileZoneOf(payload) {
   return undefined;
 }
 
+/* Backoff for a failed /subscriptions/me: quick at first (a cold Lambda is
+   the usual cause), then once a minute for as long as it keeps failing. */
+const SUB_RETRY_MS = [2_000, 5_000, 15_000, 30_000, 60_000];
+const SUB_FOCUS_STALE_MS = 60_000;
+
 function planKeyFromName(name) {
   if (!name || typeof name !== 'string') return 'free';
   return name.toLowerCase().replace(/\s|\+/g, '');
@@ -80,14 +85,36 @@ export function AuthProvider({ children }) {
       // critical because admin comps have no Dodo customer to manage/cancel.
       subscriptionSource: 'free',
       // Trial/access state — overwritten by mergePlanIntoUser once the
-      // subscription loads. `access`: 'trial' | 'active' | 'expired' | 'free'.
-      access: 'free',
+      // subscription loads. `access`: 'trial' | 'active' | 'expired' | 'free'
+      // | 'none' once known.
+      //
+      // NULL UNTIL /subscriptions/me ANSWERS — NEVER 'free'.
+      // This defaulted to 'free', and a failed or slow /me left it there:
+      // GuardContext then read a paying user as unentitled and the shell said
+      // "Watching only — your plan has lapsed" to someone whose plan was fine
+      // (and the engine still enforcing). Unknown is its own state; every
+      // reader treats null as "don't say anything yet" (fail open).
+      access: null,
       isTrial: false,
       isExpired: false,
       trialDaysLeft: null,
       trialEndsAt: null,
     };
   }, []);
+
+  /*
+   * The same person, a new auth event (TOKEN_REFRESHED about hourly, a
+   * USER_UPDATED, a failed /me). Their plan did not change because their
+   * token did, so keep the plan we already know and refresh only identity.
+   * Resetting to toAppUser() here flipped every paying user to "unknown"
+   * (and, before access went null, to 'free') for the length of the /me
+   * round trip — or for good, when that call failed.
+   */
+  const keepKnownPlan = useCallback((prev, authUser) => {
+    const fresh = toAppUser(authUser);
+    if (!fresh || !prev || prev.id !== fresh.id || !prev.planKnown) return fresh;
+    return { ...prev, email: fresh.email, name: fresh.name };
+  }, [toAppUser]);
 
   const mergePlanIntoUser = useCallback(
     (authUser, subData) => {
@@ -246,17 +273,41 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  /*
+   * /subscriptions/me: ONE ANSWER AT A TIME, RETRIED UNTIL IT COMES.
+   *
+   * `seq` drops a slow response that lands after a newer one (a 10 s /me
+   * from before a checkout must not overwrite the answer from after it).
+   * A failure keeps the last known plan for the same user — or stays
+   * unknown if there is none — and retries on a backoff, so one cold Lambda
+   * or a dropped connection no longer decides what the user is told for the
+   * rest of the session. Focus and visibility also refetch (below).
+   */
+  const subSeqRef = useRef(0);
+  const subRetryRef = useRef({ timer: null, attempt: 0 });
+  const subOkAtRef = useRef(0);
+  const loadSubscriptionRef = useRef(null);
+  const clearSubRetry = useCallback(() => {
+    clearTimeout(subRetryRef.current.timer);
+    subRetryRef.current = { timer: null, attempt: 0 };
+  }, []);
   const loadSubscription = useCallback(async (targetSession) => {
     const token = targetSession?.access_token;
     if (!token) {
+      clearSubRetry();
       setSubscription(null);
       setSubscriptionError(null);
       return;
     }
+    const mySeq = ++subSeqRef.current;
+    clearTimeout(subRetryRef.current.timer);
     setSubscriptionLoading(true);
-    setSubscriptionError(null);
     try {
       const data = await getCurrentSubscription({ accessToken: token });
+      if (mySeq !== subSeqRef.current) return;
+      subRetryRef.current = { timer: null, attempt: 0 };
+      subOkAtRef.current = Date.now();
+      setSubscriptionError(null);
       setSubscription(data);
       // The /me payload carries the profile's timezone too. A mirror must
       // not write the mirrored user's zone into the operator's storage.
@@ -264,13 +315,22 @@ export function AuthProvider({ children }) {
       if (tz !== undefined) setUserZone(tz, { persist: !isMirroring() });
       setUser(mergePlanIntoUser(targetSession.user, data));
     } catch (e) {
+      if (mySeq !== subSeqRef.current) return;
       setSubscriptionError(e?.message || 'Could not load subscription');
-      setSubscription(null);
-      setUser(toAppUser(targetSession.user));
+      // Keep `subscription` and the user's known plan: a failed read is not
+      // evidence the plan changed. Unknown stays unknown (access: null).
+      setUser((prev) => keepKnownPlan(prev, targetSession.user));
+      const attempt = subRetryRef.current.attempt;
+      const delay = SUB_RETRY_MS[Math.min(attempt, SUB_RETRY_MS.length - 1)];
+      subRetryRef.current = {
+        attempt: attempt + 1,
+        timer: setTimeout(() => loadSubscriptionRef.current?.(targetSession), delay),
+      };
     } finally {
-      setSubscriptionLoading(false);
+      if (mySeq === subSeqRef.current) setSubscriptionLoading(false);
     }
-  }, [mergePlanIntoUser, toAppUser]);
+  }, [mergePlanIntoUser, keepKnownPlan, clearSubRetry]);
+  useEffect(() => { loadSubscriptionRef.current = loadSubscription; }, [loadSubscription]);
 
   const bootstrapSession = useCallback(
     async (targetSession, nameHint) => {
@@ -337,7 +397,7 @@ export function AuthProvider({ children }) {
 
       const nextSession = data?.session ?? null;
       setSession(nextSession);
-      setUser(toAppUser(nextSession?.user ?? null));
+      setUser((prev) => keepKnownPlan(prev, nextSession?.user ?? null));
       setAuthReady(true);
       if (nextSession) {
         // Identity only — a restored session is not a fresh login.
@@ -350,7 +410,7 @@ export function AuthProvider({ children }) {
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       setSession(nextSession ?? null);
-      setUser(toAppUser(nextSession?.user ?? null));
+      setUser((prev) => keepKnownPlan(prev, nextSession?.user ?? null));
       setAuthReady(true);
       if (nextSession) {
         // Analytics: SIGNED_IN fires for password, OAuth AND signup. A signup
@@ -365,6 +425,8 @@ export function AuthProvider({ children }) {
         await bootstrapSession(nextSession);
       } else {
         setAnalyticsUser(null);
+        clearSubRetry();
+        subSeqRef.current += 1;
         setSubscription(null);
         setSubscriptionError(null);
         setUserZone(null);
@@ -376,7 +438,35 @@ export function AuthProvider({ children }) {
       mounted = false;
       listener?.subscription?.unsubscribe();
     };
-  }, [bootstrapSession, toAppUser]);
+  }, [bootstrapSession, toAppUser, keepKnownPlan, clearSubRetry]);
+
+  /*
+   * Refetch the plan when the user comes back to the tab: after a failure
+   * (so a retry does not wait out its backoff), or when the last answer is
+   * over a minute old (a payment made in another tab, a plan that ended
+   * while this one sat in the background). Never more than once a minute
+   * otherwise — /me is not free.
+   */
+  const sessionRef = useRef(null);
+  useEffect(() => { sessionRef.current = session; }, [session]);
+  const subErrorRef = useRef(null);
+  useEffect(() => { subErrorRef.current = subscriptionError; }, [subscriptionError]);
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    const onFocus = () => {
+      if (document.hidden) return;
+      const s = sessionRef.current;
+      if (!s?.access_token) return;
+      if (subErrorRef.current || Date.now() - subOkAtRef.current > SUB_FOCUS_STALE_MS) loadSubscriptionRef.current?.(s);
+    };
+    document.addEventListener('visibilitychange', onFocus);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', onFocus);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
+  useEffect(() => () => clearTimeout(subRetryRef.current.timer), []);
 
   // Tag/clear the Sentry user scope so error events from authenticated users
   // are attributable. No-op when Sentry isn't configured.
@@ -506,6 +596,8 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     supabase.auth.signOut();
+    clearSubRetry();
+    subSeqRef.current += 1;
     setUser(null);
     setSession(null);
     setSubscription(null);
@@ -514,7 +606,7 @@ export function AuthProvider({ children }) {
     // from the last user's chosen zone.
     setUserZone(null);
     initializedProfilesRef.current = new Set();
-  }, []);
+  }, [clearSubRetry]);
 
   /** After a successful PUT /profile/timezone — see PreferencesPage. */
   const setTimezone = useCallback((tz) => setUserZone(tz), []);
