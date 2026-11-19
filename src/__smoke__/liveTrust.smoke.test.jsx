@@ -250,6 +250,20 @@ describe('R2 · no verdict before data; a stale feed says so', () => {
   });
 });
 
+describe('the hero sentence never promises a target that is not set', () => {
+  // 20 Nov: an open short at +Rs 183 with the daily target off read
+  // "Banked so far today. The day locks itself at — so the gain survives".
+  it('says "Up so far, including your open trade" and names no target when none is set', async () => {
+    server.rows['acc-1'].dailyPnl = 183.8;
+    server.trades['acc-1'] = [{ tradeUid: 'p1', symbol: 'BTCUSD', side: 'SELL', status: 'OPEN' }];
+    mount('/dashboard/live');
+    await waitFor(() => expect(screen.getByText(/Up so far today, including your open trade\./)).toBeTruthy());
+    expect(screen.queryByText(/locks itself at —/)).toBeNull();
+    expect(screen.queryByText(/Banked so far today/)).toBeNull();
+    expect(screen.getByText('No daily target set')).toBeTruthy();
+  });
+});
+
 describe('R4 · switching accounts never shows the previous account', () => {
   it('drops the old open trade (which gates the kill switch) and the old P&L the moment the account changes', async () => {
     server.trades['acc-1'] = [{ tradeUid: 'p1', symbol: 'BTCUSD', side: 'BUY', status: 'OPEN' }];

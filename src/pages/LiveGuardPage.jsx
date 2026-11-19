@@ -291,10 +291,26 @@ export default function LiveGuardPage() {
     : g.readOnly
       ? `You are ${Math.round(usedPct)}% into today's loss budget. The key on this account is read-only, so at 100% we alert you and log it — we cannot close anything. Replace the key to make these limits enforceable.`
       : pnlSign < 0
-        ? `You are ${Math.round(usedPct)}% into today's loss budget. At 100% the guard closes everything and locks the day.`
+        ? (s.lossLimit
+          ? `You are ${Math.round(usedPct)}% into today's loss budget. At 100% the guard closes everything and locks the day.`
+          : 'Down so far today. No daily loss limit is set on this account, so the guard will not close the day on a loss.')
         : pnlSign === 0
-          ? `Flat so far. The guard closes the day at ${lossLimit} down, or locks it in at ${target} up.`
-          : `Banked so far today. The day locks itself at ${target} so the gain survives the afternoon.`;
+          ? (s.lossLimit && s.target
+            ? `Flat so far. The guard closes the day at ${lossLimit} down, or locks it in at ${target} up.`
+            : s.lossLimit
+              ? `Flat so far. The guard closes the day at ${lossLimit} down.`
+              : `Flat so far. The day locks itself in at ${target} up.`)
+          /*
+           * "Banked" only when it is: with a trade still open the figure
+           * includes unrealised P&L that can still go (20 Nov: an open short
+           * showed "Banked"). And no target means no lock-in to promise; the
+           * sentence used to print "locks itself at —".
+           */
+          : `${posOpen ? 'Up so far today, including your open trade.' : 'Banked so far today.'} ${s.target
+            ? `The day locks itself at ${target} so the gain survives.`
+            : s.lossLimit
+              ? `No daily target is set, so the day stays open; your ${lossLimit} loss limit still applies.`
+              : 'No daily target is set, so the day stays open.'}`;
   const fillLeft = pnlSign < 0 ? `${50 - usedPct / 2}%` : '50%';
   const fillWidth = pnlSign < 0 ? `${usedPct / 2}%` : `${towardTarget / 2}%`;
   const fillBg = pnlSign < 0 ? 'var(--red-solid)' : 'var(--mint-solid)';
@@ -402,7 +418,7 @@ export default function LiveGuardPage() {
       bar: `${Math.min(100, Math.max(0, usedPct))}%`,
       barBg: usedPct > 70 ? 'var(--red-solid)' : 'var(--amber-solid)',
       fg: usedPct > 70 ? 'var(--red)' : 'var(--ink)',
-      note: locked ? 'Frozen at the lockout' : 'At 0 we close the day',
+      note: locked ? 'Frozen at the lockout' : s.lossLimit ? 'At 0 we close the day' : 'No daily loss limit set',
       noteFg: 'var(--ink-3)',
     }),
     tone(atTradeCap ? 'red' : nearCap ? 'amber' : 'neutral', {
@@ -422,11 +438,11 @@ export default function LiveGuardPage() {
     tone('neutral', {
       k: 'Toward target',
       tag: null,
-      v: `${Math.round(towardTarget)}%`,
+      v: s.target ? `${Math.round(towardTarget)}%` : '—',
       bar: `${Math.min(100, Math.max(0, towardTarget))}%`,
       barBg: 'var(--mint-solid)',
       fg: 'var(--ink)',
-      note: locked ? 'Paused while locked' : towardTarget >= 100 ? 'Target hit — the day is locked in' : 'Day locks itself when it lands',
+      note: locked ? 'Paused while locked' : !s.target ? 'No daily target set' : towardTarget >= 100 ? 'Target hit — the day is locked in' : 'Day locks itself when it lands',
       noteFg: 'var(--ink-3)',
     }),
     tone(g.readOnly || rulesOn === 0 ? 'amber' : 'neutral', {
