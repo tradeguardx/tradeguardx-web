@@ -20,6 +20,7 @@ import { keyStateOf, lifecycleIdOf, lifecycleView } from '../lib/lifecycle';
 import { getPricingPlans } from '../api/pricingApi';
 import { formatMoney } from '../lib/priceBands';
 import { useLiveAccount } from '../hooks/useLiveAccount';
+import { useLiveDrivenRefresh } from '../hooks/useLiveDrivenRefresh';
 
 /**
  * Guard state for every account the user has, kept fresh, read everywhere.
@@ -41,6 +42,8 @@ const GuardContext = createContext(null);
  */
 const LiveRowContext = createContext(undefined);
 const POLL_MS = 20_000;
+/** Rules + settings backstop while live changes drive their refresh. */
+const RULES_BACKSTOP_MS = 60_000;
 /** Longest the dashboard waits for its inputs before rendering regardless. */
 const READY_TIMEOUT_MS = 8_000;
 const TICK_MS = 1_000;
@@ -218,7 +221,7 @@ export function GuardProvider({ children }) {
    * re-learn facts that had not moved.
    */
   const load = useCallback(
-    async (signal, { scope = 'all' } = {}) => {
+    async (signal, { scope = 'all', light = false } = {}) => {
       if (!accessToken || accountsLoading) return;
       const myRun = ++inflight.current;
       const all = accounts.map((a) => a.id);
@@ -226,12 +229,16 @@ export function GuardProvider({ children }) {
         ? [selectedTradingAccountId]
         : all;
 
+      /* A light pass (see the poll below) keeps the alert badge and the key's
+         health on their 20 s clock and skips what only changes when the user
+         edits it or the live row says so: notification settings and rules. */
+      const skipped = Promise.resolve({ ok: false, v: null, skipped: true });
       const [notif, breaches, ...pairs] = await Promise.all([
-        settle(fetchNotificationSettings({ accessToken, signal })),
+        light ? skipped : settle(fetchNotificationSettings({ accessToken, signal })),
         settle(fetchBreaches({ accessToken, unreadOnly: true, limit: 50, signal })),
         ...ids.flatMap((id) => [
           settle(getExchangeCredentialsStatus({ accessToken, accountId: id, signal })),
-          settle(fetchRulesBundle({ accessToken, tradingAccountId: id, signal })),
+          light ? skipped : settle(fetchRulesBundle({ accessToken, tradingAccountId: id, signal })),
         ]),
       ]);
       if (signal?.aborted || myRun !== inflight.current) return;
@@ -246,9 +253,11 @@ export function GuardProvider({ children }) {
       // landed; the merge below then keeps whatever we already knew, or leaves
       // the account in `loading` if we knew nothing yet.
       const fetched = {};
+      const connOnly = {};
       ids.forEach((id, i) => {
         const conn = pairs[i * 2];
         const bundle = pairs[i * 2 + 1];
+        if (bundle.skipped) { if (conn.ok) connOnly[id] = conn.v; return; }
         if (!conn.ok || !bundle.ok) return;
         fetched[id] = { connection: conn.v, rules: bundle.v, loaded: true };
       });
@@ -257,6 +266,9 @@ export function GuardProvider({ children }) {
       setPerAccount((prev) => {
         const next = { ...fetched };
         for (const id of all) if (!next[id] && prev[id]) next[id] = prev[id];
+        // A light pass only refreshes the key's health on a slice that is
+        // already loaded; it never marks an account loaded on its own.
+        for (const [id, conn] of Object.entries(connOnly)) if (next[id]?.loaded) next[id] = { ...next[id], connection: conn };
         return next;
       });
       if (notif.ok) setNotifications(notif.v);
@@ -272,28 +284,24 @@ export function GuardProvider({ children }) {
     [accessToken, accounts, accountsLoading, selectedTradingAccountId],
   );
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    // Full pass when the account set or the selection changes; polls after
-    // that are scoped to the selected account.
-    load(ctrl.signal, { scope: 'all' });
-    const poll = setInterval(() => {
-      // A hidden tab is not watching anything. The engine enforces server-side
-      // regardless, so polling a background tab buys nothing and costs a
-      // Lambda invocation every 20 seconds for as long as it stays open.
-      if (typeof document !== 'undefined' && document.hidden) return;
-      load(ctrl.signal, { scope: 'selected' });
-    }, POLL_MS);
-    // Catch up immediately on return, so the first thing a returning user sees
-    // is current rather than up to 20s stale.
-    const onVisible = () => { if (!document.hidden) load(ctrl.signal, { scope: 'selected' }); };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      ctrl.abort();
-      clearInterval(poll);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [load]);
+  /*
+   * Full pass when the account set or the selection changes (load changes
+   * identity); after that, scoped to the selected account:
+   * - every 20 s: unread alerts + the key's health (light pass), as before;
+   * - rules + notification settings: whenever the live row shows a trade,
+   *   lock or queued lock change, and every 60 s as a backstop — every 20 s,
+   *   as before, whenever the live feed is not healthy;
+   * - nothing while the tab is hidden; a full pass the moment it is back.
+   * Edits call refresh() below, which always does a full pass.
+   */
+  useLiveDrivenRefresh({
+    load: (signal, { first, full }) => load(signal, { scope: first ? 'all' : 'selected', light: !full }),
+    resetKey: load,
+    row: liveRow,
+    fastMs: POLL_MS,
+    slowMs: RULES_BACKSTOP_MS,
+    light: true,
+  });
 
   /*
    * One clock for every countdown on screen.

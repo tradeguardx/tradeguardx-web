@@ -173,8 +173,11 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
       };
       const onVisible = () => {
         if (document.visibilityState === 'visible' && !liveTimer) run();
+        if (document.visibilityState === 'visible') listOnly();
       };
       const listOnly = async () => {
+        // A hidden tab shows no list; coming back refreshes it (onVisible).
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
         try {
           const list = await fetchTradingAccounts({ accessToken });
           if (!cancelled) onListRef.current?.(Array.isArray(list) ? list : []);

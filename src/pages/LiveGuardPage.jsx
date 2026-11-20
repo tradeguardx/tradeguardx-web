@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
@@ -9,7 +9,6 @@ import { SkeletonValue } from '../components/dashboard/shell/DashboardSkeleton';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { sessionOf, fmtMoney, splitDecimal, ruleConfig } from '../lib/session';
 import { computeRule } from '../components/dashboard/RuleStatusCards';
-import { fetchJournalTrades } from '../api/tradesApi';
 import { stopCellFor } from '../lib/stopLoss';
 import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../api/userApi';
 import { OpenTradeLockChoice, PendingLockPanel } from '../components/dashboard/shell/LockChoice';
@@ -32,7 +31,6 @@ import { useGuardActivity } from '../hooks/useGuardActivity';
  * not built: the app runs on real state.
  */
 
-const POLL_MS = 15_000;
 const MONO_LABEL = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)";
 const H3 = "margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em";
 const HOUR_ON = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
@@ -68,7 +66,7 @@ function pick(o, ...keys) { for (const k of keys) if (o && o[k] != null) return 
 export default function LiveGuardPage() {
   const { session } = useAuth();
   const { selectedAccount, selectedTradingAccountId, accountsLoading } = useTradingAccounts();
-  const { selected: g, refresh, now, subscribeTick } = useGuard();
+  const { selected: g, refresh, now, subscribeTick, unreadList } = useGuard();
   const toast = useToast();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
@@ -92,7 +90,10 @@ export default function LiveGuardPage() {
   // never to a "$" on a rupee account.
   const cur = s.currency ?? selectedAccount?.accountCurrency ?? 'USD';
   const [activityOpen, setActivityOpen] = useState(false);
-  const activity = useGuardActivity({ accessToken, tradingAccountId: selectedTradingAccountId, currency: cur, account: selectedAccount });
+  // A new unread alert re-reads the activity list at once (warnings that do
+  // not move the live row would otherwise wait for the backstop).
+  const alertKey = unreadList?.[0]?.id ?? '';
+  const activity = useGuardActivity({ accessToken, tradingAccountId: selectedTradingAccountId, currency: cur, account: selectedAccount, liveRow, alertKey });
   const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });
 
   // ── positions ───────────────────────────────────────────────────────
@@ -112,24 +113,15 @@ export default function LiveGuardPage() {
    * on first load — the server still refuses with POSITION_OPEN if a trade is
    * open, which brings up the choice — so the kill switch behaves as before.
    */
-  const [posState, setPosState] = useState({ id: null, list: null });
-  const positions = posState.id === selectedTradingAccountId ? posState.list : null;
-  const loadPositions = useCallback(async (signal) => {
-    if (!accessToken || !selectedTradingAccountId) return;
-    const id = selectedTradingAccountId;
-    try {
-      const t = await fetchJournalTrades({ accessToken, tradingAccountId: id, limit: 50, signal });
-      const open = (Array.isArray(t) ? t : []).filter((x) => String(pick(x, 'status') || '').toUpperCase() === 'OPEN');
-      // Late for an account no longer selected: drop it (see above).
-      setPosState((prev) => (signal?.aborted ? prev : { id, list: open }));
-    } catch { /* keep last */ }
-  }, [accessToken, selectedTradingAccountId]);
-  useEffect(() => {
-    const ctrl = new AbortController();
-    loadPositions(ctrl.signal);
-    const id = setInterval(() => loadPositions(ctrl.signal), POLL_MS);
-    return () => { ctrl.abort(); clearInterval(id); };
-  }, [loadPositions]);
+  /* Read from the activity list's trades (useGuardActivity), which is kept
+     per account id and re-read the moment the live row shows a trade open or
+     close; a separate /trades poll every 15 s used to fetch the same rows.
+     `activity.trades` is null until a fetch for THIS account has succeeded. */
+  const positions = useMemo(
+    () => (Array.isArray(activity.trades) ? activity.trades.filter((x) => String(pick(x, 'status') || '').toUpperCase() === 'OPEN') : null),
+    [activity.trades],
+  );
+  const loadPositions = activity.refresh;
   const posOpen = (positions?.length ?? 0) > 0;
 
   /*
