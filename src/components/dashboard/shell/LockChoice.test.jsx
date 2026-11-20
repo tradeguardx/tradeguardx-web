@@ -54,3 +54,15 @@ describe('PendingLockPanel', () => {
     expect(screen.getByText(/no cancel/)).toBeInTheDocument();
   });
 });
+
+describe('many open trades (20 Nov: nine option strikes listed twice)', () => {
+  const nine = ['MV-BTC-59800-211126', 'MV-BTC-60000-211126', 'MV-BTC-60200-211126', 'MV-BTC-60400-211126', 'MV-BTC-60600-211126', 'MV-BTC-60800-211126', 'MV-BTC-61000-211126', 'MV-BTC-61200-211126', 'MV-BTC-61400-211126'];
+  it('counts them instead of listing every symbol', () => {
+    render(<OpenTradeLockChoice symbols={nine} hours={3} setHours={() => {}} busy={false} onArm={() => {}} />);
+    expect(screen.getByText('You have 9 trades open')).toBeTruthy();
+    expect(screen.getByText(/MV-BTC-59800-211126, MV-BTC-60000-211126 and 7 more are open\./)).toBeTruthy();
+    expect(screen.getByText('Lock when all 9 trades close')).toBeTruthy();
+    expect(screen.getByText(/We close all 9 open trades at market/)).toBeTruthy();
+    expect(screen.queryByText(/MV-BTC-61400-211126/)).toBeNull();
+  });
+});

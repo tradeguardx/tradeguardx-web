@@ -27,15 +27,19 @@ const HOUR_OFF = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space 
 const CHOICES = [
   {
     key: 'after_close',
-    title: 'Lock when this trade closes',
+    title: (n) => (n > 1 ? `Lock when all ${n} trades close` : 'Lock when this trade closes'),
     tag: null,
     body: (h) => `Your stop-loss and target stay. The ${h}h lock starts the moment you're flat. Any new trade before then is closed straight away.`,
   },
   {
     key: 'close_now',
-    title: 'Close everything now',
+    title: () => 'Close everything now',
     tag: null,
-    body: (h, list) => `We close ${list} at market and the ${h}h lock starts now. Whatever the trade made or lost is booked as normal.`,
+    // Every symbol was listed here too: nine option strikes made the choice
+    // unreadable (owner, 20 Nov). The count says it; the positions table shows them.
+    body: (h, list, n) => n > 1
+      ? `We close all ${n} open trades at market and the ${h}h lock starts now. Whatever they made or lost is booked as normal.`
+      : `We close ${list} at market and the ${h}h lock starts now. Whatever the trade made or lost is booked as normal.`,
   },
 ];
 
@@ -44,7 +48,9 @@ function listSymbols(symbols) {
   if (s.length === 0) return 'your open positions';
   if (s.length === 1) return s[0];
   if (s.length === 2) return `${s[0]} and ${s[1]}`;
-  return `${s.slice(0, -1).join(', ')} and ${s[s.length - 1]}`;
+  if (s.length === 3) return `${s[0]}, ${s[1]} and ${s[2]}`;
+  // Beyond three, name two and count the rest: the full list is in Open positions.
+  return `${s[0]}, ${s[1]} and ${s.length - 2} more`;
 }
 
 export function OpenTradeLockChoice({ symbols, hours, setHours, busy, onArm, firstRef }) {
@@ -56,7 +62,7 @@ export function OpenTradeLockChoice({ symbols, hours, setHours, busy, onArm, fir
   return (
     <div>
       <div style={sx('padding:12px 13px;margin-bottom:13px;border:1px solid var(--amber-line);border-radius:11px;background:var(--amber-tint)')}>
-        <div style={sx('font-size:12.5px;font-weight:700;color:var(--amber)')}>You have a trade open</div>
+        <div style={sx('font-size:12.5px;font-weight:700;color:var(--amber)')}>{n > 1 ? `You have ${n} trades open` : 'You have a trade open'}</div>
         <p style={sx('margin:4px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>{list} {n === 1 ? 'is' : 'are'} open. Choose when the lock starts.</p>
       </div>
 
@@ -88,10 +94,10 @@ export function OpenTradeLockChoice({ symbols, hours, setHours, busy, onArm, fir
               </span>
               <span style={sx('flex:1;min-width:0')}>
                 <span style={sx('display:flex;align-items:center;gap:7px;flex-wrap:wrap')}>
-                  <span style={sx('font-size:13px;font-weight:700;color:var(--ink)')}>{c.title}</span>
+                  <span style={sx('font-size:13px;font-weight:700;color:var(--ink)')}>{c.title(n)}</span>
                   {c.tag && <span style={sx("font:600 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;padding:3px 6px;border-radius:5px;background:var(--mint-tint);color:var(--mint)")}>{c.tag}</span>}
                 </span>
-                <span style={sx('display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--ink-2)')}>{c.body(hours, list)}</span>
+                <span style={sx('display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--ink-2)')}>{c.body(hours, list, n)}</span>
               </span>
             </button>
           );
