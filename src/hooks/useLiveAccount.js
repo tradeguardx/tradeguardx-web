@@ -163,7 +163,12 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
             every = row.liveSource === 'db' ? LIVE_POLL_UNWATCHED_MS : open ? LIVE_POLL_OPEN_MS : LIVE_POLL_FLAT_MS;
             apply(row, 'live', every);
           }
-        } catch { /* keep last known; the staleness label says so */ }
+        } catch (err) {
+          /* Keep last known; the staleness label says so. A rejected login
+             (expired session or mirror pass) will not fix itself by retrying:
+             stop here. A fresh token re-runs this effect and polling resumes. */
+          if (err?.status === 401) return;
+        }
         if (!cancelled) liveTimer = setTimeout(run, every);
       };
       const onVisible = () => {
