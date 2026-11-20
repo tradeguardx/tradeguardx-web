@@ -72,6 +72,10 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
   const topic = useRef(Math.random().toString(36).slice(2, 10));
   const onListRef = useRef(onList);
   const onRowRef = useRef(onRow);
+  // The account list knows each account's currency; the live poll falls back
+  // to it if a snapshot ever arrives without one.
+  const initialCurrencyRef = useRef(null);
+  initialCurrencyRef.current = initial?.accountCurrency ?? initial?.account_currency ?? initialCurrencyRef.current;
   useEffect(() => { onListRef.current = onList; onRowRef.current = onRow; }, [onList, onRow]);
 
   // Account switched: adopt the new account's seed in THIS render. React
@@ -153,7 +157,7 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
           const { accounts } = await fetchLive({ accessToken, accountIds: [tradingAccountId] });
           if (cancelled) return;
           const s = accounts.find((a) => a.accountId === tradingAccountId);
-          const row = rowFromLive(s);
+          const row = rowFromLive(s, initialCurrencyRef.current);
           if (row) {
             const open = (row.livePositions?.length ?? 0) > 0 || Object.keys(row.openPnl ?? {}).length > 0;
             every = row.liveSource === 'db' ? LIVE_POLL_UNWATCHED_MS : open ? LIVE_POLL_OPEN_MS : LIVE_POLL_FLAT_MS;

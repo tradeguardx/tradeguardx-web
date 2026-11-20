@@ -22,7 +22,7 @@ const PENDING_LOCK_MAX_WAIT_MS = 24 * 3_600_000;
  * normalise accepts camelCase), so nothing downstream changes. `hb` is the
  * engine's last write (change or 10 s heartbeat): proof the feed is alive.
  */
-export function rowFromLive(s) {
+export function rowFromLive(s, fallbackCurrency = null) {
   if (!s || !s.accountId) return null;
   const pending = s.pendingLock && s.pendingLock.requestedAt
     ? {
@@ -34,6 +34,9 @@ export function rowFromLive(s) {
     : null;
   return {
     id: s.accountId,
+    // The engine's snapshot names the account's currency; without it the row
+    // reader defaults to USD and a rupee account showed "$" (20 Nov, Shark).
+    accountCurrency: s.currency || fallbackCurrency || undefined,
     dailyPnl: s.dailyPnl,
     openPnl: s.openPnl ?? {},
     dailyStartingEquity: s.dailyStartingEquity,

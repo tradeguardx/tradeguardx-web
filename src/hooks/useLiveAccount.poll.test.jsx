@@ -35,6 +35,11 @@ describe('rowFromLive', () => {
       id: A, currentEquity: 5012.5, dailyPnl: 12.5, openPnl: { BTCUSD: 12.5 }, tradeCountToday: 1, liveSource: 'cache', liveHb: 1_000,
     });
   });
+  it("keeps the account's currency: a rupee account never shows $ (20 Nov, Shark)", () => {
+    expect(rowFromLive(snap({ currency: 'INR' })).accountCurrency).toBe('INR');
+    expect(rowFromLive(snap({ currency: null }), 'INR').accountCurrency).toBe('INR');
+  });
+
   it('carries a lock and derives the pending-lock deadline like the API does', () => {
     const r = rowFromLive(snap({ cooldownUntil: '2026-11-21T00:00:00.000Z', lockReason: 'daily_loss', pendingLock: { hours: 3, requestedAt: '2026-11-20T10:00:00.000Z', symbols: ['BTCUSD'] } }));
     expect(r).toMatchObject({ cooldownUntil: '2026-11-21T00:00:00.000Z', cooldownReason: 'daily_loss' });
