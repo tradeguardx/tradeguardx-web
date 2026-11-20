@@ -1,26 +1,28 @@
 import { motion } from 'framer-motion';
 
 /**
- * Two-column shell for /login and /signup: the pitch on the left, the form
+ * Two-column shell for /login and /signup: the product on the left (a
+ * recording of the live guard near its loss limit), the form
  * on the right. No brand mark here — the navbar above already carries it.
  *
  * The left panel is hidden below `lg` so a phone gets straight to the form;
  * the copy is the landing page's job there.
  */
 
-const POINTS = [
-  'Your key can trade, never withdraw. Funds cannot leave through us.',
-  'A killswitch you cannot call off yourself once it is running.',
-  'A journal that prices what your habits actually cost you.',
-];
+/* The recording has its own dark backdrop. Fading its outer edges into the
+   page removes the visible rectangle, so only the card and caption read.
+   The card sits inside 12-88% of the frame, so the fade never touches it. */
+const FADE_X = 'linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%)';
+const FADE_Y = 'linear-gradient(to bottom, transparent 0%, #000 7%, #000 93%, transparent 100%)';
+const EDGE_FADE = {
+  maskImage: `${FADE_X}, ${FADE_Y}`,
+  maskComposite: 'intersect',
+  WebkitMaskImage: `${FADE_X}, ${FADE_Y}`,
+  WebkitMaskComposite: 'source-in',
+};
 
-function Check() {
-  return (
-    <svg className="mt-1 h-4 w-4 flex-shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
+// Absolute so it also loads on a local dev server, which has no /media.
+const LOCKOUT_GIF = 'https://tradeguardx.com/media/2026/11/tradeguardx-hero-7b3cd163.gif';
 
 export default function AuthSplit({ children }) {
   return (
@@ -47,26 +49,23 @@ export default function AuthSplit({ children }) {
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="relative max-w-[560px]"
+          className="relative mx-auto w-full max-w-[560px]"
         >
-          <h1 className="font-display text-[44px] font-bold leading-[1.08] tracking-[-0.02em] text-white xl:text-[52px]">
-            The rules you set when you were calm.
-          </h1>
-
-          <p className="mt-7 text-[17px] leading-[1.65] text-slate-400">
-            We watch every fill on your account. Break a rule you set for yourself and we cancel the
-            orders, close the positions, and check you are actually flat &mdash; within seconds, from
-            our servers, not your browser.
-          </p>
-
-          <ul className="mt-10 space-y-4">
-            {POINTS.map((p) => (
-              <li key={p} className="flex items-start gap-3 text-[15px] leading-relaxed text-slate-300">
-                <Check />
-                <span>{p}</span>
-              </li>
-            ))}
-          </ul>
+          {/* Soft accent light behind the card, so it sits in the page's
+              light rather than on a flat panel. */}
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/[0.07] blur-[90px]" />
+          {/* The product doing its job: the guard nearing the loss limit on a
+              phone. Sized to the viewport height so it never pushes the page
+              into a scroll beside the form. */}
+          <img
+            src={LOCKOUT_GIF}
+            alt="TradeGuardX live guard on a Delta Exchange account: today's loss budget, trades, target and armed rules, with the guard closing everything at the loss limit"
+            width={600}
+            height={750}
+            decoding="async"
+            className="relative mx-auto h-auto max-h-[calc(100vh-140px)] w-auto"
+            style={EDGE_FADE}
+          />
         </motion.div>
       </aside>
 
