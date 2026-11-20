@@ -5,9 +5,6 @@ import { createCheckoutSession, validateCoupon, fetchTrialEligibility } from '..
 import { getPricingPlans } from '../../../api/pricingApi';
 import { bandOfPlan, bandSync, formatMoney, planForBand, testerPriceFor, TESTER_DAYS } from '../../../lib/priceBands';
 import { trackBilling } from '../../../lib/analytics';
-import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
-import { getStoredReferralCode } from '../../../lib/referralCode';
-import { getLinkPromoCode } from '../../../lib/promoLink';
 import { useActiveOffer } from '../../../hooks/useActiveOffer';
 import { offerCoversInterval, offerLabel, discountWording, offerPrice } from '../../../lib/siteOffer';
 
@@ -216,9 +213,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
    * shown at all.
    */
   const { offer } = useActiveOffer();
-  const ownCode = useMemo(() => Boolean(getStoredReferralCode() || getLinkPromoCode()), []);
   const offerCode =
-    !typed && !ownCode && offer && options.some((o) => offerCoversInterval(offer, o.id)) ? offer.code : null;
+    !typed && offer && options.some((o) => offerCoversInterval(offer, o.id)) ? offer.code : null;
   const [offerCheck, setOfferCheck] = useState(null);
   const intervalKey = options.map((o) => o.id).join(',');
   const token = session?.access_token;
@@ -260,9 +256,17 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
      already said no for this interval — a refused code is not passed on. */
   const offerVerdict = offerVerified?.[cur.id];
   const offerRefused = Boolean(offerVerdict && !offerVerdict.valid && offerVerdict.reason !== 'LOOKUP' && offerVerdict.reason !== 'UNSUPPORTED');
-  const carried = checkoutCouponCode({ interval: cur.id, multiInterval: options.length > 1, offer });
-  const autoCoupon = carried === offer?.code && (offerRefused || !offerOn) ? undefined : carried;
-  const effectiveCoupon = coupon.trim() || autoCoupon || undefined;
+  /*
+   * ONLY WHAT IS ON SCREEN IS SENT (owner, 21 Nov 2026): the code in the box,
+   * or the offer they pressed Apply on. A referral or promo-link code saved
+   * in this browser used to ride along unseen; a dead one ("PRODUCTHUNT")
+   * then failed checkout with an empty coupon box. Anyone with a code types
+   * it and presses Apply. A typed code the server refused is not sent.
+   */
+  const autoCoupon = offerOn && !offerRefused && offer?.code && offerCoversInterval(offer, cur.id) ? offer.code : undefined;
+  const typedVerdict = applied?.code === typed ? applied.byInterval?.[cur.id] : null;
+  const typedRefused = Boolean(typedVerdict && !typedVerdict.valid && typedVerdict.reason !== 'LOOKUP' && typedVerdict.reason !== 'UNSUPPORTED');
+  const effectiveCoupon = (typed && !typedRefused ? typed : undefined) || autoCoupon || undefined;
   /* Checkout applies a live offer by itself when no code is sent. Someone who
      left it off saw list price, so tell it not to (payments: skipOffer). */
   const skipOffer = !effectiveCoupon && !offerOn;

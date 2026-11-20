@@ -1,9 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { validateCoupon } from '../../api/paymentsApi';
 import { useActiveOffer } from '../../hooks/useActiveOffer';
-import { checkoutCouponCode } from '../../lib/checkoutCoupon';
-import { getStoredReferralCode } from '../../lib/referralCode';
-import { getLinkPromoCode } from '../../lib/promoLink';
 import { offerCoversInterval } from '../../lib/siteOffer';
 
 const checkAll = (token, code, intervals) =>
@@ -38,9 +35,8 @@ export function useSubscribeDiscount({ enabled, intervals, token }) {
 
   const typed = coupon.trim().toUpperCase();
   const key = intervals.join(',');
-  const ownCode = useMemo(() => Boolean(getStoredReferralCode() || getLinkPromoCode()), []);
   const offerCode =
-    enabled && !typed && !ownCode && offer && intervals.some((iv) => offerCoversInterval(offer, iv)) ? offer.code : null;
+    enabled && !typed && offer && intervals.some((iv) => offerCoversInterval(offer, iv)) ? offer.code : null;
 
   useEffect(() => {
     if (!offerCode || !token || !key) return undefined;
@@ -67,7 +63,10 @@ export function useSubscribeDiscount({ enabled, intervals, token }) {
       const refused = v && !v.valid && v.reason !== 'LOOKUP' && v.reason !== 'UNSUPPORTED';
       return refused ? undefined : typed;
     }
-    return checkoutCouponCode({ interval: iv, multiInterval: intervals.length > 1, offer });
+    /* Otherwise only the offer this page shows as applied, where the server
+       confirmed it for this plan. Saved referral / promo-link codes are not
+       sent unseen any more (owner, 21 Nov 2026): a code is typed and applied. */
+    return offerCode && offerVerdicts?.[iv]?.valid ? offerCode : undefined;
   };
 
   const apply = async () => {

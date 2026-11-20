@@ -259,7 +259,7 @@ describe('billing step', () => {
     fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: ' save20 ' } });
     fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
-    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'save20' });
+    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'SAVE20' });
   });
 
   /*
@@ -268,23 +268,27 @@ describe('billing step', () => {
    * attribution silently — the referee paid full price and the referrer was
    * never credited for a sale they made.
    */
-  it('carries a referral code through setup without being asked', async () => {
+  /* Owner, 21 Nov 2026: only what is on screen is sent. A saved link code
+     used to ride along unseen, and a dead one failed checkout. The referrer
+     is still credited server-side through the signup bind. */
+  it('never sends a saved referral or link code the buyer cannot see', async () => {
     carried.referral = 'REF123';
     render(<BillingStep />);
     fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
-    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'REF123' });
+    expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
   });
 
-  /* The voucher owed to the referrer is tiered by the plan bought, so the
-     longer intervals are the ones that must never lose the code. */
-  it.each([['Quarterly', 'quarterly'], ['Yearly', 'yearly']])('carries a referral code on %s too', async (label, interval) => {
-    carried.referral = 'REF123';
+  it('does not send a typed code the server refused', async () => {
+    validate.mockResolvedValue({ valid: false, reason: 'UNKNOWN' });
     render(<BillingStep />);
-    fireEvent.click(await screen.findByRole('radio', { name: new RegExp(label) }));
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(`Start 7 days free · ${label}`) }));
+    fireEvent.change(screen.getByPlaceholderText('Enter code'), { target: { value: 'PRODUCTHUNT' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await vi.waitFor(() => expect(validate).toHaveBeenCalled());
+    await screen.findByRole('alert');
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
-    expect(checkout.mock.calls[0][0]).toMatchObject({ interval, couponCode: 'REF123' });
+    expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
   });
 
   it('lets a typed code beat the one we carried for them', async () => {
@@ -644,19 +648,19 @@ describe('billing step — the site offer, to apply', () => {
     expect(screen.getAllByText('₹1,104').length).toBeGreaterThan(0);
     fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
-    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'save15' });
+    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'SAVE15' });
   });
 
-  it('lets a referral win: no offer check, no card, the referral is sent', async () => {
+  it('a saved referral does not hide the offer: the offer is shown to apply', async () => {
     siteOffer.value = DIWALI;
     carried.referral = 'REF123';
+    validate.mockResolvedValue(DIWALI_OK);
     render(<BillingStep />);
-    await screen.findByText('Due today');
-    expect(screen.queryByText(/Diwali offer/)).toBeNull();
-    expect(validate).not.toHaveBeenCalled();
+    await applyOffer();
+    await screen.findByText(/Diwali offer applied/);
     fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
     await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
-    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'REF123' });
+    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'DIWALI30' });
   });
 
   it('prices only the intervals the offer covers', async () => {
