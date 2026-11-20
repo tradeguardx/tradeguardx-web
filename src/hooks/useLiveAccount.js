@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchTradingAccounts } from '../api/tradingAccountsApi';
 import { fetchLive, rowFromLive } from '../api/liveApi';
-import { LIVE_POLL_FLAT_MS, LIVE_POLL_OPEN_MS, liveTransport } from '../lib/liveTransport';
+import { LIVE_POLL_FLAT_MS, LIVE_POLL_OPEN_MS, LIVE_POLL_UNWATCHED_MS, liveTransport } from '../lib/liveTransport';
 import { supabase } from '../lib/supabaseClient';
 
 const FALLBACK_POLL_MS = 30_000;
@@ -156,7 +156,7 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
           const row = rowFromLive(s);
           if (row) {
             const open = (row.livePositions?.length ?? 0) > 0 || Object.keys(row.openPnl ?? {}).length > 0;
-            every = open ? LIVE_POLL_OPEN_MS : LIVE_POLL_FLAT_MS;
+            every = row.liveSource === 'db' ? LIVE_POLL_UNWATCHED_MS : open ? LIVE_POLL_OPEN_MS : LIVE_POLL_FLAT_MS;
             apply(row, 'live', every);
           }
         } catch { /* keep last known; the staleness label says so */ }

@@ -17,6 +17,9 @@ export default defineConfig({
     env: {
       VITE_SUPABASE_URL: 'http://localhost:54321',
       VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+      // The suites that test Realtime behaviour run on Realtime; the cache
+      // path has its own tests that pick it explicitly (useLiveAccount.poll).
+      VITE_LIVE_TRANSPORT: 'realtime',
     },
   },
 });

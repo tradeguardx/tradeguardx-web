@@ -75,4 +75,10 @@ describe('useLiveAccount with the live cache switched on', () => {
     const { result } = renderHook(() => useLiveAccount({ accessToken: 't', tradingAccountId: A }));
     await waitFor(() => expect(result.current?.expectMs).toBe(5_000));
   });
+
+  it("asks only every 30 s for an account no engine is watching (answered from the database)", async () => {
+    live.respond = () => ({ serverTime: Date.now(), cache: 'ok', accounts: [snap({ source: 'db', positions: undefined, openPnl: { BTCUSD: 1 } })] });
+    const { result } = renderHook(() => useLiveAccount({ accessToken: 't', tradingAccountId: A }));
+    await waitFor(() => expect(result.current?.expectMs).toBe(30_000));
+  });
 });
