@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchTradingAccounts } from '../api/tradingAccountsApi';
+import { fetchLive, rowFromLive } from '../api/liveApi';
+import { LIVE_POLL_FLAT_MS, LIVE_POLL_OPEN_MS, liveTransport } from '../lib/liveTransport';
 import { supabase } from '../lib/supabaseClient';
 
 const FALLBACK_POLL_MS = 30_000;
@@ -87,7 +89,7 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
     let pollMs = FALLBACK_POLL_MS;
     let timer = null;
     let lastPushAt = 0;
-    const apply = (row, via = 'poll') => {
+    const apply = (row, via = 'poll', liveEveryMs = null) => {
       if (!row || cancelled) return;
       // A row for any other account is not ours to show (a late response, or
       // a payload Realtime routed to a stale channel).
@@ -101,7 +103,7 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
        * healthy engine read every 30 s is never called "Delayed" (owner,
        * 20 Nov: mirror view showed Delayed with the engine writing every 3 s).
        */
-      next.expectMs = next.receivedAt - lastPushAt < PUSH_RECENT_MS ? 0 : pollMs;
+      next.expectMs = via === 'live' ? liveEveryMs : next.receivedAt - lastPushAt < PUSH_RECENT_MS ? 0 : pollMs;
       /*
        * `changedAt`: THIS browser's clock when equity_updated_at last moved.
        * lib/liveFeed measures staleness from it, so a phone clock that is off
@@ -110,9 +112,12 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
        */
       setState((prev) => {
         const before = prev.id === tradingAccountId && prev.row?.source === 'server' ? prev.row : null;
+        // Live cache: the engine's heartbeat (hb) moving is the proof the feed
+        // is alive, since a quiet price leaves equity unchanged for minutes.
+        const key = (r) => (via === 'live' ? r.liveHb : r.equityUpdatedAt);
         const changedAt = !before
           ? null
-          : before.equityUpdatedAt !== next.equityUpdatedAt ? next.receivedAt : before.changedAt;
+          : key(before) !== key(next) ? next.receivedAt : before.changedAt;
         return { id: tradingAccountId, row: { ...next, changedAt } };
       });
       onRowRef.current?.(next);
@@ -127,6 +132,56 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
         onListRef.current?.(list);
       } catch { /* keep last known */ }
     };
+    /*
+     * PHASE 3a: LIVE NUMBERS FROM THE ENGINE'S CACHE (switch: lib/liveTransport).
+     *
+     * GET /user/live about once a second with a trade open (5 s when flat,
+     * nothing while the tab is hidden), served from ElastiCache, so Postgres
+     * is not involved. No Realtime channel is opened. The slow account-list
+     * poll stays only to keep the OTHER accounts' lock dots fresh (onList);
+     * it no longer writes this account's row, because the list carries the
+     * database's copy and the cache is fresher.
+     */
+    if (liveTransport() === 'poll') {
+      let liveTimer = null;
+      const run = async () => {
+        liveTimer = null;
+        if (cancelled) return;
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+        let every = LIVE_POLL_FLAT_MS;
+        try {
+          const { accounts } = await fetchLive({ accessToken, accountIds: [tradingAccountId] });
+          if (cancelled) return;
+          const s = accounts.find((a) => a.accountId === tradingAccountId);
+          const row = rowFromLive(s);
+          if (row) {
+            const open = (row.livePositions?.length ?? 0) > 0 || Object.keys(row.openPnl ?? {}).length > 0;
+            every = open ? LIVE_POLL_OPEN_MS : LIVE_POLL_FLAT_MS;
+            apply(row, 'live', every);
+          }
+        } catch { /* keep last known; the staleness label says so */ }
+        if (!cancelled) liveTimer = setTimeout(run, every);
+      };
+      const onVisible = () => {
+        if (document.visibilityState === 'visible' && !liveTimer) run();
+      };
+      const listOnly = async () => {
+        try {
+          const list = await fetchTradingAccounts({ accessToken });
+          if (!cancelled) onListRef.current?.(Array.isArray(list) ? list : []);
+        } catch { /* next round */ }
+      };
+      document.addEventListener('visibilitychange', onVisible);
+      run();
+      const listTimer = setInterval(listOnly, FALLBACK_POLL_MS);
+      return () => {
+        cancelled = true;
+        clearTimeout(liveTimer);
+        clearInterval(listTimer);
+        document.removeEventListener('visibilitychange', onVisible);
+      };
+    }
+
     const schedule = () => {
       clearInterval(timer);
       timer = setInterval(snapshot, pollMs);
