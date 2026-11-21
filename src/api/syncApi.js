@@ -49,10 +49,12 @@ export async function fetchBackfillStatus({ accessToken, tradingAccountId, signa
  * one-time read of the exchange (queued — follow fetchRevengeStatus).
  * months: 1 | 2 | 3 | 'auto' (30 days, reading further back only if thin).
  */
-export async function unlockRevengeReport({ accessToken, tradingAccountId, months = 'auto' } = {}) {
+export async function unlockRevengeReport({ accessToken, tradingAccountId, months = 'auto', refresh = false } = {}) {
   const payload = await apiPost(
     '/sync/revenge/unlock',
-    { tradingAccountId, months },
+    // refresh: re-read a snapshot over an hour old in the background; the
+    // answer says { refreshing: true } when it did (sync-service).
+    { tradingAccountId, months, ...(refresh ? { refresh: true } : {}) },
     { baseUrl: SYNC_API_BASE_URL, headers: { Authorization: `Bearer ${accessToken}` } },
   );
   return payload?.data ?? payload;
