@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchTradingAccounts } from '../api/tradingAccountsApi';
-import { supabase } from '../lib/supabaseClient';
+import { useSelectedLiveRowIfAny } from '../context/GuardContext';
 
 const FALLBACK_POLL_MS = 30000;
 
@@ -12,8 +12,11 @@ const FALLBACK_POLL_MS = 30000;
  * edits and deletes (see rulesService), so the UI has to disable those controls
  * rather than let someone type a change that will be rejected.
  *
- * State is pushed over Supabase Realtime with a slow poll as a fallback, so the
- * lock lifts in the UI at the same moment it lifts server-side.
+ * State comes from the guard's live row (the engine's cache, read every
+ * 1-5 s; Phase 3a, 21 Nov 2026) when this is the selected account, with a
+ * slow poll as the fallback. It used to be pushed over Supabase Realtime on
+ * trading_accounts, which is switched off: its change-log polling was 76% of
+ * database time.
  */
 export function useCooldown({ accessToken, tradingAccountId, account }) {
   /*
@@ -34,11 +37,14 @@ export function useCooldown({ accessToken, tradingAccountId, account }) {
     setCd(cd);
   }
   const [now, setNow] = useState(() => Date.now());
-  // Supabase returns the SAME channel object for a duplicate topic, and calling
-  // .on() on an already-subscribed channel throws. Two components can legitimately
-  // watch the same account (the rules screen renders the banner AND reads `locked`
-  // to disable its inputs), so each hook instance gets its own topic.
-  const topicSuffix = useRef(Math.random().toString(36).slice(2, 10));
+
+  /* The live row for the selected account: a lock starting or ending shows
+     within a few seconds, as Realtime did. */
+  const live = useSelectedLiveRowIfAny();
+  const liveId = live?.source === 'server' && live.id === tradingAccountId ? live.id : null;
+  // When the live row covers this account it is the answer (it is fresher
+  // than the 30 s poll); otherwise the last poll or the seed.
+  if (liveId) cd = { id: liveId, until: live.cooldownUntil ?? null, reason: live.cooldownReason ?? null };
 
   useEffect(() => {
     if (!accessToken || !tradingAccountId) return undefined;
@@ -62,19 +68,13 @@ export function useCooldown({ accessToken, tradingAccountId, account }) {
       }
     };
     snapshot();
-    const channel = supabase
-      .channel(`acct-cooldown-${tradingAccountId}-${topicSuffix.current}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'trading_accounts', filter: `id=eq.${tradingAccountId}` },
-        (p) => apply(p.new),
-      )
-      .subscribe();
-    const id = setInterval(snapshot, FALLBACK_POLL_MS);
+    const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      snapshot();
+    }, FALLBACK_POLL_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
-      supabase.removeChannel(channel);
     };
   }, [accessToken, tradingAccountId]);
 

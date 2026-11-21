@@ -511,6 +511,11 @@ export function useSelectedLiveRow() {
   return row;
 }
 
+/** Same row as useSelectedLiveRow, or null outside a GuardProvider (no throw). */
+export function useSelectedLiveRowIfAny() {
+  return useContext(LiveRowContext) ?? null;
+}
+
 export function useGuard() {
   const ctx = useContext(GuardContext);
   if (!ctx) throw new Error('useGuard must be used within GuardProvider');
