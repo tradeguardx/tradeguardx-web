@@ -108,6 +108,26 @@ describe('useLiveAccount with the live cache switched on', () => {
   });
 });
 
+
+describe('feed freshness follows the engine heartbeat, not the numbers', () => {
+  beforeEach(() => { localStorage.setItem('tgx.liveTransport', 'poll'); live.calls = []; });
+  afterEach(() => { localStorage.removeItem('tgx.liveTransport'); vi.useRealTimers(); });
+
+  it('a quiet account whose heartbeat moves stays fresh (no false Reconnecting)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let hb = 1_000;
+    // Numbers never change (ts fixed); only the heartbeat moves.
+    live.respond = () => ({ serverTime: Date.now(), cache: 'ok', accounts: [snap({ ts: 1_000, hb })] });
+    const { result } = renderHook(() => useLiveAccount({ accessToken: 't', tradingAccountId: A }));
+    await waitFor(() => expect(result.current?.liveHb).toBe(1_000));
+    expect(result.current.changedAt).toBeNull();
+    hb = 11_000;
+    await act(async () => { await vi.advanceTimersByTimeAsync(1_100); });
+    await waitFor(() => expect(result.current.liveHb).toBe(11_000));
+    expect(result.current.changedAt).not.toBeNull();
+  });
+});
+
 describe('isLivePage', () => {
   it('is true only where live numbers are shown', async () => {
     const { isLivePage } = await import('../lib/liveTransport');

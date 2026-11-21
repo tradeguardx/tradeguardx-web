@@ -295,5 +295,13 @@ export function normalise(row, source = 'server') {
     dailyResetTimeLocal: row.daily_reset_time_local ?? row.dailyResetTimeLocal ?? null,
     timezone: row.timezone ?? null,
     ver: row.ver ?? null,
+    /*
+     * The engine's heartbeat (cache feed): it moves every 10 s even when no
+     * number does, and it is what says the feed is alive. It was dropped
+     * here, so `changedAt` never moved and a quiet account with a trade open
+     * (an unpriced position, a still market) read "Reconnecting" while the
+     * engine was watching it the whole time (21 Nov 2026).
+     */
+    liveHb: row.liveHb ?? null,
   };
 }
