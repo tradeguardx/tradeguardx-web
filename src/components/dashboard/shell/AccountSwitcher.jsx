@@ -17,6 +17,10 @@ function tagOf(account) {
 export default function AccountSwitcher() {
   const { accounts, selectedAccount, setSelectedTradingAccountId } = useTradingAccounts();
   const guard = useGuard();
+  const openTrades = guard.openTrades ?? {};
+  const others = accounts.filter((a) => a.id !== selectedAccount?.id && openTrades[a.id] > 0);
+  const elsewhere = others.reduce((n, a) => n + openTrades[a.id], 0);
+  const otherWithOpen = others.length;
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -50,6 +54,19 @@ export default function AccountSwitcher() {
           <span style={sx('display:block;font-size:13px;font-weight:600;letter-spacing:-.005em;white-space:nowrap')}>{draft ? 'New account' : selectedAccount?.name ?? 'No account'}</span>
           <span style={sx('display:block;font-size:11px;color:var(--ink-3);margin-top:2px;white-space:nowrap')}>{draft ? 'Not created yet' : selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'Add one to begin'}</span>
         </span>
+        {/* Trades open on an account NOT on screen (21 Nov 2026): someone with
+            two accounts could look at the flat one while the other had 13
+            trades running, with nothing saying so. */}
+        {elsewhere > 0 && (
+          <span
+            data-open-elsewhere
+            title={`${elsewhere} ${elsewhere === 1 ? 'trade' : 'trades'} open on your other ${otherWithOpen === 1 ? 'account' : 'accounts'}`}
+            aria-label={`${elsewhere} ${elsewhere === 1 ? 'trade' : 'trades'} open on your other ${otherWithOpen === 1 ? 'account' : 'accounts'}`}
+            style={sx("flex:none;display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:var(--amber-tint);box-shadow:inset 0 0 0 1px var(--amber-line);color:var(--amber);font:600 10.5px/1 'JetBrains Mono',monospace")}
+          >
+            <span aria-hidden="true" style={sx('width:6px;height:6px;border-radius:50%;background:var(--amber)')} />+{elsewhere}
+          </span>
+        )}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--ink-faint)' }}><path d="M7 10l5 5 5-5" /></svg>
       </button>
 
@@ -75,6 +92,11 @@ export default function AccountSwitcher() {
                   <span style={sx('display:block;font-size:13px;font-weight:600')}>{isDraft ? 'New account' : a.name}</span>
                   <span style={sx('display:block;font-size:11px;color:var(--ink-3);margin-top:2px')}>{isDraft ? 'Not created yet' : s.describe.label}</span>
                 </span>
+                {openTrades[a.id] > 0 && (
+                  <span data-open-count style={sx("flex:none;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:var(--surface-3);color:var(--ink-2);font:600 11px/1 'JetBrains Mono',monospace")}>
+                    <span aria-hidden="true" style={sx('width:6px;height:6px;border-radius:50%;background:var(--amber)')} />{openTrades[a.id]} open
+                  </span>
+                )}
               </button>
             );
           })}

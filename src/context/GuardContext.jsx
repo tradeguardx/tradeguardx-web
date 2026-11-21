@@ -21,6 +21,7 @@ import { getPricingPlans } from '../api/pricingApi';
 import { formatMoney } from '../lib/priceBands';
 import { useLiveAccount } from '../hooks/useLiveAccount';
 import { useLiveDrivenRefresh } from '../hooks/useLiveDrivenRefresh';
+import { useAllAccountsLive } from '../hooks/useAllAccountsLive';
 
 /**
  * Guard state for every account the user has, kept fresh, read everywhere.
@@ -44,6 +45,8 @@ const LiveRowContext = createContext(undefined);
 const POLL_MS = 20_000;
 /** Rules + settings backstop while live changes drive their refresh. */
 const RULES_BACKSTOP_MS = 60_000;
+/** With change stamps for every account, the database is re-read on a change; this is only the safety net. */
+const STAMPED_BACKSTOP_MS = 300_000;
 /** Longest the dashboard waits for its inputs before rendering regardless. */
 const READY_TIMEOUT_MS = 8_000;
 const TICK_MS = 1_000;
@@ -191,7 +194,11 @@ export function GuardProvider({ children, fastLive = true }) {
   const onLiveList = useCallback((list) => writeLocks(list), [writeLocks]);
   // Only rows from the server reach this: the seed is the (old) list itself.
   const onLiveRow = useCallback((row) => writeLocks([row]), [writeLocks]);
-  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount, onList: onLiveList, onRow: onLiveRow, fast: fastLive });
+  /* Every account's lock, open-trade count and alert stamp from the cache in
+     one call every 20 s (useAllAccountsLive). While it covers every account
+     with stamps (`allLive.ok`), the database polls below stand down. */
+  const allLive = useAllAccountsLive({ accessToken, accountIds: accounts.map((a) => a.id), onRows: writeLocks });
+  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount, onList: onLiveList, onRow: onLiveRow, fast: fastLive, listPoll: !allLive.ok });
   const liveAccounts = useMemo(
     () => accounts.map((a) => (lockOverlay[a.id] ? { ...a, ...lockOverlay[a.id] } : a)),
     [accounts, lockOverlay],
@@ -294,14 +301,37 @@ export function GuardProvider({ children, fastLive = true }) {
    * - nothing while the tab is hidden; a full pass the moment it is back.
    * Edits call refresh() below, which always does a full pass.
    */
+  /*
+   * With change stamps for every account (allLive.ok, 21 Nov 2026) the 20 s
+   * light pass stops: the key's health is re-read when the selected
+   * account's key stamp moves (it is in the live row's change key), the
+   * unread alerts when any account's alert stamp moves (below), and the full
+   * pass backstop is 5 min. Without them, exactly the behaviour above.
+   */
   useLiveDrivenRefresh({
     load: (signal, { first, full }) => load(signal, { scope: first ? 'all' : 'selected', light: !full }),
     resetKey: load,
     row: liveRow,
     fastMs: POLL_MS,
-    slowMs: RULES_BACKSTOP_MS,
-    light: true,
+    slowMs: allLive.ok ? STAMPED_BACKSTOP_MS : RULES_BACKSTOP_MS,
+    light: !allLive.ok,
   });
+
+  // A new, acknowledged or voided alert on ANY account: re-read the unread list.
+  const alertsSeen = useRef(null);
+  useEffect(() => {
+    const k = allLive.alertsKey;
+    const prev = alertsSeen.current;
+    alertsSeen.current = k;
+    if (!k || prev == null || prev === k) return undefined;
+    if (typeof document !== 'undefined' && document.hidden) return undefined;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => load(ctrl.signal, { scope: 'selected', light: true }), 0);
+    return () => { clearTimeout(t); ctrl.abort(); };
+    // load is read at the moment of the change; a new load identity alone is
+    // not an alert.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allLive.alertsKey]);
 
   /*
    * One clock for every countdown on screen.
@@ -489,8 +519,10 @@ export function GuardProvider({ children, fastLive = true }) {
       refresh,
       user,
       subscribeTick,
+      /** Open trades per account id, from the cache (accounts not on screen too). */
+      openTrades: allLive.open,
     }),
-    [ready, life, loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedState, liveAccounts, refresh, user, subscribeTick],
+    [ready, life, loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedState, liveAccounts, refresh, user, subscribeTick, allLive.open],
   );
 
   return (

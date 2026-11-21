@@ -55,6 +55,8 @@ export function liveChangeKey(row) {
     row.cooldownReason ?? '',
     JSON.stringify(row.pendingLock ?? null),
     symbols,
+    // Rules / alerts / key changed in the database (stamps from the engine).
+    row.ver ? `${row.ver.rules ?? ''}:${row.ver.alerts ?? ''}:${row.ver.key ?? ''}` : '',
   ].join('|');
 }
 
@@ -81,7 +83,11 @@ function hidden() {
 export function useLiveDrivenRefresh({ load, enabled = true, resetKey, row, extraKey = '', fastMs, slowMs, light = false, minGapMs = 5_000, settleMs = 8_000 }) {
   const loadRef = useRef(load);
   const rowRef = useRef(row);
-  useEffect(() => { loadRef.current = load; rowRef.current = row; });
+  // Read at tick time, so changing them never restarts the timers (a restart
+  // runs a full pass at once).
+  const slowRef = useRef(slowMs);
+  const lightRef = useRef(light);
+  useEffect(() => { loadRef.current = load; rowRef.current = row; slowRef.current = slowMs; lightRef.current = light; });
 
   const runRef = useRef(() => {});
   const lastFullRef = useRef(0);
@@ -105,10 +111,10 @@ export function useLiveDrivenRefresh({ load, enabled = true, resetKey, row, extr
     full();
     const tick = setInterval(() => {
       if (hidden()) return;
-      const every = liveIsHealthy(rowRef.current) ? slowMs : fastMs;
+      const every = liveIsHealthy(rowRef.current) ? slowRef.current : fastMs;
       // A little slack so a 20 s tick is not skipped for being 20 ms early.
       if (Date.now() - lastFullRef.current >= every - 500) full();
-      else if (light) loadRef.current(ctrl.signal, { full: false, first: false });
+      else if (lightRef.current) loadRef.current(ctrl.signal, { full: false, first: false });
     }, fastMs);
     const onVisible = () => { if (!hidden()) full(); };
     document.addEventListener('visibilitychange', onVisible);
@@ -122,7 +128,7 @@ export function useLiveDrivenRefresh({ load, enabled = true, resetKey, row, extr
       runRef.current = () => {};
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [enabled, resetKey, fastMs, slowMs, light]);
+  }, [enabled, resetKey, fastMs]);
 
   // Something changed on the live row (or the extra signal): refresh now.
   const key = `${liveChangeKey(row) ?? ''}#${extraKey}`;

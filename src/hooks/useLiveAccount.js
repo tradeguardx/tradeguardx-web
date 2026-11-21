@@ -66,7 +66,7 @@ function n(v) {
  * handing it on lets the switcher's per-account lock dots stay fresh without
  * a second request.
  */
-export function useLiveAccount({ accessToken, tradingAccountId, initial, onList, onRow, fast = true }) {
+export function useLiveAccount({ accessToken, tradingAccountId, initial, onList, onRow, fast = true, listPoll = true }) {
   const seed = (id) => (initial && initial.id === id ? normalise(initial, 'initial') : null);
   const [state, setState] = useState(() => ({ id: tradingAccountId ?? null, row: seed(tradingAccountId) }));
   const topic = useRef(Math.random().toString(36).slice(2, 10));
@@ -82,6 +82,10 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
      a live page polls at once instead of waiting out the slow timer. */
   const fastRef = useRef(fast);
   const kickRef = useRef(null);
+  /* The account-list poll only keeps OTHER accounts' lock dots fresh; when
+     the all-accounts cache check covers them (useAllAccountsLive), it stops. */
+  const listPollRef = useRef(listPoll);
+  useEffect(() => { listPollRef.current = listPoll; }, [listPoll]);
   useEffect(() => {
     const was = fastRef.current;
     fastRef.current = fast;
@@ -195,6 +199,7 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
       const listOnly = async () => {
         // A hidden tab shows no list; coming back refreshes it (onVisible).
         if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+        if (!listPollRef.current) return;
         try {
           const list = await fetchTradingAccounts({ accessToken });
           if (!cancelled) onListRef.current?.(Array.isArray(list) ? list : []);
@@ -289,5 +294,6 @@ export function normalise(row, source = 'server') {
     accountCurrency: row.account_currency ?? row.accountCurrency ?? 'USD',
     dailyResetTimeLocal: row.daily_reset_time_local ?? row.dailyResetTimeLocal ?? null,
     timezone: row.timezone ?? null,
+    ver: row.ver ?? null,
   };
 }
