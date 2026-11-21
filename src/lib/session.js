@@ -37,8 +37,31 @@ export function sessionOf(live, bundle) {
  * this, its daily-loss limit renders "$500" for a number the engine enforces
  * as ₹500, which is not a cosmetic difference at roughly eighty to one.
  */
+/*
+ * THE ACCOUNT'S OWN CURRENCY, WHATEVER IT IS (21 Nov 2026).
+ * This returned ₹ for INR and $ for everything else, so a euro, pound or
+ * dirham Exness account showed its money as dollars. Dollar-pegged codes keep
+ * "$"; anything else takes its own symbol (€, £, ¥) or, where there is no
+ * short one, its code ("AED 1,234").
+ */
+const FIXED_SYMBOLS = { INR: '₹', USD: '$', USDT: '$', USDC: '$', USC: '$' };
+const symbolCache = new Map();
+
 export function currencySymbol(currency) {
-  return currency === 'INR' ? '₹' : '$';
+  const c = String(currency || 'USD').trim().toUpperCase();
+  if (FIXED_SYMBOLS[c]) return FIXED_SYMBOLS[c];
+  if (symbolCache.has(c)) return symbolCache.get(c);
+  let sym = `${c} `;
+  try {
+    const part = new Intl.NumberFormat('en-US', { style: 'currency', currency: c, currencyDisplay: 'narrowSymbol' })
+      .formatToParts(0)
+      .find((p) => p.type === 'currency');
+    if (part?.value) sym = /^[A-Z]{2,}$/.test(part.value) ? `${part.value} ` : part.value;
+  } catch {
+    /* not an ISO code: show the code itself */
+  }
+  symbolCache.set(c, sym);
+  return sym;
 }
 
 export function fmtMoney(v, currency = 'USD', { sign = false, decimals = 2 } = {}) {

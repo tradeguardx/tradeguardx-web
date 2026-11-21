@@ -309,6 +309,9 @@ export function ruleShort(breach) {
   return RULE_LABEL[breach?.breachType] ?? RULE_LABEL[breach?.ruleSlug] ?? ruleName(breach);
 }
 
+/** A currency symbol as a literal inside a RegExp (₹, $, €, "AED "…). */
+const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 /**
  * Format helpers bound to one account's currency, so nothing downstream has
  * to remember that Shark settles in rupees.
@@ -321,7 +324,7 @@ export function moneyFns(currency = 'USD') {
     plain: (v) => fmtMoney(v, currency, { sign: false }),
     // The masking regex in shareCards.js is written for '$'. Rupee amounts
     // need their own, and a shared escape keeps the two from drifting.
-    mask: new RegExp(`[−+]?${sym === '₹' ? '₹' : '\\$'}[\\d,]+(\\.\\d+)?`, 'g'),
+    mask: new RegExp(`[−+]?${escapeRe(sym)}[\\d,]+(\\.\\d+)?`, 'g'),
     /**
      * A figure short enough for a calendar cell.
      *
