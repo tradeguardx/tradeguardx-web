@@ -34,6 +34,11 @@ describe('liveIsHealthy', () => {
     expect(liveIsHealthy(row({ expectMs: 30_000 }), now)).toBe(false);
     expect(liveIsHealthy(null, now)).toBe(false);
   });
+  it('judges a cache-fed row by its own poll interval (slow pages poll every 15-30 s)', () => {
+    const now = Date.now();
+    expect(liveIsHealthy(row({ viaCache: true, expectMs: 30_000, receivedAt: now - 25_000 }), now)).toBe(true);
+    expect(liveIsHealthy(row({ viaCache: true, expectMs: 15_000, receivedAt: now - 40_000 }), now)).toBe(false);
+  });
 });
 
 describe('useLiveDrivenRefresh', () => {

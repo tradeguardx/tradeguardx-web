@@ -40,3 +40,22 @@ export const LIVE_POLL_FLAT_MS = 5_000;
  * changes second to second; asking every 5 s would only add database reads.
  */
 export const LIVE_POLL_UNWATCHED_MS = 30_000;
+
+/*
+ * PAGES THAT DO NOT SHOW LIVE NUMBERS (21 Nov 2026).
+ *
+ * Only Overview and Live guard show P&L moving. Every other dashboard page
+ * (Journal, Tax, Billing, Settings…) uses the live row for the shell's
+ * Armed / Locked pill and the lock banner alone, and a lock is a rare event,
+ * so there it is read every 15 s with a trade open and 30 s when flat.
+ * Enforcement is on the server and is not affected. Coming back to a live
+ * page polls at once.
+ */
+export const LIVE_POLL_BACKGROUND_OPEN_MS = 15_000;
+export const LIVE_POLL_BACKGROUND_FLAT_MS = 30_000;
+
+/** True on the pages that show live numbers (and the dashboard landing). */
+export function isLivePage(pathname = '') {
+  const p = String(pathname).replace(/\/+$/, '');
+  return p === '/dashboard' || p.startsWith('/dashboard/overview') || p.startsWith('/dashboard/live');
+}

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { TradingAccountProvider } from '../../context/TradingAccountContext';
 import { DashboardThemeProvider, useDashboardTheme } from '../../context/DashboardThemeContext';
 import { GuardProvider, useGuard } from '../../context/GuardContext';
+import { isLivePage } from '../../lib/liveTransport';
 import { PrefsProvider, usePrefs } from '../../context/PrefsContext';
 import SupportChat from '../support/SupportChat';
 import { UpgradeWall } from './TrialGate';
@@ -232,11 +233,13 @@ function Shell() {
 }
 
 export default function DashboardLayout() {
+  // Live numbers every second only where they are shown (lib/liveTransport).
+  const { pathname } = useLocation();
   return (
     <DashboardThemeProvider>
       <PrefsProvider>
         <TradingAccountProvider>
-          <GuardProvider>
+          <GuardProvider fastLive={isLivePage(pathname)}>
             {/* Inside GuardProvider so the breach toast — which lives in the
                 shell, not in a page — can open the share modal. */}
             <ShareProvider>

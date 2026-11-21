@@ -72,7 +72,7 @@ function settle(p) {
   return p.then((v) => ({ ok: true, v }), () => ({ ok: false, v: null }));
 }
 
-export function GuardProvider({ children }) {
+export function GuardProvider({ children, fastLive = true }) {
   const { session, user, subscription, subscriptionError } = useAuth();
   /*
    * Entitlement, mirroring isEntitled() in the engine's exchange/credentials.ts
@@ -191,7 +191,7 @@ export function GuardProvider({ children }) {
   const onLiveList = useCallback((list) => writeLocks(list), [writeLocks]);
   // Only rows from the server reach this: the seed is the (old) list itself.
   const onLiveRow = useCallback((row) => writeLocks([row]), [writeLocks]);
-  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount, onList: onLiveList, onRow: onLiveRow });
+  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount, onList: onLiveList, onRow: onLiveRow, fast: fastLive });
   const liveAccounts = useMemo(
     () => accounts.map((a) => (lockOverlay[a.id] ? { ...a, ...lockOverlay[a.id] } : a)),
     [accounts, lockOverlay],

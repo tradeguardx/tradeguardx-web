@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchTradingAccounts } from '../api/tradingAccountsApi';
 import { fetchLive, rowFromLive } from '../api/liveApi';
-import { LIVE_POLL_FLAT_MS, LIVE_POLL_OPEN_MS, LIVE_POLL_UNWATCHED_MS, liveTransport } from '../lib/liveTransport';
+import { LIVE_POLL_BACKGROUND_FLAT_MS, LIVE_POLL_BACKGROUND_OPEN_MS, LIVE_POLL_FLAT_MS, LIVE_POLL_OPEN_MS, LIVE_POLL_UNWATCHED_MS, liveTransport } from '../lib/liveTransport';
 import { supabase } from '../lib/supabaseClient';
 
 const FALLBACK_POLL_MS = 30_000;
@@ -66,7 +66,7 @@ function n(v) {
  * handing it on lets the switcher's per-account lock dots stay fresh without
  * a second request.
  */
-export function useLiveAccount({ accessToken, tradingAccountId, initial, onList, onRow }) {
+export function useLiveAccount({ accessToken, tradingAccountId, initial, onList, onRow, fast = true }) {
   const seed = (id) => (initial && initial.id === id ? normalise(initial, 'initial') : null);
   const [state, setState] = useState(() => ({ id: tradingAccountId ?? null, row: seed(tradingAccountId) }));
   const topic = useRef(Math.random().toString(36).slice(2, 10));
@@ -77,6 +77,16 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
   const initialCurrencyRef = useRef(null);
   initialCurrencyRef.current = initial?.accountCurrency ?? initial?.account_currency ?? initialCurrencyRef.current;
   useEffect(() => { onListRef.current = onList; onRowRef.current = onRow; }, [onList, onRow]);
+  /* Fast on the pages that show live numbers, slow elsewhere (liveTransport).
+     Read through a ref so a page change does not restart the poll; going TO
+     a live page polls at once instead of waiting out the slow timer. */
+  const fastRef = useRef(fast);
+  const kickRef = useRef(null);
+  useEffect(() => {
+    const was = fastRef.current;
+    fastRef.current = fast;
+    if (fast && !was) kickRef.current?.();
+  }, [fast]);
 
   // Account switched: adopt the new account's seed in THIS render. React
   // re-renders immediately with the new state and nothing of the old row is
@@ -99,6 +109,9 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
       // a payload Realtime routed to a stale channel).
       if (row.id != null && row.id !== tradingAccountId) return;
       const next = normalise(row, 'server');
+      // Fed by the engine's cache (not its database fallback): its age is
+      // judged against its own poll interval (useLiveDrivenRefresh).
+      next.viaCache = via === 'live' && row.liveSource !== 'db';
       if (via === 'push') lastPushAt = next.receivedAt;
       /*
        * `expectMs`: how long this browser can go between readings with
@@ -160,7 +173,11 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
           const row = rowFromLive(s, initialCurrencyRef.current);
           if (row) {
             const open = (row.livePositions?.length ?? 0) > 0 || Object.keys(row.openPnl ?? {}).length > 0;
-            every = row.liveSource === 'db' ? LIVE_POLL_UNWATCHED_MS : open ? LIVE_POLL_OPEN_MS : LIVE_POLL_FLAT_MS;
+            every = row.liveSource === 'db'
+              ? LIVE_POLL_UNWATCHED_MS
+              : fastRef.current
+                ? (open ? LIVE_POLL_OPEN_MS : LIVE_POLL_FLAT_MS)
+                : (open ? LIVE_POLL_BACKGROUND_OPEN_MS : LIVE_POLL_BACKGROUND_FLAT_MS);
             apply(row, 'live', every);
           }
         } catch (err) {
@@ -184,6 +201,11 @@ export function useLiveAccount({ accessToken, tradingAccountId, initial, onList,
         } catch { /* next round */ }
       };
       document.addEventListener('visibilitychange', onVisible);
+      kickRef.current = () => {
+        if (cancelled || !liveTimer) return; // in flight: it reschedules itself
+        clearTimeout(liveTimer);
+        run();
+      };
       run();
       const listTimer = setInterval(listOnly, FALLBACK_POLL_MS);
       return () => {

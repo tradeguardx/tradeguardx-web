@@ -29,10 +29,14 @@ export const LIVE_HEALTHY_AGE_MS = 15_000;
 /** True while live readings arrive often enough to be trusted for changes. */
 export function liveIsHealthy(row, now = Date.now()) {
   if (!row || row.source !== 'server' || !Number.isFinite(row.receivedAt)) return false;
+  if (!Number.isFinite(row.expectMs)) return false;
+  // From the cache: a reading every 1-30 s depending on the page and whether
+  // a trade is open. Healthy while the next one is not overdue.
+  if (row.viaCache) return now - row.receivedAt <= row.expectMs + LIVE_HEALTHY_AGE_MS;
+  // Pushes (~0) or a 5 s poll; a 30 s database fallback is not fresh enough
+  // to replace the timer.
   if (now - row.receivedAt > LIVE_HEALTHY_AGE_MS) return false;
-  // expectMs: 1 s or 5 s on the cache poll, ~0 while pushes arrive. A 30 s
-  // fallback poll (cache down) is not fresh enough to replace the timer.
-  return Number.isFinite(row.expectMs) && row.expectMs <= 5_000;
+  return row.expectMs <= 5_000;
 }
 
 /**

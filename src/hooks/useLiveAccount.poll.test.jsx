@@ -86,4 +86,37 @@ describe('useLiveAccount with the live cache switched on', () => {
     const { result } = renderHook(() => useLiveAccount({ accessToken: 't', tradingAccountId: A }));
     await waitFor(() => expect(result.current?.expectMs).toBe(30_000));
   });
+
+  /* 21 Nov 2026: pages that do not show live numbers read them slowly. */
+  it('off the live pages: every 15 s with a trade open, and back to 1 s at once on return', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const { result, rerender } = renderHook(({ fast }) => useLiveAccount({ accessToken: 't', tradingAccountId: A, fast }), { initialProps: { fast: false } });
+    await waitFor(() => expect(result.current?.expectMs).toBe(15_000));
+    const before = live.calls.length;
+    await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+    expect(live.calls.length).toBe(before);
+    rerender({ fast: true });
+    await waitFor(() => expect(live.calls.length).toBe(before + 1));
+    await waitFor(() => expect(result.current?.expectMs).toBe(1_000));
+  });
+
+  it('off the live pages and flat: every 30 s', async () => {
+    live.respond = () => ({ serverTime: Date.now(), cache: 'ok', accounts: [snap({ positions: [], openPnl: {} })] });
+    const { result } = renderHook(() => useLiveAccount({ accessToken: 't', tradingAccountId: A, fast: false }));
+    await waitFor(() => expect(result.current?.expectMs).toBe(30_000));
+    expect(result.current.viaCache).toBe(true);
+  });
+});
+
+describe('isLivePage', () => {
+  it('is true only where live numbers are shown', async () => {
+    const { isLivePage } = await import('../lib/liveTransport');
+    expect(isLivePage('/dashboard')).toBe(true);
+    expect(isLivePage('/dashboard/')).toBe(true);
+    expect(isLivePage('/dashboard/overview')).toBe(true);
+    expect(isLivePage('/dashboard/live')).toBe(true);
+    expect(isLivePage('/dashboard/journal')).toBe(false);
+    expect(isLivePage('/dashboard/tax')).toBe(false);
+    expect(isLivePage('/dashboard/account/billing')).toBe(false);
+  });
 });
