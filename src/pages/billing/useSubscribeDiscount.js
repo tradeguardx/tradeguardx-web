@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { validateCoupon } from '../../api/paymentsApi';
+import { getInvitedBy } from '../../api/referralApi';
 import { useActiveOffer } from '../../hooks/useActiveOffer';
 import { offerCoversInterval } from '../../lib/siteOffer';
 
@@ -35,6 +36,33 @@ export function useSubscribeDiscount({ enabled, intervals, token }) {
 
   const typed = coupon.trim().toUpperCase();
   const key = intervals.join(',');
+
+  /* A friend's referral, shown in the box and checked like any code (owner,
+     21 Nov 2026): the discount checkout would otherwise add unseen. Removing
+     it sends skipReferral so checkout does not put it back. */
+  const [invited, setInvited] = useState(null);
+  const [referralRemoved, setReferralRemoved] = useState(false);
+  const invitedTried = useRef(false);
+  const couponRef = useRef(coupon);
+  useEffect(() => { couponRef.current = coupon; }, [coupon]);
+  useEffect(() => {
+    if (!enabled || !token || !key || invitedTried.current) return;
+    invitedTried.current = true;
+    getInvitedBy({ accessToken: token })
+      .then(async (inv) => {
+        if (!inv?.code) return;
+        setInvited(inv);
+        if (couponRef.current.trim()) return;
+        setCoupon(inv.code);
+        setChecking(true);
+        try {
+          setApplied({ code: inv.code, byInterval: await checkAll(token, inv.code, key.split(',')) });
+        } finally {
+          setChecking(false);
+        }
+      })
+      .catch(() => { /* no line shown; checkout still applies the referral */ });
+  }, [enabled, token, key]);
   const offerCode =
     enabled && !typed && offer && intervals.some((iv) => offerCoversInterval(offer, iv)) ? offer.code : null;
 
@@ -83,7 +111,13 @@ export function useSubscribeDiscount({ enabled, intervals, token }) {
     offer,
     offerCode,
     coupon,
-    setCoupon: (v) => { setCoupon(v); setApplied(null); },
+    setCoupon: (v) => {
+      if (!v && invited && typed === invited.code) setReferralRemoved(true);
+      setCoupon(v);
+      setApplied(null);
+    },
+    invitedName: invited && typed === invited.code ? invited.name : null,
+    skipReferral: referralRemoved && !typed,
     typed,
     checked: Boolean(typed && verdicts),
     refusal: verdicts && !best ? Object.values(verdicts)[0]?.reason ?? 'UNKNOWN' : null,

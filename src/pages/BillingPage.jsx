@@ -391,7 +391,7 @@ export default function BillingPage() {
     trackBilling('billing_subscribe_clicked', { state, interval: toInterval });
     setBusy(`switch:${toInterval}`);
     try {
-      const res = await createCheckoutSession({ accessToken, planSlug: 'pro', interval: toInterval, couponCode: discount.codeFor(toInterval) });
+      const res = await createCheckoutSession({ accessToken, planSlug: 'pro', interval: toInterval, couponCode: discount.codeFor(toInterval), skipReferral: Boolean(discount.skipReferral && !discount.codeFor(toInterval)) });
       if (!res?.checkoutUrl) throw new Error('Could not open checkout.');
       window.location.href = res.checkoutUrl;
     } catch (e) {

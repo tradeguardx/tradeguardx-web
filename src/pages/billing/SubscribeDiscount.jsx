@@ -8,7 +8,7 @@ import { discountWording, offerLabel } from '../../lib/siteOffer';
  * place to type a code. Prices on the page change from `discount`, not here.
  */
 export default function SubscribeDiscount({ discount }) {
-  const { offer, offerCode, coupon, setCoupon, typed, checked, refusal, apply, checking, best } = discount;
+  const { offer, offerCode, coupon, setCoupon, typed, checked, refusal, apply, checking, best, invitedName } = discount;
   const [open, setOpen] = useState(false);
   const showOffer = !typed && offerCode && best;
   /* Applied: the field locks and the button takes the code off (owner, 16 Nov 2026). */
@@ -26,7 +26,9 @@ export default function SubscribeDiscount({ discount }) {
 
       {open || coupon ? (
         <div style={sx('margin-top:10px')}>
-          <label htmlFor="subscribe-coupon" style={sx('display:block;margin-bottom:6px;font-size:11.5px;color:var(--ink-faint)')}>Coupon code</label>
+          <label htmlFor="subscribe-coupon" style={sx('display:block;margin-bottom:6px;font-size:11.5px;color:var(--ink-faint)')}>
+            {invitedName ? <span data-invited-by style={sx('color:var(--mint);font-weight:600')}>Referral from {invitedName}</span> : 'Coupon code'}
+          </label>
           <div style={sx('display:flex;gap:8px')}>
             <input
               id="subscribe-coupon"

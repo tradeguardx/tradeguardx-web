@@ -32,6 +32,9 @@ vi.mock('../../../api/pricingApi', () => ({
   }],
 }));
 vi.mock('../../../lib/analytics', () => ({ trackBilling: vi.fn() }));
+/* Who invited this user (payments /referral/invited-by). null = nobody. */
+const invitedBy = { value: null };
+vi.mock('../../../api/referralApi', () => ({ getInvitedBy: async () => invitedBy.value }));
 /* The real checkoutCouponCode runs; its inputs are mocked. */
 const carried = { referral: null, link: null };
 vi.mock('../../../lib/referralCode', () => ({ getStoredReferralCode: () => carried.referral }));
@@ -63,6 +66,7 @@ beforeEach(() => {
   carried.referral = null;
   carried.link = null;
   siteOffer.value = null;
+  invitedBy.value = null;
 });
 
 /* What the panel says is charged today (the timeline box is gone, 9 Nov 2026). */
@@ -701,5 +705,48 @@ describe('billing step — the site offer, to apply', () => {
     await screen.findByText('Due today');
     expect(validate).not.toHaveBeenCalled();
     expect(screen.queryByText(/offer applied/)).toBeNull();
+  });
+});
+
+/*
+ * Owner, 21 Nov 2026: a friend's referral discount is shown, not added
+ * unseen at checkout. It sits in the coupon box, checked, with Remove.
+ */
+describe('billing step — a friend\'s referral, shown', () => {
+  const REF_OK = { valid: true, code: 'RAHUL10', percentOff: 10, cycles: 1, referral: true };
+
+  it('puts the friend\'s code in the box, applied, and sends it', async () => {
+    invitedBy.value = { code: 'RAHUL10', name: 'Rahul M.' };
+    validate.mockResolvedValue(REF_OK);
+    render(<BillingStep />);
+    await screen.findByText('Referral from Rahul M.');
+    await screen.findByText(/10% off applied/);
+    expect(screen.getByPlaceholderText('Enter code').value).toBe('RAHUL10');
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0]).toMatchObject({ couponCode: 'RAHUL10' });
+    expect(checkout.mock.calls[0][0].skipReferral).toBeFalsy();
+  });
+
+  it('Remove takes it off for good: checkout is told not to re-add it', async () => {
+    invitedBy.value = { code: 'RAHUL10', name: 'Rahul M.' };
+    validate.mockResolvedValue(REF_OK);
+    render(<BillingStep />);
+    await screen.findByText(/10% off applied/);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove code RAHUL10' }));
+    expect(screen.queryByText('Referral from Rahul M.')).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
+    expect(checkout.mock.calls[0][0].skipReferral).toBe(true);
+  });
+
+  it('no referral: the box stays empty and nothing extra is sent', async () => {
+    render(<BillingStep />);
+    fireEvent.click(await screen.findByRole('button', { name: /Start 7 days free/ }));
+    await vi.waitFor(() => expect(checkout).toHaveBeenCalled());
+    expect(screen.queryByText(/Referral from/)).toBeNull();
+    expect(checkout.mock.calls[0][0].couponCode).toBeUndefined();
+    expect(checkout.mock.calls[0][0].skipReferral).toBeFalsy();
   });
 });

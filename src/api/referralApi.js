@@ -47,3 +47,14 @@ export async function bindReferral({ accessToken, code }, options = {}) {
 export async function setReferralCurrency({ accessToken, currency }, options = {}) {
   return unwrap(await apiPost('/referral/currency', { currency }, authed(accessToken, options)));
 }
+
+/**
+ * GET /payments/referral/invited-by → { invitedBy: { code, name } | null }.
+ * The friend whose link brought the caller, while that referral still applies
+ * (not their own code, still new to Pro). Shown in the coupon box so the
+ * referral discount is one the buyer can see (21 Nov 2026).
+ */
+export async function getInvitedBy({ accessToken }, options = {}) {
+  const data = unwrap(await apiGet('/referral/invited-by', authed(accessToken, options)));
+  return data?.invitedBy ?? null;
+}

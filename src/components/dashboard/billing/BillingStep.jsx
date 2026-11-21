@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { createCheckoutSession, validateCoupon, fetchTrialEligibility } from '../../../api/paymentsApi';
 import { getPricingPlans } from '../../../api/pricingApi';
+import { getInvitedBy } from '../../../api/referralApi';
 import { bandOfPlan, bandSync, formatMoney, planForBand, testerPriceFor, TESTER_DAYS } from '../../../lib/priceBands';
 import { trackBilling } from '../../../lib/analytics';
 import { useActiveOffer } from '../../../hooks/useActiveOffer';
@@ -333,13 +334,16 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   const codeLocked = typed && applied?.code === typed && Object.values(applied.byInterval).some((v) => v?.valid);
   const removeCode = () => {
     trackBilling('billing_coupon_removed', { code: typed });
+    // Taking the friend's referral off means no referral discount at all:
+    // checkout must not put it back on by itself (payments skipReferral).
+    if (invited && typed === invited.code) setReferralRemoved(true);
     setCoupon('');
     setApplied(null);
     requestAnimationFrame(() => document.getElementById('bs-coupon')?.focus());
   };
 
-  const apply = async () => {
-    const code = coupon.trim().toUpperCase();
+  const apply = async (preset) => {
+    const code = (typeof preset === 'string' ? preset : coupon).trim().toUpperCase();
     if (!code || couponBusy) return;
     setCouponBusy(true);
     try {
@@ -358,6 +362,38 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
       setCouponBusy(false);
     }
   };
+
+  /*
+   * A FRIEND'S REFERRAL, SHOWN (owner, 21 Nov 2026). Someone who signed up
+   * through a friend's link is owed the referral discount, and checkout used
+   * to add it unseen: ₹1,299 here, less on the payment page. Now the friend's
+   * code goes into the box and is checked like any code, so the price here is
+   * the price they pay, with "Referral from Rahul M." above it and Remove to
+   * take it off. Only when the box is empty and they have not removed it.
+   */
+  const [invited, setInvited] = useState(null);
+  const couponRef = useRef(coupon);
+  useEffect(() => { couponRef.current = coupon; }, [coupon]);
+  const [referralRemoved, setReferralRemoved] = useState(false);
+  const invitedTried = useRef(false);
+  useEffect(() => {
+    const t = session?.access_token;
+    if (!t || invitedTried.current || options.length === 0) return;
+    invitedTried.current = true;
+    getInvitedBy({ accessToken: t })
+      .then((inv) => {
+        if (!inv?.code) return;
+        setInvited(inv);
+        // Something typed meanwhile wins; the friend's code waits behind it.
+        if (couponRef.current.trim()) return;
+        setCoupon(inv.code);
+        apply(inv.code);
+      })
+      .catch(() => { /* no line shown; checkout still applies the referral */ });
+    // apply reads options at call time; this runs once per mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.access_token, options.length]);
+  const showInvited = Boolean(invited && typed === invited.code);
 
   /*
    * Dates from the real trial length, in the user's own zone (lib/userZone). "Today" is when the guard comes
@@ -409,6 +445,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
           interval: cur.id,
           couponCode: effectiveCoupon,
           skipOffer,
+          // They took the friend's referral off: checkout must not re-add it.
+          skipReferral: referralRemoved && !effectiveCoupon,
         });
       if (!res?.checkoutUrl) throw new Error('Could not open checkout. Please try again.');
       trackBilling('billing_trial_started', { plan: chosen });
@@ -792,7 +830,11 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   )}
                   {/* Always open (owner, 9 Nov 2026): no "Have a coupon?" link to find. */}
                     <div>
-                      <label htmlFor="bs-coupon" style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-faint)', marginBottom: 6 }}>Coupon code</label>
+                      <label htmlFor="bs-coupon" style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-faint)', marginBottom: 6 }}>
+                        {showInvited ? (
+                          <span data-invited-by style={{ color: 'var(--mint)', fontWeight: 600 }}>Referral from {invited.name}</span>
+                        ) : 'Coupon code'}
+                      </label>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <input
                           id="bs-coupon"
