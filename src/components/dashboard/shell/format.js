@@ -42,10 +42,23 @@ export function formatResumes(ts) {
   const tz = getUserZone();
   const d = new Date(ts);
   const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz });
-  const dayNow = new Date().toLocaleDateString('en-GB', { timeZone: tz });
-  const dayThen = d.toLocaleDateString('en-GB', { timeZone: tz });
   const zone = zoneLabel(tz);
-  return `${dayNow === dayThen ? 'today' : 'tomorrow'} at ${time}${zone ? ` ${zone}` : ''}`;
+  return `${dayLabel(ts)} at ${time}${zone ? ` ${zone}` : ''}`;
+}
+
+/**
+ * "today", "tomorrow", or the date ("Sat 29 Nov") in the user's own zone.
+ * It only ever said today/tomorrow, which was true while every lock was 12
+ * hours or less; a 3-day break would have read "resumes tomorrow" (22 Nov 2026).
+ */
+export function dayLabel(ts, now = Date.now()) {
+  if (!ts) return '';
+  const tz = getUserZone();
+  const key = (t) => new Date(t).toLocaleDateString('en-CA', { timeZone: tz });
+  const then = key(ts);
+  if (then === key(now)) return 'today';
+  if (then === key(now + 86_400_000)) return 'tomorrow';
+  return new Date(ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: tz });
 }
 
 export function initialsOf(name, email) {

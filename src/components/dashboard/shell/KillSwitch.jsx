@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useGuard } from '../../../context/GuardContext';
 import { useToast } from '../../common/ToastProvider';
-import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../../../api/userApi';
+import { armLockout } from '../../../api/userApi';
+import LockDurationPicker from './LockDurationPicker';
+import { durationLong, lockEndsAt } from '../../../lib/lockDuration';
 import { fetchJournalTrades } from '../../../api/tradesApi';
 import { sx } from './sx';
-import { formatRemaining } from './format';
+import { formatRemaining, formatResumes } from './format';
 import { OpenTradeLockChoice, PendingLockPanel } from './LockChoice';
 
 /**
@@ -55,8 +57,6 @@ export function KillSwitchButton({ onOpen }) {
   );
 }
 
-const HOUR_ON = "flex:1;padding:12px;border-radius:11px;font:600 14px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
-const HOUR_OFF = "flex:1;padding:12px;border-radius:11px;font:600 14px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
 
 export function KillSwitchModal({ open, onClose, returnFocusRef }) {
   const { session } = useAuth();
@@ -145,9 +145,9 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
     try {
       const res = await armLockout({ accessToken: session?.access_token, tradingAccountId: account.id, hours, whenOpen });
       await refresh();
-      if (res?.status === 'pending') toast.success(`Lock waiting — ${hours} hours`, 'It starts the moment your trade closes. New trades are closed until then.');
-      else if (whenOpen === 'close_now') toast.success(`Locked out for ${hours} hours`, 'Closing your open positions now.');
-      else toast.success(`Locked out for ${hours} hours`, 'Orders placed anywhere in the meantime get closed on sight.');
+      if (res?.status === 'pending') toast.success(`Lock waiting — ${durationLong(hours)}`, 'It starts the moment your trade closes. New trades are closed until then.');
+      else if (whenOpen === 'close_now') toast.success(`Locked out for ${durationLong(hours)}`, 'Closing your open positions now.');
+      else toast.success(`Locked out for ${durationLong(hours)}`, 'Orders placed anywhere in the meantime get closed on sight.');
       setStage(0);
       setBlocked(null);
     } catch (err) {
@@ -216,11 +216,9 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
                 <p style={sx('margin:0 0 10px;font-size:13px;line-height:1.55;font-weight:600;color:var(--ink)')}>Your rules aren&rsquo;t active right now. This kill switch is.</p>
               )}
               <p style={sx('margin:0 0 15px;font-size:13px;line-height:1.6;color:var(--ink-2)')}>Locks you out of this account for the window you pick. <strong style={sx('color:var(--ink);font-weight:700')}>You can&rsquo;t call it off yourself</strong> — there is no off button, only the clock. Support can lift it if something real happens.</p>
-              <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:9px")}>Lock duration</div>
-              <div style={sx('display:flex;gap:8px;margin-bottom:15px')} role="radiogroup" aria-label="Lock duration">
-                {LOCKOUT_HOUR_OPTIONS.map((h, i) => (
-                  <button key={h} ref={i === 0 ? firstRef : undefined} type="button" role="radio" aria-checked={hours === h} onClick={() => setHours(h)} style={sx(hours === h ? HOUR_ON : HOUR_OFF)}>{h}h</button>
-                ))}
+              <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:11px")}>Lock duration</div>
+              <div style={sx('margin-bottom:16px')}>
+                <LockDurationPicker hours={hours} setHours={setHours} disabled={stage === 1} firstRef={firstRef} big />
               </div>
               {stage === 0 && (
                 <button type="button" className="ks-arm" onClick={() => setStage(1)} style={sx('width:100%;padding:13px;border:1px solid var(--red-line);border-radius:11px;background:var(--red-tint);color:var(--red);font-size:13.5px;font-weight:700')}>Arm the lockout</button>
@@ -228,9 +226,9 @@ export function KillSwitchModal({ open, onClose, returnFocusRef }) {
               {stage === 1 && (
                 <div style={sx('padding:15px 16px;border:1px solid var(--red-line);border-radius:12px;background:var(--red-tint)')}>
                   <div style={sx('font-size:12.5px;font-weight:700;color:var(--red)')}>Read this before you confirm</div>
-                  <p style={sx('margin:6px 0 13px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>You will not be able to trade this account for {hours} hours. There is no cancel. Orders placed anywhere in the meantime get closed on sight.</p>
+                  <p style={sx('margin:6px 0 13px;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>You will not be able to trade this account for {durationLong(hours)}, until {formatResumes(lockEndsAt(hours))}. There is no cancel. Orders placed anywhere in the meantime get closed on sight.</p>
                   <div style={sx('display:flex;gap:8px')}>
-                    <button type="button" disabled={busy} onClick={() => arm()} style={sx('flex:1;padding:11px;border:1px solid var(--red-solid);border-radius:10px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${hours} hours`}</button>
+                    <button type="button" disabled={busy} onClick={() => arm()} style={sx('flex:1;padding:11px;border:1px solid var(--red-solid);border-radius:10px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${durationLong(hours)}`}</button>
                     <button type="button" disabled={busy} onClick={() => setStage(0)} style={sx('padding:11px 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Back</button>
                   </div>
                 </div>

@@ -10,13 +10,15 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { sessionOf, fmtMoney, splitDecimal, ruleConfig } from '../lib/session';
 import { computeRule } from '../components/dashboard/RuleStatusCards';
 import { stopCellFor } from '../lib/stopLoss';
-import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../api/userApi';
+import { armLockout } from '../api/userApi';
+import LockDurationPicker from '../components/dashboard/shell/LockDurationPicker';
+import { durationLong, lockEndsAt } from '../lib/lockDuration';
 import { OpenTradeLockChoice, PendingLockPanel } from '../components/dashboard/shell/LockChoice';
 import { setRuleLockDays } from '../api/tradingAccountsApi';
 import { RULE_GLYPH, ruleAccent } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
 import DailyResetLine from '../components/dashboard/DailyResetLine';
-import { formatRemaining, zoneLabel } from '../components/dashboard/shell/format';
+import { dayLabel, formatRemaining, formatResumes, zoneLabel } from '../components/dashboard/shell/format';
 import { getUserZone } from '../lib/userZone';
 import { ruleLockNow } from '../lib/guard';
 import { instrumentOf } from '../lib/labels';
@@ -33,8 +35,6 @@ import { useGuardActivity } from '../hooks/useGuardActivity';
 
 const MONO_LABEL = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)";
 const H3 = "margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em";
-const HOUR_ON = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
-const HOUR_OFF = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
 const DAY_ON = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
 const DAY_OFF = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
 
@@ -54,13 +54,8 @@ function clockAt(t) {
   const time = new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz });
   return `${time}${zoneLabel(tz) ? ` ${zoneLabel(tz)}` : ''}`;
 }
-function dayAt(t) {
-  if (!t) return '';
-  const tz = getUserZone();
-  const d = new Date(t).toLocaleDateString('en-GB', { timeZone: tz });
-  const n = new Date().toLocaleDateString('en-GB', { timeZone: tz });
-  return d === n ? 'today' : 'tomorrow';
-}
+// today / tomorrow / "Sat 29 Nov": a break can run for days (shell/format).
+const dayAt = (t) => dayLabel(t);
 function pick(o, ...keys) { for (const k of keys) if (o && o[k] != null) return o[k]; return null; }
 
 export default function LiveGuardPage() {
@@ -187,9 +182,9 @@ export default function LiveGuardPage() {
     try {
       const res = await armLockout({ accessToken, tradingAccountId: selectedTradingAccountId, hours, whenOpen });
       await refresh();
-      if (res?.status === 'pending') toast.success(`Lock waiting — ${hours} hours`, 'It starts the moment your trade closes. New trades are closed until then.');
-      else if (whenOpen === 'close_now') toast.success(`Locked out for ${hours} hours`, 'Closing your open positions now.');
-      else toast.success(`Locked out for ${hours} hours`, 'Orders placed anywhere in the meantime get closed on sight.');
+      if (res?.status === 'pending') toast.success(`Lock waiting — ${durationLong(hours)}`, 'It starts the moment your trade closes. New trades are closed until then.');
+      else if (whenOpen === 'close_now') toast.success(`Locked out for ${durationLong(hours)}`, 'Closing your open positions now.');
+      else toast.success(`Locked out for ${durationLong(hours)}`, 'Orders placed anywhere in the meantime get closed on sight.');
       setStage(0);
       setBlocked(false);
     } catch (err) {
@@ -802,20 +797,19 @@ export default function LiveGuardPage() {
 
             {armable && (
               <div style={sx('margin-top:auto')}>
-                <div style={sx('display:flex;align-items:center;min-height:15px;margin-bottom:10px')}>
+                <div style={sx('display:flex;align-items:center;min-height:15px;margin-bottom:11px')}>
                   <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)")}>Lock duration</span>
                 </div>
-                <div style={sx('min-height:9px;margin-bottom:4px')} aria-hidden />
-                <div style={sx('display:flex;gap:8px;margin-bottom:12px')} role="radiogroup" aria-label="Lock duration">
-                  {LOCKOUT_HOUR_OPTIONS.map((h) => <button key={h} type="button" role="radio" aria-checked={hours === h} onClick={() => setHours(h)} style={sx(hours === h ? HOUR_ON : HOUR_OFF)}>{h}h</button>)}
+                <div style={sx('margin-bottom:14px')}>
+                  <LockDurationPicker hours={hours} setHours={setHours} disabled={stage === 1} />
                 </div>
                 {stage === 0 && <button type="button" className="ks-arm" onClick={() => setStage(1)} style={sx('width:100%;padding:11px;border:1px solid var(--red-line);border-radius:10px;background:var(--red-tint);color:var(--red);font-size:13px;font-weight:700')}>Arm the lockout</button>}
                 {stage === 1 && (
                   <div style={sx('padding:13px 14px;border:1px solid var(--red-line);border-radius:11px;background:var(--red-tint)')}>
                     <div style={sx('font-size:12.5px;font-weight:700;color:var(--red)')}>Read this before you confirm</div>
-                    <p style={sx('margin:5px 0 11px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>You will not be able to trade this account for {hours} hours. There is no cancel. Orders placed anywhere in the meantime get closed on sight.</p>
+                    <p style={sx('margin:5px 0 11px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>You will not be able to trade this account for {durationLong(hours)}, until {formatResumes(lockEndsAt(hours))}. There is no cancel. Orders placed anywhere in the meantime get closed on sight.</p>
                     <div style={sx('display:flex;gap:8px')}>
-                      <button type="button" disabled={busy} onClick={() => arm()} style={sx('flex:1;padding:10px;border:1px solid var(--red-solid);border-radius:9px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${hours} hours`}</button>
+                      <button type="button" disabled={busy} onClick={() => arm()} style={sx('flex:1;padding:10px;border:1px solid var(--red-solid);border-radius:9px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${durationLong(hours)}`}</button>
                       <button type="button" disabled={busy} onClick={() => setStage(0)} style={sx('padding:10px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Back</button>
                     </div>
                   </div>
