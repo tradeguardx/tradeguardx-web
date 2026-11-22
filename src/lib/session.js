@@ -50,6 +50,9 @@ const symbolCache = new Map();
 export function currencySymbol(currency) {
   const c = String(currency || 'USD').trim().toUpperCase();
   if (FIXED_SYMBOLS[c]) return FIXED_SYMBOLS[c];
+  // A server that could not tell the unit says so; print the number alone
+  // rather than the word "UNKNOWN" in front of every amount.
+  if (c === 'UNKNOWN') return '';
   if (symbolCache.has(c)) return symbolCache.get(c);
   let sym = `${c} `;
   try {

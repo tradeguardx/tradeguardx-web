@@ -21,4 +21,9 @@ describe('currencySymbol: the account\'s own currency, whatever it is', () => {
   it('money in euros reads as euros', () => {
     expect(fmtMoney(50.5, 'EUR', { sign: true })).toBe('+€50.50');
   });
+
+  it('an unknown unit prints the number alone, never the word UNKNOWN', () => {
+    expect(currencySymbol('UNKNOWN')).toBe('');
+    expect(fmtMoney(15063, 'UNKNOWN', { sign: true })).toBe('+15,063.00');
+  });
 });
