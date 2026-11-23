@@ -3,10 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export const faqs = [
   {
-    q: 'Is TradeGuardX the same as TradeGuard?',
-    a: 'No. TradeGuardX, with an X, is a separate company: a server-side kill switch for crypto and forex trading accounts. It is not connected to Nasdaq TradeGuard, TradeGuard (tradeguard.co) or TradeGuardHQ.',
-  },
-  {
     q: 'How does it actually work?',
     a: 'You connect your exchange account with a read-and-trade API key once. Our servers then watch your account in real time and, the moment you breach a rule you set, take action — close trades, lock the account, or just alert you, depending on the rule. Setup takes about a minute.',
   },
@@ -41,6 +37,10 @@ export const faqs = [
   {
     q: 'Is there a free plan?',
     a: 'No — there is one plan, Pro, with everything included, priced for your country. To try it first, buy a 3-day Trial Plan: everything Pro has, paid once, no AutoPay, nothing renews. When it ends, you choose a plan.',
+  },
+  {
+    q: 'Is TradeGuardX the same as TradeGuard?',
+    a: 'No. TradeGuardX, with an X, is a separate company: a server-side kill switch for crypto and forex trading accounts. It is not connected to Nasdaq TradeGuard, TradeGuard (tradeguard.co) or TradeGuardHQ.',
   },
 ];
 
