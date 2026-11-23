@@ -31,6 +31,10 @@ export const faqs = [
     a: 'Seven rules. Five act on your account: daily loss limit, max trades per day, daily profit target, a pause after losses in a row, and risk per trade. Two alert you: a position with no stop-loss, and a drawdown past your threshold. Turn on whichever fit your style.',
   },
   {
+    q: 'Can I get around a lock by deleting my API key?',
+    a: 'On TradeGuardX, no: while a lock is running you can’t disconnect or replace the key here. On the exchange, yes. It’s your account, and you can revoke or delete the API key there at any time. Once you do, we can no longer close anything on that account, and we’ll tell you the key stopped working. None of the exchanges we support has an account lock of its own today, so every lock we set runs through your key. If an exchange adds one and we use it, that lock is held by the exchange itself: deleting the key won’t lift it, and it ends only when its time runs out. We’ll say so on that exchange’s page before we use it.',
+  },
+  {
     q: 'Which exchanges are supported?',
     a: 'Delta Exchange (India and Global), Exness, CoinDCX futures, Bybit and Shark Exchange are live today. One plan covers every exchange you connect.',
   },

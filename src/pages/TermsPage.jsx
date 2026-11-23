@@ -8,7 +8,7 @@ import { useSEO } from '../hooks/useSEO';
  * could never tell when the terms actually changed. Bump this by hand, only
  * when the text above it changes.
  */
-const LAST_UPDATED = 'November 16, 2026';
+const LAST_UPDATED = 'November 23, 2026';
 
 const sections = [
   {
@@ -52,7 +52,9 @@ const sections = [
     list: [
       'We require keys scoped to trading only. We never request withdrawal or transfer permission, and we reject a key that carries it. We cannot move funds out of your exchange account.',
       'Your keys are encrypted at rest and used only to operate the Service for your account.',
-      'You may disconnect a key at any time, except while a lockout you initiated is still running — that restriction is the feature working as described, not a denial of access to your funds, which remain under your control on the exchange at all times.',
+      'You may disconnect a key from the Service at any time, except while a lock is running on that account. That restriction is the feature working as described, not a denial of access to your funds, which remain under your control on the exchange at all times.',
+      'Your exchange or broker account remains yours, and you can revoke or delete the API key on the exchange or broker at any time, including while a lock is running. Once the key is revoked we can no longer act on that account, so any rule or lock that depends on the key stops being enforced. This is your choice and outside our control, and we are not responsible for trading that follows it.',
+      'None of our supported venues currently offers an account lock of its own, so every lock we set today is enforced through your API key. If a venue offers its own lock and we use it, that lock is held by the venue: revoking the key ends our access but does not lift a lock already placed there, which ends only when its period runs out. We will state this on that venue\'s page before we use such a lock.',
       'We cannot prevent an order from reaching your exchange. Enforcement is corrective: we act after a position opens, not before. No exchange grants a third party the ability to block an order at source.',
       'We depend on exchange APIs and market conditions outside our control. Outages, rate limits, latency, illiquidity, gaps and liquidations may delay or prevent enforcement.',
     ],
