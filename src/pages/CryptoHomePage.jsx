@@ -303,10 +303,10 @@ function CryptoHomeBody({ variant }) {
       <div className="landing-bg" aria-hidden />
 
       <RawHtml className="tgx-home" innerRef={aRef} html={BODIES[variant].aHero} region={region} variant={variant} />
-      {/* A day in the life — straight after the hero. */}
-      <RawHtml className="tgx-home" innerRef={a2Ref} html={BODIES[variant].aDayInLife} region={region} variant={variant} />
-      {/* Trading in Action — proof it's real, right above "Seven rules. Pick yours." */}
+      {/* Trading in Action — straight after the hero: see it work before reading how. */}
       <TradingInAction />
+      {/* A day in the life. */}
+      <RawHtml className="tgx-home" innerRef={a2Ref} html={BODIES[variant].aDayInLife} region={region} variant={variant} />
       {/* Rules. */}
       <RawHtml className="tgx-home" innerRef={a3Ref} html={BODIES[variant].aRules} region={region} variant={variant} />
       <StoryAIJournal />

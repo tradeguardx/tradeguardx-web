@@ -69,6 +69,8 @@ export const CHALLENGE = {
  *   video     YouTube ID only, not the full URL. For a normal link
  *             youtube.com/watch?v=ID it's the v= part; for a Short
  *             youtube.com/shorts/ID it's the bit after /shorts/.
+ *   title     Optional card label for a clip that is not a trading day (a
+ *             walkthrough, a proof video). Replaces "Day NN" and hides the P&L.
  *   short     true if `video` is a YouTube Short (vertical 9:16). Renders the
  *             player portrait instead of the default 16:9.
  *   poster    Optional path under /public for the branded video poster's
@@ -90,6 +92,7 @@ export const DAYS = [
     cooldowns: 0,
     loosened: false,
     video: 'bsErNry48d8',
+    title: 'Exness live proof',
     short: true,
     note: [
       'Set the limits and started trading. A clean green day — rules held, nothing had to step in.',
@@ -106,6 +109,7 @@ export const DAYS = [
     cooldowns: 0,
     loosened: false,
     video: 'OGmoEeUr3Hc',
+    title: 'Delta 2-min setup',
     short: true,
     note: [
       'Second green day in a row. Still under every limit — the rules haven’t had to do anything yet.',
