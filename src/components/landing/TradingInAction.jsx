@@ -1,4 +1,5 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { trackCtaClick } from '../../lib/analytics';
 import { DAYS } from '../../content/thirtyDays';
 
@@ -95,17 +96,14 @@ function MutedPreview({ id }) {
 }
 
 /** One card in the shelf — a branded poster that swaps for an inline player on click. */
-const ClipCard = forwardRef(function ClipCard({ day, index, preview, onPlay }, ref) {
-  const [live, setLive] = useState(false);
-
+const ClipCard = forwardRef(function ClipCard({ day, index, preview, onOpen }, ref) {
   const play = () => {
     try {
       trackCtaClick(`landing_trading_in_action_day${day.n}`);
     } catch {
       /* analytics is best-effort */
     }
-    onPlay?.();
-    setLive(true);
+    onOpen(index);
   };
 
   return (
@@ -115,16 +113,6 @@ const ClipCard = forwardRef(function ClipCard({ day, index, preview, onPlay }, r
       className="relative aspect-[9/16] w-[170px] shrink-0 snap-center overflow-hidden rounded-2xl border sm:w-[184px]"
       style={{ borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#05070c' }}
     >
-      {live ? (
-        <iframe
-          className="absolute inset-0 h-full w-full"
-          src={`https://www.youtube-nocookie.com/embed/${day.video}?autoplay=1&rel=0&playsinline=1`}
-          title={day.title || `Day ${day.n} — TradeGuardX enforcing on Delta`}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          frameBorder="0"
-        />
-      ) : (
         <button
           type="button"
           onClick={play}
@@ -181,7 +169,6 @@ const ClipCard = forwardRef(function ClipCard({ day, index, preview, onPlay }, r
             </span>
           </span>
         </button>
-      )}
       {/* card order, decorative — helps the shelf read as a sequence while scrolling */}
       <span
         aria-hidden
@@ -193,6 +180,101 @@ const ClipCard = forwardRef(function ClipCard({ day, index, preview, onPlay }, r
     </div>
   );
 });
+
+const clipName = (d) => d.title || `Day ${String(d.n).padStart(2, '0')}`;
+
+/**
+ * The clip with sound, in a popup over the page: 9:16 player, previous /
+ * next (arrows on a computer, buttons under the video on a phone), Esc or a
+ * click outside to close. The page behind does not scroll while it is open.
+ */
+function ClipPlayer({ index, setIndex, onClose }) {
+  const day = CLIPS[index];
+  const last = CLIPS.length - 1;
+  const go = useCallback((step) => setIndex(Math.min(last, Math.max(0, index + step))), [index, last, setIndex]);
+  const closeRef = useRef(null);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+      else if (e.key === 'ArrowRight') go(1);
+      else if (e.key === 'ArrowLeft') go(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [go, onClose]);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  const arrow = (dir) => (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); go(dir); }}
+      disabled={dir < 0 ? index === 0 : index === last}
+      aria-label={dir < 0 ? 'Previous video' : 'Next video'}
+      className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full text-white transition-opacity hover:bg-white/20 disabled:opacity-20 sm:flex"
+      style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d={dir < 0 ? 'M15 18l-6-6 6-6' : 'M9 18l6-6-6-6'} />
+      </svg>
+    </button>
+  );
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={clipName(day)}
+      onClick={onClose}
+      className="fixed inset-0 z-[200] flex items-center justify-center gap-5 p-4"
+      style={{ backgroundColor: 'rgba(3,5,9,0.9)', backdropFilter: 'blur(8px)' }}
+    >
+      {arrow(-1)}
+      <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-[min(380px,calc((100dvh-150px)*9/16))] flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2">
+            <YouTubeMark className="h-[15px] w-[21px] shrink-0" />
+            <span className="truncate text-[14px] font-bold text-white">{clipName(day)}</span>
+            <span className="shrink-0 text-[12px] text-slate-400">{index + 1} / {CLIPS.length}</span>
+          </span>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Close video"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/20"
+            style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div className="relative aspect-[9/16] w-full overflow-hidden rounded-2xl bg-black shadow-2xl">
+          <iframe
+            key={day.video}
+            className="absolute inset-0 h-full w-full"
+            src={`https://www.youtube-nocookie.com/embed/${day.video}?autoplay=1&rel=0&playsinline=1`}
+            title={clipName(day)}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            frameBorder="0"
+          />
+        </div>
+        <div className="flex justify-between gap-3 sm:hidden">
+          <button type="button" onClick={() => go(-1)} disabled={index === 0} className="rounded-full px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-30" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>← Previous</button>
+          <button type="button" onClick={() => go(1)} disabled={index === last} className="rounded-full px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-30" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>Next →</button>
+        </div>
+      </div>
+      {arrow(1)}
+    </div>,
+    document.body,
+  );
+}
 
 /** Last card in the row, same size as a clip: the channel itself. */
 function ChannelCard() {
@@ -218,12 +300,12 @@ function ChannelCard() {
 /**
  * Which card plays its silent preview: one at a time, only among cards fully
  * on screen, moving on every PREVIEW_MS. One embed at a time keeps the page
- * light. Stops for good once the visitor plays a clip with sound.
+ * light. Paused while the popup player is open.
  */
-function usePreviewRotation(count) {
+function usePreviewRotation(count, paused) {
   const cards = useRef([]);
   const [active, setActive] = useState(-1);
-  const [stopped, setStopped] = useState(false);
+  const stopped = paused;
 
   useEffect(() => {
     if (stopped || count === 0 || !previewsAllowed() || typeof IntersectionObserver === 'undefined') return undefined;
@@ -247,11 +329,14 @@ function usePreviewRotation(count) {
     return () => { io.disconnect(); clearInterval(timer); };
   }, [count, stopped]);
 
-  return { cards, active: stopped ? -1 : active, stop: () => setStopped(true) };
+  return { cards, active: stopped ? -1 : active };
 }
 
 export default function TradingInAction() {
-  const { cards, active, stop } = usePreviewRotation(CLIPS.length);
+  const [open, setOpen] = useState(null);
+  // Previews pause while the popup plays, and pick up again when it closes.
+  const { cards, active } = usePreviewRotation(CLIPS.length, open != null);
+  const close = useCallback(() => setOpen(null), []);
   if (CLIPS.length === 0) return null;
 
   return (
@@ -295,13 +380,14 @@ export default function TradingInAction() {
             day={day}
             index={i}
             preview={active === i}
-            onPlay={stop}
+            onOpen={setOpen}
           />
         ))}
         <ChannelCard />
         {/* trailing spacer so the last card can snap fully into view, not flush to the edge */}
         <span aria-hidden className="shrink-0" style={{ width: '1px' }} />
       </div>
+      {open != null && <ClipPlayer index={open} setIndex={setOpen} onClose={close} />}
     </section>
   );
 }
