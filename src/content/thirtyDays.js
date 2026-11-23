@@ -89,7 +89,7 @@ export const DAYS = [
     blocked: 0,
     cooldowns: 0,
     loosened: false,
-    video: 'h2pBVkx9uTU',
+    video: 'bsErNry48d8',
     short: true,
     note: [
       'Set the limits and started trading. A clean green day — rules held, nothing had to step in.',
@@ -105,7 +105,7 @@ export const DAYS = [
     blocked: 0,
     cooldowns: 0,
     loosened: false,
-    video: 'DnVy8oXqqOg',
+    video: 'OGmoEeUr3Hc',
     short: true,
     note: [
       'Second green day in a row. Still under every limit — the rules haven’t had to do anything yet.',
