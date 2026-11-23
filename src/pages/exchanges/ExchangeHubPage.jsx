@@ -5,6 +5,8 @@ import { SITE, ogImageFor } from '../../lib/publicRoutes';
 import { ENFORCED_RULES, VENUE_ORDER, venuePageFor, VENUE_PAGES } from '../../lib/venueSeo';
 import { guidesFor } from '../../lib/venueGuides';
 import NotFoundPage from '../NotFoundPage';
+import WatchDemoCard from '../../components/common/WatchDemoCard';
+import { ownVideoFor } from '../../lib/demoVideo';
 
 /**
  * /exchanges/<venue> — the venue's kill-switch page.
@@ -157,6 +159,12 @@ export default function ExchangeHubPage() {
               className="mb-14 w-full rounded-2xl border"
               style={{ borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}
             />
+          )}
+
+          {/* The venue's own setup video, when it has one. A venue without one
+              shows none here: the Delta walkthrough would be the wrong screens. */}
+          {ownVideoFor(venue.slug) && (
+            <WatchDemoCard video={ownVideoFor(venue.slug)} source={`venue_hub_video_${venue.slug}`} className="-mt-4 mb-14" />
           )}
 
           <div className="space-y-12">

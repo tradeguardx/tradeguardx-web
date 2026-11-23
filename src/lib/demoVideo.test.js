@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_VIDEO, DEMO_VIDEO_ID, demoVideoEmbedUrl, demoVideoPoster, videoFor } from './demoVideo';
+import { DEMO_VIDEO, DEMO_VIDEO_ID, demoVideoEmbedUrl, demoVideoPoster, ownVideoFor, videoFor } from './demoVideo';
 
 /**
  * THE WALKTHROUGH HAS TO MATCH THE PAGE IT IS ON.
@@ -30,6 +30,9 @@ describe('which video a guide plays', () => {
 
   it('is case-insensitive, because slugs arrive from a URL', () => {
     expect(videoFor('Shark').id).toBe('UO748FFiThA');
+    expect(videoFor('exness').id).toBe('mCfyRweWofY');
+    expect(ownVideoFor('exness').id).toBe('mCfyRweWofY');
+    expect(ownVideoFor('delta')).toBeNull();
   });
 
   it('says what language it is in before the click, where that differs', () => {

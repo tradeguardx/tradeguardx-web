@@ -37,6 +37,13 @@ const VENUE_VIDEOS = {
     title: 'Watch: the kill switch on Shark Exchange',
     subtitle: 'Creating the API key, whitelisting the IP, and arming the kill switch — start to finish.',
   },
+  // "How to Connect Exness to a Kill Switch (Full Setup in 3 Minutes)",
+  // published 23 Nov 2026 (owner, 24 Nov).
+  exness: {
+    id: 'mCfyRweWofY',
+    title: 'Watch: connect Exness to the kill switch',
+    subtitle: 'Choosing Exness, creating the API key with the exact settings, pasting it in and arming your rules, in about three minutes.',
+  },
 };
 
 /** The default walkthrough, as a video descriptor. */
@@ -56,6 +63,11 @@ export const HOW_TO_USE_VIDEO = {
   title: 'How to use TradeGuardX',
   subtitle: 'Full setup on Delta, Shark and Exness — connect the key, set your rules, and see the kill switch work.',
 };
+
+/** The venue's own walkthrough, or null when it has none (no Delta stand-in). */
+export function ownVideoFor(venueSlug) {
+  return VENUE_VIDEOS[String(venueSlug ?? '').toLowerCase()] ?? null;
+}
 
 /** The video a venue's guides should play, or the general walkthrough. */
 export function videoFor(venueSlug) {
