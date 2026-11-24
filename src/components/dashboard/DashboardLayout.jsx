@@ -50,6 +50,23 @@ function Shell() {
   const { prefs } = usePrefs();
   const { pathname } = useLocation();
   const mainRef = useRef(null);
+  const rootRef = useRef(null);
+  const headerRef = useRef(null);
+
+  /* The sidebar's brand block takes the header's measured height, so their
+     bottom borders meet in one line (owner, 24 Nov 2026). Measured, not a
+     shared constant: the header grows with the account switcher's two lines,
+     a long name, or a wider font. */
+  useEffect(() => {
+    const head = headerRef.current;
+    const root = rootRef.current;
+    if (!head || !root || typeof ResizeObserver === 'undefined') return undefined;
+    const sync = () => root.style.setProperty('--tgx-head-h', `${head.offsetHeight}px`);
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(head);
+    return () => ro.disconnect();
+  }, []);
   // 900 matches the tab bar's breakpoint, not the 640 default: the chat
   // button is fixed bottom-right at the same z-index, so wherever the tab bar
   // exists the two occupy the same corner.
@@ -144,6 +161,7 @@ function Shell() {
 
   return (
     <div
+      ref={rootRef}
       data-tgx="1"
       data-dash-theme={theme}
       data-theme={theme}
@@ -169,7 +187,7 @@ function Shell() {
         */}
         <MirrorBar />
 
-        <header style={sx('position:sticky;top:0;z-index:20;background:var(--bg-header);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--line)')}>
+        <header ref={headerRef} style={sx('position:sticky;top:0;z-index:20;background:var(--bg-header);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--line)')}>
           <div data-tgx-headbar="1" style={sx('display:flex;align-items:center;gap:14px;padding:11px 24px')}>
             <button type="button" data-tgx-burger="1" onClick={() => setDrawer(true)} aria-label="Menu" style={sx('flex:none;place-items:center;width:36px;height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink-2)')}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
