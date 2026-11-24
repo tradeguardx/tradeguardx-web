@@ -10,6 +10,7 @@ import SupportChat from '../support/SupportChat';
 import { UpgradeWall } from './TrialGate';
 import WelcomeCelebration from './WelcomeCelebration';
 import PhonePrompt from './PhonePrompt';
+import ReviewPrompt from './ReviewPrompt';
 import BreachToast from './shell/BreachToast';
 import { ShareProvider } from '../../context/ShareContext';
 import VerifyEmailBanner from './VerifyEmailBanner';
@@ -241,6 +242,7 @@ function Shell() {
       <WelcomeCelebration />
       <LifecycleToast />
       <PhonePrompt />
+      <ReviewPrompt />
       {/* No bubble on a phone: it sat on top of the bottom tab bar, same corner,
           same z-index, so the "More" tab and the bubble fought for the same
           thumb. The panel stays mounted, opened from the Support page and from
