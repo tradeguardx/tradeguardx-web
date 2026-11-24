@@ -89,7 +89,6 @@ const DASH_ONLY_VIDEOS = {
   // Hindi Short. Replace once the full Delta video is recorded.
   delta: {
     id: 'OGmoEeUr3Hc',
-    lang: 'Hindi',
     short: true,
     title: 'Watch: connect Delta Exchange to the kill switch',
     subtitle: 'Creating the Delta API key with Trading on, whitelisting our IP and connecting, in under two minutes.',

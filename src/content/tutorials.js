@@ -156,7 +156,7 @@ export const LESSONS = [
     // Stop-gap, DASHBOARD ONLY (owner, 25 Nov 2026): a 101 s Hindi Short until
     // the proper Delta video is recorded. Deliberately not `video`, so it stays
     // out of /tutorials, the sitemap, VideoObject and the public guide pages.
-    dashVideo: { id: 'OGmoEeUr3Hc', seconds: 101, lang: 'Hindi', short: true },
+    dashVideo: { id: 'OGmoEeUr3Hc', seconds: 101, short: true },
     guide: '/exchanges/delta/api-key',
     steps: [
       STEP_OPEN('Delta Exchange'),
