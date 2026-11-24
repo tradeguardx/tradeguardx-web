@@ -14,7 +14,7 @@ import { DEMO_VIDEO, DEMO_VIDEO_ID, demoVideoEmbedUrl, demoVideoPoster, ownVideo
 describe('which video a guide plays', () => {
   it('gives Shark its own', () => {
     const v = videoFor('shark');
-    expect(v.id).toBe('UO748FFiThA');
+    expect(v.id).toBe('VtfAydIu_FQ');
     expect(v.id).not.toBe(DEMO_VIDEO_ID);
   });
 
@@ -29,16 +29,18 @@ describe('which video a guide plays', () => {
   });
 
   it('is case-insensitive, because slugs arrive from a URL', () => {
-    expect(videoFor('Shark').id).toBe('UO748FFiThA');
+    expect(videoFor('Shark').id).toBe('VtfAydIu_FQ');
     expect(videoFor('exness').id).toBe('mCfyRweWofY');
     expect(ownVideoFor('exness').id).toBe('mCfyRweWofY');
     expect(ownVideoFor('delta')).toBeNull();
+    expect(ownVideoFor('shark-exchange').id).toBe('VtfAydIu_FQ');
+    expect(ownVideoFor('sharkfin')).toBeNull();
   });
 
   it('says what language it is in before the click, where that differs', () => {
     // Someone who does not speak it should find out from the card, not from
     // ten seconds of a lightbox they have to close again.
-    expect(videoFor('shark').lang).toBe('Hindi');
+    expect(videoFor('shark').lang).toBeUndefined(); // the 2-minute Shark video is English
     expect(DEMO_VIDEO.lang).toBeUndefined();
   });
 });

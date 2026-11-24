@@ -51,6 +51,8 @@ import CryptoKillSwitchPage from './pages/CryptoKillSwitchPage';
 import ExchangeIndexPage from './pages/exchanges/ExchangeIndexPage';
 import ExchangeHubPage from './pages/exchanges/ExchangeHubPage';
 import ExchangeGuidePage from './pages/exchanges/ExchangeGuidePage';
+import TutorialsPage from './pages/TutorialsPage';
+import DashboardTutorialsPage from './pages/DashboardTutorialsPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import TaxPage from './pages/TaxPage';
@@ -129,6 +131,8 @@ function App() {
                   <Route path="crypto-tax-india" element={<CryptoTaxIndiaPage />} />
                   {/* The free revenge report, for someone not signed in. */}
                   <Route path="revenge-report" element={<RevengeLandingPage />} />
+                  {/* Every video, public (24 Nov 2026). Same library in the dashboard. */}
+                  <Route path="tutorials" element={<TutorialsPage />} />
                   <Route path="roadmap" element={<RoadmapPage />} />
                   <Route path="reviews" element={<ReviewsPage />} />
                   <Route path="review" element={<ReviewLinkPage />} />
@@ -175,6 +179,7 @@ function App() {
                   <Route path="connect" element={<ConnectKeyPage />} />
                   <Route path="alerts" element={<SettingsFrame><AlertsPage /></SettingsFrame>} />
                   <Route path="support" element={<DashboardSupportPage />} />
+                  <Route path="tutorials" element={<DashboardTutorialsPage />} />
                   <Route path="review" element={<MyReviewPage />} />
                   <Route path="refer" element={<ReferPage />} />
                   <Route path="preferences" element={<PreferencesPage />} />

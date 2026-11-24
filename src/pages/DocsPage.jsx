@@ -5,6 +5,7 @@ import { useSEO } from '../hooks/useSEO';
 import { HELP_ARTICLES } from '../lib/exchangeDocs';
 import { VENUE_PAGE_LIST } from '../lib/venueSeo';
 import ArticleBody from '../components/docs/ArticleBody';
+import { videoCardFor, videoObjectFor } from '../content/tutorials';
 import NotFoundPage from './NotFoundPage';
 
 const SITE = 'https://tradeguardx.com';
@@ -84,6 +85,10 @@ function buildDocsSchema(article, pageUrl, description) {
       isPartOf: { '@type': 'WebSite', name: 'TradeGuardX', url: SITE },
     });
   }
+
+  // The article's video, marked up here: this page is its home.
+  const video = article.video && videoObjectFor(article.video);
+  if (video) graph.push(video);
 
   return { '@context': 'https://schema.org', '@graph': graph };
 }
@@ -200,7 +205,7 @@ function HelpArticle({ article, activeSlug }) {
           </aside>
 
           <motion.main key={activeSlug} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <ArticleBody article={article} />
+            <ArticleBody article={article} showDemo={Boolean(article.video && videoCardFor(article.video))} video={article.video ? videoCardFor(article.video) : undefined} />
           </motion.main>
         </div>
       </div>

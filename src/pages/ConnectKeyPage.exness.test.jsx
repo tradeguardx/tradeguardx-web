@@ -41,6 +41,20 @@ describe('connect an Exness key', () => {
     account = { id: 'acc-1', name: 'Exness main', propFirmSlug: 'exness' };
   });
 
+  it("step 1 offers the setup video for this account's exchange", () => {
+    renderFlow();
+    // Standalone page: the strip under the heading, and the step-1 button.
+    expect(screen.getByRole('button', { name: /Watch how to connect Exness/ })).toBeInTheDocument();
+    expect(screen.getByText('How to connect Exness')).toBeInTheDocument();
+  });
+
+  it('an exchange with no video yet shows neither', () => {
+    account = { id: 'acc-2', name: 'Delta main', propFirmSlug: 'delta_india' };
+    renderFlow();
+    expect(screen.queryByRole('button', { name: /Watch how to connect/ })).toBeNull();
+    expect(screen.queryByText(/^How to connect/)).toBeNull();
+  });
+
   it('says MT4/MT5 is not supported before anyone makes a key', () => {
     renderFlow();
     expect(screen.getByText(/MT4 and MT5 accounts are not supported/)).toBeInTheDocument();

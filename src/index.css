@@ -1898,7 +1898,8 @@
 @media (max-width: 560px) {
   .founder-help > a,
   .setup-video-help.has-hide > .svh-watch { margin-right: 0 !important; }
-  .setup-video-help > .svh-watch {
+  .setup-video-help > .svh-watch,
+  .founder-help > a {
     flex: 1 1 100% !important;
     justify-content: center;
     min-height: 48px !important;

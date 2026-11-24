@@ -88,6 +88,7 @@ export default function Sidebar({ onNavigate }) {
   const setup = [
     { id: 'accounts', to: '/dashboard/account/trading', label: 'Accounts', badge: accounts.length ? String(accounts.length) : '' },
     { id: 'connect', to: '/dashboard/connect', label: 'Connect key', badge: g.loaded && g.account && g.guard !== 'armed' ? '!' : '' },
+    { id: 'tutorials', to: '/dashboard/tutorials', label: 'Tutorials' },
     // Its own item: buying should never be hidden under Settings.
     { id: 'plan', to: '/dashboard/account/billing', label: 'Plan & billing' },
     // Alerts and Security are one page with tabs. Each keeps its own URL, so

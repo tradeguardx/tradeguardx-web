@@ -42,6 +42,7 @@ export const ICON = {
   // receipt: a docket with a torn bottom edge and two amount lines
   tax: ['M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21z', 'M9 8h6M9 12h6M9 16h3'],
   accounts: ['M3 9l9-5 9 5v11H3z', 'M9 20v-6h6v6'],
+  tutorials: ['M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z', 'M10 9.2v5.6l4.8-2.8z'],
   connect: ['M9.5 14.5l5-5', 'M7 12l-2 2a3.5 3.5 0 005 5l2-2M17 12l2-2a3.5 3.5 0 00-5-5l-2 2'],
   bell: ['M12 4a5.2 5.2 0 00-5.2 5.2c0 5-2 6.3-2 6.3h14.4s-2-1.3-2-6.3A5.2 5.2 0 0012 4z', 'M10.2 18.4a2 2 0 003.6 0'],
   plan: ['M3 7h18v12H3z', 'M3 11h18M8 15h4'],

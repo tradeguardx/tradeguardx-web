@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { VideoLightbox } from '../common/WatchDemoCard';
-import { HOW_TO_USE_VIDEO } from '../../lib/demoVideo';
+import { HOW_TO_USE_VIDEO, ownVideoFor } from '../../lib/demoVideo';
 import { trackCtaClick } from '../../lib/analytics';
 import { sx } from './shell/sx';
 
@@ -21,20 +22,37 @@ function rememberHidden(key) {
  * Also above Overview (same day). There it is seen every day by people long
  * past setup, so `hideKey` gives it a Hide button that is remembered.
  */
-export default function SetupVideoHelp({ top = 26, bottom = 0, hideKey = null }) {
+/*
+ * `venue` (24 Nov 2026): once an exchange is chosen in setup, the strip plays
+ * that exchange's own walkthrough when it has one (Exness, Shark): the exact
+ * key screens the reader is about to see. Otherwise the general video.
+ */
+/*
+ * `venueOnly` (24 Nov 2026): on a page about one exchange (an account card
+ * with no key yet, the Connect key page) only that exchange's own video
+ * belongs; the general one would be an answer to a different question, so the
+ * strip renders nothing instead.
+ */
+export default function SetupVideoHelp({ top = 26, bottom = 0, hideKey = null, venue = null, venueOnly = false }) {
+  const own = venue?.slug ? ownVideoFor(venue.slug) : null;
+  const video = own ?? HOW_TO_USE_VIDEO;
+  const heading = own ? `How to connect ${venue.name}` : 'How to use TradeGuardX';
+  const blurb = own
+    ? `${own.subtitle}${own.lang ? ` (${own.lang})` : ''}`
+    : 'A 3-minute video: setting your rules, locking them, and a live trade that closes itself at the daily limit.';
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(() => wasHidden(hideKey));
   const close = useCallback(() => setOpen(false), []);
   const play = () => {
     try {
-      trackCtaClick('setup_how_to_video');
+      trackCtaClick(own ? `setup_venue_video_${venue.slug}` : 'setup_how_to_video');
     } catch {
       /* analytics is best-effort */
     }
     setOpen(true);
   };
 
-  if (hidden) return null;
+  if (hidden || (venueOnly && !own)) return null;
   const hide = () => {
     rememberHidden(hideKey);
     setHidden(true);
@@ -59,9 +77,10 @@ export default function SetupVideoHelp({ top = 26, bottom = 0, hideKey = null })
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>
         </span>
         <span style={sx('flex:1;min-width:min(230px,100%)', hideKey ? { paddingRight: 28 } : null)}>
-          <span style={sx('display:block;font-size:13.5px;font-weight:700;color:var(--ink)')}>How to use TradeGuardX</span>
+          <span style={sx('display:block;font-size:13.5px;font-weight:700;color:var(--ink)')}>{heading}</span>
           <span style={sx('display:block;margin-top:2px;font-size:12.5px;line-height:1.45;color:var(--ink-3)')}>
-            A 7-minute walkthrough of the whole setup — connect your exchange, set your rules, and see the kill switch work.
+            {blurb}{' '}
+            <Link to={own ? `/dashboard/tutorials#${venue.slug.split(/[-_]/)[0]}` : '/dashboard/tutorials'} style={sx('color:var(--mint);font-weight:600;text-decoration:none;white-space:nowrap')}>All tutorials →</Link>
           </span>
         </span>
         <button
@@ -74,7 +93,7 @@ export default function SetupVideoHelp({ top = 26, bottom = 0, hideKey = null })
           Watch video
         </button>
       </aside>
-      {open && <VideoLightbox video={HOW_TO_USE_VIDEO} onClose={close} />}
+      {open && <VideoLightbox video={video} onClose={close} />}
     </>
   );
 }

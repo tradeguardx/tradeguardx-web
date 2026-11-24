@@ -396,6 +396,16 @@ export default function CryptoKillSwitchPage() {
           <h2 className="mb-4 font-display text-lg font-bold text-white">Read next</h2>
           <ul className="space-y-2.5 text-[15px]">
             <li>
+              <Link to="/help/kill-switch" className="text-accent hover:underline">
+                How to set up a crypto kill switch, with a video of it firing live
+              </Link>
+            </li>
+            <li>
+              <Link to="/tutorials" className="text-accent hover:underline">
+                Crypto kill switch tutorials: free setup videos
+              </Link>
+            </li>
+            <li>
               <Link to="/exchanges" className="text-accent hover:underline">
                 Every exchange we support, and what each one can enforce
               </Link>

@@ -1,5 +1,12 @@
 import { motion } from 'framer-motion';
 import { useSEO } from '../hooks/useSEO';
+import WatchDemoCard from '../components/common/WatchDemoCard';
+import { videoCardFor, videoObjectFor } from '../content/tutorials';
+
+/* The API-key safety video lives here (24 Nov 2026): "can a kill switch
+   withdraw my funds" is the question this page answers. */
+const SAFETY_VIDEO = videoCardFor('is-my-money-safe');
+const JSON_LD = { '@context': 'https://schema.org', '@graph': [videoObjectFor('is-my-money-safe')].filter(Boolean) };
 
 const SECTIONS = [
   {
@@ -78,6 +85,7 @@ export default function SecurityPage() {
     title: 'Security & Data Handling',
     description: 'How TradeGuardX handles your data — what we collect, where it lives, who can see it, and how to delete it.',
     url: 'https://tradeguardx.com/security',
+    jsonLd: JSON_LD,
   });
 
   return (
@@ -98,6 +106,7 @@ export default function SecurityPage() {
           <p className="mt-4 text-base leading-relaxed text-slate-400">
             Plain-language answers to the question every trader asks before connecting an API key: <em>what do you actually do with my data?</em>
           </p>
+          {SAFETY_VIDEO && <WatchDemoCard video={SAFETY_VIDEO} source="security_video" className="mt-6 text-left" />}
         </header>
 
         <div className="space-y-10">

@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Link } from 'react-router-dom';
 import { trackCtaClick } from '../../lib/analytics';
 import { DAYS } from '../../content/thirtyDays';
 
@@ -354,6 +355,18 @@ export default function TradingInAction() {
         <p className="mt-4 max-w-[54ch] text-[15px] leading-relaxed text-slate-400">
           Real accounts, real trades: a kill switch firing on Exness, a two-minute Delta setup, and green and red days — including the ones the account got locked. Scroll to watch.
         </p>
+        {/* The homepage's link into the tutorials (24 Nov 2026): the strongest
+            page on the site passing weight to the setup course. */}
+        <Link
+          to="/tutorials"
+          onClick={() => { try { trackCtaClick('landing_tutorials'); } catch { /* best-effort */ } }}
+          className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-semibold hover:underline"
+          style={{ color: 'var(--accent, #00d4aa)' }}
+        >
+          New here? Watch the free kill switch tutorials
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </Link>
+        <br />
         <a
           href={CHANNEL_URL}
           target="_blank"
