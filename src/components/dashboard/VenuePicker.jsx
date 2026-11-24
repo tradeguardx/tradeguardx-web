@@ -60,10 +60,13 @@ export default function VenuePicker({ venues, loading, onPick, columns = 'repeat
             )}
           >
             <VenueMark slug={pf.brokerId} name={pf.name} size={30} radius={9} />
-            <span style={sx('flex:1;min-width:0;align-self:center')}>
-              <span style={sx('display:block;font-size:13px;font-weight:600')}>{pf.name}</span>
+            {/* Name on the logo's centre line in every card; a note hangs
+                below it. All five names then sit on one line, however tall a
+                card grows from a wrapping note. */}
+            <span style={sx('flex:1;min-width:0')}>
+              <span style={sx('display:block;font-size:13px;font-weight:600;line-height:30px')}>{pf.name}</span>
               {note && (
-                <span style={sx('display:block;margin-top:2px;font-size:11.5px;color:var(--ink-3)')}>{note}</span>
+                <span style={sx('display:block;margin-top:-4px;font-size:11.5px;line-height:1.45;color:var(--ink-3)')}>{note}</span>
               )}
             </span>
           </button>
