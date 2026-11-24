@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { VideoLightbox } from '../common/WatchDemoCard';
-import { HOW_TO_USE_VIDEO, ownVideoFor } from '../../lib/demoVideo';
+import { HOW_TO_USE_VIDEO, dashVideoFor } from '../../lib/demoVideo';
 import { trackCtaClick } from '../../lib/analytics';
 import { sx } from './shell/sx';
 
@@ -34,7 +34,7 @@ function rememberHidden(key) {
  * strip renders nothing instead.
  */
 export default function SetupVideoHelp({ top = 26, bottom = 0, hideKey = null, venue = null, venueOnly = false }) {
-  const own = venue?.slug ? ownVideoFor(venue.slug) : null;
+  const own = venue?.slug ? dashVideoFor(venue.slug) : null;
   const video = own ?? HOW_TO_USE_VIDEO;
   const heading = own ? `How to connect ${venue.name}` : 'How to use TradeGuardX';
   const blurb = own

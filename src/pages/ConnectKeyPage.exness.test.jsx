@@ -48,8 +48,15 @@ describe('connect an Exness key', () => {
     expect(screen.getByText('How to connect Exness')).toBeInTheDocument();
   });
 
-  it('an exchange with no video yet shows neither', () => {
+  it('Delta gets its dashboard-only stop-gap Short in both places', () => {
     account = { id: 'acc-2', name: 'Delta main', propFirmSlug: 'delta_india' };
+    renderFlow();
+    expect(screen.getByRole('button', { name: /Watch how to connect Delta/ })).toBeInTheDocument();
+    expect(screen.getByText(/^How to connect Delta/)).toBeInTheDocument();
+  });
+
+  it('an exchange with no video at all shows neither', () => {
+    account = { id: 'acc-3', name: 'Bybit main', propFirmSlug: 'bybit' };
     renderFlow();
     expect(screen.queryByRole('button', { name: /Watch how to connect/ })).toBeNull();
     expect(screen.queryByText(/^How to connect/)).toBeNull();

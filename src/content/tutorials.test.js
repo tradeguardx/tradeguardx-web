@@ -33,7 +33,7 @@ describe('tutorials', () => {
 
   it('finds the main connect video for setup step one', () => {
     expect(connectTutorialFor('exness').id).toBe('mCfyRweWofY');
-    expect(connectTutorialFor('delta-india')).toBeNull(); // new Delta video not out yet
+    expect(connectTutorialFor('delta-india').id).toBe('OGmoEeUr3Hc'); // dashboard-only stop-gap Short
     expect(connectTutorialFor('shark-exchange').id).toBe('VtfAydIu_FQ');
     expect(connectTutorialFor('bybit')).toBeNull();
   });
@@ -42,5 +42,15 @@ describe('tutorials', () => {
     expect(formatLength(205)).toBe('3:25');
     expect(isoDuration(205)).toBe('PT3M25S');
     expect(isoDuration(41)).toBe('PT41S');
+  });
+});
+
+describe('dashboard-only stop-gap videos', () => {
+  it('Delta has a dashboard video but stays out of the course, sitemap and schema', async () => {
+    const t = await import('./tutorials');
+    expect(t.connectTutorialFor('delta_india')?.id).toBe('OGmoEeUr3Hc');
+    expect(t.VIDEO_LESSONS.some((l) => l.key === 'delta')).toBe(false);
+    expect(t.lessonFor('delta').video).toBeUndefined();
+    expect(t.videoObjectFor('delta')).toBeNull();
   });
 });

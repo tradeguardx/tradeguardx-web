@@ -80,6 +80,31 @@ export function ownVideoFor(venueSlug) {
   return k ? VENUE_VIDEOS[k] : null;
 }
 
+/*
+ * Dashboard-only stop-gaps (owner, 25 Nov 2026): shown while connecting an
+ * exchange that has no proper video yet, never on public pages or /tutorials.
+ */
+const DASH_ONLY_VIDEOS = {
+  // "Delta Exchange ko Kill Switch se kaise connect karein? 2-min setup", a
+  // Hindi Short. Replace once the full Delta video is recorded.
+  delta: {
+    id: 'OGmoEeUr3Hc',
+    lang: 'Hindi',
+    short: true,
+    title: 'Watch: connect Delta Exchange to the kill switch',
+    subtitle: 'Creating the Delta API key with Trading on, whitelisting our IP and connecting, in under two minutes.',
+  },
+};
+
+/** For the dashboard: the venue's own video, else its dashboard-only stop-gap. */
+export function dashVideoFor(venueSlug) {
+  const own = ownVideoFor(venueSlug);
+  if (own) return own;
+  const s = String(venueSlug ?? '').toLowerCase();
+  const k = Object.keys(DASH_ONLY_VIDEOS).find((x) => s === x || s.startsWith(`${x}-`) || s.startsWith(`${x}_`));
+  return k ? DASH_ONLY_VIDEOS[k] : null;
+}
+
 /** The video a venue's guides should play, or the general walkthrough. */
 export function videoFor(venueSlug) {
   return ownVideoFor(venueSlug) ?? DEMO_VIDEO;

@@ -153,6 +153,10 @@ export const LESSONS = [
     title: 'How to connect Delta Exchange',
     seoTitle: 'How to create an API key on Delta Exchange India and connect a kill switch',
     desc: 'The new video is on its way. Until then, the steps below and the written guide cover everything.',
+    // Stop-gap, DASHBOARD ONLY (owner, 25 Nov 2026): a 101 s Hindi Short until
+    // the proper Delta video is recorded. Deliberately not `video`, so it stays
+    // out of /tutorials, the sitemap, VideoObject and the public guide pages.
+    dashVideo: { id: 'OGmoEeUr3Hc', seconds: 101, lang: 'Hindi', short: true },
     guide: '/exchanges/delta/api-key',
     steps: [
       STEP_OPEN('Delta Exchange'),
@@ -216,11 +220,17 @@ export function lessonFor(key) {
     ?? null;
 }
 
-/** An exchange's main connect video, as { id, title, seconds, lang, start, short }, or null. */
+/** A lesson's video for the dashboard: its course video, else a dashboard-only
+ *  stop-gap (`dashVideo`, never shown on public pages). */
+export const dashVideoOf = (l) => l?.video ?? l?.dashVideo ?? null;
+
+/** An exchange's main connect video, as { id, title, seconds, lang, start, short }, or null.
+ *  Dashboard only, so it includes `dashVideo` stop-gaps. */
 export function connectTutorialFor(slug) {
   const l = lessonFor(slug);
-  if (!l || l.section !== 'connect' || l.quick || !l.video) return null;
-  return { ...l.video, title: l.title };
+  const v = dashVideoOf(l);
+  if (!l || l.section !== 'connect' || l.quick || !v) return null;
+  return { ...v, title: l.title };
 }
 
 /** Cover image: the video's own designed thumbnail (for a Short its 9:16

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { VideoLightbox } from '../common/WatchDemoCard';
-import { LESSONS, formatLength, videoCardFor } from '../../content/tutorials';
+import { LESSONS, dashVideoOf, formatLength } from '../../content/tutorials';
 import { trackCtaClick } from '../../lib/analytics';
 import { sx } from '../dashboard/shell/sx';
 
@@ -14,7 +14,8 @@ import { sx } from '../dashboard/shell/sx';
  */
 export default function VideoLink({ lesson, label, source, style, asButton = false }) {
   const l = LESSONS.find((x) => x.key === lesson);
-  const video = videoCardFor(lesson);
+  const v = dashVideoOf(l);
+  const video = v ? { id: v.id, start: v.start, lang: v.lang, short: v.short, title: l.title } : null;
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   if (!l || !video) return null;
@@ -40,7 +41,7 @@ export default function VideoLink({ lesson, label, source, style, asButton = fal
           <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z" /></svg>
         </span>
         <span style={sx(asButton ? '' : 'text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line-strong)')}>{label ?? l.title}</span>
-        <span style={sx('color:var(--ink-faint);font-weight:500')}>{formatLength(l.video.seconds)}</span>
+        <span style={sx('color:var(--ink-faint);font-weight:500')}>{formatLength(v.seconds)}{v.lang ? ` · ${v.lang}` : ''}</span>
       </button>
       {open && <VideoLightbox video={video} title={l.title} onClose={close} />}
     </>
