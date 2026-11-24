@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
 /**
- * Two-column shell for /login and /signup: the product on the left (a
- * recording of the live guard near its loss limit), the form
+ * Two-column shell for /login and /signup: the product on the left (a short
+ * silent loop of the live guard, 24 Nov 2026), the form
  * on the right. No brand mark here — the navbar above already carries it.
  *
  * The left panel is hidden below `lg` so a phone gets straight to the form;
@@ -21,8 +22,50 @@ const EDGE_FADE = {
   WebkitMaskComposite: 'source-in',
 };
 
-// Absolute so it also loads on a local dev server, which has no /media.
-const LOCKOUT_GIF = 'https://tradeguardx.com/media/2026/11/tradeguardx-hero-7b3cd163.gif';
+// Under /auth, not /media: /media/* is rewritten to the content bucket on
+// Vercel. WebM first (smaller), MP4 for Safari. 960x1080.
+const LOOP = { webm: '/auth/login-loop.webm', mp4: '/auth/login-loop.mp4', poster: '/auth/login-loop-poster.png' };
+
+/** Silent loop of the guard; a still frame for anyone who asked for less motion. */
+function GuardLoop() {
+  const ref = useRef(null);
+  const [still] = useState(() => {
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
+  });
+  // Some browsers ignore the autoplay attribute after a client-side route
+  // change; a muted play() is always allowed.
+  useEffect(() => {
+    if (still) return;
+    // play() returns a promise in browsers, nothing in some test DOMs.
+    const p = ref.current?.play?.();
+    p?.catch?.(() => { /* the poster stays, which is fine */ });
+  }, [still]);
+
+  const cls = 'relative mx-auto h-auto max-h-[calc(100vh-140px)] w-auto';
+  const alt = "TradeGuardX live guard on a Delta Exchange account: kill switch armed, today's P&L against the daily loss limit, trades and rules armed";
+  if (still) {
+    return <img src={LOOP.poster} alt={alt} width={960} height={1080} className={cls} style={EDGE_FADE} />;
+  }
+  return (
+    <video
+      ref={ref}
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="auto"
+      poster={LOOP.poster}
+      width={960}
+      height={1080}
+      aria-label={alt}
+      className={cls}
+      style={EDGE_FADE}
+    >
+      <source src={LOOP.webm} type="video/webm" />
+      <source src={LOOP.mp4} type="video/mp4" />
+    </video>
+  );
+}
 
 export default function AuthSplit({ children }) {
   return (
@@ -54,18 +97,9 @@ export default function AuthSplit({ children }) {
           {/* Soft accent light behind the card, so it sits in the page's
               light rather than on a flat panel. */}
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/[0.07] blur-[90px]" />
-          {/* The product doing its job: the guard nearing the loss limit on a
-              phone. Sized to the viewport height so it never pushes the page
-              into a scroll beside the form. */}
-          <img
-            src={LOCKOUT_GIF}
-            alt="TradeGuardX live guard on a Delta Exchange account: today's loss budget, trades, target and armed rules, with the guard closing everything at the loss limit"
-            width={600}
-            height={750}
-            decoding="async"
-            className="relative mx-auto h-auto max-h-[calc(100vh-140px)] w-auto"
-            style={EDGE_FADE}
-          />
+          {/* The product doing its job, sized to the viewport height so it
+              never pushes the page into a scroll beside the form. */}
+          <GuardLoop />
         </motion.div>
       </aside>
 
