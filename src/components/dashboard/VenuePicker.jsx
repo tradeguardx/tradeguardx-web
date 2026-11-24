@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import VenueMark from './VenueMark';
 import { venueFor } from '../../lib/venues';
-import { connectTutorialFor, formatLength } from '../../content/tutorials';
+import { connectTutorialFor, formatLength, lessonFor } from '../../content/tutorials';
 import { trackCtaClick } from '../../lib/analytics';
 import TutorialPlayer from '../tutorials/TutorialPlayer';
 import { sx } from './shell/sx';
@@ -36,6 +36,12 @@ export default function VenuePicker({ venues, loading, onPick, columns = 'repeat
            Beside the card's button, not inside it: a button in a button is
            invalid and would also pick the exchange. */
         const video = planned ? null : connectTutorialFor(pf.brokerId);
+        /* No video yet: the same footer row opens the written steps instead,
+           so every card has its help in the same place (25 Nov 2026). */
+        const lesson = planned || video ? null : lessonFor(pf.brokerId);
+        /* Only a note that says something about THIS exchange. "Runs on our
+           servers" was true of all of them, so it said nothing. */
+        const note = planned ? 'Coming soon' : venueFor(pf.brokerId)?.pickerNote ?? null;
         return (
           <div
             key={pf.brokerId}
@@ -49,16 +55,16 @@ export default function VenuePicker({ venues, loading, onPick, columns = 'repeat
             disabled={planned}
             onClick={() => onPick(pf.brokerId)}
             style={sx(
-              'flex:1;display:flex;align-items:center;gap:10px;padding:12px 13px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer',
+              'flex:1;display:flex;align-items:flex-start;gap:10px;padding:12px 13px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer',
               planned ? { cursor: 'not-allowed' } : {},
             )}
           >
             <VenueMark slug={pf.brokerId} name={pf.name} size={30} radius={9} />
-            <span style={sx('flex:1;min-width:0')}>
+            <span style={sx('flex:1;min-width:0;align-self:center')}>
               <span style={sx('display:block;font-size:13px;font-weight:600')}>{pf.name}</span>
-              <span style={sx('display:block;margin-top:2px;font-size:11.5px;color:var(--ink-3)')}>
-                {planned ? 'Coming soon' : venueFor(pf.brokerId)?.pickerNote ?? 'Runs on our servers'}
-              </span>
+              {note && (
+                <span style={sx('display:block;margin-top:2px;font-size:11.5px;color:var(--ink-3)')}>{note}</span>
+              )}
             </span>
           </button>
           {video && (
@@ -75,6 +81,20 @@ export default function VenuePicker({ venues, loading, onPick, columns = 'repeat
               Watch setup video
               <span style={sx('margin-left:auto;color:var(--ink-faint);font-weight:500')}>{formatLength(video.seconds)}{video.lang ? ` · ${video.lang}` : ''}</span>
             </button>
+          )}
+          {lesson && (
+            <Link
+              to={`/dashboard/tutorials#${lesson.key}`}
+              onClick={() => { try { trackCtaClick(`setup_picker_steps_${pf.brokerId}`); } catch { /* best-effort */ } }}
+              aria-label={`Read how to set up ${pf.name}`}
+              style={sx('display:flex;align-items:center;gap:7px;width:100%;padding:8px 13px;border-top:1px solid var(--line);font-size:11.5px;font-weight:600;color:var(--ink-2);text-decoration:none')}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color: 'var(--ink-3)' }}>
+                <path d="M4 5h11a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3z" /><path d="M8 9h6M8 13h6" />
+              </svg>
+              Setup steps
+              <span style={sx('margin-left:auto;color:var(--ink-faint);font-weight:500')}>{lesson.steps?.length ?? ''} steps</span>
+            </Link>
           )}
           </div>
         );
