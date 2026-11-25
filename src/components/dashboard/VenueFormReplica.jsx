@@ -95,12 +95,12 @@ function Field({ label, hint, note, children, tight }) {
     <div style={sx(tight ? 'margin-bottom:0' : 'margin-bottom:20px')}>
       <span style={sx('display:flex;align-items:center;font-size:12.5px;font-weight:600;color:var(--ink-2)')}>{label}</span>
       {hint && (
-        <span style={sx('display:block;margin-top:3px;font-size:11.5px;line-height:1.5;color:var(--ink-faint);max-width:62ch')}>{hint}</span>
+        <span style={sx('display:block;margin-top:3px;font-size:11.5px;line-height:1.5;color:var(--ink-faint);max-width:90ch')}>{hint}</span>
       )}
       <span style={sx('display:block;height:7px')} />
       {children}
       {note && (
-        <span style={sx('display:block;margin-top:7px;font-size:11.5px;line-height:1.55;color:var(--ink-faint);max-width:62ch')}>
+        <span style={sx('display:block;margin-top:7px;font-size:11.5px;line-height:1.55;color:var(--ink-faint);max-width:90ch')}>
           {note}
         </span>
       )}
@@ -369,7 +369,7 @@ function ExnessForm({ venue, onCopy, copiedValue, accent }) {
  */
 function BloFinForm({ venue, onCopy, copiedValue, accent }) {
   return (
-    <div style={sx('max-width:420px')}>
+    <div style={sx('max-width:none')}>
       <Field label={<><Num n={1} />{venue.usageField}</>} hint={venue.usageNote}>
         <span style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:8px 14px')}>
           {venue.usageOptions.map((o) => {
@@ -466,7 +466,7 @@ function RadioRow({ options, choice, accent }) {
  */
 function BybitForm({ venue, onCopy, copiedValue, accent }) {
   return (
-    <div style={sx('max-width:440px')}>
+    <div style={sx('max-width:none')}>
       <Field label={<><Num n={1} />API key type</>}>
         <RadioRow options={venue.keyTypeOptions} choice={venue.keyTypeChoice} accent={accent} />
       </Field>
@@ -642,7 +642,9 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
           it is a picture, then their panel on its own card. The backdrop
           either side of the card is the page around their panel — it reads as
           a screenshot, where a full-width box with a narrow column in it read
-          as a broken form with empty space. */}
+          as a broken form with empty space. The card was 520px; widened to
+          860px on 24 Nov 2026 (owner) so the steps use the room the
+          connect step has. */}
       <figcaption style={sx('display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--surface-3)')}>
         <span aria-hidden style={sx('display:flex;gap:5px;flex:none')}>
           {[0, 1, 2].map((i) => <span key={i} style={sx('width:8px;height:8px;border-radius:50%;background:var(--line-strong)')} />)}
@@ -654,7 +656,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
       </figcaption>
 
       <div style={sx('padding:clamp(12px,3vw,26px) clamp(10px,3vw,26px)')}>
-      <div style={sx('max-width:520px;margin:0 auto;padding:clamp(16px,3vw,24px);border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -12px rgba(15,23,42,.12)')}>
+      <div style={sx('max-width:860px;margin:0 auto;padding:clamp(16px,3vw,24px);border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -12px rgba(15,23,42,.12)')}>
         {venue.family === 'exness' ? (
           <ExnessForm venue={venue} onCopy={onCopy} copiedValue={copiedValue} accent={accent} />
         ) : venue.family === 'blofin' ? (
@@ -669,7 +671,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
           /* Delta only. A key made on the wrong account connects and passes
              the scope check, then cannot touch the position the user holds. */
           <Field label={venue.accountField} hint={venue.accountNote}>
-            <span style={sx(FIELD, 'max-width:420px;justify-content:space-between')}>
+            <span style={sx(FIELD, 'justify-content:space-between')}>
               <span style={sx('font-size:13.5px;font-weight:600')}>{venue.accountDefault ?? 'Main'}</span>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="2" aria-hidden>
                 <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
@@ -689,7 +691,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
              above). The user chooses it on their form — so there is no
              value of ours to copy, only the instruction to keep it. */
           <Field label={venue.passphraseField ?? 'Passphrase'} hint={venue.passphraseNote}>
-            <span style={sx(FIELD, 'max-width:420px;color:var(--ink-faint);font-size:13px')}>Your own passphrase</span>
+            <span style={sx(FIELD, 'color:var(--ink-faint);font-size:13px')}>Your own passphrase</span>
           </Field>
         )}
 
@@ -739,7 +741,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
 
           {venue.ipAddNote && (
             <span
-              style={sx('display:block;margin-top:10px;padding:10px 12px;border-radius:9px;font-size:12px;line-height:1.55;max-width:62ch', {
+              style={sx('display:block;margin-top:10px;padding:10px 12px;border-radius:9px;font-size:12px;line-height:1.55;max-width:90ch', {
                 border: `1px solid ${accent.line}`,
                 background: accent.tint,
                 color: 'var(--ink-2)',
@@ -780,13 +782,13 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
             /* Shark. Not absent — deferred. Saying "there is nothing to tick"
                here, as CoinDCX's branch does, would be the more dangerous
                wrong answer of the two: it reads as "you are done". */
-            <span style={sx('display:block;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:62ch')}>
+            <span style={sx('display:block;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:90ch')}>
               Not on this form. {venue.name} sets permissions <strong>after</strong> the key exists, which is the next step.
             </span>
           ) : (
             /* CoinDCX's form has no permission control. Saying "there is
                nothing to tick" is the instruction — otherwise people look. */
-            <span style={sx('display:block;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:62ch')}>
+            <span style={sx('display:block;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:90ch')}>
               {venue.name} has no permission checkbox — there is nothing to tick here. We check the key can act the moment
               you connect it and say so plainly if it cannot.
             </span>
@@ -819,7 +821,7 @@ export default function VenueFormReplica({ venue, onCopy, copiedValue }) {
              read before any of this started. CoinDCX sends two, by two
              different routes; Shark's expires. Both are the kind of thing that
              strands someone mid-flow if it is a surprise. */
-          <span style={sx('display:block;margin-top:13px;font-size:12px;line-height:1.55;color:var(--ink-3);max-width:62ch')}>
+          <span style={sx('display:block;margin-top:13px;font-size:12px;line-height:1.55;color:var(--ink-3);max-width:90ch')}>
             {venue.otpNote}
           </span>
         )}

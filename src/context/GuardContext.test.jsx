@@ -13,13 +13,23 @@ import { gapsOf } from '../lib/guard';
 
 const account = { id: 'acc-1', name: 'Delta main', propFirmSlug: 'delta_india', accountSize: 5000, cooldownUntil: null };
 
-vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ session: { access_token: 'tok' }, user: { id: 'u1' } }) }));
+const authState = { session: { access_token: 'tok' }, user: { id: 'u1' }, subscriptionError: null };
+vi.mock('../context/AuthContext', () => ({ useAuth: () => authState }));
+// One stable list, as the real provider holds it in state: a fresh array on
+// every render would read as a new account list each time.
+const accountsList = [account];
+const refreshTradingAccounts = vi.fn();
 vi.mock('./TradingAccountContext', () => ({
   useTradingAccounts: () => ({
-    accounts: [account], accountsLoading: false,
-    selectedTradingAccountId: 'acc-1', refreshTradingAccounts: vi.fn(),
+    accounts: accountsList, accountsLoading: false,
+    selectedTradingAccountId: 'acc-1', selectedAccount: account, refreshTradingAccounts,
   }),
 }));
+// The guard now holds the selected account's live row (useLiveAccount).
+vi.mock('../lib/supabaseClient', () => ({
+  supabase: { channel: () => ({ on() { return this; }, subscribe() { return this; } }), removeChannel: vi.fn() },
+}));
+vi.mock('../api/tradingAccountsApi', () => ({ fetchTradingAccounts: vi.fn(async () => [account]) }));
 vi.mock('../api/exchangeCredentialsApi', () => ({ getExchangeCredentialsStatus: vi.fn() }));
 vi.mock('../api/rulesApi', () => ({ fetchRulesBundle: vi.fn() }));
 vi.mock('../api/notificationsApi', () => ({ fetchNotificationSettings: vi.fn() }));
@@ -59,6 +69,8 @@ const mount = () => render(<GuardProvider><Probe /></GuardProvider>);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  authState.user = { id: 'u1' };
+  authState.subscriptionError = null;
   getExchangeCredentialsStatus.mockResolvedValue({ status: 'active', enforcementCapable: true });
   fetchNotificationSettings.mockResolvedValue({ telegramConnected: true });
   fetchBreaches.mockResolvedValue([]);
@@ -151,5 +163,32 @@ describe('entitlement reaches the guard', () => {
     await waitFor(() => expect(screen.getByTestId('pass').textContent).toBe('done'));
     expect(screen.getByTestId('readOnly').textContent).toBe('true');
     expect(screen.getByTestId('keyLive').textContent).toBe('true');
+  });
+});
+
+/*
+ * R3: a failed or slow /subscriptions/me leaves `access` null (unknown) —
+ * AuthContext no longer defaults it to 'free'. Unknown must fail open: no
+ * "Watching only — your plan has lapsed", no billing gap.
+ */
+describe('unknown plan is never a lapsed verdict', () => {
+  it.each([
+    ['failed', { id: 'u1', access: null, planKnown: false }, 'Could not load subscription'],
+    ['slow', { id: 'u1', access: null, planKnown: false }, null],
+  ])('a %s /me reads as armed, with no lapsed copy and no billing gap', async (_n, user, err) => {
+    authState.user = user;
+    authState.subscriptionError = err;
+    mount();
+    await waitFor(() => expect(screen.getByTestId('pass')).toHaveTextContent('done'));
+    expect(screen.getByTestId('guard')).toHaveTextContent('armed');
+    expect(screen.getByTestId('title').textContent).not.toMatch(/Watching only|lapsed|ended/i);
+    expect(screen.getByTestId('gaps').textContent).not.toMatch(/billing/);
+  });
+
+  it('control: a KNOWN lapsed plan still says so (the probe can see the verdict)', async () => {
+    authState.user = { id: 'u1', access: 'expired', planKnown: true, planProtected: false };
+    mount();
+    await waitFor(() => expect(screen.getByTestId('pass')).toHaveTextContent('done'));
+    expect(screen.getByTestId('title').textContent).toMatch(/Watching only/);
   });
 });

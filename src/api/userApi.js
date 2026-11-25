@@ -1,3 +1,4 @@
+import { LOCK_HOURS } from '../lib/lockDuration';
 import { apiPost, apiPut } from './httpClient';
 
 export async function initUserProfile({ accessToken, fullName, email, attribution, timezone, signal } = {}) {
@@ -34,7 +35,8 @@ export async function initUserProfile({ accessToken, fullName, email, attributio
  * There is deliberately no cancel call: the backend exposes no route to clear
  * an armed lock. It ends only when its time passes.
  */
-export const LOCKOUT_HOUR_OPTIONS = [3, 6, 12];
+// 3, 6, 12 hours and 1, 3, 7 days (lib/lockDuration).
+export const LOCKOUT_HOUR_OPTIONS = LOCK_HOURS;
 
 /**
  * `whenOpen` matters only with a position open: 'after_close' starts the lock

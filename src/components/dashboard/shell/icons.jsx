@@ -42,13 +42,17 @@ export const ICON = {
   // receipt: a docket with a torn bottom edge and two amount lines
   tax: ['M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21z', 'M9 8h6M9 12h6M9 16h3'],
   accounts: ['M3 9l9-5 9 5v11H3z', 'M9 20v-6h6v6'],
+  tutorials: ['M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z', 'M10 9.2v5.6l4.8-2.8z'],
   connect: ['M9.5 14.5l5-5', 'M7 12l-2 2a3.5 3.5 0 005 5l2-2M17 12l2-2a3.5 3.5 0 00-5-5l-2 2'],
   bell: ['M12 4a5.2 5.2 0 00-5.2 5.2c0 5-2 6.3-2 6.3h14.4s-2-1.3-2-6.3A5.2 5.2 0 0012 4z', 'M10.2 18.4a2 2 0 003.6 0'],
   plan: ['M3 7h18v12H3z', 'M3 11h18M8 15h4'],
   security: ['M6 11V8.4a6 6 0 1112 0V11', 'M5 11h14v9H5z'],
   support: ['M4 5h16v11H9l-5 4z', 'M8 9.5h8M8 12.5h5'],
+  settings: ['M4 7h10M18 7h2M4 17h4M12 17h8', 'M16 9a2 2 0 100-4 2 2 0 000 4zM10 19a2 2 0 100-4 2 2 0 000 4z'],
   key: ['M14.5 4a5.5 5.5 0 00-5.2 7.3L4 16.6V20h3.4l5.3-5.3A5.5 5.5 0 1014.5 4z', 'M16.4 7.6h.01'],
   target: ['M12 21a9 9 0 100-18 9 9 0 000 18z', 'M12 16a4 4 0 100-8 4 4 0 000 8z'],
+  // a gift box with its bow: refer a friend
+  refer: ['M4 11h16v9H4zM3 7h18v4H3z', 'M12 7v13M12 7c-1.2-2.8-5-3.4-5-1.2 0 1.2 2.2 1.2 5 1.2zM12 7c1.2-2.8 5-3.4 5-1.2 0 1.2-2.2 1.2-5 1.2z'],
   bank: ['M3 9l9-5 9 5v2H3z', 'M5 11v9h14v-9M9 20v-5h6v5'],
 };
 

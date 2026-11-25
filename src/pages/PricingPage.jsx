@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSEO } from '../hooks/useSEO';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
@@ -11,8 +11,6 @@ import { trialDaysOnOffer, trialOfferLine, firstChargeDate } from '../lib/trialO
 import { getPendingCheckoutPlan, clearPendingCheckoutPlan, normalizePlanSlugForMatch, getPendingCheckoutInterval, normalizeInterval, BILLING_INTERVALS } from '../lib/checkoutIntent';
 import { trackCheckoutStarted } from '../lib/analytics';
 import { checkoutCouponCode } from '../lib/checkoutCoupon';
-import { getStoredReferralCode } from '../lib/referralCode';
-import { getLinkPromoCode } from '../lib/promoLink';
 import { useActiveOffer } from '../hooks/useActiveOffer';
 import { offerCoversInterval, offerLabel, offerPrice, firstPeriodLabel, discountWording } from '../lib/siteOffer';
 import { bandSync, currencyForBand, formatMoney, testerPriceFor, TESTER_DAYS } from '../lib/priceBands';
@@ -283,7 +281,6 @@ export default function PricingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [checkoutKey, setCheckoutKey] = useState(null);
-  const [referralCode, setReferralCode] = useState(null);
   /**
    * The site offer from the admin panel (useActiveOffer): null until the API
    * and the visitor's band have answered, outside its audience, and after it
@@ -294,10 +291,9 @@ export default function PricingPage() {
    * that loses.
    */
   const { offer } = useActiveOffer();
-  const hasOwnCode = useMemo(() => Boolean(getStoredReferralCode() || getLinkPromoCode()), []);
   /* An India-only offer is restricted in Dodo to the INR products — never
      shown against a dollar price it would not apply to. */
-  const activePromo = offer && !hasOwnCode && (offer.audience === 'all' || currency === 'INR') ? offer : null;
+  const activePromo = offer && (offer.audience === 'all' || currency === 'INR') ? offer : null;
   /** The offer price for one interval, or null when the offer does not cover it. */
   const offerPriceFor = (iv, price) =>
     activePromo && offerCoversInterval(activePromo, iv) && price > 0 ? offerPrice(price, activePromo) : null;
@@ -322,12 +318,6 @@ export default function PricingPage() {
    * push "what's included" a long way down.
    */
   const intervalView = plans.length === 1 && plans[0].intervals.length > 1;
-
-  useEffect(() => {
-    // The pill under the header names whichever code will actually be sent;
-    // a promo-link code reuses it so the email's promise is visibly kept.
-    setReferralCode(getStoredReferralCode() || getLinkPromoCode());
-  }, []);
 
   /** `iv` is the interval of the card that was clicked; the toggle's when omitted. */
   async function handlePaidPlanCta(plan, iv = interval) {
@@ -622,26 +612,6 @@ export default function PricingPage() {
               <div className="h-3.5 w-3.5 rounded-full border-2 border-t-accent/80 border-accent/20 animate-spin" />
               Loading plans…
             </div>
-          )}
-          {referralCode && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mt-6 mx-auto inline-flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm"
-              style={{
-                borderColor: 'rgba(0,212,170,0.30)',
-                backgroundColor: 'rgba(0,212,170,0.08)',
-                color: '#00d4aa',
-              }}
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-              <span className="font-medium">
-                Discount <span className="font-mono font-bold tracking-wider">{referralCode}</span> will be applied at checkout
-              </span>
-            </motion.div>
           )}
         </motion.header>
 

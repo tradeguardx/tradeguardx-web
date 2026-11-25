@@ -51,6 +51,8 @@ import CryptoKillSwitchPage from './pages/CryptoKillSwitchPage';
 import ExchangeIndexPage from './pages/exchanges/ExchangeIndexPage';
 import ExchangeHubPage from './pages/exchanges/ExchangeHubPage';
 import ExchangeGuidePage from './pages/exchanges/ExchangeGuidePage';
+import TutorialsPage from './pages/TutorialsPage';
+import DashboardTutorialsPage from './pages/DashboardTutorialsPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import TaxPage from './pages/TaxPage';
@@ -69,6 +71,8 @@ import { ToastProvider } from './components/common/ToastProvider';
 import AppErrorBoundary from './components/common/AppErrorBoundary';
 import VercelRouteAnalytics from './components/common/VercelRouteAnalytics';
 import AnalyticsRouteTracker from './components/common/AnalyticsRouteTracker';
+import { SettingsFrame } from './components/dashboard/shell/SettingsTabs';
+import ReferPage from './pages/ReferPage';
 
 function App() {
   return (
@@ -127,6 +131,8 @@ function App() {
                   <Route path="crypto-tax-india" element={<CryptoTaxIndiaPage />} />
                   {/* The free revenge report, for someone not signed in. */}
                   <Route path="revenge-report" element={<RevengeLandingPage />} />
+                  {/* Every video, public (24 Nov 2026). Same library in the dashboard. */}
+                  <Route path="tutorials" element={<TutorialsPage />} />
                   <Route path="roadmap" element={<RoadmapPage />} />
                   <Route path="reviews" element={<ReviewsPage />} />
                   <Route path="review" element={<ReviewLinkPage />} />
@@ -167,13 +173,15 @@ function App() {
                   <Route path="account/billing" element={<BillingPage />} />
                   <Route path="account/trading" element={<AccountsPage />} />
                   <Route path="account/notifications" element={<RedirectWithSearch to="/dashboard/alerts" />} />
-                  <Route path="account/security" element={<SecuritySettingsPage />} />
+                  <Route path="account/security" element={<SettingsFrame><SecuritySettingsPage /></SettingsFrame>} />
                   <Route path="trading-accounts" element={<RedirectWithSearch to="/dashboard/account/trading" />} />
                   <Route path="billing" element={<RedirectWithSearch to="/dashboard/account/billing" />} />
                   <Route path="connect" element={<ConnectKeyPage />} />
-                  <Route path="alerts" element={<AlertsPage />} />
+                  <Route path="alerts" element={<SettingsFrame><AlertsPage /></SettingsFrame>} />
                   <Route path="support" element={<DashboardSupportPage />} />
+                  <Route path="tutorials" element={<DashboardTutorialsPage />} />
                   <Route path="review" element={<MyReviewPage />} />
+                  <Route path="refer" element={<ReferPage />} />
                   <Route path="preferences" element={<PreferencesPage />} />
                   {/* Extension-era routes: the product is server-side only now. */}
                   <Route path="install-extension" element={<RedirectWithSearch to="/dashboard/account/trading" />} />

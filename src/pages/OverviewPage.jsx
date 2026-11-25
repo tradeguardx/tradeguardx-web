@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
-import { useGuard } from '../context/GuardContext';
+import { useGuard, useSelectedLiveRow } from '../context/GuardContext';
 import { useShare } from '../context/ShareContext';
-import { useLiveAccount } from '../hooks/useLiveAccount';
+import { SkeletonValue } from '../components/dashboard/shell/DashboardSkeleton';
 import ShareCardsStrip from '../components/share/ShareCardsStrip';
 import { sessionOf, fmtMoney } from '../lib/session';
 import { fetchJournalStats, fetchTaxSummary, fetchJournalTrades } from '../api/tradesApi';
@@ -103,26 +103,44 @@ export default function OverviewPage() {
   const { openShare, items: shareItems, awards: shareAwards, canShare } = useShare();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
-  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount });
+  // The guard's copy of the live row (same one the lock is read from).
+  const liveRow = useSelectedLiveRow();
   // No key: the row's P&L and counters are the last values the engine wrote
   // before it stopped watching — not today's. Same rule as Live guard.
   const live = g.keyLive === false ? null : liveRow;
   const s = useMemo(() => sessionOf(live, g.rules), [live, g.rules]);
+  /* No row from the server yet: every live figure is a skeleton, not "$0.00"
+     (see lib/liveFeed). Not while the key is known to be gone — that case
+     has its own honest "—". */
+  const waiting = g.keyLive !== false && liveRow?.source !== 'server';
 
-  const [stats, setStats] = useState(null);
-  const [tax, setTax] = useState(null);
+  /*
+   * PER-ACCOUNT FIGURES ARE STORED WITH THE ACCOUNT THEY BELONG TO.
+   *
+   * Stats, the tax figure and the activity feed were plain state, and the
+   * fetch for a newly selected account only REPLACED them when it landed —
+   * so for that whole round trip the previous account's 90-day stats, FY
+   * figure and recent trades sat under the new account's name. Each is now
+   * kept with its account id and reads as "not loaded" under any other.
+   */
+  const [statsS, setStatsS] = useState({ id: null, v: null });
+  const [taxS, setTaxS] = useState({ id: null, v: null });
+  const [activityS, setActivityS] = useState({ id: null, v: null });
+  const stats = statsS.id === selectedTradingAccountId ? statsS.v : null;
+  const tax = taxS.id === selectedTradingAccountId ? taxS.v : null;
+  const activity = activityS.id === selectedTradingAccountId ? activityS.v : null;
   /* No tax centre for this venue (Exness, BloFin): no tax call, no FY tile. */
   const taxOn = accountHasTaxCentre(selectedAccount);
-  const [activity, setActivity] = useState(null);
+  const cur = s.currency ?? selectedAccount?.accountCurrency ?? 'USD';
   useEffect(() => {
     if (!accessToken || !selectedTradingAccountId) return undefined;
     const ctrl = new AbortController();
-    const opt = { accessToken, tradingAccountId: selectedTradingAccountId, signal: ctrl.signal };
-    fetchJournalStats({ ...opt, days: 90 }).then((r) => !ctrl.signal.aborted && setStats(r)).catch(() => {});
-    if (taxOn) fetchTaxSummary(opt).then((r) => !ctrl.signal.aborted && setTax(r)).catch(() => {});
-    else setTax(null);
+    const id = selectedTradingAccountId;
+    const opt = { accessToken, tradingAccountId: id, signal: ctrl.signal };
+    fetchJournalStats({ ...opt, days: 90 }).then((r) => !ctrl.signal.aborted && setStatsS({ id, v: r })).catch(() => {});
+    if (taxOn) fetchTaxSummary(opt).then((r) => !ctrl.signal.aborted && setTaxS({ id, v: r })).catch(() => {});
     Promise.all([
-      fetchBreaches({ accessToken, tradingAccountId: selectedTradingAccountId, limit: 5, signal: ctrl.signal }).catch(() => []),
+      fetchBreaches({ accessToken, tradingAccountId: id, limit: 5, signal: ctrl.signal }).catch(() => []),
       fetchJournalTrades({ ...opt, limit: 5 }).catch(() => []),
     ]).then(([breaches, trades]) => {
       if (ctrl.signal.aborted) return;
@@ -142,10 +160,10 @@ export default function OverviewPage() {
       for (const t of list) {
         if (!t?.closedAt) continue;
         const pnl = Number(t.realizedPnl ?? t.pnl ?? t.netPnl);
-        ev.push({ t: new Date(t.closedAt).getTime(), text: `${instrumentOf(t.symbol) ?? 'Position'} ${String(t.side ?? '').toLowerCase()} closed`, kind: 'trade', amt: Number.isFinite(pnl) ? fmtMoney(pnl, s.currency, { sign: true }) : '', fg: pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink-3)', dot: pnl < 0 ? 'var(--red-solid)' : 'var(--mint-solid)' });
+        ev.push({ t: new Date(t.closedAt).getTime(), text: `${instrumentOf(t.symbol) ?? 'Position'} ${String(t.side ?? '').toLowerCase()} closed`, kind: 'trade', amt: Number.isFinite(pnl) ? fmtMoney(pnl, cur, { sign: true }) : '', fg: pnl < 0 ? 'var(--red)' : pnl > 0 ? 'var(--mint)' : 'var(--ink-3)', dot: pnl < 0 ? 'var(--red-solid)' : 'var(--mint-solid)' });
       }
       ev.sort((a, b) => b.t - a.t);
-      setActivity(ev.slice(0, 5));
+      setActivityS({ id, v: ev.slice(0, 5) });
     });
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -277,7 +295,6 @@ export default function OverviewPage() {
   const hero = heroOf(life, d, g.guard);
   const heroTitle = hero.title;
   const heroSub = hero.sub;
-  const cur = s.currency;
   const venue = selectedAccount ? brokerLabel(selectedAccount.propFirmSlug) : 'your exchange';
   const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });
 
@@ -295,6 +312,12 @@ export default function OverviewPage() {
     dash: `${((C * dialPct) / 100).toFixed(1)} ${C}`,
     label: unprot ? 'nothing measured yet' : losing ? "of today's loss budget spent" : "of the way to today's target",
   };
+  if (waiting && !unprot) {
+    // A 0% dial is a reading; we have not taken one yet.
+    dial.pct = <SkeletonValue w="2.6ch" label="Loading today's progress" />;
+    dial.dash = `0 ${C}`;
+    dial.label = 'reading today\u2019s figures';
+  }
 
   // ── facts ───────────────────────────────────────────────────────────
   const budgetLeft = s.lossLimit ? fmt0(Math.max(0, s.lossLimit - s.budgetUsed)) : '—';
@@ -327,10 +350,15 @@ export default function OverviewPage() {
   const fyNet = tax?.netTradingPnl?.value ?? tax?.netTradingPnl ?? null;
   const fyLabel = tax?.fyLabel ? `${tax.fyLabel} reconciled` : 'FY reconciled';
   const statCards = [
-    fresh
-      ? { k: 'Today', v: '$0.00', note: 'No trades yet on this account.', fg: 'var(--ink)', to: '/dashboard/live' }
+    waiting
+      ? { k: 'Today', v: <SkeletonValue w="4ch" label="Loading today's P&L" />, note: 'Reading today\u2019s figures\u2026', fg: 'var(--ink-3)', to: '/dashboard/live' }
+      : fresh
+      // No P&L on the row is no reading — not "$0.00" (and never a "$" on a rupee account).
+      ? { k: 'Today', v: '—', note: g.keyLive === false ? 'No key connected, so nothing live to show.' : 'No reading for today yet.', fg: 'var(--ink-3)', to: '/dashboard/live' }
       : { k: 'Today', v: fmtMoney(s.pnl, cur, { sign: true }), note: s.pnl < 0 ? `Down on the day. ${budgetLeft} of budget left.` : s.pnl === 0 ? 'Flat. No closed trades today.' : `Up on the day, ${Math.round(towardTarget)}% of the way to target.`, fg: s.pnl < 0 ? 'var(--red)' : s.pnl > 0 ? 'var(--mint)' : 'var(--ink)', to: '/dashboard/live' },
-    s.lossLimit
+    waiting
+      ? { k: 'Loss budget', v: <SkeletonValue w="3ch" label="Loading loss budget" />, note: 'Reading\u2026', fg: 'var(--ink-3)', to: '/dashboard/live' }
+      : s.lossLimit
       ? (fresh
         ? { k: 'Loss budget', v: fmt0(s.lossLimit), note: 'Full budget available. Nothing spent today.', fg: 'var(--ink)', to: '/dashboard/live', bar: '2%' }
         : { k: 'Loss budget used', v: `${Math.round(usedPct)}%`, note: `${budgetLeft} left before the guard closes the day.`, fg: usedPct > 70 ? 'var(--red)' : 'var(--ink)', to: '/dashboard/live', bar: `${Math.max(2, usedPct)}%` })

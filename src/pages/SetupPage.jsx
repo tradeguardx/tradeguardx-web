@@ -311,7 +311,7 @@ export default function SetupPage() {
           onBack={() => go(3)}
           revenge={revengeHere?.report?.enoughData ? { ...revengeHere.report, months: revengeHere.months } : null}
         />
-        <div style={sx('max-width:1220px;margin:-48px auto 40px')}><SetupVideoHelp /><FounderHelp step="Switch guard on" top={12} /></div>
+        <div style={sx('max-width:1220px;margin:-48px auto 40px')}><SetupVideoHelp venue={venue ? { slug, name: venue.name } : null} /><FounderHelp step="Switch guard on" top={12} /></div>
       </>
     );
   }
@@ -450,7 +450,7 @@ export default function SetupPage() {
         </footer>
       )}
 
-      <SetupVideoHelp />
+      <SetupVideoHelp venue={venue ? { slug, name: venue.name } : null} />
       <FounderHelp step={step?.label} top={12} />
     </div>
   );

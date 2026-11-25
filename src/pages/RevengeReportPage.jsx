@@ -6,7 +6,7 @@ import { useGuard } from '../context/GuardContext';
 import { keyStateOf } from '../lib/lifecycle';
 import { venueFor } from '../lib/venues';
 import { fetchRevengeReport } from '../api/tradesApi';
-import { triggerHistoryBackfill } from '../api/syncApi';
+import { triggerHistoryBackfill, unlockRevengeReport } from '../api/syncApi';
 import { useRevengeUnlock } from '../hooks/useRevengeUnlock';
 import { sx } from '../components/dashboard/shell/sx';
 import { CARD, PERIODS } from '../components/revenge/revengeFormat';
@@ -36,6 +36,19 @@ import { handleFrom } from '../hooks/useShareData';
  * Never built from the engine's own trade data. Every figure comes from the
  * server (trade-service services/revengeReport); this page lays it out.
  */
+/** Re-read a snapshot older than this when the report is opened. */
+const SNAPSHOT_STALE_MS = 24 * 60 * 60_000;
+
+/** "just now", "3 hours ago", "2 days ago". */
+function snapshotAgo(iso) {
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
+  if (m < 2) return 'just now';
+  if (m < 60) return `${m} minutes ago`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `${h} hour${h === 1 ? '' : 's'} ago`;
+  return `${Math.round(h / 24)} days ago`;
+}
+
 export default function RevengeReportPage() {
   const { session, user } = useAuth();
   const [sharing, setSharing] = useState(false);
@@ -110,9 +123,55 @@ export default function RevengeReportPage() {
      gives way to their tax history as soon as the import has it. */
   const refresh = async () => {
     if (keyState !== 'ok') return;
+    // A snapshot (Exness, Bybit…: no tax import) is re-read from the exchange
+    // in the background; the report on screen stays until the new one lands.
+    if (res?.source === 'snapshot') {
+      await refreshSnapshot();
+      return;
+    }
     await triggerHistoryBackfill({ accessToken, tradingAccountId: accountId }).catch(() => null);
     await startUnlock(months);
   };
+
+  /*
+   * SNAPSHOT REFRESH (21 Nov 2026). A snapshot used to be the trades read at
+   * unlock and nothing after. Ask the server to re-read it (at most hourly,
+   * server side), then follow the report until its snapshotAt moves and swap
+   * the new one in. The current report never goes away; a re-read that fails
+   * or is not due leaves it as it is.
+   */
+  const [updating, setUpdating] = useState(false);
+  const refreshSnapshot = useCallback(async () => {
+    if (!accessToken || !accountId || updating) return;
+    setUpdating(true);
+    try {
+      const before = res?.snapshotAt ?? null;
+      const out = await unlockRevengeReport({ accessToken, tradingAccountId: accountId, months, refresh: true }).catch(() => null);
+      if (!out?.refreshing) return;
+      for (let i = 0; i < 36 && alive.current; i += 1) {
+        await new Promise((r) => setTimeout(r, 5_000));
+        const r = await fetchRevengeReport({ accessToken, tradingAccountId: accountId, months }).catch(() => null);
+        if (!alive.current) return;
+        if (r && !r.locked && !r.building && !r.needsUnlock && r.snapshotAt && r.snapshotAt !== before) {
+          setRes(r);
+          return;
+        }
+      }
+    } finally {
+      if (alive.current) setUpdating(false);
+    }
+  }, [accessToken, accountId, months, res, updating]);
+
+  // Opened on a snapshot older than a day: bring it up to date once, quietly.
+  const autoRefreshed = useRef('');
+  useEffect(() => {
+    if (!res || res.source !== 'snapshot' || keyState !== 'ok' || !res.snapshotAt) return undefined;
+    if (autoRefreshed.current === accountId) return undefined;
+    if (Date.now() - new Date(res.snapshotAt).getTime() < SNAPSHOT_STALE_MS) return undefined;
+    autoRefreshed.current = accountId;
+    const t = setTimeout(() => { refreshSnapshot(); }, 0);
+    return () => clearTimeout(t);
+  }, [res, keyState, accountId, refreshSnapshot]);
 
   const building = unlock.phase === 'building';
   const report = res && !res.locked && !res.building && !res.needsUnlock ? res : null;
@@ -173,10 +232,14 @@ export default function RevengeReportPage() {
       ) : report ? (
         <>
           <div style={sx('margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-3)')}>
-            <span>{report.source === 'snapshot' ? `Read from ${exchangeName || 'your exchange'} when you unlocked it.` : 'Built from your imported trade history.'}</span>
+            <span>
+              {report.source === 'snapshot'
+                ? `Read from ${exchangeName || 'your exchange'}${report.snapshotAt ? ` ${snapshotAgo(report.snapshotAt)}` : ''}.`
+                : 'Built from your imported trade history.'}
+            </span>
             {keyState === 'ok' && (
-              <button type="button" onClick={refresh} style={sx('padding:6px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700;cursor:pointer')}>
-                Refresh
+              <button type="button" onClick={refresh} disabled={updating} style={sx('padding:6px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:700;cursor:pointer', { opacity: updating ? 0.6 : 1 })}>
+                {updating ? 'Updating…' : 'Refresh'}
               </button>
             )}
           </div>

@@ -1,4 +1,5 @@
 import { moneyOf } from './revengeFormat';
+import { currencySymbol } from '../../lib/session';
 
 /* Share-card data: fixed brand colours (share art is seen outside the app's
    theme), and the trader's numbers in first person. */
@@ -88,7 +89,7 @@ export function oneIn(pct) {
 /** −57660 → "−₹57.7k" (a share card has no room for every digit). */
 export function moneyShort(n, currency) {
   if (n == null || !Number.isFinite(n)) return null;
-  const sym = String(currency).toUpperCase() === 'INR' ? '₹' : '$';
+  const sym = currencySymbol(currency);
   const a = Math.abs(n);
   const body = a >= 1e7 ? `${(a / 1e7).toFixed(1)}Cr` : a >= 1e5 && sym === '₹' ? `${(a / 1e5).toFixed(1)}L` : a >= 1000 ? `${(a / 1000).toFixed(1)}k` : String(Math.round(a));
   return `${n < 0 ? '−' : '+'}${sym}${body.replace('.0', '')}`;

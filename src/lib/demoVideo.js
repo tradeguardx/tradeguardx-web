@@ -30,12 +30,20 @@ export const DEMO_VIDEO_URL = `https://www.youtube.com/watch?v=${DEMO_VIDEO_ID}`
  * after.
  */
 const VENUE_VIDEOS = {
+  // "How to Connect Shark Exchange to a Kill Switch (2-Minute Setup)",
+  // 24 Nov 2026; replaces the 13-minute Hindi walkthrough (UO748FFiThA),
+  // which stays in the tutorials course.
   shark: {
-    id: 'UO748FFiThA',
-    start: 7,
-    lang: 'Hindi',
-    title: 'Watch: the kill switch on Shark Exchange',
-    subtitle: 'Creating the API key, whitelisting the IP, and arming the kill switch — start to finish.',
+    id: 'VtfAydIu_FQ',
+    title: 'Watch: connect Shark Exchange to the kill switch',
+    subtitle: 'Creating the API key, whitelisting the IP, ticking Trade Futures and connecting, in about two minutes.',
+  },
+  // "How to Connect Exness to a Kill Switch (Full Setup in 3 Minutes)",
+  // published 23 Nov 2026 (owner, 24 Nov).
+  exness: {
+    id: 'mCfyRweWofY',
+    title: 'Watch: connect Exness to the kill switch',
+    subtitle: 'Choosing Exness, creating the API key with the exact settings, pasting it in and arming your rules, in about three minutes.',
   },
 };
 
@@ -52,15 +60,55 @@ export const DEMO_VIDEO = {
  * to choose an exchange and has not yet seen how any of it works.
  */
 export const HOW_TO_USE_VIDEO = {
-  id: 'TR8aCHD_YCs',
-  title: 'How to use TradeGuardX',
-  subtitle: 'Full setup on Delta, Shark and Exness — connect the key, set your rules, and see the kill switch work.',
+  // "How to Set Up a Crypto Kill Switch (Rules, Rule Lock & Live Test)",
+  // 24 Nov 2026; replaces TR8aCHD_YCs, which showed the old dashboard.
+  id: 'vYp5ddNgDk0',
+  title: 'How to set up your kill switch',
+  subtitle: 'Setting your rules, the rule lock, and a live trade on Shark that closes itself at the limit.',
 };
+
+/* Broker ids can carry a region ("shark-exchange", "delta-india"): match the
+   venue by prefix, as venueFor() in venues.js does. */
+const venueKey = (slug) => {
+  const s = String(slug ?? '').toLowerCase();
+  return Object.keys(VENUE_VIDEOS).find((k) => s === k || s.startsWith(`${k}-`) || s.startsWith(`${k}_`)) ?? null;
+};
+
+/** The venue's own walkthrough, or null when it has none (no Delta stand-in). */
+export function ownVideoFor(venueSlug) {
+  const k = venueKey(venueSlug);
+  return k ? VENUE_VIDEOS[k] : null;
+}
+
+/*
+ * Dashboard-only stop-gaps (owner, 25 Nov 2026): shown while connecting an
+ * exchange that has no proper video yet, never on public pages or /tutorials.
+ */
+const DASH_ONLY_VIDEOS = {
+  // "Delta Exchange ko Kill Switch se kaise connect karein? 2-min setup", a
+  // Hindi Short. Replace once the full Delta video is recorded.
+  delta: {
+    id: 'OGmoEeUr3Hc',
+    short: true,
+    title: 'Watch: connect Delta Exchange to the kill switch',
+    subtitle: 'Creating the Delta API key with Trading on, whitelisting our IP and connecting, in under two minutes.',
+  },
+};
+
+/** For the dashboard: the venue's own video, else its dashboard-only stop-gap. */
+export function dashVideoFor(venueSlug) {
+  const own = ownVideoFor(venueSlug);
+  if (own) return own;
+  const s = String(venueSlug ?? '').toLowerCase();
+  const k = Object.keys(DASH_ONLY_VIDEOS).find((x) => s === x || s.startsWith(`${x}-`) || s.startsWith(`${x}_`));
+  return k ? DASH_ONLY_VIDEOS[k] : null;
+}
 
 /** The video a venue's guides should play, or the general walkthrough. */
 export function videoFor(venueSlug) {
-  return VENUE_VIDEOS[String(venueSlug ?? '').toLowerCase()] ?? DEMO_VIDEO;
+  return ownVideoFor(venueSlug) ?? DEMO_VIDEO;
 }
+
 
 /**
  * `maxres` isn't generated for every upload, so callers fall back to `hq` on

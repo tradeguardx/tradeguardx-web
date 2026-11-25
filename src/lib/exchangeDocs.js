@@ -39,6 +39,8 @@ export const HELP_ARTICLES = [
   {
     slug: 'kill-switch',
     navTitle: 'The kill switch',
+    // The setup video, rules to live firing (tutorials.js lesson key).
+    video: 'set-up-rules',
     title: 'What happens when you break a trading rule',
     intro:
       'There is one kill switch and two ways to fire it: a rule breach fires it for you, or you fire it yourself. What it does is identical either way — only the trigger and the lock length differ.',
@@ -141,17 +143,28 @@ export const HELP_ARTICLES = [
   },
   {
     slug: 'changing-rules',
-    navTitle: 'Changing rules safely',
-    title: "Why you can't loosen a limit instantly",
+    navTitle: 'Rule lock',
+    // Rewritten 24 Nov 2026 to match the rule lock video: the 24-hour
+    // cooling-off this page described is retired.
+    video: 'rule-lock',
+    title: "Rule lock: why you can't change rules mid-day",
     intro:
-      'To stop impulse decisions, loosening a protection is delayed while tightening is instant. This applies at all times, not only during a lock.',
+      "You set your rules while you are calm. Rule lock makes sure the angry version of you can't undo them: once the lock is on, your rules stay exactly as you set them until it ends.",
     sections: [
       {
+        heading: 'How rule lock works',
         list: [
-          { bold: 'Tightening is immediate:', text: 'lowering a loss limit, fewer trades, or enabling a rule takes effect right away.' },
-          { bold: 'Loosening waits 24h:', text: 'raising a limit, allowing more trades, shorter cooldowns, or disabling a rule is staged and applies after a 24-hour cooling-off.' },
-          { bold: 'Keys are locked in cooldown:', text: 'you can\'t disconnect or replace your API key while a lock is active — this keeps the kill switch alive when it matters most.' },
+          { bold: 'Choose how long:', text: 'Off, 3 days, 7 days (the default) or 30 days.' },
+          { bold: 'A 15-minute setup window:', text: 'after you save, you can change anything for 15 minutes, including the lock itself. Then your rules freeze.' },
+          { bold: 'Tightening is frozen too:', text: 'a locked rule cannot be changed in either direction, so the lock means exactly what you set.' },
+          { bold: 'With the lock Off:', text: 'rules can be edited only in the morning, before your first trade of the day. No edits during your trading day.' },
+          { bold: 'Never locked:', text: 'switching a rule on is always allowed.' },
+          { bold: 'Need a change mid-lock?', text: 'Raise a support ticket.' },
         ],
+      },
+      {
+        heading: 'Your API key during a lock',
+        body: "While a kill-switch lock is running you can't disconnect or replace your API key in TradeGuardX. That keeps the kill switch alive when it matters most. You can still revoke the key on your exchange at any time; we then can't close anything, and we tell you it stopped working.",
       },
     ],
   },

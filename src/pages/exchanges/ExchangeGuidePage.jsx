@@ -6,7 +6,8 @@ import { venuePageFor } from '../../lib/venueSeo';
 import { guideFor, guidesFor } from '../../lib/venueGuides';
 import { venueFor } from '../../lib/venues';
 import ArticleBody from '../../components/docs/ArticleBody';
-import { videoFor } from '../../lib/demoVideo';
+import { ownVideoFor, videoFor } from '../../lib/demoVideo';
+import { lessonFor, videoObjectFor } from '../../content/tutorials';
 import NotFoundPage from '../NotFoundPage';
 
 /**
@@ -159,7 +160,7 @@ export default function ExchangeGuidePage() {
           {/* The venue's own step list is the article; the screenshots slot in
               after the intro, before the numbered steps, so the page reads
               "here is the flow" then "here is each step in words". */}
-          <ArticleBody article={guide} showDemo={Boolean(guide.imagesFrom)} video={videoFor(venue.slug)}>
+          <ArticleBody article={guide} showDemo={Boolean(guide.imagesFrom) || Boolean(ownVideoFor(venue.slug))} video={videoFor(venue.slug)}>
             <GuideShots steps={shots} venueName={venue.name} />
           </ArticleBody>
 
@@ -171,6 +172,13 @@ export default function ExchangeGuidePage() {
                   {venue.h1} — what it does when you breach a limit
                 </Link>
               </li>
+              {lessonFor(venue.slug)?.video && (
+                <li>
+                  <Link to={`/tutorials#${lessonFor(venue.slug).key}`} className="text-accent hover:underline">
+                    Crypto kill switch tutorials: every setup video in one course
+                  </Link>
+                </li>
+              )}
               {siblings.map((g) => (
                 <li key={g.slug}>
                   <Link to={`/exchanges/${venue.slug}/${g.slug}`} className="text-accent hover:underline">
@@ -205,6 +213,10 @@ export default function ExchangeGuidePage() {
  *  unknown-guide 404 check without changing hook order. */
 function GuideHead({ venue, guide, url, shots }) {
   const stepsSection = guide.sections.find((s) => s.steps);
+  // The API-key guide is the home of that exchange's setup video, so the
+  // video is marked up here, where "how to get the <venue> API key" lands.
+  const lesson = guide.slug === 'api-key' ? lessonFor(venue.slug) : null;
+  const video = lesson?.video && ownVideoFor(venue.slug)?.id === lesson.video.id ? videoObjectFor(lesson.key) : null;
   useSEO({
     title: guide.seoTitle,
     rawTitle: true,
@@ -246,6 +258,7 @@ function GuideHead({ venue, guide, url, shots }) {
               inLanguage: 'en',
               isPartOf: { '@type': 'WebSite', name: 'TradeGuardX', url: SITE },
             },
+        ...(video ? [video] : []),
       ],
     },
   });

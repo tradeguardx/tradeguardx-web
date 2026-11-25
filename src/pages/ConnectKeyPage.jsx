@@ -12,6 +12,9 @@ import { ENGINE_EGRESS_IP, extraFieldsReady, secretFieldFor, splitsPastedPair, v
 import { brokerLabel } from '../lib/labels';
 import { sx } from '../components/dashboard/shell/sx';
 import AppGuide from '../components/dashboard/AppGuide';
+import SetupVideoHelp from '../components/dashboard/SetupVideoHelp';
+import VideoLink from '../components/tutorials/VideoLink';
+import { connectTutorialFor, lessonFor } from '../content/tutorials';
 import VenuePath from '../components/dashboard/VenuePath';
 import { useIsMobile } from '../hooks/useIsMobile';
 import VenueFormReplica from '../components/dashboard/VenueFormReplica';
@@ -88,6 +91,8 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
   const v = venueFor(exchangeSlug) ?? venueFor('delta_india');
   const ready = !cooled && keyVal.trim().length > 4 && secretVal.trim().length > 4 && !!exchangeSlug && (!v.hasPassphrase || passVal.trim().length > 0) && extraFieldsReady(v, extraVals);
   const secretField = secretFieldFor(v);
+  // This account's exchange setup video, if it has one (Exness, Shark).
+  const venueLesson = exchangeSlug && connectTutorialFor(exchangeSlug) ? lessonFor(exchangeSlug)?.key ?? null : null;
 
   const copy = async (text) => {
     try { await navigator.clipboard.writeText(text); setCopied(text); setTimeout(() => setCopied(''), 1500); } catch { /* ignore */ }
@@ -265,6 +270,13 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
       </div>
       )}
 
+      {/* The exchange's own setup video (Exness, Shark), above the steps it
+          walks through. Not inside setup, which shows its own strip, and not
+          once the key works. 24 Nov 2026. */}
+      {!embedded && !(connected && !replacing) && (
+        <SetupVideoHelp top={0} bottom={18} venue={exchangeSlug ? { slug: exchangeSlug, name: v.name } : null} venueOnly />
+      )}
+
       {/* A tab strip with exactly one tab, left from when there was a second
           connection method. It still anchors the section on the standalone
           page; inside the wizard the stage rail already says "Connect key",
@@ -388,6 +400,13 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                       </a>
                     )}
 
+                    {/* The setup video for THIS account's exchange (owner, 24
+                        Nov 2026), beside the button that starts the steps it
+                        shows. Exchanges without a video show nothing. */}
+                    {venueLesson && (
+                      <VideoLink asButton lesson={venueLesson} label={`Watch how to connect ${v.name}`} source={`connect_step1_${venueLesson}`} />
+                    )}
+
                     {/* This page is called "Connect enforcement" and is where
                         people actually land to connect — yet it was the one
                         surface without the screenshot walkthrough, which lived
@@ -408,7 +427,7 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                        page footer that prefixed it with "X cannot issue a key
                        from a phone — ", making one sentence with two em dashes
                        that said the same thing twice. */
-                    <p style={sx('margin:11px 0 0;padding:11px 13px;border:1px solid var(--amber-line);border-radius:10px;background:var(--amber-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:70ch')}>
+                    <p style={sx('margin:11px 0 0;padding:11px 13px;border:1px solid var(--amber-line);border-radius:10px;background:var(--amber-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>
                       <strong style={sx('font-weight:700', { color: 'var(--amber)' })}>Do this on a laptop or desktop.</strong>{' '}
                       {v.desktopOnlyNote}
                     </p>
@@ -449,6 +468,8 @@ export function ConnectKeyFlow({ embedded = false, onConnected }) {
                     <p style={sx('margin:11px 0 0;padding:11px 13px;border:1px solid var(--red-line);border-radius:9px;background:var(--red-tint);font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:70ch')}><strong style={sx('color:var(--red);font-weight:700')}>Key changes are blocked while your lockout runs.</strong> Removing the key would stop us closing anything, which would make the lockout pointless. This unblocks itself when the lock expires.</p>
                   )}
                   <p style={sx('margin:11px 0 0;font-size:12px;line-height:1.55;color:var(--ink-3);max-width:70ch')}>Your secret is encrypted before we store it and is never shown again. We test the key the moment you connect it and tell you straight away if it cannot close a position — we will not let you think you are protected when you are not.</p>
+                  {/* The question people ask at exactly this moment (24 Nov 2026). */}
+                  <div style={sx('margin-top:10px')}><VideoLink lesson="is-my-money-safe" source="connect_safety" /></div>
                 </div>
               )}
             </div>

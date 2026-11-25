@@ -52,7 +52,22 @@ export function initSentry() {
       // A user navigating away mid-request is not an error.
       'AbortError',
       'The operation was aborted',
+      /*
+       * Supabase auth's cross-tab lock: two tabs refreshing the session at
+       * once, one takes the lock from the other and supabase-js retries on
+       * its own. The user stays signed in; nothing for us to do (21 Nov 2026).
+       */
+      /Lock "lock:sb-.*-auth-token" was released because another request stole it/,
     ],
+    /*
+     * Errors thrown inside Vercel's own analytics scripts (21 Nov 2026: 3.3K
+     * "Unexpected token '<'" from 65 users over 7 months). On our domain both
+     * /_vercel/insights/script.js and its beacon answer correctly; these come
+     * from visitors whose ad blocker, privacy browser or network swaps the
+     * script for an HTML page. Only their page-view count is lost; the app is
+     * untouched. Errors from OUR code on those pages are still reported.
+     */
+    denyUrls: [/\/_vercel\/insights\//, /\/_vercel\/speed-insights\//, /insights\/script/],
   });
 }
 

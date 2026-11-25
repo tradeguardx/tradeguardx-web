@@ -1,22 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
-import { useGuard } from '../context/GuardContext';
+import { useGuard, useSelectedLiveRow } from '../context/GuardContext';
 import { useToast } from '../components/common/ToastProvider';
-import { useLiveAccount } from '../hooks/useLiveAccount';
+import { FEED, agoLabel, feedOf } from '../lib/liveFeed';
+import { SkeletonValue } from '../components/dashboard/shell/DashboardSkeleton';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { sessionOf, fmtMoney, splitDecimal, ruleConfig } from '../lib/session';
 import { computeRule } from '../components/dashboard/RuleStatusCards';
-import { fetchJournalTrades } from '../api/tradesApi';
 import { stopCellFor } from '../lib/stopLoss';
-import { armLockout, LOCKOUT_HOUR_OPTIONS } from '../api/userApi';
+import { armLockout } from '../api/userApi';
+import LockDurationPicker from '../components/dashboard/shell/LockDurationPicker';
+import { durationLong, lockEndsAt } from '../lib/lockDuration';
 import { OpenTradeLockChoice, PendingLockPanel } from '../components/dashboard/shell/LockChoice';
 import { setRuleLockDays } from '../api/tradingAccountsApi';
 import { RULE_GLYPH, ruleAccent } from '../components/dashboard/shell/icons';
 import { sx } from '../components/dashboard/shell/sx';
 import DailyResetLine from '../components/dashboard/DailyResetLine';
-import { formatRemaining, zoneLabel } from '../components/dashboard/shell/format';
+import { dayLabel, formatRemaining, formatResumes, zoneLabel } from '../components/dashboard/shell/format';
 import { getUserZone } from '../lib/userZone';
 import { ruleLockNow } from '../lib/guard';
 import { instrumentOf } from '../lib/labels';
@@ -31,11 +33,8 @@ import { useGuardActivity } from '../hooks/useGuardActivity';
  * not built: the app runs on real state.
  */
 
-const POLL_MS = 15_000;
 const MONO_LABEL = "font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)";
 const H3 = "margin:0;font:600 16.5px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.018em";
-const HOUR_ON = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
-const HOUR_OFF = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
 const DAY_ON = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
 const DAY_OFF = "padding:11px 4px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
 
@@ -55,23 +54,20 @@ function clockAt(t) {
   const time = new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz });
   return `${time}${zoneLabel(tz) ? ` ${zoneLabel(tz)}` : ''}`;
 }
-function dayAt(t) {
-  if (!t) return '';
-  const tz = getUserZone();
-  const d = new Date(t).toLocaleDateString('en-GB', { timeZone: tz });
-  const n = new Date().toLocaleDateString('en-GB', { timeZone: tz });
-  return d === n ? 'today' : 'tomorrow';
-}
+// today / tomorrow / "Sat 29 Nov": a break can run for days (shell/format).
+const dayAt = (t) => dayLabel(t);
 function pick(o, ...keys) { for (const k of keys) if (o && o[k] != null) return o[k]; return null; }
 
 export default function LiveGuardPage() {
   const { session } = useAuth();
   const { selectedAccount, selectedTradingAccountId, accountsLoading } = useTradingAccounts();
-  const { selected: g, refresh, now, subscribeTick } = useGuard();
+  const { selected: g, refresh, now, subscribeTick, unreadList } = useGuard();
   const toast = useToast();
   const navigate = useNavigate();
   const accessToken = session?.access_token;
-  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount });
+  // The guard's own copy of the live row — the one its lock is read from, so
+  // this page's P&L and its lockout can never come from different moments.
+  const liveRow = useSelectedLiveRow();
   /*
    * NO KEY, NO LIVE NUMBERS.
    *
@@ -85,28 +81,59 @@ export default function LiveGuardPage() {
   const noLiveKey = g.keyLive === false;
   const live = noLiveKey ? null : liveRow;
   const s = useMemo(() => sessionOf(live, g.rules), [live, g.rules]);
-  const cur = s.currency;
+  // sessionOf has no currency without a row; fall back to the account's own,
+  // never to a "$" on a rupee account.
+  const cur = s.currency ?? selectedAccount?.accountCurrency ?? 'USD';
   const [activityOpen, setActivityOpen] = useState(false);
-  const activity = useGuardActivity({ accessToken, tradingAccountId: selectedTradingAccountId, currency: cur, account: selectedAccount });
+  // A new unread alert re-reads the activity list at once (warnings that do
+  // not move the live row would otherwise wait for the backstop).
+  const alertKey = unreadList?.[0]?.id ?? '';
+  const activity = useGuardActivity({ accessToken, tradingAccountId: selectedTradingAccountId, currency: cur, account: selectedAccount, liveRow, alertKey });
   const fmt0 = (v) => fmtMoney(v, cur, { decimals: 0 });
 
   // ── positions ───────────────────────────────────────────────────────
-  const [positions, setPositions] = useState(null);
-  const loadPositions = useCallback(async (signal) => {
-    if (!accessToken || !selectedTradingAccountId) return;
-    try {
-      const t = await fetchJournalTrades({ accessToken, tradingAccountId: selectedTradingAccountId, limit: 50, signal });
-      const open = (Array.isArray(t) ? t : []).filter((x) => String(pick(x, 'status') || '').toUpperCase() === 'OPEN');
-      setPositions(open);
-    } catch { /* keep last */ }
-  }, [accessToken, selectedTradingAccountId]);
-  useEffect(() => {
-    const ctrl = new AbortController();
-    loadPositions(ctrl.signal);
-    const id = setInterval(() => loadPositions(ctrl.signal), POLL_MS);
-    return () => { ctrl.abort(); clearInterval(id); };
-  }, [loadPositions]);
+  /*
+   * POSITIONS BELONG TO ONE ACCOUNT.
+   *
+   * They were plain state, kept across an account switch until the new
+   * account's fetch landed — and `posOpen` decides whether the kill switch
+   * arms directly or asks how to treat the open trade. So for a moment after
+   * switching, the PREVIOUS account's open trade decided what this account's
+   * kill switch offered. A response for the old account could also land late
+   * (the POSITION_OPEN retry below runs without the poll's abort signal) and
+   * write the old list back.
+   *
+   * Stored with the id it was fetched for; a mismatch reads as unknown
+   * (null), exactly as on first load. Unknown arms the same way it always did
+   * on first load — the server still refuses with POSITION_OPEN if a trade is
+   * open, which brings up the choice — so the kill switch behaves as before.
+   */
+  /* Read from the activity list's trades (useGuardActivity), which is kept
+     per account id and re-read the moment the live row shows a trade open or
+     close; a separate /trades poll every 15 s used to fetch the same rows.
+     `activity.trades` is null until a fetch for THIS account has succeeded. */
+  const positions = useMemo(
+    () => (Array.isArray(activity.trades) ? activity.trades.filter((x) => String(pick(x, 'status') || '').toUpperCase() === 'OPEN') : null),
+    [activity.trades],
+  );
+  const loadPositions = activity.refresh;
   const posOpen = (positions?.length ?? 0) > 0;
+
+  /*
+   * ── feed freshness (lib/liveFeed) ─────────────────────────────────────
+   * `waiting`: no row from the server yet for this account — every live
+   * figure is a skeleton, never "$0.00" / "Flat so far" / "0 trades".
+   * `stale`: a position is open and the engine has gone quiet (restart,
+   * dropped exchange socket). The figures stay — they are the last we know —
+   * but the strip says "Delayed" / "Reconnecting" instead of "Guard live".
+   * Positions still unknown count as flat: no stale verdict from unloaded data.
+   */
+  const feed = noLiveKey ? null : feedOf(liveRow, { now, positionsOpen: positions == null ? null : posOpen });
+  const waiting = feed?.status === FEED.LOADING;
+  const stale = feed?.status === FEED.DELAYED || feed?.status === FEED.RECONNECTING;
+  // "Updated 8s ago" has to move, and Delayed has to arrive on time: tick the
+  // shared clock while a position is open (the only time age is judged).
+  useEffect(() => (posOpen && !noLiveKey ? subscribeTick() : undefined), [posOpen, noLiveKey, subscribeTick]);
 
   // ── kill switch (inline) ────────────────────────────────────────────
   const [hours, setHours] = useState(3);
@@ -114,6 +141,14 @@ export default function LiveGuardPage() {
   const [stage, setStage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  /* A half-finished arm (stage) or a POSITION_OPEN refusal (blocked) was
+     about the account it happened on. Switching starts the next one clean. */
+  const [controlsFor, setControlsFor] = useState(selectedTradingAccountId);
+  if (controlsFor !== selectedTradingAccountId) {
+    setControlsFor(selectedTradingAccountId);
+    setStage(0);
+    setBlocked(false);
+  }
   const isMobile = useIsMobile();
   /**
    * Commitment controls are collapsed on a phone.
@@ -147,9 +182,9 @@ export default function LiveGuardPage() {
     try {
       const res = await armLockout({ accessToken, tradingAccountId: selectedTradingAccountId, hours, whenOpen });
       await refresh();
-      if (res?.status === 'pending') toast.success(`Lock waiting — ${hours} hours`, 'It starts the moment your trade closes. New trades are closed until then.');
-      else if (whenOpen === 'close_now') toast.success(`Locked out for ${hours} hours`, 'Closing your open positions now.');
-      else toast.success(`Locked out for ${hours} hours`, 'Orders placed anywhere in the meantime get closed on sight.');
+      if (res?.status === 'pending') toast.success(`Lock waiting — ${durationLong(hours)}`, 'It starts the moment your trade closes. New trades are closed until then.');
+      else if (whenOpen === 'close_now') toast.success(`Locked out for ${durationLong(hours)}`, 'Closing your open positions now.');
+      else toast.success(`Locked out for ${durationLong(hours)}`, 'Orders placed anywhere in the meantime get closed on sight.');
       setStage(0);
       setBlocked(false);
     } catch (err) {
@@ -223,7 +258,8 @@ export default function LiveGuardPage() {
   const pnlSign = s.pnl == null ? 0 : Math.sign(s.pnl);
   const fg = pnlSign < 0 ? 'var(--red)' : pnlSign > 0 ? 'var(--mint)' : 'var(--ink)';
   const glow = pnlSign < 0 ? 'var(--red-tint)' : pnlSign > 0 ? 'var(--mint-tint)' : 'transparent';
-  const pnlStr = noLiveKey ? '—' : fmtMoney(s.pnl ?? 0, cur, { sign: true });
+  // A row with no P&L in it is "no reading", not zero.
+  const pnlStr = noLiveKey || s.pnl == null ? '—' : fmtMoney(s.pnl, cur, { sign: true });
   const [pnlMain, pnlDec] = splitDecimal(pnlStr);
   const usedPct = s.budgetPct ?? 0;
   const towardTarget = s.target && s.pnl > 0 ? Math.min(100, (s.pnl / s.target) * 100) : 0;
@@ -233,15 +269,35 @@ export default function LiveGuardPage() {
   const target = s.target ? fmt0(s.target) : '—';
   const summary = noLiveKey
     ? 'No key is connected to this account, so nothing is being watched and there is nothing live to show. Connect a key and today\u2019s P&L, limits and trade count appear here.'
+    : waiting
+    ? 'Reading the latest figures for this account\u2026'
+    : s.pnl == null
+    ? 'No reading for today yet. Your P&L, loss budget and trade count appear here as soon as the engine reports one.'
     : !hasLimits
     ? 'No trades yet, and no limits to show. Your loss limit and daily target appear here once setup is finished.'
     : g.readOnly
       ? `You are ${Math.round(usedPct)}% into today's loss budget. The key on this account is read-only, so at 100% we alert you and log it — we cannot close anything. Replace the key to make these limits enforceable.`
       : pnlSign < 0
-        ? `You are ${Math.round(usedPct)}% into today's loss budget. At 100% the guard closes everything and locks the day.`
+        ? (s.lossLimit
+          ? `You are ${Math.round(usedPct)}% into today's loss budget. At 100% the guard closes everything and locks the day.`
+          : 'Down so far today. No daily loss limit is set on this account, so the guard will not close the day on a loss.')
         : pnlSign === 0
-          ? `Flat so far. The guard closes the day at ${lossLimit} down, or locks it in at ${target} up.`
-          : `Banked so far today. The day locks itself at ${target} so the gain survives the afternoon.`;
+          ? (s.lossLimit && s.target
+            ? `Flat so far. The guard closes the day at ${lossLimit} down, or locks it in at ${target} up.`
+            : s.lossLimit
+              ? `Flat so far. The guard closes the day at ${lossLimit} down.`
+              : `Flat so far. The day locks itself in at ${target} up.`)
+          /*
+           * "Banked" only when it is: with a trade still open the figure
+           * includes unrealised P&L that can still go (20 Nov: an open short
+           * showed "Banked"). And no target means no lock-in to promise; the
+           * sentence used to print "locks itself at —".
+           */
+          : `${posOpen ? 'Up so far today, including your open trade.' : 'Banked so far today.'} ${s.target
+            ? `The day locks itself at ${target} so the gain survives.`
+            : s.lossLimit
+              ? `No daily target is set, so the day stays open; your ${lossLimit} loss limit still applies.`
+              : 'No daily target is set, so the day stays open.'}`;
   const fillLeft = pnlSign < 0 ? `${50 - usedPct / 2}%` : '50%';
   const fillWidth = pnlSign < 0 ? `${usedPct / 2}%` : `${towardTarget / 2}%`;
   const fillBg = pnlSign < 0 ? 'var(--red-solid)' : 'var(--mint-solid)';
@@ -349,7 +405,7 @@ export default function LiveGuardPage() {
       bar: `${Math.min(100, Math.max(0, usedPct))}%`,
       barBg: usedPct > 70 ? 'var(--red-solid)' : 'var(--amber-solid)',
       fg: usedPct > 70 ? 'var(--red)' : 'var(--ink)',
-      note: locked ? 'Frozen at the lockout' : 'At 0 we close the day',
+      note: locked ? 'Frozen at the lockout' : s.lossLimit ? 'At 0 we close the day' : 'No daily loss limit set',
       noteFg: 'var(--ink-3)',
     }),
     tone(atTradeCap ? 'red' : nearCap ? 'amber' : 'neutral', {
@@ -369,11 +425,11 @@ export default function LiveGuardPage() {
     tone('neutral', {
       k: 'Toward target',
       tag: null,
-      v: `${Math.round(towardTarget)}%`,
+      v: s.target ? `${Math.round(towardTarget)}%` : '—',
       bar: `${Math.min(100, Math.max(0, towardTarget))}%`,
       barBg: 'var(--mint-solid)',
       fg: 'var(--ink)',
-      note: locked ? 'Paused while locked' : towardTarget >= 100 ? 'Target hit — the day is locked in' : 'Day locks itself when it lands',
+      note: locked ? 'Paused while locked' : !s.target ? 'No daily target set' : towardTarget >= 100 ? 'Target hit — the day is locked in' : 'Day locks itself when it lands',
       noteFg: 'var(--ink-3)',
     }),
     tone(g.readOnly || rulesOn === 0 ? 'amber' : 'neutral', {
@@ -394,6 +450,11 @@ export default function LiveGuardPage() {
       Object.assign(t, TONE.neutral, { v: '—', tag: null, bar: '0%', pips: null, fg: 'var(--ink-3)', note: 'No key connected', noteFg: 'var(--ink-3)' });
     }
     tiles[3].note = 'Rules are set, but no key is connected to act on them';
+  } else if (waiting) {
+    /* Not loaded is not zero: skeletons until the first live row lands. */
+    for (const t of tiles.slice(0, 3)) {
+      Object.assign(t, TONE.neutral, { v: <SkeletonValue w="3.4ch" label={`Loading ${t.k.toLowerCase()}`} />, tag: null, bar: '0%', pips: null, fg: 'var(--ink-3)', note: 'Reading\u2026', noteFg: 'var(--ink-3)' });
+    }
   }
 
 
@@ -408,6 +469,12 @@ export default function LiveGuardPage() {
     ? { label: 'Locked out', meta: g.readOnly ? 'Lockout is a commitment — this key cannot block orders' : 'New orders are rejected on this account', right: `releases ${clockAt(g.lockUntil)}`, tone: 'var(--red)', bg: 'var(--red-tint)' }
     : noLiveKey
       ? { label: 'Not watching', meta: 'No key connected — nothing on this account is being watched', right: '', tone: 'var(--ink-3)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
+    : waiting
+      ? { label: 'Connecting', meta: 'Reading the latest from this account', right: '', tone: 'var(--ink-3)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
+    : stale
+      ? feed.status === FEED.RECONNECTING
+        ? { label: 'Reconnecting', meta: 'The live feed has gone quiet. The figures below are the last we received.', right: `updated ${agoLabel(feed.ageMs)}`, tone: 'var(--amber)', bg: 'var(--amber-tint)', sweep: SWEEP.calm }
+        : { label: 'Delayed', meta: 'No update for a few seconds while a position is open — the figures below may be behind.', right: `updated ${agoLabel(feed.ageMs)}`, tone: 'var(--amber)', bg: 'var(--amber-tint)', sweep: SWEEP.calm }
     : !enforcing
       ? g.readOnly
         ? { label: 'Watching', meta: 'Alerts only — this key cannot close positions', right: 'updates as fills land', tone: 'var(--amber)', bg: 'var(--surface-2)', sweep: SWEEP.calm }
@@ -416,7 +483,7 @@ export default function LiveGuardPage() {
         ? { label: 'Near the limit', meta: atTradeCap ? 'Trade cap reached — the next entry is blocked' : `${Math.round(usedPct)}% of today's loss budget used — the guard is close to closing the day`, right: 'one bad fill from a close', tone: 'var(--red)', bg: 'var(--red-tint)', sweep: SWEEP.danger }
         : band === 'caution'
           ? { label: 'Getting close', meta: nearCap ? 'One trade left before your cap' : `${Math.round(usedPct)}% of today's loss budget used`, right: 'slow down here', tone: 'var(--amber)', bg: 'var(--amber-tint)', sweep: SWEEP.caution }
-          : { label: 'Guard live', meta: `${rulesOn} rules armed · positions closed from our servers`, right: 'updates as fills land', tone: 'var(--mint)', bg: 'var(--surface-2)', sweep: SWEEP.calm };
+          : { label: 'Guard live', meta: `${rulesOn} rules armed · positions closed from our servers`, right: feed?.status === FEED.LIVE && feed.ageMs != null ? `updated ${agoLabel(feed.ageMs)}` : 'updates as fills land', tone: 'var(--mint)', bg: 'var(--surface-2)', sweep: SWEEP.calm };
 
 
   if (!accountsLoading && !selectedAccount) {
@@ -505,7 +572,7 @@ export default function LiveGuardPage() {
 
               <div style={sx('flex:1;min-width:min(250px,100%);padding:18px 19px;border:1px solid var(--line);border-radius:16px;background:var(--surface)')}>
                 <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>Session closed at</div>
-                <div style={sx("margin-top:10px;font:700 34px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: fg })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
+                <div style={sx("margin-top:10px;font:700 34px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.03em", { color: fg })}>{waiting ? <SkeletonValue w="4.5ch" label="Loading today's P&L" /> : <>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</>}</div>
                 <div style={sx('display:flex;flex-direction:column;gap:10px;margin-top:16px')}>
                   {(g.readOnly
                     ? [['!', 'var(--amber)', 'var(--amber-tint)', 'We cannot block new orders with a read-only key']]
@@ -527,7 +594,7 @@ export default function LiveGuardPage() {
             <div style={sx('display:flex;align-items:flex-start;justify-content:space-between;gap:26px;flex-wrap:wrap')}>
               <div style={sx('flex:1;min-width:min(280px,100%)')}>
                 <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)")}>Today · session P&amp;L</div>
-                <div style={sx("margin-top:12px;font:700 62px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.05em", { color: fg, textShadow: `0 0 48px ${glow}` })}>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</div>
+                <div style={sx("margin-top:12px;font:700 62px/1 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.05em", { color: fg, textShadow: `0 0 48px ${glow}` })}>{waiting ? <SkeletonValue w="4.5ch" label="Loading today's P&L" /> : <>{pnlMain}{pnlDec != null && <span style={sx('font-size:.52em;letter-spacing:-.02em;opacity:.55')}>.{pnlDec}</span>}</>}</div>
                 <div style={sx('margin-top:12px;font-size:13px;line-height:1.55;color:var(--ink-2);max-width:52ch;text-wrap:pretty')}>{summary}</div>
               </div>
 
@@ -730,20 +797,19 @@ export default function LiveGuardPage() {
 
             {armable && (
               <div style={sx('margin-top:auto')}>
-                <div style={sx('display:flex;align-items:center;min-height:15px;margin-bottom:10px')}>
+                <div style={sx('display:flex;align-items:center;min-height:15px;margin-bottom:11px')}>
                   <span style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-faint)")}>Lock duration</span>
                 </div>
-                <div style={sx('min-height:9px;margin-bottom:4px')} aria-hidden />
-                <div style={sx('display:flex;gap:8px;margin-bottom:12px')} role="radiogroup" aria-label="Lock duration">
-                  {LOCKOUT_HOUR_OPTIONS.map((h) => <button key={h} type="button" role="radio" aria-checked={hours === h} onClick={() => setHours(h)} style={sx(hours === h ? HOUR_ON : HOUR_OFF)}>{h}h</button>)}
+                <div style={sx('margin-bottom:14px')}>
+                  <LockDurationPicker hours={hours} setHours={setHours} disabled={stage === 1} />
                 </div>
                 {stage === 0 && <button type="button" className="ks-arm" onClick={() => setStage(1)} style={sx('width:100%;padding:11px;border:1px solid var(--red-line);border-radius:10px;background:var(--red-tint);color:var(--red);font-size:13px;font-weight:700')}>Arm the lockout</button>}
                 {stage === 1 && (
                   <div style={sx('padding:13px 14px;border:1px solid var(--red-line);border-radius:11px;background:var(--red-tint)')}>
                     <div style={sx('font-size:12.5px;font-weight:700;color:var(--red)')}>Read this before you confirm</div>
-                    <p style={sx('margin:5px 0 11px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>You will not be able to trade this account for {hours} hours. There is no cancel. Orders placed anywhere in the meantime get closed on sight.</p>
+                    <p style={sx('margin:5px 0 11px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>You will not be able to trade this account for {durationLong(hours)}, until {formatResumes(lockEndsAt(hours))}. There is no cancel. Orders placed anywhere in the meantime get closed on sight.</p>
                     <div style={sx('display:flex;gap:8px')}>
-                      <button type="button" disabled={busy} onClick={() => arm()} style={sx('flex:1;padding:10px;border:1px solid var(--red-solid);border-radius:9px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${hours} hours`}</button>
+                      <button type="button" disabled={busy} onClick={() => arm()} style={sx('flex:1;padding:10px;border:1px solid var(--red-solid);border-radius:9px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>{busy ? 'Arming…' : `Lock me out for ${durationLong(hours)}`}</button>
                       <button type="button" disabled={busy} onClick={() => setStage(0)} style={sx('padding:10px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Back</button>
                     </div>
                   </div>

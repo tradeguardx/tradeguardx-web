@@ -98,3 +98,45 @@ export function getStoredReferralCode() {
 export function clearReferralCode() {
   safeRemoveStorage();
 }
+
+/*
+ * "Pending bind": a code was captured and the server has not yet been told
+ * who brought this person. Set on every capture; cleared on any 200 from
+ * POST /payments/referral/bind (bound or not — the server has answered, and
+ * first bind wins there anyway). A failed call leaves it set, so the next
+ * signed-in load tries again.
+ */
+const PENDING_KEY = 'tgx_referral_bind_pending';
+
+export function markReferralBindPending() {
+  try { localStorage.setItem(PENDING_KEY, '1'); } catch { /* ignore */ }
+}
+
+export function isReferralBindPending() {
+  try { return localStorage.getItem(PENDING_KEY) === '1'; } catch { return false; }
+}
+
+export function clearReferralBindPending() {
+  try { localStorage.removeItem(PENDING_KEY); } catch { /* ignore */ }
+}
+
+/**
+ * Take `ref` out of the address bar once it is stored, keeping every other
+ * param, the hash and the router's history state. A shared or bookmarked
+ * URL then no longer carries somebody's code, and a reload does not
+ * re-capture it. Returns true when it changed the URL.
+ */
+export function stripRefFromAddressBar() {
+  if (typeof window === 'undefined' || !window.history?.replaceState) return false;
+  let url;
+  try { url = new URL(window.location.href); } catch { return false; }
+  if (!url.searchParams.has('ref')) return false;
+  url.searchParams.delete('ref');
+  const search = url.searchParams.toString();
+  try {
+    window.history.replaceState(window.history.state, '', `${url.pathname}${search ? `?${search}` : ''}${url.hash}`);
+  } catch {
+    return false;
+  }
+  return true;
+}

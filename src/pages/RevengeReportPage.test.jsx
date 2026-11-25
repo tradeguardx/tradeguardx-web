@@ -126,3 +126,35 @@ describe('revenge report page', () => {
     expect(screen.getByText(/My revenge score: 38\/100/)).toBeTruthy();
   });
 });
+
+/* 21 Nov 2026: an Exness (snapshot) report was frozen at unlock. */
+describe('revenge report page: a snapshot keeps itself current', () => {
+  const ago = (h) => new Date(Date.now() - h * 3600_000).toISOString();
+
+  it('opened on a snapshot older than a day: re-read quietly, report stays on screen', async () => {
+    fetchRevengeReport.mockImplementation(async () => ({ ...report, source: 'snapshot', windowDays: 90, snapshotAt: ago(30) }));
+    unlockRevengeReport.mockImplementation(async () => ({ status: 'ready', source: 'snapshot', refreshing: true }));
+    mount();
+    expect(await screen.findByText('After a loss, you trade to get it back.')).toBeTruthy();
+    await waitFor(() => expect(unlockRevengeReport).toHaveBeenCalledWith(expect.objectContaining({ refresh: true })));
+    expect(screen.getByText('After a loss, you trade to get it back.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Updating…' })).toBeTruthy();
+  });
+
+  it('a fresh snapshot is left alone, and says when it was read', async () => {
+    fetchRevengeReport.mockImplementation(async () => ({ ...report, source: 'snapshot', windowDays: 90, snapshotAt: ago(3) }));
+    mount();
+    expect(await screen.findByText(/Read from .* 3 hours ago\./)).toBeTruthy();
+    expect(unlockRevengeReport).not.toHaveBeenCalledWith(expect.objectContaining({ refresh: true }));
+  });
+
+  it('Refresh on a snapshot re-reads the exchange, not the tax import', async () => {
+    const { triggerHistoryBackfill } = await import('../api/syncApi');
+    fetchRevengeReport.mockImplementation(async () => ({ ...report, source: 'snapshot', windowDays: 90, snapshotAt: ago(2) }));
+    unlockRevengeReport.mockImplementation(async () => ({ status: 'ready', source: 'snapshot' }));
+    mount();
+    fireEvent.click(await screen.findByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(unlockRevengeReport).toHaveBeenCalledWith(expect.objectContaining({ refresh: true })));
+    expect(triggerHistoryBackfill).not.toHaveBeenCalled();
+  });
+});

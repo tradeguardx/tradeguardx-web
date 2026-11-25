@@ -1,0 +1,58 @@
+# Checks only: install, unit tests, lint (advisory), production build with
+# prerender. No deploys (Vercel deploys on its own), no secrets.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Dummies, not secrets. src/lib/supabaseClient.js throws at import without a
+  # URL, which would blank every prerendered page. Nothing in CI signs in.
+  VITE_SUPABASE_URL: http://localhost:54321
+  VITE_SUPABASE_ANON_KEY: ci-dummy-anon-key
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      # Puppeteer downloads its own Chrome on install (~150 MB); keep it
+      # between runs so each run does not fetch it again.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npm ci --no-audit --no-fund
+      # Tax-arithmetic guard, sitemap check, then Vitest (vitest.config.mts
+      # supplies its own dummy Supabase env, so no .env.local is needed).
+      - name: Unit tests
+        run: npm test
+      # Lint DEBT: `eslint .` reports ~1,460 errors on main today. Advisory
+      # until that is paid down; then delete continue-on-error.
+      - name: Lint (advisory)
+        run: npm run lint
+        continue-on-error: true
+      # Ubuntu 24.04 blocks the unprivileged user namespaces Chrome's sandbox
+      # needs, so Puppeteer's Chrome fails to launch for the prerender step.
+      # Re-allow them on this throwaway runner rather than change vite.config.
+      - name: Allow Chrome sandbox (prerender)
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      # The real build: sitemap check, vite build with Puppeteer prerender of
+      # every public route, then the prerendered-SEO check. The prerender loads
+      # pages that call the public prod API (pricing, offers), as Vercel does.
+      - name: Build (with prerender)
+        run: npm run build

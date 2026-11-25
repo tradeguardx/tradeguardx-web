@@ -31,6 +31,7 @@ const links = {
     { label: 'What is a crypto kill switch?', to: '/crypto-kill-switch' },
     { label: 'Revenge trading report', to: '/revenge-report' },
     { label: 'Guides', to: '/help' },
+    { label: 'Video tutorials', to: '/tutorials' },
     { label: 'Blog', to: '/blog' },
     { label: 'Crypto tax India', to: '/crypto-tax-india' },
     { label: 'Security', to: '/security' },
@@ -41,7 +42,13 @@ const links = {
     { label: 'Email Us', to: 'mailto:support@tradeguardx.com' },
     { label: 'Partner program', to: '/partner-with-us' },
   ],
-  legal: [
+};
+
+/* Legal sits in the bottom bar beside the copyright (24 Nov 2026). As a fifth
+   column it wrapped onto its own row under the brand block and left the right
+   side of the footer empty. */
+const legal = {
+  items: [
     { label: 'Privacy Policy', to: '/privacy' },
     { label: 'Terms & Conditions', to: '/terms' },
     { label: 'Refund Policy', to: '/refund' },
@@ -136,18 +143,14 @@ export default function Footer() {
               </div>
               <span className="font-display text-base font-bold text-white">TradeGuard<span className="tgx-x">X</span></span>
             </Link>
+            {/* No exchange list here: the Exchanges column has it, and a list in
+                prose goes stale (it said Delta, CoinDCX and Shark long after
+                Exness and Bybit went live). The "All systems operational" pill
+                was fixed text, not a status check, so it went (24 Nov 2026). */}
             <p className="max-w-xs text-sm leading-relaxed text-slate-400">
-              Automated trade protection for serious traders. A server-side kill
-              switch that enforces your risk rules on Delta, CoinDCX and Shark in real time.
+              A server-side kill switch for your exchange account. It enforces your daily loss limit and
+              trading rules in real time, and closes positions when a rule is broken.
             </p>
-            {/* Status pill */}
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              </span>
-              <span className="text-[11px] font-semibold text-emerald-300">All systems operational</span>
-            </div>
             {/*
               * Product Hunt (owner, 13 Nov 2026). Social proof for visitors,
               * and a link from our own site to the listing helps it rank for
@@ -159,7 +162,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TradeGuardX on Product Hunt"
-              className="mt-3 flex w-fit items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] py-2 pl-2 pr-3.5 transition hover:border-[#FF6154]/40 hover:bg-[#FF6154]/[0.06]"
+              className="mt-6 flex w-fit items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] py-2 pl-2 pr-3.5 transition hover:border-[#FF6154]/40 hover:bg-[#FF6154]/[0.06]"
             >
               <svg viewBox="0 0 40 40" className="h-7 w-7 flex-none" aria-hidden="true">
                 <circle cx="20" cy="20" r="20" fill="#FF6154" />
@@ -220,6 +223,13 @@ export default function Footer() {
               TradeGuardX is not affiliated with any exchange or broker. Trading
               involves risk — use at your own discretion.
             </p>
+            <nav aria-label="Legal" className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+              {legal.items.map((l) => (
+                <Link key={l.label} to={l.to} className="text-xs text-slate-500 transition-colors hover:text-white">
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
           </div>
 
           {/* Socials */}

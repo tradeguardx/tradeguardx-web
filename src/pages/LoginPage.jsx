@@ -172,7 +172,7 @@ export default function LoginPage() {
         </p>
 
         <div className="flex items-center gap-5 mt-8">
-          {['Secure login', '2,500+ traders', 'Free plan available'].map((t) => (
+          {['Secure login', 'Trade-only keys', 'No withdrawal access'].map((t) => (
             <span key={t} className="flex items-center gap-1.5 text-[11px] text-slate-600">
               <span className="w-1 h-1 rounded-full bg-accent/50" />
               {t}

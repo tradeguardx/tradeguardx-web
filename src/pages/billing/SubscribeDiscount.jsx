@@ -8,9 +8,12 @@ import { discountWording, offerLabel } from '../../lib/siteOffer';
  * place to type a code. Prices on the page change from `discount`, not here.
  */
 export default function SubscribeDiscount({ discount }) {
-  const { offer, offerCode, coupon, setCoupon, typed, checked, refusal, apply, checking, best } = discount;
+  const { offer, offerCode, coupon, setCoupon, typed, checked, refusal, apply, checking, best, invitedName } = discount;
   const [open, setOpen] = useState(false);
   const showOffer = !typed && offerCode && best;
+  /* Applied: the field locks and the button takes the code off (owner, 16 Nov 2026). */
+  const locked = Boolean(typed && checked && best);
+  const remove = () => { setCoupon(''); requestAnimationFrame(() => document.getElementById('subscribe-coupon')?.focus()); };
 
   return (
     <div style={sx('margin-top:14px;max-width:460px')}>
@@ -23,11 +26,14 @@ export default function SubscribeDiscount({ discount }) {
 
       {open || coupon ? (
         <div style={sx('margin-top:10px')}>
-          <label htmlFor="subscribe-coupon" style={sx('display:block;margin-bottom:6px;font-size:11.5px;color:var(--ink-faint)')}>Coupon code</label>
+          <label htmlFor="subscribe-coupon" style={sx('display:block;margin-bottom:6px;font-size:11.5px;color:var(--ink-faint)')}>
+            {invitedName ? <span data-invited-by style={sx('color:var(--mint);font-weight:600')}>Referral from {invitedName}</span> : 'Coupon code'}
+          </label>
           <div style={sx('display:flex;gap:8px')}>
             <input
               id="subscribe-coupon"
               value={coupon}
+              readOnly={locked}
               onChange={(e) => setCoupon(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); apply(); } }}
               placeholder="Enter code"
@@ -35,21 +41,32 @@ export default function SubscribeDiscount({ discount }) {
               spellCheck={false}
               style={sx("flex:1;min-width:0;min-height:44px;padding:11px 13px;border:0;border-radius:12px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line-input);color:var(--ink);font:600 13px/1 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase")}
             />
-            <button
-              type="button"
-              onClick={apply}
-              disabled={!typed || checking}
-              style={sx(`flex:none;min-height:44px;padding:0 14px;border:0;border-radius:12px;background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--line-strong);color:var(--ink);font-size:13px;font-weight:700;opacity:${!typed || checking ? 0.5 : 1}`)}
-            >
-              {checking ? 'Checking…' : 'Apply'}
-            </button>
+            {locked ? (
+              <button
+                type="button"
+                onClick={remove}
+                aria-label={`Remove code ${typed}`}
+                style={sx('flex:none;min-height:44px;padding:0 14px;border:0;border-radius:12px;background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong);color:var(--ink-2);font-size:13px;font-weight:700')}
+              >
+                Remove
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={apply}
+                disabled={!typed || checking}
+                style={sx(`flex:none;min-height:44px;padding:0 14px;border:0;border-radius:12px;background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--line-strong);color:var(--ink);font-size:13px;font-weight:700;opacity:${!typed || checking ? 0.5 : 1}`)}
+              >
+                {checking ? 'Checking…' : 'Apply'}
+              </button>
+            )}
           </div>
           {!typed ? (
             <p style={sx('margin:7px 0 0;font-size:11.5px;line-height:1.45;color:var(--ink-faint)')}>
               {showOffer ? `A code you enter here replaces the ${offerLabel(offer).toLowerCase()}.` : 'Press Apply to see the new price.'}
             </p>
           ) : checked && best ? (
-            <p style={sx('margin:7px 0 0;font-size:11.5px;line-height:1.45;color:var(--mint)')}>{`${discountWording(best)} applied.`}</p>
+            <p style={sx('margin:7px 0 0;font-size:11.5px;line-height:1.45;color:var(--mint)')}>{`✓ ${discountWording(best)} applied.`}</p>
           ) : refusal ? (
             <p role="alert" style={sx(`margin:7px 0 0;font-size:11.5px;line-height:1.45;color:${refusal === 'UNSUPPORTED' || refusal === 'LOOKUP' ? 'var(--ink-faint)' : 'var(--red)'}`)}>
               {COUPON_REFUSAL[refusal] ?? COUPON_REFUSAL.UNKNOWN}

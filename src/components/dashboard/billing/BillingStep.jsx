@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { createCheckoutSession, validateCoupon, fetchTrialEligibility } from '../../../api/paymentsApi';
 import { getPricingPlans } from '../../../api/pricingApi';
+import { getInvitedBy } from '../../../api/referralApi';
 import { bandOfPlan, bandSync, formatMoney, planForBand, testerPriceFor, TESTER_DAYS } from '../../../lib/priceBands';
 import { trackBilling } from '../../../lib/analytics';
-import { checkoutCouponCode } from '../../../lib/checkoutCoupon';
-import { getStoredReferralCode } from '../../../lib/referralCode';
-import { getLinkPromoCode } from '../../../lib/promoLink';
 import { useActiveOffer } from '../../../hooks/useActiveOffer';
 import { offerCoversInterval, offerLabel, discountWording, offerPrice } from '../../../lib/siteOffer';
 
@@ -216,9 +214,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
    * shown at all.
    */
   const { offer } = useActiveOffer();
-  const ownCode = useMemo(() => Boolean(getStoredReferralCode() || getLinkPromoCode()), []);
   const offerCode =
-    !typed && !ownCode && offer && options.some((o) => offerCoversInterval(offer, o.id)) ? offer.code : null;
+    !typed && offer && options.some((o) => offerCoversInterval(offer, o.id)) ? offer.code : null;
   const [offerCheck, setOfferCheck] = useState(null);
   const intervalKey = options.map((o) => o.id).join(',');
   const token = session?.access_token;
@@ -260,9 +257,17 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
      already said no for this interval — a refused code is not passed on. */
   const offerVerdict = offerVerified?.[cur.id];
   const offerRefused = Boolean(offerVerdict && !offerVerdict.valid && offerVerdict.reason !== 'LOOKUP' && offerVerdict.reason !== 'UNSUPPORTED');
-  const carried = checkoutCouponCode({ interval: cur.id, multiInterval: options.length > 1, offer });
-  const autoCoupon = carried === offer?.code && (offerRefused || !offerOn) ? undefined : carried;
-  const effectiveCoupon = coupon.trim() || autoCoupon || undefined;
+  /*
+   * ONLY WHAT IS ON SCREEN IS SENT (owner, 21 Nov 2026): the code in the box,
+   * or the offer they pressed Apply on. A referral or promo-link code saved
+   * in this browser used to ride along unseen; a dead one ("PRODUCTHUNT")
+   * then failed checkout with an empty coupon box. Anyone with a code types
+   * it and presses Apply. A typed code the server refused is not sent.
+   */
+  const autoCoupon = offerOn && !offerRefused && offer?.code && offerCoversInterval(offer, cur.id) ? offer.code : undefined;
+  const typedVerdict = applied?.code === typed ? applied.byInterval?.[cur.id] : null;
+  const typedRefused = Boolean(typedVerdict && !typedVerdict.valid && typedVerdict.reason !== 'LOOKUP' && typedVerdict.reason !== 'UNSUPPORTED');
+  const effectiveCoupon = (typed && !typedRefused ? typed : undefined) || autoCoupon || undefined;
   /* Checkout applies a live offer by itself when no code is sent. Someone who
      left it off saw list price, so tell it not to (payments: skipOffer). */
   const skipOffer = !effectiveCoupon && !offerOn;
@@ -324,8 +329,21 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
   /* The chip: the offer, verified for the selected plan, and nothing typed. */
   const offerApplied = !typed && offerOn && offerUsable ? offerUsable : null;
 
-  const apply = async () => {
-    const code = coupon.trim().toUpperCase();
+  /* A typed code the server accepted for at least one plan. Locked so the
+     price on screen can't drift from the code it was checked for. */
+  const codeLocked = typed && applied?.code === typed && Object.values(applied.byInterval).some((v) => v?.valid);
+  const removeCode = () => {
+    trackBilling('billing_coupon_removed', { code: typed });
+    // Taking the friend's referral off means no referral discount at all:
+    // checkout must not put it back on by itself (payments skipReferral).
+    if (invited && typed === invited.code) setReferralRemoved(true);
+    setCoupon('');
+    setApplied(null);
+    requestAnimationFrame(() => document.getElementById('bs-coupon')?.focus());
+  };
+
+  const apply = async (preset) => {
+    const code = (typeof preset === 'string' ? preset : coupon).trim().toUpperCase();
     if (!code || couponBusy) return;
     setCouponBusy(true);
     try {
@@ -344,6 +362,38 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
       setCouponBusy(false);
     }
   };
+
+  /*
+   * A FRIEND'S REFERRAL, SHOWN (owner, 21 Nov 2026). Someone who signed up
+   * through a friend's link is owed the referral discount, and checkout used
+   * to add it unseen: ₹1,299 here, less on the payment page. Now the friend's
+   * code goes into the box and is checked like any code, so the price here is
+   * the price they pay, with "Referral from Rahul M." above it and Remove to
+   * take it off. Only when the box is empty and they have not removed it.
+   */
+  const [invited, setInvited] = useState(null);
+  const couponRef = useRef(coupon);
+  useEffect(() => { couponRef.current = coupon; }, [coupon]);
+  const [referralRemoved, setReferralRemoved] = useState(false);
+  const invitedTried = useRef(false);
+  useEffect(() => {
+    const t = session?.access_token;
+    if (!t || invitedTried.current || options.length === 0) return;
+    invitedTried.current = true;
+    getInvitedBy({ accessToken: t })
+      .then((inv) => {
+        if (!inv?.code) return;
+        setInvited(inv);
+        // Something typed meanwhile wins; the friend's code waits behind it.
+        if (couponRef.current.trim()) return;
+        setCoupon(inv.code);
+        apply(inv.code);
+      })
+      .catch(() => { /* no line shown; checkout still applies the referral */ });
+    // apply reads options at call time; this runs once per mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.access_token, options.length]);
+  const showInvited = Boolean(invited && typed === invited.code);
 
   /*
    * Dates from the real trial length, in the user's own zone (lib/userZone). "Today" is when the guard comes
@@ -395,6 +445,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
           interval: cur.id,
           couponCode: effectiveCoupon,
           skipOffer,
+          // They took the friend's referral off: checkout must not re-add it.
+          skipReferral: referralRemoved && !effectiveCoupon,
         });
       if (!res?.checkoutUrl) throw new Error('Could not open checkout. Please try again.');
       trackBilling('billing_trial_started', { plan: chosen });
@@ -408,7 +460,9 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
     }
   };
 
-  const guardOff = !(user?.isTrial || user?.access === 'active');
+  // Only once access is KNOWN (null until /me answers — AuthContext): an
+  // unanswered or failed /me is not "guard off".
+  const guardOff = user?.access != null && !(user?.isTrial || user?.access === 'active');
 
   return (
     <div style={{ color: 'var(--ink)', fontSize: 14 }}>
@@ -429,8 +483,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
             body={stepsDone >= 3
               ? 'Your key is connected, but nothing is enforced until you finish this step.'
               : stepsDone === 0
-                ? 'Add an account and connect its key first, then choose a plan to switch it on.'
-                : 'Connect your key first, then choose a plan to switch it on.'}
+                ? 'You can choose your plan now. Your guard switches on once you add an account and connect its key.'
+                : 'You can choose your plan now. Your guard switches on once your key is connected.'}
           />
         </div>
       )}
@@ -776,11 +830,17 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                   )}
                   {/* Always open (owner, 9 Nov 2026): no "Have a coupon?" link to find. */}
                     <div>
-                      <label htmlFor="bs-coupon" style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-faint)', marginBottom: 6 }}>Coupon code</label>
+                      <label htmlFor="bs-coupon" style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-faint)', marginBottom: 6 }}>
+                        {showInvited ? (
+                          <span data-invited-by style={{ color: 'var(--mint)', fontWeight: 600 }}>Referral from {invited.name}</span>
+                        ) : 'Coupon code'}
+                      </label>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <input
                           id="bs-coupon"
                           value={coupon}
+                          readOnly={Boolean(codeLocked)}
+                          aria-describedby={codeLocked ? 'bs-coupon-status' : undefined}
                           onChange={(e) => { setCoupon(e.target.value); setApplied(null); }}
                           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); apply(); } }}
                           placeholder="Enter code"
@@ -788,14 +848,27 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                           spellCheck={false}
                           style={{ flex: 1, minWidth: 0, minHeight: 44, padding: '11px 13px', border: 0, borderRadius: 12, background: 'var(--surface-2)', boxShadow: `inset 0 0 0 1px ${discount ? 'var(--mint-line)' : 'var(--line-input)'}`, color: 'var(--ink)', font: "600 13px/1 'JetBrains Mono',monospace", letterSpacing: '.06em', textTransform: 'uppercase' }}
                         />
-                        <button
-                          type="button"
-                          onClick={apply}
-                          disabled={!coupon.trim() || couponBusy}
-                          style={{ flex: 'none', minHeight: 44, padding: '0 14px', border: 0, borderRadius: 12, background: 'var(--surface-3)', boxShadow: 'inset 0 0 0 1px var(--line-strong)', color: 'var(--ink)', fontSize: 13, fontWeight: 700, opacity: !coupon.trim() || couponBusy ? 0.5 : 1 }}
-                        >
-                          {couponBusy ? 'Checking…' : 'Apply'}
-                        </button>
+                        {codeLocked ? (
+                          /* Applied: the field locks and the one action left is
+                             taking it off (owner, 16 Nov 2026). */
+                          <button
+                            type="button"
+                            onClick={removeCode}
+                            aria-label={`Remove code ${typed}`}
+                            style={{ flex: 'none', minHeight: 44, padding: '0 14px', border: 0, borderRadius: 12, background: 'transparent', boxShadow: 'inset 0 0 0 1px var(--line-strong)', color: 'var(--ink-2)', fontSize: 13, fontWeight: 700 }}
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={apply}
+                            disabled={!coupon.trim() || couponBusy}
+                            style={{ flex: 'none', minHeight: 44, padding: '0 14px', border: 0, borderRadius: 12, background: 'var(--surface-3)', boxShadow: 'inset 0 0 0 1px var(--line-strong)', color: 'var(--ink)', fontSize: 13, fontWeight: 700, opacity: !coupon.trim() || couponBusy ? 0.5 : 1 }}
+                          >
+                            {couponBusy ? 'Checking…' : 'Apply'}
+                          </button>
+                        )}
                       </div>
 
                       {isPass ? null : !typed ? (
@@ -805,8 +878,8 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                             : 'Have a code? Press Apply to see the new price.'}
                         </p>
                       ) : discount ? (
-                        <p style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--mint)' }}>
-                          {discount.amountOff ? `₹${discount.amountOff.toLocaleString('en-IN')} off` : `${discount.percentOff}% off`} applied.{' '}
+                        <p id="bs-coupon-status" style={{ margin: '7px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--mint)' }}>
+                          <span aria-hidden="true">✓ </span>{discount.amountOff ? `₹${discount.amountOff.toLocaleString('en-IN')} off` : `${discount.percentOff}% off`} applied.{' '}
                           {discount.cycles
                             ? `Covers your first ${discount.cycles === 1 ? 'payment' : `${discount.cycles} payments`}, then the full price.`
                             : 'Applies to every renewal.'}
@@ -861,6 +934,7 @@ export default function BillingStep({ onStarted, setupCta, stepsDone = LAST, onB
                 ) : isPass ? (
                   <p data-pass-note="1" style={{ margin: '12px 0 0', fontSize: 11.5, lineHeight: 1.55, color: 'var(--ink-2)', textAlign: 'left' }}>
                     One payment{isInr ? '' : ' in US dollars'}. No AutoPay and nothing renews. When the {TESTER_DAYS} days end, choose a plan to keep your guard on — your rules carry over.
+                    {stepsDone < 3 ? ` The ${TESTER_DAYS} days start when you pay, so connect your key first to get all of them.` : ''}
                   </p>
                 ) : (
                   /*

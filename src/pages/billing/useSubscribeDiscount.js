@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { validateCoupon } from '../../api/paymentsApi';
+import { getInvitedBy } from '../../api/referralApi';
 import { useActiveOffer } from '../../hooks/useActiveOffer';
-import { checkoutCouponCode } from '../../lib/checkoutCoupon';
-import { getStoredReferralCode } from '../../lib/referralCode';
-import { getLinkPromoCode } from '../../lib/promoLink';
 import { offerCoversInterval } from '../../lib/siteOffer';
 
 const checkAll = (token, code, intervals) =>
@@ -38,9 +36,35 @@ export function useSubscribeDiscount({ enabled, intervals, token }) {
 
   const typed = coupon.trim().toUpperCase();
   const key = intervals.join(',');
-  const ownCode = useMemo(() => Boolean(getStoredReferralCode() || getLinkPromoCode()), []);
+
+  /* A friend's referral, shown in the box and checked like any code (owner,
+     21 Nov 2026): the discount checkout would otherwise add unseen. Removing
+     it sends skipReferral so checkout does not put it back. */
+  const [invited, setInvited] = useState(null);
+  const [referralRemoved, setReferralRemoved] = useState(false);
+  const invitedTried = useRef(false);
+  const couponRef = useRef(coupon);
+  useEffect(() => { couponRef.current = coupon; }, [coupon]);
+  useEffect(() => {
+    if (!enabled || !token || !key || invitedTried.current) return;
+    invitedTried.current = true;
+    getInvitedBy({ accessToken: token })
+      .then(async (inv) => {
+        if (!inv?.code) return;
+        setInvited(inv);
+        if (couponRef.current.trim()) return;
+        setCoupon(inv.code);
+        setChecking(true);
+        try {
+          setApplied({ code: inv.code, byInterval: await checkAll(token, inv.code, key.split(',')) });
+        } finally {
+          setChecking(false);
+        }
+      })
+      .catch(() => { /* no line shown; checkout still applies the referral */ });
+  }, [enabled, token, key]);
   const offerCode =
-    enabled && !typed && !ownCode && offer && intervals.some((iv) => offerCoversInterval(offer, iv)) ? offer.code : null;
+    enabled && !typed && offer && intervals.some((iv) => offerCoversInterval(offer, iv)) ? offer.code : null;
 
   useEffect(() => {
     if (!offerCode || !token || !key) return undefined;
@@ -67,7 +91,10 @@ export function useSubscribeDiscount({ enabled, intervals, token }) {
       const refused = v && !v.valid && v.reason !== 'LOOKUP' && v.reason !== 'UNSUPPORTED';
       return refused ? undefined : typed;
     }
-    return checkoutCouponCode({ interval: iv, multiInterval: intervals.length > 1, offer });
+    /* Otherwise only the offer this page shows as applied, where the server
+       confirmed it for this plan. Saved referral / promo-link codes are not
+       sent unseen any more (owner, 21 Nov 2026): a code is typed and applied. */
+    return offerCode && offerVerdicts?.[iv]?.valid ? offerCode : undefined;
   };
 
   const apply = async () => {
@@ -84,7 +111,13 @@ export function useSubscribeDiscount({ enabled, intervals, token }) {
     offer,
     offerCode,
     coupon,
-    setCoupon: (v) => { setCoupon(v); setApplied(null); },
+    setCoupon: (v) => {
+      if (!v && invited && typed === invited.code) setReferralRemoved(true);
+      setCoupon(v);
+      setApplied(null);
+    },
+    invitedName: invited && typed === invited.code ? invited.name : null,
+    skipReferral: referralRemoved && !typed,
     typed,
     checked: Boolean(typed && verdicts),
     refusal: verdicts && !best ? Object.values(verdicts)[0]?.reason ?? 'UNKNOWN' : null,

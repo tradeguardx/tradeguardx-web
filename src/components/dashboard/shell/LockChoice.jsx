@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { LOCKOUT_HOUR_OPTIONS } from '../../../api/userApi';
+import LockDurationPicker from './LockDurationPicker';
+import { durationAdj, durationLong, durationShort } from '../../../lib/lockDuration';
 import { sx } from './sx';
 import { formatResumes } from './format';
 import { symbolLabel } from '../../../lib/labels';
@@ -21,21 +22,22 @@ import { symbolLabel } from '../../../lib/labels';
  * entry points cannot disagree.
  */
 
-const HOUR_ON = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--surface)";
-const HOUR_OFF = "flex:1;padding:11px;border-radius:11px;font:600 13px/1 'Space Grotesk',sans-serif;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)";
-
 const CHOICES = [
   {
     key: 'after_close',
-    title: 'Lock when this trade closes',
+    title: (n) => (n > 1 ? `Lock when all ${n} trades close` : 'Lock when this trade closes'),
     tag: null,
-    body: (h) => `Your stop-loss and target stay. The ${h}h lock starts the moment you're flat. Any new trade before then is closed straight away.`,
+    body: (h) => `Your stop-loss and target stay. The ${durationAdj(h)} lock starts the moment you're flat. Any new trade before then is closed straight away.`,
   },
   {
     key: 'close_now',
-    title: 'Close everything now',
+    title: () => 'Close everything now',
     tag: null,
-    body: (h, list) => `We close ${list} at market and the ${h}h lock starts now. Whatever the trade made or lost is booked as normal.`,
+    // Every symbol was listed here too: nine option strikes made the choice
+    // unreadable (owner, 20 Nov). The count says it; the positions table shows them.
+    body: (h, list, n) => n > 1
+      ? `We close all ${n} open trades at market and the ${durationAdj(h)} lock starts now. Whatever they made or lost is booked as normal.`
+      : `We close ${list} at market and the ${durationAdj(h)} lock starts now. Whatever the trade made or lost is booked as normal.`,
   },
 ];
 
@@ -44,7 +46,9 @@ function listSymbols(symbols) {
   if (s.length === 0) return 'your open positions';
   if (s.length === 1) return s[0];
   if (s.length === 2) return `${s[0]} and ${s[1]}`;
-  return `${s.slice(0, -1).join(', ')} and ${s[s.length - 1]}`;
+  if (s.length === 3) return `${s[0]}, ${s[1]} and ${s[2]}`;
+  // Beyond three, name two and count the rest: the full list is in Open positions.
+  return `${s[0]}, ${s[1]} and ${s.length - 2} more`;
 }
 
 export function OpenTradeLockChoice({ symbols, hours, setHours, busy, onArm, firstRef }) {
@@ -56,15 +60,13 @@ export function OpenTradeLockChoice({ symbols, hours, setHours, busy, onArm, fir
   return (
     <div>
       <div style={sx('padding:12px 13px;margin-bottom:13px;border:1px solid var(--amber-line);border-radius:11px;background:var(--amber-tint)')}>
-        <div style={sx('font-size:12.5px;font-weight:700;color:var(--amber)')}>You have a trade open</div>
+        <div style={sx('font-size:12.5px;font-weight:700;color:var(--amber)')}>{n > 1 ? `You have ${n} trades open` : 'You have a trade open'}</div>
         <p style={sx('margin:4px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>{list} {n === 1 ? 'is' : 'are'} open. Choose when the lock starts.</p>
       </div>
 
-      <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:9px")}>Lock duration</div>
-      <div style={sx('display:flex;gap:8px;margin-bottom:13px')} role="radiogroup" aria-label="Lock duration">
-        {LOCKOUT_HOUR_OPTIONS.map((h, i) => (
-          <button key={h} ref={i === 0 ? firstRef : undefined} type="button" role="radio" aria-checked={hours === h} disabled={confirming} onClick={() => setHours(h)} style={sx(hours === h ? HOUR_ON : HOUR_OFF)}>{h}h</button>
-        ))}
+      <div style={sx("font:600 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:11px")}>Lock duration</div>
+      <div style={sx('margin-bottom:15px')}>
+        <LockDurationPicker hours={hours} setHours={setHours} disabled={confirming} firstRef={firstRef} startsNow={choice === 'close_now'} />
       </div>
 
       <div role="radiogroup" aria-label="When the lock starts" style={sx('display:grid;gap:8px;margin-bottom:13px')}>
@@ -88,10 +90,10 @@ export function OpenTradeLockChoice({ symbols, hours, setHours, busy, onArm, fir
               </span>
               <span style={sx('flex:1;min-width:0')}>
                 <span style={sx('display:flex;align-items:center;gap:7px;flex-wrap:wrap')}>
-                  <span style={sx('font-size:13px;font-weight:700;color:var(--ink)')}>{c.title}</span>
+                  <span style={sx('font-size:13px;font-weight:700;color:var(--ink)')}>{c.title(n)}</span>
                   {c.tag && <span style={sx("font:600 9px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;padding:3px 6px;border-radius:5px;background:var(--mint-tint);color:var(--mint)")}>{c.tag}</span>}
                 </span>
-                <span style={sx('display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--ink-2)')}>{c.body(hours, list)}</span>
+                <span style={sx('display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--ink-2)')}>{c.body(hours, list, n)}</span>
               </span>
             </button>
           );
@@ -106,12 +108,12 @@ export function OpenTradeLockChoice({ symbols, hours, setHours, busy, onArm, fir
           <div style={sx('font-size:12.5px;font-weight:700;color:var(--red)')}>Read this before you confirm</div>
           <p style={sx('margin:5px 0 11px;font-size:12.5px;line-height:1.5;color:var(--ink-2)')}>
             {choice === 'close_now'
-              ? `${list} will be closed at market now, and you won't be able to trade this account for ${hours} hours. There is no cancel.`
-              : `When ${list} closes, you won't be able to trade this account for ${hours} hours. Until then, any new trade is closed on sight. There is no cancel.`}
+              ? `${list} will be closed at market now, and you won't be able to trade this account for ${durationLong(hours)}. There is no cancel.`
+              : `When ${list} closes, you won't be able to trade this account for ${durationLong(hours)}. Until then, any new trade is closed on sight. There is no cancel.`}
           </p>
           <div style={sx('display:flex;gap:8px;flex-wrap:wrap')}>
             <button type="button" disabled={busy} onClick={() => onArm(choice)} style={sx('flex:1 1 180px;padding:10px;border:1px solid var(--red-solid);border-radius:9px;background:var(--red-solid);color:#fff;font-size:12.5px;font-weight:700')}>
-              {busy ? 'Arming…' : choice === 'close_now' ? `Close ${n === 1 ? 'it' : 'all'} and lock ${hours}h` : `Lock me out after this trade`}
+              {busy ? 'Arming…' : choice === 'close_now' ? `Close ${n === 1 ? 'it' : 'all'} and lock ${durationShort(hours)}` : `Lock me out after this trade`}
             </button>
             <button type="button" disabled={busy} onClick={() => setConfirming(false)} style={sx('padding:10px 13px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600')}>Back</button>
           </div>
@@ -129,7 +131,7 @@ export function PendingLockPanel({ pending }) {
     <div style={sx('padding:16px 17px;border:1px solid var(--red-line);border-radius:12px;background:var(--red-tint)')}>
       <div style={sx('display:flex;align-items:center;gap:8px')}>
         <span style={sx('width:7px;height:7px;border-radius:50%;background:var(--amber);animation:tgxPulse 2s ease-in-out infinite')} />
-        <span style={sx('font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--red);font-weight:700')}>Lock waiting · {pending.hours}h</span>
+        <span style={sx('font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--red);font-weight:700')}>Lock waiting · {durationShort(pending.hours)}</span>
       </div>
       <div style={sx("margin-top:10px;font:600 17px/1.3 'Space Grotesk',sans-serif;color:var(--ink)")}>Starts when {list} {(pending.symbols?.length ?? 0) > 1 ? 'close' : 'closes'}</div>
       <p style={sx('margin:8px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-2)')}>

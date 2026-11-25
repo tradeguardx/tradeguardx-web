@@ -12,6 +12,7 @@ import { keyStateOf } from '../../lib/lifecycle';
 import { Icon, RULE_GLYPH, ICON, ruleAccent } from './shell/icons';
 import { sx } from './shell/sx';
 import DailyResetLine from './DailyResetLine';
+import VideoLink from '../tutorials/VideoLink';
 import NoticeCard from './shell/NoticeCard';
 import { currencySymbol } from '../../lib/session';
 import { profitLockExamples, profitLockSettings, TARGET_ACTIONS, targetActionOf } from '../../lib/profitLock';
@@ -551,6 +552,8 @@ function RuleRow({ rule, accessToken, tradingAccountId, isRetail, onSaved, coole
                   Need it released sooner? Ask support
                 </button>
                 <span style={sx('color:var(--ink-3)')}> &middot; we usually reply within 30 minutes</span>
+                {/* "Why can't I change this?" is asked right here. */}
+                <span style={sx('display:block;margin-top:8px')}><VideoLink lesson="rule-lock" label="Why rules lock: watch the video" source="rules_frozen" /></span>
               </span>
             </div>
           ) : isCooled ? (
@@ -775,8 +778,8 @@ export default function RulesTerminal() {
             at most, not push the actual controls below the fold forever. */}
         <div className="rt-explain" style={sx('display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))')}>
           {[
-            ['1', 'Switch on the rules you want', <>Every rule is off until you turn it on. Off rules do nothing at all — no alerts, no closing. Start with two.</>],
-            ['2', 'Rule lock holds them there', <>Rules that are <strong style={sx('color:var(--ink);font-weight:700')}>on</strong> freeze for the window you pick — 7 days by default. Rules that are <strong style={sx('color:var(--ink);font-weight:700')}>off</strong> can always be turned on.</>],
+            ['1', 'Switch on the rules you want', <>Every rule is off until you turn it on. Off rules do nothing at all — no alerts, no closing. Start with two.<span style={sx('display:block;margin-top:9px')}><VideoLink lesson="set-up-rules" label="How to set up your kill switch" source="rules_setup" /></span></>],
+            ['2', 'Rule lock holds them there', <>Rules that are <strong style={sx('color:var(--ink);font-weight:700')}>on</strong> freeze for the window you pick — 7 days by default. Rules that are <strong style={sx('color:var(--ink);font-weight:700')}>off</strong> can always be turned on.<span style={sx('display:block;margin-top:9px')}><VideoLink lesson="rule-lock" label="Rule lock explained" source="rules_lock" /></span></>],
             ['3', 'Killswitch is the manual one', <>Separate from rules. It stops you trading this account for a few hours, whatever your rules say. Set it on <button type="button" onClick={() => navigate('/dashboard/live')} style={sx('padding:0;border:0;background:none;color:var(--mint);font:inherit;font-weight:700;text-decoration:underline')}>Live guard</button>.</>],
           ].map(([n, title, body], idx) => (
             <div key={n} className="rt-explain__card" style={sx('padding:17px 21px', idx < 2 ? { borderRight: '1px solid var(--line)' } : {})}>

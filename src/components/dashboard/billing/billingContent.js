@@ -93,5 +93,7 @@ export const COUPON_REFUSAL = {
   USED_UP: 'That code has been fully claimed.',
   WRONG_PLAN: 'That code doesn’t apply to this plan — try another billing option.',
   UNSUPPORTED: 'We can’t preview that code here, but it will still be applied at checkout.',
+  OWN_REFERRAL: 'That’s your own referral code. Share it with a friend — it gives them the discount and you the voucher.',
+  NOT_NEW: 'Referral codes are for traders new to Pro, so this one can’t be used on your account.',
   LOOKUP: 'Couldn’t check that code just now. It will still be applied at checkout.',
 };

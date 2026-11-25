@@ -110,8 +110,19 @@ export default function BillingPage() {
 
   const accessToken = session?.access_token;
 
+  /*
+   * Back from checkout: the payment webhook can land a few seconds after
+   * the redirect, so one read straight away can still return the old plan.
+   * Read again at 5 s and 15 s — the newest answer always wins (AuthContext
+   * drops a slower, older response).
+   */
   useEffect(() => {
-    if (params.get('checkout') === 'success') { clearPendingCheckoutPlan(); refetchSubscription?.(); }
+    if (params.get('checkout') !== 'success') return undefined;
+    clearPendingCheckoutPlan();
+    refetchSubscription?.();
+    const t1 = setTimeout(() => refetchSubscription?.(), 5_000);
+    const t2 = setTimeout(() => refetchSubscription?.(), 15_000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [params, refetchSubscription]);
   useEffect(() => { getPricingPlans().then(setPlans).catch(() => setPlans([])); }, []);
 
@@ -380,7 +391,7 @@ export default function BillingPage() {
     trackBilling('billing_subscribe_clicked', { state, interval: toInterval });
     setBusy(`switch:${toInterval}`);
     try {
-      const res = await createCheckoutSession({ accessToken, planSlug: 'pro', interval: toInterval, couponCode: discount.codeFor(toInterval) });
+      const res = await createCheckoutSession({ accessToken, planSlug: 'pro', interval: toInterval, couponCode: discount.codeFor(toInterval), skipReferral: Boolean(discount.skipReferral && !discount.codeFor(toInterval)) });
       if (!res?.checkoutUrl) throw new Error('Could not open checkout.');
       window.location.href = res.checkoutUrl;
     } catch (e) {
@@ -393,8 +404,10 @@ export default function BillingPage() {
    * SETUP: THE BILLING SETUP STEP ITSELF.
    *
    * Nothing about a subscription exists yet, so this page is the same step
-   * onboarding ends with. Before a key is verified (s0, s2) a trial cannot
-   * start, so its button says "Continue setup" and goes back to onboarding.
+   * onboarding ends with. Before a key is verified (s0, s2) it used to send
+   * people back to onboarding instead of checkout. That turned away someone
+   * holding their card (owner, 19 Nov 2026): the plan can be bought first,
+   * and the guard switches on once a key is connected. The step says so.
    */
   if (plans === null && state !== 'setup' && state !== 'setupEarly' && state !== 'pass') return <DashboardSkeleton />;
 
@@ -404,7 +417,6 @@ export default function BillingPage() {
     return (
       <BillingStep
         passUntil={state === 'pass' ? me?.subscription?.currentPeriodEnd ?? life?.endsAt ?? null : null}
-        setupCta={state === 'setupEarly' ? { label: 'Continue setup', to: '/dashboard/setup' } : undefined}
         // s0: nothing set up yet · s2: exchange and account done, key not
         stepsDone={life?.id === 's0' ? 0 : life?.id === 's2' ? 2 : 4}
       />

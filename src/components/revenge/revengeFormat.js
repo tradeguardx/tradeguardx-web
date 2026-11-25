@@ -4,6 +4,7 @@
  * this only formats it.
  */
 
+import { currencySymbol } from '../../lib/session';
 import { formatDateKey, getUserZone, zoneLabel, zoneOffsetMinutes } from '../../lib/userZone';
 
 export const PERIODS = [
@@ -42,7 +43,7 @@ export const toneBg = (t) => (t === 'neutral' ? 'var(--surface-2)' : `var(--${t}
 
 export function moneyOf(currency) {
   const cur = String(currency || '').toUpperCase();
-  const sym = cur === 'INR' ? '₹' : cur === 'USD' ? '$' : '';
+  const sym = cur ? currencySymbol(cur) : '';
   return (n, { signed = false } = {}) => {
     if (n == null || !Number.isFinite(n)) return '—';
     const a = Math.abs(n);

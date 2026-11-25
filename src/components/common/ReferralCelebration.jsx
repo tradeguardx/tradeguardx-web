@@ -89,9 +89,9 @@ export default function ReferralCelebration({ code, onClose }) {
                     className="hidden sm:inline mr-2 text-[10px] font-bold uppercase tracking-[0.18em]"
                     style={{ color: '#7dffd4' }}
                   >
-                    Referral applied
+                    Referral code
                   </span>
-                  Discount code{' '}
+                  Your code{' '}
                   <span
                     className="inline-block rounded-md px-1.5 py-0.5 font-mono text-[12px] font-bold tracking-wider"
                     style={{
@@ -101,9 +101,11 @@ export default function ReferralCelebration({ code, onClose }) {
                     }}
                   >
                     {code}
-                  </span>{' '}
-                  <span className="hidden sm:inline">will be applied at checkout.</span>
-                  <span className="sm:hidden">at checkout.</span>
+                  </span>
+                  {/* Codes are typed and applied by the buyer (21 Nov 2026):
+                      nothing is added at checkout unseen. */}
+                  <span className="hidden sm:inline">: enter it in the coupon box when you choose a plan.</span>
+                  <span className="sm:hidden">: enter it at checkout.</span>
                 </p>
               </div>
 

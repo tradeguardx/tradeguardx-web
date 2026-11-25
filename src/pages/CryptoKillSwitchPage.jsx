@@ -42,7 +42,7 @@ const FAQ = [
   },
   {
     q: 'Can I turn the kill switch off when I want to keep trading?',
-    a: "You can change any rule, but loosening one goes through a cooling-off window — you can't raise your loss limit in the middle of a bad session. Tightening applies instantly. A kill switch you can disable in the moment you most want to disable it isn't a kill switch.",
+    a: "Before your first trade of the day, yes — changes apply straight away. From your first trade until the daily reset your rules are locked: you can switch on a rule that's off, but you can't loosen one or switch it off in the middle of a bad session. A kill switch you can disable in the moment you most want to disable it isn't a kill switch.",
   },
   {
     q: 'Does it work if I trade from the exchange mobile app?',
@@ -118,7 +118,7 @@ const SECTIONS = [
     h: 'You cannot loosen a rule in the moment you want to',
     p: [
       'This is the part people argue with, and it is the part that does the work.',
-      'Tightening a limit applies immediately. Loosening one — raising your loss cap, allowing more trades, shortening a cooldown, switching a rule off — is staged for twenty-four hours. You can still make the change; you just cannot make it at 2pm on the day you are down and certain the next one comes back. While a lock is active your API key is frozen too, so pulling the key is not the exit either.',
+      'Before your first trade of the day, change anything and it applies straight away. From your first trade until the daily reset, your rules are locked: you can switch on a rule that is off, but you cannot raise your loss cap, allow more trades, shorten a cooldown or switch a rule off. The change waits for tomorrow, not for 2pm on the day you are down and certain the next one comes back. While a lock is running you cannot disconnect or replace your API key on TradeGuardX either.',
     ],
   },
   {
@@ -395,6 +395,16 @@ export default function CryptoKillSwitchPage() {
         <section className="mt-16 border-t pt-10" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
           <h2 className="mb-4 font-display text-lg font-bold text-white">Read next</h2>
           <ul className="space-y-2.5 text-[15px]">
+            <li>
+              <Link to="/help/kill-switch" className="text-accent hover:underline">
+                How to set up a crypto kill switch, with a video of it firing live
+              </Link>
+            </li>
+            <li>
+              <Link to="/tutorials" className="text-accent hover:underline">
+                Crypto kill switch tutorials: free setup videos
+              </Link>
+            </li>
             <li>
               <Link to="/exchanges" className="text-accent hover:underline">
                 Every exchange we support, and what each one can enforce

@@ -78,6 +78,8 @@ export const PUBLIC_ROUTES = [
   { path: '/crypto-kill-switch', priority: '0.9', changefreq: 'monthly', og: 'crypto-kill-switch.png' },
   { path: '/crypto-tax-india', priority: '0.8', changefreq: 'monthly', og: 'https://pniimryjmmqykjmumpbe.supabase.co/storage/v1/object/public/media/og-tax.png' },
   { path: '/revenge-report', priority: '0.9', changefreq: 'monthly', og: 'revenge-report.png' },
+  // Every video in one place, with VideoObject schema per video (24 Nov 2026).
+  { path: '/tutorials', priority: '0.8', changefreq: 'weekly', og: null },
 
   // Help centre — the seven shared articles. Nothing venue-specific lives here
   // any more; that all moved under /exchanges/<venue>/.

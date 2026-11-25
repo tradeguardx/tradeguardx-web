@@ -19,6 +19,9 @@ import {
 import { keyStateOf, lifecycleIdOf, lifecycleView } from '../lib/lifecycle';
 import { getPricingPlans } from '../api/pricingApi';
 import { formatMoney } from '../lib/priceBands';
+import { useLiveAccount } from '../hooks/useLiveAccount';
+import { useLiveDrivenRefresh } from '../hooks/useLiveDrivenRefresh';
+import { useAllAccountsLive } from '../hooks/useAllAccountsLive';
 
 /**
  * Guard state for every account the user has, kept fresh, read everywhere.
@@ -33,16 +36,46 @@ import { formatMoney } from '../lib/priceBands';
  */
 
 const GuardContext = createContext(null);
+/*
+ * The selected account's live row, in its own context so the P&L ticking
+ * every few seconds re-renders only the screens that print it (Overview,
+ * Live guard) — not the whole shell, which reads GuardContext.
+ */
+const LiveRowContext = createContext(undefined);
 const POLL_MS = 20_000;
+/** Rules + settings backstop while live changes drive their refresh. */
+const RULES_BACKSTOP_MS = 60_000;
+/** With change stamps for every account, the database is re-read on a change; this is only the safety net. */
+const STAMPED_BACKSTOP_MS = 300_000;
 /** Longest the dashboard waits for its inputs before rendering regardless. */
 const READY_TIMEOUT_MS = 8_000;
 const TICK_MS = 1_000;
+
+/*
+ * The three lock fields, compared by value. The live row changes every few
+ * seconds while a position is open; the lock almost never does. Writing the
+ * overlay only on a real change keeps the guard context — and so the whole
+ * shell — from re-rendering on every P&L tick.
+ */
+function lockFieldsOf(row) {
+  const f = { cooldownUntil: row?.cooldownUntil ?? null, cooldownReason: row?.cooldownReason ?? null };
+  // undefined = the payload did not carry it; keep whatever we already had.
+  if (row?.pendingLock !== undefined) f.pendingLock = row.pendingLock ?? null;
+  return f;
+}
+function sameLock(a, b) {
+  if (!a || !b) return false;
+  const t = (iso) => (iso ? new Date(iso).getTime() : null);
+  return t(a.cooldownUntil) === t(b.cooldownUntil)
+    && (a.cooldownReason ?? null) === (b.cooldownReason ?? null)
+    && JSON.stringify(a.pendingLock) === JSON.stringify(b.pendingLock);
+}
 
 function settle(p) {
   return p.then((v) => ({ ok: true, v }), () => ({ ok: false, v: null }));
 }
 
-export function GuardProvider({ children }) {
+export function GuardProvider({ children, fastLive = true }) {
   const { session, user, subscription, subscriptionError } = useAuth();
   /*
    * Entitlement, mirroring isEntitled() in the engine's exchange/credentials.ts
@@ -97,8 +130,79 @@ export function GuardProvider({ children }) {
      offer is real; `expired` means it ran out and checkout will charge them
      today. The two must not be told the same thing. */
   const trialSpent = access === 'expired';
-  const { accounts, accountsLoading, selectedTradingAccountId, refreshTradingAccounts } = useTradingAccounts();
+  const { accounts, accountsLoading, selectedTradingAccountId, selectedAccount, refreshTradingAccounts } = useTradingAccounts();
   const accessToken = session?.access_token;
+
+  /*
+   * ──────────────────────────────────────────────────────────────────────
+   * THE LOCK COMES FROM THE FRESHEST COPY OF THE ROW, NOT THE ACCOUNT LIST.
+   *
+   * `accounts` is fetched once per login token — about hourly — and on an
+   * explicit refresh after the user's own mutation. Every lock surface (the
+   * header kill switch, the guard pill, the Locked out view, the switcher
+   * and mobile dots) read cooldown_until from it, so a lock the ENGINE set
+   * (daily loss, trade cap, loss streak, profit lock, an after_close lock
+   * starting) could stay invisible for up to an hour while the P&L beside it
+   * updated every three seconds from the live row.
+   *
+   * The live row (Realtime + a 30 s snapshot poll) now feeds an overlay of
+   * the three lock fields, per account id. Whichever arrived LAST wins:
+   *   - a live push or snapshot writes its account(s) into the overlay;
+   *   - a new account list (login, or refresh() after arming a lock) clears
+   *     the overlay, because that list was fetched after everything in it.
+   * The snapshot poll already fetches every account's row, so the other
+   * accounts' dots ride along at no extra cost (≤ 30 s fresh).
+   *
+   * Only DISPLAY changes. The engine and user-service decide the lock; this
+   * only decides which copy of their decision is newest.
+   * ──────────────────────────────────────────────────────────────────────
+   */
+  const [now, setNow] = useState(() => Date.now());
+  const [lockOverlay, setLockOverlay] = useState({});
+  const [overlayBase, setOverlayBase] = useState(accounts);
+  if (overlayBase !== accounts) {
+    setOverlayBase(accounts);
+    setLockOverlay({});
+  }
+  /*
+   * Both callbacks fire from the live hook as rows ARRIVE (never from an
+   * effect on the row), and both bring the shared clock up to date: nothing
+   * ticks while nothing is locked, so a lock that just arrived would
+   * otherwise be judged against a clock that stopped minutes ago.
+   *
+   * Compared against a ref of the committed overlay, not inside the state
+   * updater, so the clock is bumped ONLY on a real lock change. Bumping it on
+   * every row would re-render the whole shell every 3 s with an open trade.
+   */
+  const overlayRef = useRef(lockOverlay);
+  useEffect(() => { overlayRef.current = lockOverlay; }, [lockOverlay]);
+  const writeLocks = useCallback((rows) => {
+    const prev = overlayRef.current;
+    let next = prev;
+    for (const row of rows) {
+      if (!row?.id) continue;
+      const merged = { ...prev[row.id], ...lockFieldsOf(row) };
+      if (prev[row.id] && sameLock(prev[row.id], merged)) continue;
+      if (next === prev) next = { ...prev };
+      next[row.id] = merged;
+    }
+    if (next === prev) return;
+    overlayRef.current = next;
+    setLockOverlay(next);
+    setNow(Date.now());
+  }, []);
+  const onLiveList = useCallback((list) => writeLocks(list), [writeLocks]);
+  // Only rows from the server reach this: the seed is the (old) list itself.
+  const onLiveRow = useCallback((row) => writeLocks([row]), [writeLocks]);
+  /* Every account's lock, open-trade count and alert stamp from the cache in
+     one call every 20 s (useAllAccountsLive). While it covers every account
+     with stamps (`allLive.ok`), the database polls below stand down. */
+  const allLive = useAllAccountsLive({ accessToken, accountIds: accounts.map((a) => a.id), onRows: writeLocks });
+  const liveRow = useLiveAccount({ accessToken, tradingAccountId: selectedTradingAccountId, initial: selectedAccount, onList: onLiveList, onRow: onLiveRow, fast: fastLive, listPoll: !allLive.ok });
+  const liveAccounts = useMemo(
+    () => accounts.map((a) => (lockOverlay[a.id] ? { ...a, ...lockOverlay[a.id] } : a)),
+    [accounts, lockOverlay],
+  );
 
   const [perAccount, setPerAccount] = useState({}); // id → { connection, rules, loaded }
   const [notifications, setNotifications] = useState(null);
@@ -107,7 +211,6 @@ export function GuardProvider({ children }) {
   // time for data this context already has.
   const [unreadList, setUnreadList] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
   // Screens with their own countdowns (economic calendar) subscribe to the
   // same clock instead of starting a second interval.
   const [tickSubscribers, setTickSubscribers] = useState(0);
@@ -125,7 +228,7 @@ export function GuardProvider({ children }) {
    * re-learn facts that had not moved.
    */
   const load = useCallback(
-    async (signal, { scope = 'all' } = {}) => {
+    async (signal, { scope = 'all', light = false } = {}) => {
       if (!accessToken || accountsLoading) return;
       const myRun = ++inflight.current;
       const all = accounts.map((a) => a.id);
@@ -133,12 +236,16 @@ export function GuardProvider({ children }) {
         ? [selectedTradingAccountId]
         : all;
 
+      /* A light pass (see the poll below) keeps the alert badge and the key's
+         health on their 20 s clock and skips what only changes when the user
+         edits it or the live row says so: notification settings and rules. */
+      const skipped = Promise.resolve({ ok: false, v: null, skipped: true });
       const [notif, breaches, ...pairs] = await Promise.all([
-        settle(fetchNotificationSettings({ accessToken, signal })),
+        light ? skipped : settle(fetchNotificationSettings({ accessToken, signal })),
         settle(fetchBreaches({ accessToken, unreadOnly: true, limit: 50, signal })),
         ...ids.flatMap((id) => [
           settle(getExchangeCredentialsStatus({ accessToken, accountId: id, signal })),
-          settle(fetchRulesBundle({ accessToken, tradingAccountId: id, signal })),
+          light ? skipped : settle(fetchRulesBundle({ accessToken, tradingAccountId: id, signal })),
         ]),
       ]);
       if (signal?.aborted || myRun !== inflight.current) return;
@@ -153,9 +260,11 @@ export function GuardProvider({ children }) {
       // landed; the merge below then keeps whatever we already knew, or leaves
       // the account in `loading` if we knew nothing yet.
       const fetched = {};
+      const connOnly = {};
       ids.forEach((id, i) => {
         const conn = pairs[i * 2];
         const bundle = pairs[i * 2 + 1];
+        if (bundle.skipped) { if (conn.ok) connOnly[id] = conn.v; return; }
         if (!conn.ok || !bundle.ok) return;
         fetched[id] = { connection: conn.v, rules: bundle.v, loaded: true };
       });
@@ -164,6 +273,9 @@ export function GuardProvider({ children }) {
       setPerAccount((prev) => {
         const next = { ...fetched };
         for (const id of all) if (!next[id] && prev[id]) next[id] = prev[id];
+        // A light pass only refreshes the key's health on a slice that is
+        // already loaded; it never marks an account loaded on its own.
+        for (const [id, conn] of Object.entries(connOnly)) if (next[id]?.loaded) next[id] = { ...next[id], connection: conn };
         return next;
       });
       if (notif.ok) setNotifications(notif.v);
@@ -179,36 +291,67 @@ export function GuardProvider({ children }) {
     [accessToken, accounts, accountsLoading, selectedTradingAccountId],
   );
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    // Full pass when the account set or the selection changes; polls after
-    // that are scoped to the selected account.
-    load(ctrl.signal, { scope: 'all' });
-    const poll = setInterval(() => {
-      // A hidden tab is not watching anything. The engine enforces server-side
-      // regardless, so polling a background tab buys nothing and costs a
-      // Lambda invocation every 20 seconds for as long as it stays open.
-      if (typeof document !== 'undefined' && document.hidden) return;
-      load(ctrl.signal, { scope: 'selected' });
-    }, POLL_MS);
-    // Catch up immediately on return, so the first thing a returning user sees
-    // is current rather than up to 20s stale.
-    const onVisible = () => { if (!document.hidden) load(ctrl.signal, { scope: 'selected' }); };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      ctrl.abort();
-      clearInterval(poll);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [load]);
+  /*
+   * Full pass when the account set or the selection changes (load changes
+   * identity); after that, scoped to the selected account:
+   * - every 20 s: unread alerts + the key's health (light pass), as before;
+   * - rules + notification settings: whenever the live row shows a trade,
+   *   lock or queued lock change, and every 60 s as a backstop — every 20 s,
+   *   as before, whenever the live feed is not healthy;
+   * - nothing while the tab is hidden; a full pass the moment it is back.
+   * Edits call refresh() below, which always does a full pass.
+   */
+  /*
+   * With change stamps for every account (allLive.ok, 21 Nov 2026) the 20 s
+   * light pass stops: the key's health is re-read when the selected
+   * account's key stamp moves (it is in the live row's change key), the
+   * unread alerts when any account's alert stamp moves (below), and the full
+   * pass backstop is 5 min. Without them, exactly the behaviour above.
+   */
+  useLiveDrivenRefresh({
+    load: (signal, { first, full }) => load(signal, { scope: first ? 'all' : 'selected', light: !full }),
+    resetKey: load,
+    row: liveRow,
+    fastMs: POLL_MS,
+    slowMs: allLive.ok ? STAMPED_BACKSTOP_MS : RULES_BACKSTOP_MS,
+    light: !allLive.ok,
+  });
 
-  // One clock for every countdown on screen.
+  // A new, acknowledged or voided alert on ANY account: re-read the unread list.
+  const alertsSeen = useRef(null);
   useEffect(() => {
-    const anyLock = accounts.some((a) => lockUntilOf(a));
+    const k = allLive.alertsKey;
+    const prev = alertsSeen.current;
+    alertsSeen.current = k;
+    if (!k || prev == null || prev === k) return undefined;
+    if (typeof document !== 'undefined' && document.hidden) return undefined;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => load(ctrl.signal, { scope: 'selected', light: true }), 0);
+    return () => { clearTimeout(t); ctrl.abort(); };
+    // load is read at the moment of the change; a new load identity alone is
+    // not an alert.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allLive.alertsKey]);
+
+  /*
+   * One clock for every countdown on screen.
+   *
+   * `anyLock` is read against the shared clock, so the tick that carries a
+   * lock past its end is the same render that clears it — and the next
+   * render stops the interval. It used to be computed inside the effect off
+   * `accounts`, which kept ticking after a lock expired and, worse, only
+   * started ticking when the hourly list happened to carry the lock.
+   *
+   * A lock that just ARRIVED is checked against a clock that may not have
+   * moved for a while (nothing ticks while nothing is locked), so writeLocks
+   * above brings the clock up to date with every arrival.
+   */
+  const anyLock = liveAccounts.some((a) => lockUntilOf(a, now));
+  useEffect(() => {
     if (!anyLock && tickSubscribers === 0) return undefined;
     const id = setInterval(() => setNow(Date.now()), TICK_MS);
     return () => clearInterval(id);
-  }, [accounts, tickSubscribers]);
+  }, [anyLock, tickSubscribers]);
 
   const refresh = useCallback(async () => {
     await refreshTradingAccounts?.();
@@ -217,7 +360,7 @@ export function GuardProvider({ children }) {
 
   const stateFor = useCallback(
     (accountId) => {
-      const account = accounts.find((a) => a.id === accountId) ?? null;
+      const account = liveAccounts.find((a) => a.id === accountId) ?? null;
       const slice = perAccount[accountId] ?? { connection: null, rules: null, loaded: false };
       // `loaded` rides along so nothing downstream mistakes "not fetched yet"
       // for "not connected" — see guard.js.
@@ -260,7 +403,7 @@ export function GuardProvider({ children }) {
         canLockOut: canLockOutOf(input),
       };
     },
-    [accounts, perAccount, notifications, now, loaded, entitled, mandate, trialSpent],
+    [liveAccounts, perAccount, notifications, now, loaded, entitled, mandate, trialSpent],
   );
 
   /*
@@ -372,15 +515,37 @@ export function GuardProvider({ children }) {
       ),
       selected: selectedState,
       stateFor,
-      all: accounts.map((a) => stateFor(a.id)),
+      all: liveAccounts.map((a) => stateFor(a.id)),
       refresh,
       user,
       subscribeTick,
+      /** Open trades per account id, from the cache (accounts not on screen too). */
+      openTrades: allLive.open,
     }),
-    [ready, life, loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedState, accounts, refresh, user, subscribeTick],
+    [ready, life, loaded, now, notifications, unreadBreaches, unreadList, stateFor, selectedState, liveAccounts, refresh, user, subscribeTick, allLive.open],
   );
 
-  return <GuardContext.Provider value={value}>{children}</GuardContext.Provider>;
+  return (
+    <GuardContext.Provider value={value}>
+      <LiveRowContext.Provider value={liveRow}>{children}</LiveRowContext.Provider>
+    </GuardContext.Provider>
+  );
+}
+
+/**
+ * The selected account's live row (see useLiveAccount) — the same copy the
+ * guard reads its lock from, so a screen's P&L and its lock can never come
+ * from two different moments. Null until the account has a row.
+ */
+export function useSelectedLiveRow() {
+  const row = useContext(LiveRowContext);
+  if (row === undefined) throw new Error('useSelectedLiveRow must be used within GuardProvider');
+  return row;
+}
+
+/** Same row as useSelectedLiveRow, or null outside a GuardProvider (no throw). */
+export function useSelectedLiveRowIfAny() {
+  return useContext(LiveRowContext) ?? null;
 }
 
 export function useGuard() {

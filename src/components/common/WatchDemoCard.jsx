@@ -138,11 +138,17 @@ export function VideoLightbox({ video, title, onClose }) {
           aria-label={heading}
         >
           <div
-            className="relative w-full max-w-5xl overflow-hidden rounded-2xl border"
-            style={{ borderColor: 'rgba(0,212,170,0.22)', background: '#05070c' }}
+            className={`relative overflow-hidden rounded-2xl border ${video?.short ? '' : 'w-full max-w-5xl'}`}
+            style={{
+              borderColor: 'rgba(0,212,170,0.22)',
+              background: '#05070c',
+              // A Short is vertical: a 9:16 frame as tall as the screen allows,
+              // not a phone-width 16:9 box with a sliver of video in it.
+              ...(video?.short ? { height: 'min(86dvh, calc((100vw - 2rem) * 16 / 9))', aspectRatio: '9 / 16' } : null),
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="aspect-video w-full">
+            <div className={video?.short ? 'h-full w-full' : 'aspect-video w-full'}>
               <iframe
                 className="h-full w-full"
                 src={demoVideoEmbedUrl({ autoplay: true, id: vid, start: video?.start ?? 0 })}

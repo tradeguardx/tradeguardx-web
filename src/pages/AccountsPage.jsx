@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTradingAccounts } from '../context/TradingAccountContext';
 import { useGuard } from '../context/GuardContext';
@@ -21,6 +21,7 @@ const sameName = (typed, name) => {
   return norm(typed) !== '' && norm(typed) === norm(name);
 };
 import { sx } from '../components/dashboard/shell/sx';
+import SetupVideoHelp from '../components/dashboard/SetupVideoHelp';
 import { getUserZone } from '../lib/userZone';
 
 /**
@@ -283,6 +284,15 @@ export default function AccountsPage() {
               </button>
             </div>
 
+            {/* No key yet (24 Nov 2026): that exchange's own setup video, on
+                the card itself, not behind the chevron. Only once the key
+                status has loaded, and only for exchanges that have a video. */}
+            {st.loaded && !hasKey && !locked && (
+              <div style={sx('padding:0 19px 16px')}>
+                <SetupVideoHelp top={0} venue={{ slug: a.propFirmSlug, name: venue }} venueOnly />
+              </div>
+            )}
+
             {openId === a.id && (
             <div style={sx('padding:16px 19px 18px;border-top:1px solid var(--line);background:var(--surface-2)')}>
               <div style={sx('display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap')}>
@@ -358,7 +368,7 @@ export default function AccountsPage() {
             ))}
           </div>
         </div>
-        <p style={sx('margin:7px 0 13px;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:70ch')}>{capLine} Pick your exchange and we will walk you through creating the key.</p>
+        <p style={sx('margin:7px 0 13px;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:70ch')}>{capLine} Pick your exchange and we will walk you through creating the key. <Link to="/dashboard/tutorials" style={sx('color:var(--mint);font-weight:600;text-decoration:none;white-space:nowrap')}>Watch the setup tutorials →</Link></p>
         <button type="button" disabled={atCap} onClick={() => navigate('/dashboard/setup?new=1')} style={sx('padding:10px 15px;border-radius:10px;font-size:12.5px;font-weight:700', atCap ? { border: '1px solid var(--surface-3)', background: 'var(--surface-3)', color: 'var(--ink-3)', cursor: 'not-allowed' } : { border: '1px solid var(--ink)', background: 'var(--ink)', color: 'var(--surface)' })}>{atCap ? `Plan limit reached (${maxAccounts})` : 'Choose an exchange'}</button>
       </section>
 

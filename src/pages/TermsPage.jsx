@@ -8,7 +8,7 @@ import { useSEO } from '../hooks/useSEO';
  * could never tell when the terms actually changed. Bump this by hand, only
  * when the text above it changes.
  */
-const LAST_UPDATED = 'November 9, 2026';
+const LAST_UPDATED = 'November 23, 2026';
 
 const sections = [
   {
@@ -52,7 +52,9 @@ const sections = [
     list: [
       'We require keys scoped to trading only. We never request withdrawal or transfer permission, and we reject a key that carries it. We cannot move funds out of your exchange account.',
       'Your keys are encrypted at rest and used only to operate the Service for your account.',
-      'You may disconnect a key at any time, except while a lockout you initiated is still running — that restriction is the feature working as described, not a denial of access to your funds, which remain under your control on the exchange at all times.',
+      'You may disconnect a key from the Service at any time, except while a lock is running on that account. That restriction is the feature working as described, not a denial of access to your funds, which remain under your control on the exchange at all times.',
+      'Your exchange or broker account remains yours, and you can revoke or delete the API key on the exchange or broker at any time, including while a lock is running. Once the key is revoked we can no longer act on that account, so any rule or lock that depends on the key stops being enforced. This is your choice and outside our control, and we are not responsible for trading that follows it.',
+      'None of our supported venues currently offers an account lock of its own, so every lock we set today is enforced through your API key. If a venue offers its own lock and we use it, that lock is held by the venue: revoking the key ends our access but does not lift a lock already placed there, which ends only when its period runs out. We will state this on that venue\'s page before we use such a lock.',
       'We cannot prevent an order from reaching your exchange. Enforcement is corrective: we act after a position opens, not before. No exchange grants a third party the ability to block an order at source.',
       'We depend on exchange APIs and market conditions outside our control. Outages, rate limits, latency, illiquidity, gaps and liquidations may delay or prevent enforcement.',
     ],
@@ -62,25 +64,40 @@ const sections = [
     content: 'You can try the Service with a Trial Plan: full Pro access for 3 days, for a single payment at the price displayed when you buy it. A Trial Plan sets up no recurring mandate and does not renew; buying another adds 3 more days. When it ends you may choose a paid plan, and access to paid features stops until you do. A Pro subscription is charged in full when you start it, at the price displayed when you confirm, and you authorise a recurring mandate (AutoPay) for renewals. Paid plans renew for successive periods until cancelled; you can cancel at any time and retain access through the end of the current billing period. Free trials started before November 9, 2026 continue to their end date under the terms that applied when they began. Fees are non-refundable except as stated in our Refund Policy. We may change pricing with reasonable notice; continued use after a price change constitutes acceptance.',
   },
   {
-    title: '8. Disclaimer of Warranties',
+    title: '8. Referral Programme',
+    content: 'Every signed-up user can refer friends with their own referral link. In plain terms:',
+    list: [
+      'Your friend gets 10% off their first Pro payment, or the current site offer if that saves them more. Using a referral link never costs more than arriving without one.',
+      'You get an Amazon gift card (voucher) sized by the Pro plan your friend picks. Referrers in India get an Amazon India gift card: ₹200 for monthly, ₹400 for quarterly and ₹1,000 for yearly. Referrers outside India get an Amazon gift card in US dollars for their country’s Amazon store: $3, $5 and $12. We set the currency from your account’s timezone; you can change it on the referral page until your first reward.',
+      'A voucher is earned when your friend pays for Pro and qualifies 3 days after that payment. Vouchers are sent once a month, on the 2nd: a voucher that qualifies in a month is sent on the 2nd of the following month.',
+      'The ₹199 3-day pass (Trial Plan) does not earn a reward, and renewals do not earn a reward. One reward per friend, ever.',
+      'Rewards are capped at ₹15,000 (or $180 for US-dollar vouchers) per referrer per Indian financial year (April to March). A voucher that would take you over the cap is not paid, and it is not part-paid.',
+      'Referring yourself does not count. A friend who already had a Pro subscription before does not qualify.',
+      'A friend is tied to the first referral link they sign up with; that cannot be changed later.',
+      'We may withhold or cancel rewards where we see abuse, such as fake or duplicate accounts.',
+    ],
+    afterList: 'We may change or end the referral programme with notice on this page.',
+  },
+  {
+    title: '9. Disclaimer of Warranties',
     content: 'THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. WE DO NOT GUARANTEE THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR THAT IT WILL CORRECTLY DETECT OR ENFORCE ALL TRADING RULES. YOU USE THE SERVICE AT YOUR OWN RISK.',
     highlight: true,
   },
   {
-    title: '9. Limitation of Liability',
+    title: '10. Limitation of Liability',
     content: 'TO THE MAXIMUM EXTENT PERMITTED BY LAW, TRADEGUARDX AND ITS AFFILIATES SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, DATA, OR TRADING LOSSES, ARISING FROM YOUR USE OF THE SERVICE. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM.',
     highlight: true,
   },
   {
-    title: '10. Termination',
+    title: '11. Termination',
     content: 'We may suspend or terminate your access to the Service at any time for violation of these Terms or for any other reason. You may stop using the Service at any time. Upon termination, your right to use the Service ceases immediately.',
   },
   {
-    title: '11. Changes',
+    title: '12. Changes',
     content: 'We may modify these Terms from time to time. We will post the updated Terms on this page and update the "Last updated" date. Material changes may be communicated via email or in-product notice. Your continued use of the Service after changes constitutes acceptance of the revised Terms.',
   },
   {
-    title: '12. Contact',
+    title: '13. Contact',
     content: 'For questions about these Terms, contact us at:',
     email: 'support@tradeguardx.com',
   },

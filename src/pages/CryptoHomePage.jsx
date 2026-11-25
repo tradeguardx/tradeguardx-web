@@ -92,13 +92,14 @@ const faqLd = (variant) => ({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    ['Is TradeGuardX the same as TradeGuard?', 'No. TradeGuardX, with an X, is a separate company: a server-side kill switch for crypto and forex trading accounts. It is not connected to Nasdaq TradeGuard, TradeGuard (tradeguard.co) or TradeGuardHQ, which are different products.'],
     ['Will TradeGuardX have access to my funds?', 'No. We only ask for an API key that can read your account and place trades, never one that can withdraw, and your funds never leave your own exchange account. During a cooldown we cancel orders, close positions, and block new trades until the lock lifts.'],
     ['Does this work if I trade from the exchange’s mobile app?', 'Yes, and it is the reason we run on our own servers instead of in your browser. We hold a live connection to the account itself, so it makes no difference whether the order came from the exchange website, its phone app, or a script you wrote. A breach is checked and acted on within seconds. Alerts go to Telegram or email.'],
     ['Can I disable the rules when I want to trade more?', 'Before your first trade of the day, yes — changes apply straight away. From your first trade until the daily reset your rules are locked, so you cannot loosen one or switch it off in the heat of a bad session. You can still switch on a rule that is off.'],
+    ['Can I get around a lock by deleting my API key?', 'On TradeGuardX, no: while a lock is running you can’t disconnect or replace the key here. On the exchange, yes. It’s your account, and you can revoke or delete the API key there at any time. Once you do, we can no longer close anything on that account, and we’ll tell you the key stopped working. None of the exchanges we support has an account lock of its own today, so every lock we set runs through your key. If an exchange adds one and we use it, that lock is held by the exchange itself: deleting the key won’t lift it, and it ends only when its time runs out. We’ll say so on that exchange’s page before we use it.'],
     ['Which exchanges can I connect?', variant === 'india'
       ? 'Delta Exchange (India and Global), Exness, CoinDCX futures and Shark Exchange are live. One subscription covers every one — connect any or all.'
       : 'Delta Exchange (India and Global), Exness, CoinDCX futures, Bybit and Shark Exchange are live. One subscription covers every one — connect any or all.'],
+    ['Is TradeGuardX the same as TradeGuard?', 'No. TradeGuardX, with an X, is a separate company: a server-side kill switch for crypto and forex trading accounts. It is not connected to Nasdaq TradeGuard, TradeGuard (tradeguard.co) or TradeGuardHQ, which are different products.'],
   ].map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 });
 const FAQ_LD = { global: faqLd('global'), india: faqLd('india') };
@@ -302,10 +303,10 @@ function CryptoHomeBody({ variant }) {
       <div className="landing-bg" aria-hidden />
 
       <RawHtml className="tgx-home" innerRef={aRef} html={BODIES[variant].aHero} region={region} variant={variant} />
-      {/* A day in the life — straight after the hero. */}
-      <RawHtml className="tgx-home" innerRef={a2Ref} html={BODIES[variant].aDayInLife} region={region} variant={variant} />
-      {/* Trading in Action — proof it's real, right above "Seven rules. Pick yours." */}
+      {/* Trading in Action — straight after the hero: see it work before reading how. */}
       <TradingInAction />
+      {/* A day in the life. */}
+      <RawHtml className="tgx-home" innerRef={a2Ref} html={BODIES[variant].aDayInLife} region={region} variant={variant} />
       {/* Rules. */}
       <RawHtml className="tgx-home" innerRef={a3Ref} html={BODIES[variant].aRules} region={region} variant={variant} />
       <StoryAIJournal />
