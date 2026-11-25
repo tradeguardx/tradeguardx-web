@@ -178,14 +178,23 @@ export const LESSONS = [
     ],
   },  {
     key: 'bybit', section: 'connect', venue: 'bybit',
+    notes: [
+      'Use the Bybit website on a laptop or desktop. The Bybit app can’t create API keys.',
+      'Use your real account, not Testnet or Demo Trading. USDT and USDC perpetuals are covered; inverse contracts, spot and options are not.',
+      'Key settings: System-generated, API Transaction, Read-Write, our IP under IP restriction, Contract Orders + Positions. Leave Withdrawal off.',
+    ],
+    chapters: [[0, 'Intro'], [9, 'Choose Bybit'], [17, 'Connect the key'], [31, 'Bybit: profile → API'], [37, 'Create New Key'], [43, 'Setting 1: Read-Write'], [56, 'IP restriction'], [67, 'Setting 2: Orders + Positions'], [79, 'Verify'], [87, 'Copy both keys'], [93, 'Paste and connect'], [99, 'Connected']],
     title: 'How to connect Bybit',
-    desc: 'The video is on its way. Until then, the steps below and the written guide cover everything.',
+    seoTitle: 'How to connect Bybit to a kill switch: API key in 3 minutes',
+    desc: 'Create the Bybit API key with Read-Write and Contract Orders + Positions, restrict it to our IP and connect, in about three minutes.',
+    video: { id: 'FdQR_jIIA7I', seconds: 114, uploaded: '2026-11-25' },
     guide: '/exchanges/bybit/api-key',
     steps: [
       STEP_OPEN('Bybit'),
-      'On Bybit, create an API key with Read-Write permissions, and tick Orders and Positions under Contract.',
+      'On the Bybit website (the app cannot create keys), open profile → API → Create New Key, and pick System-generated and API Transaction.',
+      'Choose Read-Write, and tick Orders and Positions under Contract. Leave Withdrawal off.',
       'Restrict the key to our IP. Bybit deletes a key with no IP after 90 days.',
-      'Paste the API key and secret into TradeGuardX.',
+      'Copy the secret straight away (Bybit shows it once), paste the key and secret into TradeGuardX and press Connect.',
       STEP_RULES,
     ],
   },];

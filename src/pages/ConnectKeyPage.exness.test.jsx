@@ -56,7 +56,7 @@ describe('connect an Exness key', () => {
   });
 
   it('an exchange with no video at all shows neither', () => {
-    account = { id: 'acc-3', name: 'Bybit main', propFirmSlug: 'bybit' };
+    account = { id: 'acc-3', name: 'CoinDCX main', propFirmSlug: 'coindcx' };
     renderFlow();
     expect(screen.queryByRole('button', { name: /Watch how to connect/ })).toBeNull();
     expect(screen.queryByText(/^How to connect/)).toBeNull();

@@ -5,7 +5,7 @@ import { VIDEO_LESSONS, videoObjectFor } from '../content/tutorials';
 
 const SITE = 'https://tradeguardx.com';
 const URL = `${SITE}/tutorials`;
-const DESCRIPTION = 'Free videos: how to set up a crypto kill switch with a daily loss limit, how rule lock works, whether your API key is safe, and how to connect Exness and Shark Exchange.';
+const DESCRIPTION = 'Free videos: how to set up a crypto kill switch with a daily loss limit, how rule lock works, whether your API key is safe, and how to connect Exness, Shark Exchange and Bybit.';
 
 /* The course as an ItemList of its videos. Each video is also marked up on
    the page that covers its topic (the API-key guides, /help, /security);
@@ -70,7 +70,7 @@ export default function TutorialsPage() {
           <p className="mt-4 text-base leading-relaxed text-slate-400">
             A kill switch in trading closes your positions and locks you out for the day once you hit your daily loss
             limit. These short videos show how to set one up, lock your rules so you can’t undo them mid-day, and
-            connect your exchange: Exness, Shark Exchange and more.
+            connect your exchange: Exness, Shark Exchange, Bybit and more.
           </p>
         </header>
 

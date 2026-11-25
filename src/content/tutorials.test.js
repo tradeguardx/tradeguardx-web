@@ -35,7 +35,8 @@ describe('tutorials', () => {
     expect(connectTutorialFor('exness').id).toBe('mCfyRweWofY');
     expect(connectTutorialFor('delta-india').id).toBe('OGmoEeUr3Hc'); // dashboard-only stop-gap Short
     expect(connectTutorialFor('shark-exchange').id).toBe('VtfAydIu_FQ');
-    expect(connectTutorialFor('bybit')).toBeNull();
+    expect(connectTutorialFor('bybit').id).toBe('FdQR_jIIA7I');
+    expect(connectTutorialFor('coindcx')).toBeNull();
   });
 
   it('formats lengths', () => {

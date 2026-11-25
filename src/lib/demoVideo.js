@@ -38,6 +38,12 @@ const VENUE_VIDEOS = {
     title: 'Watch: connect Shark Exchange to the kill switch',
     subtitle: 'Creating the API key, whitelisting the IP, ticking Trade Futures and connecting, in about two minutes.',
   },
+  // "How to Connect Bybit to a Kill Switch (3-Minute Setup)", 25 Nov 2026.
+  bybit: {
+    id: 'FdQR_jIIA7I',
+    title: 'Watch: connect Bybit to the kill switch',
+    subtitle: 'Creating the API key with Read-Write and Contract Orders + Positions, restricting it to our IP and connecting, in about three minutes.',
+  },
   // "How to Connect Exness to a Kill Switch (Full Setup in 3 Minutes)",
   // published 23 Nov 2026 (owner, 24 Nov).
   exness: {
