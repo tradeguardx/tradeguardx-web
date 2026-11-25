@@ -8,10 +8,10 @@ import './diwaliSky.css';
  * only) burst in the gap between the headline and the code.
  */
 const ROCKETS = [
-  { x: '4%', rise: 50, dur: 4.8, delay: 0.2, r: 40, wide: false },
-  { x: '43%', rise: 58, dur: 5.6, delay: 1.5, r: 46, wide: true },
-  { x: '53%', rise: 44, dur: 5.2, delay: 3.4, r: 38, wide: true },
-  { x: '96%', rise: 48, dur: 5.0, delay: 2.4, r: 36, wide: false },
+  { x: '4%', rise: 26, dur: 4.8, delay: 0.2, r: 40, wide: false },
+  { x: '43%', rise: 30, dur: 5.6, delay: 1.5, r: 46, wide: true },
+  { x: '53%', rise: 24, dur: 5.2, delay: 3.4, r: 38, wide: true },
+  { x: '96%', rise: 28, dur: 5.0, delay: 2.4, r: 36, wide: false },
 ];
 const SPARK_COLORS = ['#fcd34d', '#f472b6', '#2dd4bf', '#fb923c', '#fde68a', '#c084fc'];
 const SPARKS = Array.from({ length: 12 }, (_, i) => ({ a: i * 30, c: SPARK_COLORS[i % SPARK_COLORS.length] }));

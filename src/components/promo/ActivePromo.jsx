@@ -32,7 +32,7 @@ function CopyCodeButton({ code }) {
           /* ignore */
         }
       }}
-      className="group relative inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition-all sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2"
+      className="group relative inline-flex h-7 items-center gap-1.5 overflow-hidden rounded-lg px-2.5 transition-all sm:h-8 sm:gap-2 sm:px-3"
       style={{
         background: 'rgba(255,255,255,0.10)',
         border: '1px solid rgba(255,255,255,0.22)',
@@ -40,7 +40,7 @@ function CopyCodeButton({ code }) {
       }}
       aria-label={`Copy code ${code}`}
     >
-      <span className="font-mono text-sm font-bold tracking-[0.16em] text-white sm:text-base sm:tracking-[0.18em]">{code}</span>
+      <span className="font-mono text-[13px] font-bold tracking-[0.14em] text-white sm:text-sm">{code}</span>
       <span className="text-white/80 transition-transform group-hover:scale-110">
         {copied ? (
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -52,15 +52,11 @@ function CopyCodeButton({ code }) {
           </svg>
         )}
       </span>
+      {/* Over the code, not under it: the strip clips its overflow. */}
       {copied && (
-        <motion.span
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold text-white/90"
-        >
+        <span role="status" className="absolute inset-0 grid place-items-center bg-[#0f172a] text-xs font-semibold text-white">
           Copied!
-        </motion.span>
+        </span>
       )}
     </button>
   );
@@ -112,9 +108,10 @@ function CodePromoContent({ promo, now }) {
     : null;
 
   return (
-    <div className="relative flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between sm:gap-6">
-      <div className="text-center sm:text-left">
-        <div className="flex items-center justify-center gap-1.5 sm:justify-start">
+    <div className="relative flex flex-col items-center gap-1.5 lg:flex-row lg:justify-between lg:gap-6">
+      <div className="flex min-w-0 flex-col items-center gap-x-3 gap-y-0.5 text-center sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start lg:text-left">
+        {/* The tagline needs a wide screen; below that the deal itself gets the room. */}
+        <div className="hidden items-center gap-1.5 xl:flex">
           {promo.theme === 'diwali' ? (
             <DiyaMark />
           ) : (
@@ -124,16 +121,16 @@ function CodePromoContent({ promo, now }) {
               transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
               aria-hidden
             >
-              <svg className="h-3.5 w-3.5 text-yellow-300 sm:h-4 sm:w-4" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-3.5 w-3.5 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
               </svg>
             </motion.span>
           )}
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 sm:text-[11px] sm:tracking-[0.22em]">{promo.headline}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/90">{promo.headline}</p>
         </div>
-        <h2 className="font-display text-sm font-bold leading-tight text-white sm:mt-1 sm:text-2xl">{headline}</h2>
+        <h2 className="font-display text-sm font-bold leading-tight text-white sm:text-base">{headline}</h2>
         {priceLine && (
-          <p className="mt-0.5 text-[11px] font-semibold text-white/85 sm:text-xs">
+          <p className="text-[11px] font-semibold leading-tight text-white/85 sm:text-xs">
             <span className={theme.accent}>{priceLine}</span>
             {promo.cycles === 1 && featured && (
               <span className="text-white/70">, then {formatInr(featured.monthly)}/mo</span>
@@ -142,22 +139,22 @@ function CodePromoContent({ promo, now }) {
         )}
       </div>
 
-      <div className="flex items-center gap-3 sm:gap-6">
-        <div className="flex flex-col items-center gap-0.5 sm:items-start sm:gap-1">
-          <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/70 sm:text-[10px]">Use code</span>
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2">
+          <span className="hidden text-[10px] font-bold uppercase tracking-[0.14em] text-white/70 sm:inline">Use code</span>
           <CopyCodeButton code={promo.code} />
         </div>
-        <div className="hidden h-12 w-px sm:block" style={{ background: 'rgba(255,255,255,0.20)' }} aria-hidden />
-        <div className="flex flex-col items-center gap-0.5 sm:items-start sm:gap-1">
-          <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/70 sm:text-[10px]">Ends in</span>
+        <div className="flex items-center gap-2">
+          <span className="hidden text-[10px] font-bold uppercase tracking-[0.14em] text-white/70 sm:inline">Ends in</span>
           <div
-            className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-white sm:rounded-xl sm:px-3 sm:py-1.5 sm:text-xl"
+            className="flex h-7 items-center gap-0.5 whitespace-nowrap rounded-lg px-2 text-[13px] text-white sm:h-8 sm:text-sm"
             style={{
               background: 'rgba(0,0,0,0.28)',
               border: '1px solid rgba(255,255,255,0.18)',
               backdropFilter: 'blur(8px)',
             }}
           >
+            <span className="mr-0.5 text-[11px] font-medium opacity-70 sm:hidden">Ends</span>
             {showDays && (
               <>
                 <CountdownDigit value={days} />
@@ -496,7 +493,7 @@ export default function ActivePromo() {
         ))}
         </>)}
 
-        <div className={`relative mx-auto max-w-7xl px-4 py-2 pr-10 sm:px-6 sm:py-5 sm:pr-16${theme.sky ? ' [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]' : ''}`}>
+        <div className={`relative mx-auto max-w-7xl px-4 py-2 pr-10 sm:px-6 sm:pr-12${theme.sky ? ' [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]' : ''}`}>
           {mode === 'launch' && (
             <LaunchOfferContent founding={foundingCfg} promo={codePromo} />
           )}
@@ -508,7 +505,7 @@ export default function ActivePromo() {
         <button
           type="button"
           onClick={handleDismiss}
-          className="absolute right-2 top-2 rounded-md p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white sm:right-4 sm:top-4"
+          className="absolute right-2 top-2 rounded-md p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white sm:right-4 lg:top-1/2 lg:-translate-y-1/2"
           aria-label="Dismiss promotion"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
