@@ -17,8 +17,11 @@ import { useCallback, useState } from 'react';
  * nowhere else.
  *
  * So this combines four things, because no single one works everywhere:
- *   - a nonsense autoComplete token, which browsers honour where "off" is
- *     ignored, since there is no known field type to match it against
+ *   - autoComplete="off". Chrome ignores it on password fields, but it is the
+ *     ONLY value that stops its form history ("autocomplete") on text fields.
+ *     Until 25 Nov 2026 this was a nonsense token, and Chrome read that as ON:
+ *     it stored every pasted key and secret and offered them back as
+ *     suggestions (measured in Chrome 147). Do not change it to anything else
  *   - the opt-out attributes the major password managers read
  *   - correction and spellcheck off, so a secret is never sent to a
  *     spellchecker or silently capitalised
@@ -34,12 +37,13 @@ import { useCallback, useState } from 'react';
  * type="text" masked with -webkit-text-security, which is what SecretInput
  * does; never type="password".
  *
- * Spread onto the input. Pair it with a `name` that does not read as a
- * credential: autofill heuristics match on name and id before anything else,
- * so `name="apiSecret"` invites exactly what this is meant to prevent.
+ * Use useNoAutofill, which adds a `name` that is new on every mount. Autofill
+ * heuristics and form history both go by name, so `name="apiSecret"` invites
+ * exactly what this is meant to prevent, and a fixed name would keep offering
+ * the values Chrome stored under it before the fix above.
  */
 export const NO_AUTOFILL = {
-  autoComplete: 'off-tgx-no-autofill',
+  autoComplete: 'off',
   autoCorrect: 'off',
   autoCapitalize: 'off',
   spellCheck: false,
@@ -59,14 +63,18 @@ export const NO_AUTOFILL = {
  * lock lifts on pointer-down and on focus, both of which happen before the
  * first keystroke or paste, so nothing is dropped on the way in.
  *
+ * Spread it AFTER any `name` of your own: the fresh name has to win.
+ *
  * This is deliberately belt and braces. The attributes above are the polite
  * request; this is what holds when a browser decides to ignore it.
  */
 export function useNoAutofill() {
   const [locked, setLocked] = useState(true);
+  const [name] = useState(() => `f${Math.random().toString(36).slice(2, 12)}`);
   const unlock = useCallback(() => setLocked(false), []);
   return {
     ...NO_AUTOFILL,
+    name,
     readOnly: locked,
     onFocus: unlock,
     onMouseDown: unlock,

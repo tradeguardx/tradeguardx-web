@@ -28,14 +28,13 @@ import { sx } from './shell/sx';
  * It is never filled from anything we hold — the value lives in the page only
  * while someone is pasting it, and the callers clear it after connecting.
  */
-export function SecretTextarea({ value, onChange, placeholder, id, name = 'tgx-val-d', disabled, className = '', style, wrapperClassName = '', wrapperStyle, rows = 5 }) {
+export function SecretTextarea({ value, onChange, placeholder, id, disabled, className = '', style, wrapperClassName = '', wrapperStyle, rows = 5 }) {
   const [reveal, setReveal] = useState(false);
   const noAutofill = useNoAutofill();
   return (
     <div className={`relative ${wrapperClassName}`} style={{ maxWidth: '100%', ...wrapperStyle }}>
       <textarea
         id={id}
-        name={name}
         rows={rows}
         {...noAutofill}
         value={value}
@@ -105,7 +104,6 @@ export function VenueExtraFields({ fields, values, onChange, disabled, variant =
       <input
         id={variant === 'connect' ? id : undefined}
         type="text"
-        name={`tgx-x-${f.name}`}
         inputMode={f.inputMode}
         {...noAutofill}
         value={val}

@@ -496,7 +496,6 @@ export default function ExchangeConnectionPanel({ account, accessToken, toast })
               <span className="text-xs" style={{ color: 'var(--dash-text-secondary)' }}>API Key</span>
               <input
                 type="text"
-                name="tgx-val-a"
                 {...noAutofill}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}

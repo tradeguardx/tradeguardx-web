@@ -19,12 +19,11 @@ import { useNoAutofill } from '../../lib/noAutofill';
  *
  * The autofill opt-outs come from useNoAutofill so there is one definition of
  * them, and it also keeps the field readOnly until it is touched — autofill
- * runs at load, and no browser writes into a readOnly input. The default
- * `name` is deliberately meaningless, because autofill heuristics match on
- * name before they look at anything else and `tgx-secret` is the word they
- * are looking for.
+ * runs at load, and no browser writes into a readOnly input. The `name`
+ * comes from there too and is new on every mount, so a browser has nothing
+ * stored to suggest. Do not pass a `name`: it would win over that one.
  */
-export default function SecretInput({ value, onChange, placeholder, className = '', wrapperClassName = '', wrapperStyle, style, name = 'tgx-val-b', ...rest }) {
+export default function SecretInput({ value, onChange, placeholder, className = '', wrapperClassName = '', wrapperStyle, style, ...rest }) {
   const [reveal, setReveal] = useState(false);
   const noAutofill = useNoAutofill();
 
@@ -32,7 +31,6 @@ export default function SecretInput({ value, onChange, placeholder, className = 
     <div className={`relative ${wrapperClassName}`} style={wrapperStyle}>
       <input
         type="text"
-        name={name}
         inputMode="text"
         {...noAutofill}
         value={value}

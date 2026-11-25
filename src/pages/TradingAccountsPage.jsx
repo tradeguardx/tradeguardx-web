@@ -1183,7 +1183,6 @@ export function AddAccountForm({ accessToken, supportedProps, onCreated, onCance
                   </span>
                   <input
                     type="text"
-                    name="tgx-val-a"
                     {...noAutofill}
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
