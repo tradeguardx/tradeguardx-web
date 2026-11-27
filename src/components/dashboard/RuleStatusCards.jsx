@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { fetchTradingAccounts } from '../../api/tradingAccountsApi';
 import { fetchRulesBundle } from '../../api/rulesApi';
-import { supabase } from '../../lib/supabaseClient';
 import { staggerContainer, staggerItem } from './dashboardMotion';
 import { targetActionOf } from '../../lib/profitLock';
 
@@ -251,21 +250,16 @@ export default function RuleStatusCards({ accessToken, tradingAccountId, account
     };
     snapshot();
 
-    const channel = supabase
-      .channel(`rule-cards-equity-${tradingAccountId}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'trading_accounts', filter: `id=eq.${tradingAccountId}` },
-        (payload) => apply(payload.new),
-      )
-      .subscribe();
-
+    /* No Supabase Realtime channel (28 Nov 2026). trading_accounts left the
+       supabase_realtime publication when live numbers moved to the engine's
+       cache (20 Nov), so the channel delivered nothing while keeping
+       Realtime's WAL poller busy. This 30 s snapshot was already what updated
+       the cards. */
     const id = setInterval(snapshot, FALLBACK_POLL_MS);
 
     return () => {
       cancelled = true;
       clearInterval(id);
-      supabase.removeChannel(channel);
     };
   }, [accessToken, tradingAccountId]);
 
